@@ -843,69 +843,6 @@ class BridgeSerializationUtilsTest {
         }
 
         @Test
-        void withUtxoBelongingToStandardMultisigFederation_shouldAllowRecoveringFederationAddressFromScript() {
-            // arrange
-            UTXO utxo = UTXOBuilder.builder()
-                .withTransactionHash(fundingTxHash)
-                .withValue(Coin.COIN)
-                .withBlockHeight(500)
-                .withScriptPubKey(standardFederation.getP2SHScript())
-                .build();
-            List<UTXO> utxos = Collections.singletonList(utxo);
-
-            // act
-            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
-            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
-
-            // assert
-            Address recoveredAddress = deserializedUtxos.get(0).getScript().getToAddress(MAINNET_PARAMETERS);
-            assertEquals(standardFederation.getAddress(), recoveredAddress);
-            assertUtxosEquals(utxos, deserializedUtxos);
-        }
-
-        @Test
-        void withUtxoBelongingToP2shErpFederation_shouldAllowRecoveringFederationAddressFromScript() {
-            // arrange
-            UTXO utxo = UTXOBuilder.builder()
-                .withTransactionHash(fundingTxHash)
-                .withValue(Coin.FIFTY_COINS)
-                .withBlockHeight(1_000)
-                .withScriptPubKey(p2shErpFederation.getP2SHScript())
-                .build();
-            List<UTXO> utxos = Collections.singletonList(utxo);
-
-            // act
-            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
-            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
-
-            // assert
-            Address recoveredAddress = deserializedUtxos.get(0).getScript().getToAddress(MAINNET_PARAMETERS);
-            assertEquals(p2shErpFederation.getAddress(), recoveredAddress);
-            assertUtxosEquals(utxos, deserializedUtxos);
-        }
-
-        @Test
-        void withUtxoBelongingToP2shP2wshErpFederation_shouldAllowRecoveringFederationAddressFromScript() {
-            // arrange
-            UTXO utxo = UTXOBuilder.builder()
-                .withTransactionHash(fundingTxHash)
-                .withValue(Coin.CENT)
-                .withBlockHeight(2_000)
-                .withScriptPubKey(p2shP2wshErpFederation.getP2SHScript())
-                .build();
-            List<UTXO> utxos = Collections.singletonList(utxo);
-
-            // act
-            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
-            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
-
-            // assert
-            Address recoveredAddress = deserializedUtxos.get(0).getScript().getToAddress(MAINNET_PARAMETERS);
-            assertEquals(p2shP2wshErpFederation.getAddress(), recoveredAddress);
-            assertUtxosEquals(utxos, deserializedUtxos);
-        }
-
-        @Test
         void withUtxosBelongingToDifferentFederations_shouldAllowRecoveringEachFederationAddress() {
             // arrange
             UTXO utxoFromStandardFederation = UTXOBuilder.builder()
