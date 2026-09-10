@@ -739,7 +739,7 @@ class BridgeSerializationUtilsTest {
         private final Sha256Hash fundingTxHash = BitcoinTestUtils.createHash(99);
 
         @Test
-        void serializeAndDeserialize_withEmptyList_shouldReturnEmptyList() {
+        void withEmptyUtxoList_shouldReturnEmptyList() {
             // arrange
             List<UTXO> utxos = new ArrayList<>();
 
@@ -782,7 +782,7 @@ class BridgeSerializationUtilsTest {
         }
 
         @Test
-        void serializeAndDeserialize_withLargeUtxoList_shouldRecoverAllUtxosInOrder() {
+        void withLargeUtxoList_shouldRecoverAllUtxosInOrder() {
             // arrange
             List<UTXO> utxos = UTXOBuilder.builder().buildMany(200, BitcoinTestUtils::createHash);
 
