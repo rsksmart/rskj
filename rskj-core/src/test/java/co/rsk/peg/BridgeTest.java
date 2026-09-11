@@ -26,6 +26,10 @@ import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.lockingcap.LockingCapStorageProvider;
+import co.rsk.peg.lockingcap.LockingCapStorageProviderImpl;
+import co.rsk.peg.lockingcap.LockingCapSupport;
+import co.rsk.peg.lockingcap.LockingCapSupportImpl;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.union.UnionBridgeSupport;
@@ -65,16 +69,24 @@ class BridgeTest {
     private final ActivationConfig papyrus200Config = ActivationConfigsForTest.papyrus200();
     private final ActivationConfig iris300Config = ActivationConfigsForTest.iris300();
     private final ActivationConfig hop400Config = ActivationConfigsForTest.hop400();
+    private final ActivationConfig vetiver900Config = ActivationConfigsForTest.vetiver900();
     private final ActivationConfig allActivationsConfig = ActivationConfigsForTest.all();
     private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private final FederationConstants federationMainNetConstants = bridgeMainNetConstants.getFederationConstants();
     private final NetworkParameters networkParameters = bridgeMainNetConstants.getBtcParams();
+    private final CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
     private BridgeBuilder bridgeBuilder;
+    private LockingCapSupport lockingCapSupport;
 
     @BeforeEach
     void setup() {
         bridgeBuilder = new BridgeBuilder();
+
+        StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, allActivations, bridgeMainNetConstants.getLockingCapConstants(), signatureCache);
     }
 
     @Test
@@ -165,8 +177,6 @@ class BridgeTest {
     @ParameterizedTest()
     @MethodSource("lockingCapValues")
     void increaseLockingCap_after_RSKIP134_activation(long newLockingCapValue) throws VMException {
-        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
-
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.increaseLockingCap(any(), any())).thenReturn(true);
 
@@ -195,9 +205,14 @@ class BridgeTest {
 
     @Test
     void increaseLockingCap_whenNewLockingCapIsInvalidParameter_shouldThrowVMException() {
-        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            .withActivations(allActivations)
+            .withLockingCapSupport(lockingCapSupport)
+            .build();
+
         Bridge bridge = bridgeBuilder
             .activationConfig(allActivationsConfig)
+            .bridgeSupport(bridgeSupport)
             .build();
 
         // Uses the proper signature but appends an invalid data type
@@ -216,46 +231,63 @@ class BridgeTest {
     @Test
     void increaseLockingCap_whenNoArgumentsInTheMethodSignature_shouldThrowVMException() {
         // Arrange
-        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
-        Bridge bridge = bridgeBuilder
-            .activationConfig(allActivationsConfig)
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            .withActivations(allActivations)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
-        // No arguments signature
-        final byte[] noArgumentData = increaseLockingCapFunction.encodeArguments();
+        Bridge bridge = bridgeBuilder
+            .activationConfig(allActivationsConfig)
+            .bridgeSupport(bridgeSupport)
+            .build();
 
-        // Act / Assert
+        final byte[] noArgumentData = increaseLockingCapFunction.encode();
+
+        // Decoding an empty payload for a single int256 param doesn't fail: IntType.decodeInt
+        // special-cases an empty array and returns BigInteger.ZERO instead of throwing. So
+        // newLockingCap decodes as zero, and it's increaseLockingCap's own "must be greater
+        // than zero" check that throws here, not the ABI decoder.
+        // Act & assert
         assertThrows(VMException.class, () -> bridge.execute(noArgumentData));
     }
 
     @Test
     void increaseLockingCap_whenNewLockingCapIsNegativeValue_shouldThrowVMException() {
         // Arrange
-        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
-        Bridge bridge = bridgeBuilder
-            .activationConfig(allActivationsConfig)
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            .withActivations(allActivations)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
-        // When new LockingCap is a negative value
-        final byte[] negativeValueData = increaseLockingCapFunction.encodeArguments(Coin.NEGATIVE_SATOSHI.getValue());
+        Bridge bridge = bridgeBuilder
+            .activationConfig(allActivationsConfig)
+            .bridgeSupport(bridgeSupport)
+            .build();
 
-        // Act / Assert
+        final byte[] negativeValueData = increaseLockingCapFunction.encode(Coin.NEGATIVE_SATOSHI.getValue());
+
+        // Act & assert
         assertThrows(VMException.class, () -> bridge.execute(negativeValueData));
     }
 
     @Test
     void increaseLockingCap_whenNewLockingCapIsZeroValue_shouldThrowVMException() {
         // Arrange
-        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            .withActivations(allActivations)
+            .withLockingCapSupport(lockingCapSupport)
+            .build();
+
         Bridge bridge = bridgeBuilder
             .activationConfig(allActivationsConfig)
+            .bridgeSupport(bridgeSupport)
             .build();
 
         // When new LockingCap is a zero value
-        final byte[] negativeValueData = increaseLockingCapFunction.encodeArguments(Coin.ZERO.getValue());
+        final byte[] zeroValueData = increaseLockingCapFunction.encode(Coin.ZERO.getValue());
 
         // Act / Assert
-        assertThrows(VMException.class, () -> bridge.execute(negativeValueData));
+        assertThrows(VMException.class, () -> bridge.execute(zeroValueData));
     }
 
     @Test
@@ -939,6 +971,79 @@ class BridgeTest {
                     false
                 );
             }
+        }
+    }
+
+    @Nested
+    class RegisterPegoutTransactionValidations {
+        private final CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
+        private Bridge bridge;
+
+        @BeforeEach
+        void setup() {
+            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+                .withActivations(allActivations)
+                .build();
+
+            bridge = bridgeBuilder
+                .activationConfig(allActivationsConfig)
+                .bridgeSupport(bridgeSupport)
+                .build();
+        }
+
+        @Test
+        void registerPegoutTransaction_beforeRskip643_shouldThrowVMException() {
+            // arrange
+            ActivationConfig.ForBlock vetiverActivation = vetiver900Config.forBlock(0);
+            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+                .withActivations(vetiverActivation)
+                .build();
+
+            Bridge bridge = bridgeBuilder
+                .activationConfig(vetiver900Config)
+                .bridgeSupport(bridgeSupport)
+                .build();
+
+            byte[] btcTxId = BitcoinTestUtils.createHash(1).getBytes();
+            int height = 100;
+            byte[] pmt = Hex.decode("ab");
+
+            byte[] data = registerPegoutTransactionFunction.encode(btcTxId, height, pmt);
+
+            // act & assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void registerPegoutTransaction_withEmptyData_shouldThrowVMException() {
+            // arrange
+            final byte[] emptyData = registerPegoutTransactionFunction.encodeSignature();
+
+            // act & assert
+            assertThrows(VMException.class, () -> bridge.execute(emptyData));
+        }
+
+        @Test
+        void registerPegoutTransaction_withNotEnoughDataForFirstParam_shouldThrowVMException() {
+            // arrange
+            // one byte isn't enough to decode btcTxId (bytes32, needs 32 bytes) -> Bytes32Type.decode throws
+            final byte[] invalidData = ByteUtil.merge(registerPegoutTransactionFunction.encodeSignature(), Hex.decode("ab"));
+
+            // act & assert
+            assertThrows(VMException.class, () -> bridge.execute(invalidData));
+        }
+
+        @Test
+        void registerPegoutTransaction_withNotEnoughDataForSecondParam_shouldThrowVMException() {
+            // arrange
+            // this literal is exactly 32 bytes, so btcTxId decodes fine; height then has no bytes left -> IntType.decode throws
+            final byte[] invalidHexData = ByteUtil.merge(
+                registerPegoutTransactionFunction.encodeSignature(),
+                Hex.decode("1111111111111111111111111111111111111111111111111111111111111111")
+            );
+
+            // act & assert
+            assertThrows(VMException.class, () -> bridge.execute(invalidHexData));
         }
     }
 
