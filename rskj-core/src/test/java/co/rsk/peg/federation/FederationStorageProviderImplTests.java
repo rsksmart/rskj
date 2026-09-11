@@ -3,6 +3,7 @@ package co.rsk.peg.federation;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_TESTNET;
 import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosEquals;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.federation.FederationStorageIndexKey.*;
@@ -1122,6 +1123,32 @@ class FederationStorageProviderImplTests {
 
             Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
             assertEquals(Optional.of(proposedFederation), actualProposedFederation);
+        }
+    }
+
+    @Nested
+    class PendingFederationsBtcUTXOs {
+        private final Script p2shP2wshErpFederationScript = P2shP2wshErpFederationBuilder.builder().build().getP2SHScript();
+
+        @Test
+        void federationsPendingBtcUTXOsKey_shouldSaveAndRetrieveUtxosFromStorage() {
+            // arrange
+            StorageAccessor storageAccessor = new InMemoryStorage();
+            Sha256Hash btcTxId = createHash(1);
+            DataWord key = FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
+
+            List<UTXO> expectedUtxos = List.of(
+                UTXOBuilder.builder()
+                    .withScriptPubKey(p2shP2wshErpFederationScript)
+                    .build()
+            );
+
+            // act
+            storageAccessor.saveToRepository(key, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
+            List<UTXO> actualUtxos = storageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
+
+            // assert
+            assertUtxosEquals(expectedUtxos, actualUtxos);
         }
     }
 
