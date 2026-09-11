@@ -1150,6 +1150,20 @@ class FederationStorageProviderImplTests {
             // assert
             assertUtxosEquals(expectedUtxos, actualUtxos);
         }
+
+        @Test
+        void getFederationsPendingBtcUTXOs_whenNotCachedAndNotInStorage_shouldReturnEmpty() {
+            // arrange
+            StorageAccessor storageAccessor = new InMemoryStorage();
+            FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+            Sha256Hash btcTxId = createHash(1);
+
+            // act
+            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+
+            // assert
+            assertTrue(actualUtxos.isEmpty());
+        }
     }
 
     private static Federation createNonStandardErpFederation() {
