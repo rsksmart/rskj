@@ -18,6 +18,7 @@ public interface FederationStorageProvider {
     List<UTXO> getOldFederationBtcUTXOs();
 
     Optional<List<UTXO>> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId);
+    void setFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos);
 
     Federation getNewFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations);
     void setNewFederation(Federation federation);

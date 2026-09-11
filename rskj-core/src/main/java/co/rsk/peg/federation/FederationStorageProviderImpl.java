@@ -131,6 +131,11 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
+    public void setFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos) {
+        federationsPendingBtcUTXOs.put(btcTxId, utxos);
+    }
+
+    @Override
     public Federation getNewFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations) {
         if (newFederation != null) {
             return newFederation;
