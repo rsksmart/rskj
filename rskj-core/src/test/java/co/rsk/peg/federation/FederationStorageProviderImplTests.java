@@ -1131,7 +1131,7 @@ class FederationStorageProviderImplTests {
         private final Script p2shP2wshErpFederationScript = P2shP2wshErpFederationBuilder.builder().build().getP2SHScript();
 
         @Test
-        void federationsPendingBtcUTXOsKey_shouldSaveAndRetrieveUtxosFromStorage() {
+        void storeInStorage_withFederationsPendingBtcUTXOsKey_shouldSaveAndRetrieveUtxosFromStorage() {
             // arrange
             StorageAccessor storageAccessor = new InMemoryStorage();
             Sha256Hash btcTxId = createHash(1);
