@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static co.rsk.peg.federation.FederationStorageIndexKey.*;
@@ -27,6 +28,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     private static final Logger logger = LoggerFactory.getLogger(FederationStorageProviderImpl.class);
     private final StorageAccessor bridgeStorageAccessor;
     private final HashMap<DataWord, Optional<Integer>> storageVersionEntries;
+    private final Map<Sha256Hash, List<UTXO>> federationsPendingBtcUTXOs;
 
     private List<UTXO> newFederationBtcUTXOs;
     private List<UTXO> oldFederationBtcUTXOs;
@@ -50,6 +52,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     public FederationStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
         this.storageVersionEntries = new HashMap<>();
+        this.federationsPendingBtcUTXOs = new HashMap<>();
     }
 
     @Override
@@ -108,6 +111,10 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public Optional<List<UTXO>> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        if (federationsPendingBtcUTXOs.containsKey(btcTxId)) {
+            return Optional.of(federationsPendingBtcUTXOs.get(btcTxId));
+        }
+
         DataWord key = getStorageKeyForFederationsPendingBtcUTXOs(btcTxId);
         List<UTXO> utxos = bridgeStorageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
 
@@ -115,6 +122,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return Optional.empty();
         }
 
+        federationsPendingBtcUTXOs.put(btcTxId, utxos);
         return Optional.of(utxos);
     }
 
