@@ -2,6 +2,7 @@ package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionWitness;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.*;
 
 import java.util.List;
@@ -158,6 +159,22 @@ public class BitcoinTestAssertions {
         Script actualStandardScript = new ScriptBuilder().addChunks(actualStandardChunks).build();
         Script expectedStandardScript = new ScriptBuilder().addChunks(expectedStandardChunks).build();
         assertArrayEquals(expectedStandardScript.getProgram(), actualStandardScript.getProgram());
+    }
+
+    public static void assertUtxosEquals(List<UTXO> expected, List<UTXO> actual) {
+        assertEquals(expected.size(), actual.size());
+        for (int i = 0; i < expected.size(); i++) {
+            assertUtxoEquals(expected.get(i), actual.get(i));
+        }
+    }
+
+    public static void assertUtxoEquals(UTXO expected, UTXO actual) {
+        assertEquals(expected.getHash(), actual.getHash());
+        assertEquals(expected.getIndex(), actual.getIndex());
+        assertEquals(expected.getValue(), actual.getValue());
+        assertEquals(expected.getHeight(), actual.getHeight());
+        assertEquals(expected.isCoinbase(), actual.isCoinbase());
+        assertEquals(expected.getScript(), actual.getScript());
     }
 
     public static void assertSegwitScriptSigContainsHashedRedeemScript(Script segwitScriptSig, Script redeemScript) {

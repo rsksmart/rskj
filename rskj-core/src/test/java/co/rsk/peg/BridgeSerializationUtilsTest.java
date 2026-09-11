@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSerializationUtils.*;
 import static co.rsk.peg.PegTestUtils.createHash3;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosEquals;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -941,21 +942,6 @@ class BridgeSerializationUtilsTest {
             assertThrows(SerializationException.class, () -> BridgeSerializationUtils.deserializeUTXOList(data));
         }
 
-        private void assertUtxosEquals(List<UTXO> expected, List<UTXO> actual) {
-            assertEquals(expected.size(), actual.size());
-            for (int i = 0; i < expected.size(); i++) {
-                assertUtxoEquals(expected.get(i), actual.get(i));
-            }
-        }
-
-        private void assertUtxoEquals(UTXO expected, UTXO actual) {
-            assertEquals(expected.getHash(), actual.getHash());
-            assertEquals(expected.getIndex(), actual.getIndex());
-            assertEquals(expected.getValue(), actual.getValue());
-            assertEquals(expected.getHeight(), actual.getHeight());
-            assertEquals(expected.isCoinbase(), actual.isCoinbase());
-            assertEquals(expected.getScript(), actual.getScript());
-        }
     }
 
     @Test
