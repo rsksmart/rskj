@@ -1572,8 +1572,35 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         };
     }
 
+    /**
+     * Rejects calls to federation-only functions that originate from a contract.
+     *
+     * <p>
+     * Functions guarded by {@link #activeAndRetiringFederationOnly} and
+     * {@link #activeRetiringAndProposedFederationOnly} are meant to be invoked only by
+     * federation members through externally signed transactions (i.e. signed by the HSM).
+     * A contract could otherwise reach these functions through an internal transaction
+     * (e.g. a delegate call), potentially bypassing the requirement of having the HSM
+     * sign the transaction. Since a federation member always interacts with the Bridge
+     * through an externally originated transaction, contract-originated calls are never
+     * legitimate for these functions and are therefore rejected.
+     * </p>
+     */
+    private static void rejectIfCalledFromContract(org.ethereum.core.Transaction rskTx, String funcName) throws VMException {
+        if (BridgeUtils.isContractTx(rskTx)) {
+            String errorMessage = String.format(
+                "The function '%s' can only be called by federation members through an externally signed transaction, not from a contract",
+                funcName
+            );
+            logger.warn(errorMessage);
+            throw new VMException(errorMessage);
+        }
+    }
+
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
+            rejectIfCalledFromContract(self.rskTx, funcName);
+
             boolean isFromActiveFed = BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache);
 
             Optional<Federation> retiringFederation = self.bridgeSupport.getRetiringFederation();
@@ -1594,6 +1621,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public static BridgeMethods.BridgeMethodExecutor activeRetiringAndProposedFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
+            rejectIfCalledFromContract(self.rskTx, funcName);
+
             boolean isFromActiveFed = BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache);
 
             Optional<Federation> retiringFederation = self.bridgeSupport.getRetiringFederation();
