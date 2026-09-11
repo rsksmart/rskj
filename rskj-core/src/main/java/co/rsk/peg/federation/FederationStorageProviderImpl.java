@@ -108,7 +108,18 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public Optional<List<UTXO>> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
-        return Optional.empty();
+        DataWord key = getStorageKeyForFederationsPendingBtcUTXOs(btcTxId);
+        List<UTXO> utxos = bridgeStorageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
+
+        if (utxos.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(utxos);
+    }
+
+    private DataWord getStorageKeyForFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        return FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
     }
 
     @Override
