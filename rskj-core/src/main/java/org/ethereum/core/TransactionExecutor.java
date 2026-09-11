@@ -374,6 +374,7 @@ public class TransactionExecutor {
                 }
             } catch (VMException | RuntimeException e) {
                 result.setException(e);
+                execError(e);
             }
             result.spendGas(gasUsed);
             profiler.stop(metric);
