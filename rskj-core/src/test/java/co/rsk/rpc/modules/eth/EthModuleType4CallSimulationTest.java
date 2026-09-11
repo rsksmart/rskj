@@ -50,6 +50,8 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -77,7 +79,7 @@ class EthModuleType4CallSimulationTest {
     private RskAddress const42;
     private RskAddress reverter;
 
-    private Account plainEOA_WITH_NO_CODE;
+    private Account plainEoaWithNoCode;
     private Account authorityA;
     private Account authorityB;
 
@@ -116,7 +118,7 @@ class EthModuleType4CallSimulationTest {
     }
 
     private void createTestAccounts() {
-        plainEOA_WITH_NO_CODE = new AccountBuilder(world).name("plainEOA_WITH_NO_CODE").build();
+        plainEoaWithNoCode = new AccountBuilder(world).name("plainEOA_WITH_NO_CODE").build();
         authorityA = new AccountBuilder(world).name("authorityA").build();
         authorityB = new AccountBuilder(world).name("authorityB").build();
     }
@@ -148,9 +150,9 @@ class EthModuleType4CallSimulationTest {
 
     @Test
     void selfAuthorization_delegateThenInvoke_runsDelegatedCodeInSingleCall() {
-        assertEquals("0x", callHex(plainEOA_WITH_NO_CODE.getAddress(), GET_VALUE, null));
-        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEOA_WITH_NO_CODE.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
-        String result = callHex(plainEOA_WITH_NO_CODE.getAddress(), GET_VALUE, List.of(selfAuth));
+        assertEquals("0x", callHex(plainEoaWithNoCode.getAddress(), GET_VALUE, null));
+        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
+        String result = callHex(plainEoaWithNoCode.getAddress(), GET_VALUE, List.of(selfAuth));
         assertEquals("0x" + "00".repeat(32), result);
     }
 
@@ -185,10 +187,29 @@ class EthModuleType4CallSimulationTest {
     }
 
     @Test
-    void delegatedRevert_propagatesAsEthCallRevert() {
-        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(plainEOA_WITH_NO_CODE.getEcKey(), reverter, BigInteger.ZERO, CHAIN_ID);
+    void mixedValidAndInvalidAuthorizations_onlyValidOnesAreApplied() {
+        ECKey authorityCKey = new ECKey();
+        RskAddress authorityC = new RskAddress(authorityCKey.getAddress());
 
-        CallArgumentsParam params = callArgumentsParam(plainEOA_WITH_NO_CODE.getAddress(), plainEOA_WITH_NO_CODE.getAddress(), new byte[0], List.of(auth), null);
+        SetCodeAuthorization validA = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization validB = Rskip545TestSupport.createSignedAuthorization(authorityB.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization invalidNonce = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), const42, BigInteger.ONE, CHAIN_ID);
+        SetCodeAuthorization wrongChainId = Rskip545TestSupport.createSignedAuthorization(authorityCKey, const42, BigInteger.ZERO, (byte) (CHAIN_ID + 1));
+        List<SetCodeAuthorization> mixed = List.of(validA, validB, invalidNonce, wrongChainId);
+
+        assertAll(
+                () -> assertEquals("0x" + "00".repeat(31) + "2a", callHex(authorityA.getAddress(), new byte[0], mixed), "authorityA's valid tuple must apply"),
+                () -> assertEquals("0x" + "00".repeat(31) + "2a", callHex(authorityB.getAddress(), new byte[0], mixed), "authorityB's valid tuple must apply"),
+                () -> assertEquals("0x", callHex(plainEoaWithNoCode.getAddress(), new byte[0], mixed), "the nonce-mismatched tuple must not apply"),
+                () -> assertEquals("0x", callHex(authorityC, new byte[0], mixed), "the wrong-chainId tuple must not apply")
+        );
+    }
+
+    @Test
+    void delegatedRevert_propagatesAsEthCallRevert() {
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), reverter, BigInteger.ZERO, CHAIN_ID);
+
+        CallArgumentsParam params = callArgumentsParam(plainEoaWithNoCode.getAddress(), plainEoaWithNoCode.getAddress(), new byte[0], List.of(auth), null);
         BlockIdentifierParam latest = new BlockIdentifierParam("latest");
 
         RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> eth.call(params, latest));
@@ -224,15 +245,15 @@ class EthModuleType4CallSimulationTest {
 
     @Test
     void stateChangesFromDelegatedExecution_areDiscardedAfterTheCall() {
-        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEOA_WITH_NO_CODE.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
 
-        String result = callHex(plainEOA_WITH_NO_CODE.getAddress(), SET_VALUE_42, List.of(selfAuth));
+        String result = callHex(plainEoaWithNoCode.getAddress(), SET_VALUE_42, List.of(selfAuth));
         assertEquals("0x", result);
 
         RepositorySnapshot chainState = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
-        byte[] eoaCodeAfterCall = chainState.getCode(plainEOA_WITH_NO_CODE.getAddress());
+        byte[] eoaCodeAfterCall = chainState.getCode(plainEoaWithNoCode.getAddress());
         assertTrue(eoaCodeAfterCall == null || eoaCodeAfterCall.length == 0, "plainEOA_WITH_NO_CODE must not have been delegated on real chain state");
-        assertEquals(BigInteger.ZERO, chainState.getNonce(plainEOA_WITH_NO_CODE.getAddress()));
+        assertEquals(BigInteger.ZERO, chainState.getNonce(plainEoaWithNoCode.getAddress()));
     }
 
     @Test
@@ -299,7 +320,121 @@ class EthModuleType4CallSimulationTest {
         assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("revert"), "expected delegated revert to propagate through eth_estimateGas");
     }
 
+    @Test
+    void call_type4_wrongAuthorizationChainId_doesNotApplyDelegation() {
+        byte wrongChainId = (byte) (CHAIN_ID + 1);
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, wrongChainId);
 
+        String result = callHex(authorityA.getAddress(), new byte[0], List.of(auth));
+        assertEquals("0x", result);
+
+        RepositorySnapshot chainState = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        byte[] code = chainState.getCode(authorityA.getAddress());
+
+        assertAll(
+                () -> assertTrue(code == null || code.length == 0, "authorization from another chain must not install delegation"),
+                () -> assertEquals(BigInteger.ZERO, chainState.getNonce(authorityA.getAddress()), "invalid authorization must not change authority nonce")
+        );
+    }
+
+    @Test
+    void call_type4_authorizationNonceMismatch_doesNotMutateAuthority() {
+        SetCodeAuthorization invalidNonce = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ONE, CHAIN_ID);
+
+        RepositorySnapshot before = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        BigInteger nonceBefore = before.getNonce(authorityA.getAddress());
+        byte[] codeBefore = normalizeCode(before.getCode(authorityA.getAddress()));
+
+        String result = callHex(authorityA.getAddress(), new byte[0], List.of(invalidNonce));
+        assertEquals("0x", result);
+
+        RepositorySnapshot after = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+
+        assertAll(
+                () -> assertEquals(nonceBefore, after.getNonce(authorityA.getAddress())),
+                () -> assertArrayEquals(codeBefore, normalizeCode(after.getCode(authorityA.getAddress())))
+        );
+    }
+
+    @Test
+    void call_type4_executionDoesNotPersistAuthorization() {
+        RskAddress authority = authorityA.getAddress();
+
+        RepositorySnapshot before = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        BigInteger nonceBefore = before.getNonce(authority);
+        byte[] codeBefore = normalizeCode(before.getCode(authority));
+
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
+
+        String result = callHex(authority, new byte[0], List.of(auth));
+        assertEquals("0x" + "00".repeat(31) + "2a", result);
+
+        RepositorySnapshot after = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+
+        assertAll(
+                () -> assertEquals(nonceBefore, after.getNonce(authority), "eth_call must not persist the authorization nonce"),
+                () -> assertArrayEquals(codeBefore, normalizeCode(after.getCode(authority)), "eth_call must not persist delegation code")
+        );
+    }
+
+    @Test
+    void estimateGas_type4_executionDoesNotPersistAuthorization() {
+        RskAddress authority = authorityA.getAddress();
+
+        RepositorySnapshot before = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        BigInteger nonceBefore = before.getNonce(authority);
+        byte[] codeBefore = normalizeCode(before.getCode(authority));
+
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
+
+        long estimated = estimate(authority, SET_VALUE_42, List.of(auth));
+        assertTrue(estimated > 0);
+
+        RepositorySnapshot after = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+
+        assertAll(
+                () -> assertEquals(nonceBefore, after.getNonce(authority), "eth_estimateGas must not persist authorization nonce"),
+                () -> assertArrayEquals(codeBefore, normalizeCode(after.getCode(authority)), "eth_estimateGas must not persist delegation code")
+        );
+    }
+
+    @Test
+    void estimateGas_type4_multipleAuthorizationsChargesEachAuthorization() {
+        SetCodeAuthorization authA = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), authorityB.getAddress(), BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization authB = Rskip545TestSupport.createSignedAuthorization(authorityB.getEcKey(), authorityA.getAddress(), BigInteger.ZERO, CHAIN_ID);
+
+        long withOneAuthorization = estimate(plainEoaWithNoCode.getAddress(), new byte[0], List.of(authA));
+        long withTwoAuthorizations = estimate(plainEoaWithNoCode.getAddress(), new byte[0], List.of(authA, authB));
+
+        assertTrue(withTwoAuthorizations - withOneAuthorization >= GasCost.PER_EMPTY_ACCOUNT_COST,
+                "each additional authorization must contribute its intrinsic gas; one=" + withOneAuthorization + " two=" + withTwoAuthorizations);
+    }
+
+    @Test
+    void call_revertedType4_doesNotPersistDelegationOrNonce() {
+        RskAddress authority = authorityA.getAddress();
+
+        RepositorySnapshot before = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        BigInteger nonceBefore = before.getNonce(authority);
+        byte[] codeBefore = normalizeCode(before.getCode(authority));
+
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), reverter, BigInteger.ZERO, CHAIN_ID);
+        CallArgumentsParam params = callArgumentsParam(authority, authority, new byte[0], List.of(auth), null);
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> eth.call(params, new BlockIdentifierParam("latest")));
+        assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("revert"));
+
+        RepositorySnapshot after = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+
+        assertAll(
+                () -> assertEquals(nonceBefore, after.getNonce(authority), "reverted eth_call must not persist authority nonce"),
+                () -> assertArrayEquals(codeBefore, normalizeCode(after.getCode(authority)), "reverted eth_call must not persist delegation code")
+        );
+    }
+
+    private static byte[] normalizeCode(byte[] code) {
+        return code == null ? new byte[0] : code;
+    }
 
     private CallArguments.AccessListEntry accessListEntry(RskAddress address) {
         CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();

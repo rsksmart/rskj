@@ -59,11 +59,16 @@ public class CallArgumentsToByteArray {
     }
 
     private BigInteger effectiveGasPrice() {
-        if (!isAbsent(args.getGasPrice())) {
-            return HexUtils.strHexOrStrNumberToBigInteger(args.getGasPrice());
-        }
+        boolean hasGasPrice = !isAbsent(args.getGasPrice());
         boolean hasMaxFee = !isAbsent(args.getMaxFeePerGas());
         boolean hasMaxPriority = !isAbsent(args.getMaxPriorityFeePerGas());
+
+        if (hasGasPrice && (hasMaxFee || hasMaxPriority)) {
+            throw invalidParamError(Rskip546FeeValidation.ERR_GAS_PRICE_WITH_FEE_CAPS);
+        }
+        if (hasGasPrice) {
+            return HexUtils.strHexOrStrNumberToBigInteger(args.getGasPrice());
+        }
 
         if (hasMaxFee || hasMaxPriority) {
             if (!hasMaxPriority) {

@@ -255,18 +255,24 @@ class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    void getGasPrice_whenGasPriceSetAndOnlyMaxPriorityFee_usesGasPriceWithoutError() {
+    void getGasPrice_whenGasPriceAndMaxPriorityFeeBothSet_rejectsRequest() {
         CallArguments args = new CallArguments();
         args.setGasPrice("0x7");
         args.setMaxPriorityFeePerGas("0x64");
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assertions.assertArrayEquals(new byte[] {0x7}, byteArrayArgs.getGasPrice());
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getGasPrice);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals(
+                "both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified",
+                ex.getMessage());
     }
 
     @Test
-    void getGasPrice_whenGasPriceExplicitlySet_takesPrecedenceOverMaxFees() {
+    void getGasPrice_whenGasPriceAndBothMaxFeesSet_rejectsRequest() {
         CallArguments args = new CallArguments();
         args.setGasPrice("0x7");
         args.setMaxFeePerGas("0xff");
@@ -274,19 +280,30 @@ class CallArgumentsToByteArrayTest {
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assertions.assertArrayEquals(new byte[] {0x7}, byteArrayArgs.getGasPrice());
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getGasPrice);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals(
+                "both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified",
+                ex.getMessage());
     }
 
     @Test
-    void getGasPrice_whenGasPriceSetAndMaxPriorityExceedsMaxFee_usesGasPriceWithoutError() {
+    void getGasPrice_whenGasPriceAndMaxFeeSet_rejectsRequest() {
         CallArguments args = new CallArguments();
         args.setGasPrice("0x7");
         args.setMaxFeePerGas("0x1");
-        args.setMaxPriorityFeePerGas("0x64");
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assertions.assertArrayEquals(new byte[] {0x7}, byteArrayArgs.getGasPrice());
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getGasPrice);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals(
+                "both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified",
+                ex.getMessage());
     }
 
     @Test

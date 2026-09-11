@@ -27,6 +27,7 @@ import org.ethereum.core.TransactionBuilder;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.PrecompiledContracts;
@@ -97,7 +98,7 @@ public class ReversibleTransactionExecutor {
                                                     ReversibleTransactionParams params) {
         Repository track = snapshot.startTracking();
 
-        ReversibleTransaction tx = new ReversibleTransaction(track.getNonce(params.fromAddress()).toByteArray(), params);
+        ReversibleTransaction tx = new ReversibleTransaction(CommonParsingUtils.unsignedBytes(track.getNonce(params.fromAddress())), params);
 
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, coinbase, track, executionBlock, 0, precompiledContracts)
@@ -168,12 +169,12 @@ public class ReversibleTransactionExecutor {
         }
 
         /**
-         * Type 2/4 transactions need both maxPriorityFeePerGas and maxFeePerGas set. If the caller
-         * gave us one or both we use those; if not, the default is to reuse gasPrice for the
-         * missing one.
+         * Type 2/4 transactions need both maxPriorityFeePerGas and maxFeePerGas set. CallArgumentsToByteArray
+         * rejects gasPrice mixed with either fee-cap field and a single fee-cap field given alone, so by the
+         * time we get here it's always both caps present, or neither — never just one. When neither was given
+         * (Type 4 via authorizationList with no fee info at all), both default to gasPrice.
          */
-        private static void applyFees(TransactionBuilder builder, TransactionType type, Coin gasPriceCoin,
-                                       byte[] maxPriorityFeePerGas, byte[] maxFeePerGas) {
+        private static void applyFees(TransactionBuilder builder, TransactionType type, Coin gasPriceCoin, byte[] maxPriorityFeePerGas, byte[] maxFeePerGas) {
             if (type == TransactionType.TYPE_2 || type == TransactionType.TYPE_4) {
                 Coin priority = maxPriorityFeePerGas != null ? RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(maxPriorityFeePerGas)) : gasPriceCoin;
                 Coin maxFee = maxFeePerGas != null ? RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(maxFeePerGas)) : gasPriceCoin;

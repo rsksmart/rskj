@@ -32,6 +32,7 @@ import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AccessListCodec;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.ContractRunner;
 import org.ethereum.util.RskTestFactory;
@@ -383,6 +384,39 @@ class ReversibleTransactionExecutorTest {
         assertEquals(Coin.valueOf(9), tx.getMaxFeePerGas());
     }
 
+    @Test
+    void reversibleTransaction_nonce128_isEncodedUnsigned() {
+        Transaction tx = executeAndCaptureTransaction(
+                params(TransactionType.LEGACY, null, null, null, null, gasPrice),
+                BigInteger.valueOf(128));
+
+        assertArrayEquals(new byte[]{(byte) 0x80}, tx.getNonce());
+    }
+
+    @Test
+    void reversibleTransaction_nonce128ContractCreation_computesCanonicalContractAddress() {
+        RskAddress from = TestUtils.generateAddress("from");
+        ReversibleTransactionExecutor.ReversibleTransactionParams createParams =
+                new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                        gasPrice,
+                        BigInteger.valueOf(500_000).toByteArray(),
+                        null,
+                        new byte[]{0},
+                        new byte[0],
+                        from,
+                        null,
+                        (byte) 33,
+                        TransactionType.LEGACY,
+                        null,
+                        null,
+                        null);
+
+        Transaction tx = executeAndCaptureTransaction(createParams, BigInteger.valueOf(128));
+
+        RskAddress expectedContractAddress = new RskAddress(HashUtil.calcNewAddr(from.getBytes(), new byte[]{(byte) 0x80}));
+        assertEquals(expectedContractAddress, tx.getContractAddress());
+    }
+
     public static Coin valueOf(byte[] value) {
         return new Coin(new BigInteger(1, value));
     }
@@ -396,6 +430,10 @@ class ReversibleTransactionExecutorTest {
     }
 
     private Transaction executeAndCaptureTransaction(ReversibleTransactionExecutor.ReversibleTransactionParams params) {
+        return executeAndCaptureTransaction(params, BigInteger.ZERO);
+    }
+
+    private Transaction executeAndCaptureTransaction(ReversibleTransactionExecutor.ReversibleTransactionParams params, BigInteger nonce) {
 
         RepositorySnapshot snapshot = mock(RepositorySnapshot.class);
         Repository track = mock(Repository.class);
@@ -407,7 +445,7 @@ class ReversibleTransactionExecutorTest {
         RskAddress coinbase = TestUtils.generateAddress("coinbase");
 
         when(snapshot.startTracking()).thenReturn(track);
-        when(track.getNonce(any(RskAddress.class))).thenReturn(BigInteger.ZERO);
+        when(track.getNonce(any(RskAddress.class))).thenReturn(nonce);
 
         when(executorFactory.newInstance(
                 any(Transaction.class),
