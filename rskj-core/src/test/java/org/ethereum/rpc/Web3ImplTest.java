@@ -3056,7 +3056,8 @@ class Web3ImplTest {
 
         ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(
                 repositoryLocator,
-                buildTransactionExecutorFactory(blockStore, null)
+                buildTransactionExecutorFactory(blockStore, null),
+                null
         );
 
         Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator, executionBlockRetriever);
@@ -3131,7 +3132,7 @@ class Web3ImplTest {
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
         ProgramResult res = new ProgramResult();
         res.setHReturn(new byte[0]);
-        when(executor.executeTransaction(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(res);
+        when(executor.executeTransactionAtBlock(any(Block.class), any(), any())).thenReturn(res);
         Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator, executionBlockRetriever);
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);

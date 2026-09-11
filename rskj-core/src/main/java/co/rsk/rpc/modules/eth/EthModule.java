@@ -31,7 +31,6 @@ import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
@@ -41,6 +40,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
@@ -169,10 +169,14 @@ public class EthModule
 
         String hReturn = null;
         try {
-            ProgramResult programResult = mutableRepository != null ?
-                    callConstant(callArgs, block, mutableRepository, overrideablePrecompiledContracts) :
-                    callConstant(callArgs, block);
-
+            ProgramResult programResult;
+            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(callArgs);
+            ReversibleTransactionExecutor.ReversibleTransactionParams params = buildParams(hexArgs, hexArgs.gasLimitForCall(this.gasCallCap), this.chainId);
+            if (mutableRepository != null) {
+                programResult = reversibleTransactionExecutor.executeTransactionOnSnapshot(mutableRepository, block, block.getCoinbase(), overrideablePrecompiledContracts, params);
+            } else {
+                programResult = reversibleTransactionExecutor.executeTransactionAtBlock(block, block.getCoinbase(), params);
+            }
             handleTransactionRevertIfHappens(programResult);
             hReturn = HexUtils.toUnformattedJsonHex(programResult.getHReturn());
             return hReturn;
@@ -238,17 +242,13 @@ public class EthModule
         String estimation = null;
         try {
             CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args.toCallArguments());
+            ReversibleTransactionExecutor.ReversibleTransactionParams params = buildParams(hexArgs, ByteUtil.longToBytes(gasEstimationCap), this.chainId);
 
             TransactionExecutor executor = reversibleTransactionExecutor.estimateGas(
                     block,
                     block.getCoinbase(),
-                    hexArgs.getGasPrice(),
-                    ByteUtil.longToBytes(gasEstimationCap),
-                    hexArgs.getToAddress(),
-                    hexArgs.getValue(),
-                    hexArgs.getData(),
-                    hexArgs.getFromAddress(),
-                    snapshot
+                    snapshot,
+                    params
             );
 
             ProgramResult res = executor.getResult();
@@ -355,34 +355,21 @@ public class EthModule
         }
     }
 
-    @VisibleForTesting
-    public ProgramResult callConstant(CallArguments args, Block executionBlock) {
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-        return reversibleTransactionExecutor.executeTransaction(
-                executionBlock,
-                executionBlock.getCoinbase(),
+    public static ReversibleTransactionExecutor.ReversibleTransactionParams buildParams(CallArgumentsToByteArray hexArgs, byte[] gasLimit, byte defaultChainId) {
+        TransactionType type = hexArgs.resolveType();
+        return new ReversibleTransactionExecutor.ReversibleTransactionParams(
                 hexArgs.getGasPrice(),
-                hexArgs.gasLimitForCall(this.gasCallCap),
-                hexArgs.getToAddress(),
-                hexArgs.getValue(),
-                hexArgs.getData(),
-                hexArgs.getFromAddress()
-        );
-    }
-
-    public ProgramResult callConstant(CallArguments args, Block executionBlock, RepositorySnapshot snapshot, PrecompiledContracts precompiledContracts) {
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-        return reversibleTransactionExecutor.executeTransaction(
-                snapshot,
-                executionBlock,
-                executionBlock.getCoinbase(),
-                hexArgs.getGasPrice(),
-                hexArgs.gasLimitForCall(this.gasCallCap),
+                gasLimit,
                 hexArgs.getToAddress(),
                 hexArgs.getValue(),
                 hexArgs.getData(),
                 hexArgs.getFromAddress(),
-                precompiledContracts
+                hexArgs.getAuthorizationList(),
+                hexArgs.getChainId(type, defaultChainId),
+                type,
+                hexArgs.getAccessListBytes(),
+                hexArgs.getMaxPriorityFeePerGasBytes(),
+                hexArgs.getMaxFeePerGasBytes()
         );
     }
 

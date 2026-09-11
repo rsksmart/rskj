@@ -30,6 +30,7 @@ public final class Rskip546FeeValidation {
 
     public static final String ERR_PRIORITY_REQUIRES_MAX_FEE = "maxPriorityFeePerGas requires maxFeePerGas";
     public static final String ERR_MAX_FEE_REQUIRES_PRIORITY = "maxFeePerGas requires maxPriorityFeePerGas";
+    public static final String ERR_GAS_PRICE_WITH_FEE_CAPS = "both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified";
 
     private Rskip546FeeValidation() {}
 

@@ -29,11 +29,14 @@ import co.rsk.rpc.modules.eth.*;
 import co.rsk.test.World;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.vm.OverrideablePrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -54,7 +57,7 @@ public class EthModuleTestUtils {
                 Constants.REGTEST_CHAIN_ID,
                 world.getBlockChain(),
                 null,
-                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
+                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor, null),
                 new ExecutionBlockRetriever(world.getBlockChain(), null, null),
                 world.getRepositoryLocator(),
                 null,
@@ -77,7 +80,7 @@ public class EthModuleTestUtils {
                 Constants.REGTEST_CHAIN_ID,
                 world.getBlockChain(),
                 null,
-                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
+                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor, null),
                 new ExecutionBlockRetriever(world.getBlockChain(), null, null),
                 world.getRepositoryLocator(),
                 null,
@@ -111,6 +114,10 @@ public class EthModuleTestUtils {
     }
 
     public static class EthModuleGasEstimation extends EthModule {
+        private final ReversibleTransactionExecutor reversibleTransactionExecutor;
+        private final byte chainId;
+        private final long gasCallCap;
+
         private EthModuleGasEstimation(BridgeConstants bridgeConstants, byte chainId, Blockchain blockchain,
                                        TransactionPool transactionPool, ReversibleTransactionExecutor reversibleTransactionExecutor,
                                        ExecutionBlockRetriever executionBlockRetriever, RepositoryLocator repositoryLocator,
@@ -123,6 +130,9 @@ public class EthModuleTestUtils {
                     executionBlockRetriever, repositoryLocator, ethModuleWallet, ethModuleTransaction,
                     bridgeSupportFactory, gasEstimationCap, gasCap, activationConfig, overrideablePrecompiledContracts,
                     allowCallStateOverride, stateOverrideApplier);
+            this.reversibleTransactionExecutor = reversibleTransactionExecutor;
+            this.chainId = chainId;
+            this.gasCallCap = gasCap;
         }
 
         private ProgramResult estimationResult;
@@ -137,6 +147,12 @@ public class EthModuleTestUtils {
             estimationResult = reversibleExecutionResult;
 
             return estimatedGas;
+        }
+
+        public ProgramResult simulateTransactionExecution(CallArguments args, Block executionBlock) {
+            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+            ReversibleTransactionExecutor.ReversibleTransactionParams params = EthModule.buildParams(hexArgs, hexArgs.gasLimitForCall(gasCallCap), chainId);
+            return reversibleTransactionExecutor.executeTransactionAtBlock(executionBlock, executionBlock.getCoinbase(), params);
         }
     }
 }
