@@ -1187,6 +1187,43 @@ class FederationStorageProviderImplTests {
             assertTrue(actualUtxos.isPresent());
             assertUtxosEquals(expectedUtxos, actualUtxos.get());
         }
+
+        @Test
+        void getFederationsPendingBtcUTXOs_whenCalledTwice_shouldReturnCachedUtxos() {
+            // arrange
+            StorageAccessor storageAccessor = new InMemoryStorage();
+            FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+            Sha256Hash btcTxId = createHash(1);
+            DataWord key = FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
+
+            List<UTXO> expectedUtxos = List.of(
+                UTXOBuilder.builder()
+                    .withScriptPubKey(p2shP2wshErpFederationScript)
+                    .build()
+            );
+            storageAccessor.saveToRepository(key, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
+
+            // act
+            Optional<List<UTXO>> actualCachedUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+
+            List<UTXO> extraUtxosOverwritingPreviousValue = UTXOBuilder.builder()
+                .withScriptPubKey(p2shP2wshErpFederationScript)
+                .buildMany(2, i -> expectedUtxos.get(0).getHash());
+
+            storageAccessor.saveToRepository(key, extraUtxosOverwritingPreviousValue, BridgeSerializationUtils::serializeUTXOList);
+
+            Optional<List<UTXO>> cachedUtxosAfterSecondGet = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+
+            // assert
+            assertTrue(actualCachedUtxos.isPresent());
+            assertUtxosEquals(expectedUtxos, actualCachedUtxos.get());
+
+            assertTrue(cachedUtxosAfterSecondGet.isPresent());
+            assertUtxosEquals(expectedUtxos, cachedUtxosAfterSecondGet.get());
+
+            List<UTXO> actualUtxosInStorage = storageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
+            assertUtxosEquals(extraUtxosOverwritingPreviousValue, actualUtxosInStorage);
+        }
     }
 
     private static Federation createNonStandardErpFederation() {
