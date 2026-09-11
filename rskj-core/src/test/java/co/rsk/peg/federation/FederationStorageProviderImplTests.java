@@ -1128,21 +1128,26 @@ class FederationStorageProviderImplTests {
 
     @Nested
     class PendingFederationsBtcUTXOs {
-        private final Script p2shP2wshErpFederationScript = P2shP2wshErpFederationBuilder.builder().build().getP2SHScript();
+        private static final Sha256Hash btcTxId = createHash(1);
+        private static final Script p2shP2wshErpFederationScript = P2shP2wshErpFederationBuilder.builder().build().getP2SHScript();
+        private static final DataWord key = FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
+        private static final List<UTXO> expectedUtxos = List.of(
+            UTXOBuilder.builder()
+                .withScriptPubKey(p2shP2wshErpFederationScript)
+                .build()
+        );
+
+        private StorageAccessor storageAccessor;
+        private FederationStorageProvider federationStorageProvider;
+
+        @BeforeEach
+        void setup() {
+            storageAccessor = new InMemoryStorage();
+            federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        }
 
         @Test
         void storeInStorage_withFederationsPendingBtcUTXOsKey_shouldSaveAndRetrieveUtxosFromStorage() {
-            // arrange
-            StorageAccessor storageAccessor = new InMemoryStorage();
-            Sha256Hash btcTxId = createHash(1);
-            DataWord key = FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
-
-            List<UTXO> expectedUtxos = List.of(
-                UTXOBuilder.builder()
-                    .withScriptPubKey(p2shP2wshErpFederationScript)
-                    .build()
-            );
-
             // act
             storageAccessor.saveToRepository(key, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
             List<UTXO> actualUtxos = storageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
@@ -1153,11 +1158,6 @@ class FederationStorageProviderImplTests {
 
         @Test
         void getFederationsPendingBtcUTXOs_whenNotCachedAndNotInStorage_shouldReturnEmpty() {
-            // arrange
-            StorageAccessor storageAccessor = new InMemoryStorage();
-            FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-            Sha256Hash btcTxId = createHash(1);
-
             // act
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
 
@@ -1168,16 +1168,6 @@ class FederationStorageProviderImplTests {
         @Test
         void getFederationsPendingBtcUTXOs_whenPresentInStorage_shouldReturnUtxosStored() {
             // arrange
-            StorageAccessor storageAccessor = new InMemoryStorage();
-            FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-            Sha256Hash btcTxId = createHash(1);
-            DataWord key = FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
-
-            List<UTXO> expectedUtxos = List.of(
-                UTXOBuilder.builder()
-                    .withScriptPubKey(p2shP2wshErpFederationScript)
-                    .build()
-            );
             storageAccessor.saveToRepository(key, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
 
             // act
@@ -1191,16 +1181,6 @@ class FederationStorageProviderImplTests {
         @Test
         void getFederationsPendingBtcUTXOs_whenCalledTwice_shouldReturnCachedUtxos() {
             // arrange
-            StorageAccessor storageAccessor = new InMemoryStorage();
-            FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-            Sha256Hash btcTxId = createHash(1);
-            DataWord key = FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
-
-            List<UTXO> expectedUtxos = List.of(
-                UTXOBuilder.builder()
-                    .withScriptPubKey(p2shP2wshErpFederationScript)
-                    .build()
-            );
             storageAccessor.saveToRepository(key, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
 
             // act
