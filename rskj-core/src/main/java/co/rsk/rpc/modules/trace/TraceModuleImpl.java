@@ -21,6 +21,8 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockResult;
+import co.rsk.crypto.Keccak256;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -43,9 +45,10 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TraceModuleImpl implements TraceModule {
@@ -102,7 +105,7 @@ public class TraceModuleImpl implements TraceModule {
         txInfo.setTransaction(tx);
 
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
-        this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+        BlockResult blockResult = this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
         SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
 
@@ -110,7 +113,8 @@ public class TraceModuleImpl implements TraceModule {
             return null;
         }
 
-        List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
+        long rootGasUsed = rootGasUsed(gasUsedByTx(blockResult), txInfo, tx.getHash());
+        List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber(), rootGasUsed);
 
         return OBJECT_MAPPER.valueToTree(traces);
     }
@@ -246,7 +250,8 @@ public class TraceModuleImpl implements TraceModule {
 
             ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
             Block parent = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
-            this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+            BlockResult blockResult = this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+            Map<Keccak256, Long> freshGasUsed = gasUsedByTx(blockResult);
 
             if (traceFilterRequest != null) {
                 Stream<Transaction> txStream = block.getTransactionsList().stream();
@@ -261,7 +266,7 @@ public class TraceModuleImpl implements TraceModule {
                     txStream = txStream.filter(tx -> tx.getReceiveAddress().getBytes().length > 0 && addresses.contains(tx.getReceiveAddress()));
                 }
 
-                txList = txStream.collect(Collectors.toList());
+                txList = txStream.toList();
             }
 
             for (Transaction tx : txList) {
@@ -278,13 +283,43 @@ public class TraceModuleImpl implements TraceModule {
                     return Collections.emptyList();
                 }
 
-                List<co.rsk.rpc.modules.trace.TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
+                long rootGasUsed = rootGasUsed(freshGasUsed, txInfo, tx.getHash());
+                List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber(), rootGasUsed);
 
                 blockTraces.addAll(traces);
             }
         }
 
         return blockTraces;
+    }
+
+    /**
+     * Per-tx gas from the re-execution, keyed by tx hash: stored Type 1/2/4 receipts omit the field
+     * (RSKIP-545/546).
+     */
+    private static Map<Keccak256, Long> gasUsedByTx(BlockResult blockResult) {
+        Map<Keccak256, Long> gasUsedByTx = new HashMap<>();
+
+        for (TransactionReceipt receipt : blockResult.getTransactionReceipts()) {
+            Transaction tx = receipt.getTransaction();
+            if (tx != null) {
+                gasUsedByTx.put(tx.getHash(), new BigInteger(1, receipt.getGasUsed()).longValue());
+            }
+        }
+
+        return gasUsedByTx;
+    }
+
+    private static long rootGasUsed(Map<Keccak256, Long> freshGasUsed, TransactionInfo txInfo, Keccak256 txHash) {
+        Long fresh = freshGasUsed.get(txHash);
+
+        if (fresh != null) {
+            return fresh;
+        }
+
+        logger.warn("No re-execution receipt for tx {}, root trace gas falls back to the stored receipt", txHash);
+
+        return new BigInteger(1, txInfo.getReceipt().getGasUsed()).longValue();
     }
 
     private Block getBlockByTagOrNumber(String strBlock, BigInteger biBlock) {
