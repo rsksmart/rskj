@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.federation.constants.FederationConstants;
@@ -15,6 +16,9 @@ public interface FederationStorageProvider {
 
     List<UTXO> getNewFederationBtcUTXOs(NetworkParameters networkParameters, ActivationConfig.ForBlock activations);
     List<UTXO> getOldFederationBtcUTXOs();
+
+    Optional<List<UTXO>> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId);
+    void setFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos);
 
     Federation getNewFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations);
     void setNewFederation(Federation federation);
