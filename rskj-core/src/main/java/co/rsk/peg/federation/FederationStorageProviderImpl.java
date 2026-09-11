@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.BridgeSerializationUtils;
@@ -103,6 +104,11 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         oldFederationBtcUTXOs = bridgeStorageAccessor.getFromRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), BridgeSerializationUtils::deserializeUTXOList);
         return oldFederationBtcUTXOs;
+    }
+
+    @Override
+    public Optional<List<UTXO>> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        return Optional.empty();
     }
 
     @Override
