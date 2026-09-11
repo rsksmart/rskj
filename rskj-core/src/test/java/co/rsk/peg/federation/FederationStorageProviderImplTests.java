@@ -1247,6 +1247,38 @@ class FederationStorageProviderImplTests {
             assertTrue(actualUtxos.isPresent());
             assertUtxosEquals(expectedUtxos, actualUtxos.get());
         }
+
+        @Test
+        void setFederationsPendingBtcUTXOs_withThreeUtxos_shouldStoreInCache() {
+            // arrange
+            List<UTXO> threeUtxos = UTXOBuilder.builder()
+                .withScriptPubKey(p2shP2wshErpFederationScript)
+                .buildMany(3, i -> createHash(i + 1));
+
+            // act
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, threeUtxos);
+            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+
+            // assert
+            assertTrue(actualUtxos.isPresent());
+            assertUtxosEquals(threeUtxos, actualUtxos.get());
+        }
+
+        @Test
+        void setFederationsPendingBtcUTXOs_with200Utxos_shouldStoreInCache() {
+            // arrange
+            List<UTXO> largeNumberOfUtxos = UTXOBuilder.builder()
+                .withScriptPubKey(p2shP2wshErpFederationScript)
+                .buildMany(200, i -> createHash(i + 1));
+
+            // act
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, largeNumberOfUtxos);
+            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+
+            // assert
+            assertTrue(actualUtxos.isPresent());
+            assertUtxosEquals(largeNumberOfUtxos, actualUtxos.get());
+        }
     }
 
     private static Federation createNonStandardErpFederation() {
