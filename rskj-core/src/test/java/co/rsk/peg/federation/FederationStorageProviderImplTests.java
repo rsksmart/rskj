@@ -1164,6 +1164,29 @@ class FederationStorageProviderImplTests {
             // assert
             assertTrue(actualUtxos.isEmpty());
         }
+
+        @Test
+        void getFederationsPendingBtcUTXOs_whenPresentInStorage_shouldReturnUtxosStored() {
+            // arrange
+            StorageAccessor storageAccessor = new InMemoryStorage();
+            FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+            Sha256Hash btcTxId = createHash(1);
+            DataWord key = FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
+
+            List<UTXO> expectedUtxos = List.of(
+                UTXOBuilder.builder()
+                    .withScriptPubKey(p2shP2wshErpFederationScript)
+                    .build()
+            );
+            storageAccessor.saveToRepository(key, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
+
+            // act
+            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+
+            // assert
+            assertTrue(actualUtxos.isPresent());
+            assertUtxosEquals(expectedUtxos, actualUtxos.get());
+        }
     }
 
     private static Federation createNonStandardErpFederation() {
