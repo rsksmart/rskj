@@ -1244,10 +1244,12 @@ class FederationStorageProviderImplTests {
             // act
             federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+            List<UTXO> actualUtxosInStorage = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
             assertTrue(actualUtxos.isPresent());
             assertUtxosEquals(expectedOneUtxo, actualUtxos.get());
+            assertTrue(actualUtxosInStorage.isEmpty());
         }
 
         @Test
@@ -1255,10 +1257,12 @@ class FederationStorageProviderImplTests {
             // act
             federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos);
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+            List<UTXO> actualUtxosInStorage = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
             assertTrue(actualUtxos.isPresent());
             assertUtxosEquals(expectedThreeUtxos, actualUtxos.get());
+            assertTrue(actualUtxosInStorage.isEmpty());
         }
 
         @Test
@@ -1266,10 +1270,12 @@ class FederationStorageProviderImplTests {
             // act
             federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedLargeNumberOfUtxos);
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+            List<UTXO> actualUtxosInStorage = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
             assertTrue(actualUtxos.isPresent());
             assertUtxosEquals(expectedLargeNumberOfUtxos, actualUtxos.get());
+            assertTrue(actualUtxosInStorage.isEmpty());
         }
 
         @Test
