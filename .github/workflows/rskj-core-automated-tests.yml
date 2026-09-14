@@ -319,6 +319,28 @@ jobs:
   # umbrella's other three suites structurally cannot. It is new, it depends on
   # a third-party public RPC and on a periodically refreshed bootstrap snapshot,
   # and it therefore must not be able to redden someone else's rskj PR yet.
+  #
+  # WHY THE ACTIONS TAB MAY SHOW THIS WORKFLOW RED WHILE THE PR IS GREEN.
+  # GitHub rolls a workflow RUN's conclusion up over all of its jobs, so when
+  # this advisory job fails the RUN shows ❌ — even though the check pinned in
+  # branch protection, "Automated Regression Report", is green. Branch
+  # protection keys on that CHECK, not on the run, so gating is unaffected.
+  # Measured: run 34865590358 on PR #3720 — `Sync suite / Sync` failed,
+  # `Automated Regression Report` concluded success and printed "All gating
+  # downstream suites passed."
+  #
+  # DO NOT "FIX" THE RED RUN BY SUPPRESSING THIS JOB'S FAILURE.
+  #  * `continue-on-error` is not even a legal key here: a job that calls a
+  #    reusable workflow with `uses:` accepts only name / uses / with / secrets /
+  #    needs / if / permissions. (Verified with actionlint, which rejects it.)
+  #  * More importantly, do not restructure the job to get around that. This
+  #    job's failure is what gives the report job something specific to say: it
+  #    is what makes `needs.sync.result` report `failure`, which is what fires
+  #    the "advisory suite sync did not succeed" warning and what renders the
+  #    Sync row as a pointed ❌ failure instead of a vague ❓ unknown. Laundering
+  #    it into a success would silence the one annotation that reports the
+  #    problem — a false green bought to tidy a tab, which is the exact shape
+  #    the advisory design exists to refuse. Accept the cosmetic red.
   sync:
     name: Sync suite
     needs: resolve
