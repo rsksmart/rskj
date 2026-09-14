@@ -19,19 +19,21 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs1;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs2;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertDestinationAddress;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationTxWithMultipleOutputs;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsP2shErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsP2shP2wshErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsStandardMultisig;
-import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationTxWithOnlyMigrationOutputs;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxSizeIsBelowStandardSizeAllowed;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertOneMigrationTxOutput;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertOutputsWithNoChange;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shP2wshErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsStandardMultisig;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxNumberOfOutputs;
+import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE;
@@ -1793,7 +1795,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -1814,7 +1818,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -1826,7 +1832,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -1848,7 +1854,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -1860,7 +1868,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -1887,7 +1895,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -1908,7 +1918,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -1920,7 +1932,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -1944,17 +1956,20 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
             }
 
             /**
-             * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(Coin, Address)} receives the
-             * value to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
-             * no partial migration. Instead, all the UTXOs available for migration are migrated.
+             * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
+             * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
+             * receives the migration outputs as a parameter and permits their total value to differ from the federation's balance.
+             * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
+             * After RSKIP455, the method always receives migration output values computed from the full balance available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
@@ -1972,7 +1987,7 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValueRequested,
+                    List.of(migrationValueRequested),
                     newFederationAddress
                 );
 
@@ -2004,7 +2019,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -2022,7 +2039,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
@@ -2040,7 +2059,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2052,7 +2073,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -2109,7 +2130,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -2130,7 +2153,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2142,7 +2167,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -2165,7 +2190,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2177,7 +2204,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -2199,7 +2226,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2211,7 +2240,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -2238,7 +2267,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -2259,7 +2290,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2271,7 +2304,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -2295,17 +2328,20 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
             }
 
             /**
-             * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(Coin, Address)} receives the
-             * value to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
-             * no partial migration. Instead, all the UTXOs available for migration are migrated.
+             * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
+             * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
+             * receives the migration outputs as a parameter and permits their total value to differ from the federation's balance.
+             * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
+             * After RSKIP455, the method always receives migration output values computed from the full balance available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
@@ -2324,7 +2360,7 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValueRequested,
+                    List.of(migrationValueRequested),
                     newFederationAddress
                 );
 
@@ -2356,7 +2392,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -2374,7 +2412,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
@@ -2392,7 +2432,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2404,7 +2446,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -2462,7 +2504,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -2483,7 +2527,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2495,7 +2541,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -2517,7 +2563,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2529,12 +2577,97 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
                     BTC_MAINNET_PARAMS
                 );
+            }
+
+            @Test
+            void buildMigrationTransaction_withUtxosSumBetweenMTMUAndLargeMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputs() {
+                // Arrange
+                Coin migrationOutputBtcValue = BRIDGE_MAINNET_CONSTANTS.getMigrationValueForMultipleOutputs();
+                int numberOfUtxos = 3;
+                retiringFederationUTXOs = UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(migrationOutputBtcValue)
+                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
+                List<Coin> expectedMigrationOutputsValues = List.of(migrationOutputBtcValue, migrationOutputBtcValue, migrationOutputBtcValue);
+
+                // Act
+                BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
+                    expectedMigrationOutputsValues,
+                    newFederationAddress
+                );
+
+                // Assert
+                assertSuccessBuildResult(migrationTransactionResult);
+                BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
+                assertBtcTxVersionIs2(migrationTransaction);
+
+                assertMigrationReleaseTxInputsP2shP2wshErp(
+                    migrationTransaction,
+                    retiringFederationRedeemScript,
+                    retiringFederationUTXOs,
+                    migrationTransactionResult.selectedUTXOs());
+                assertMigrationTxWithMultipleOutputs(
+                    migrationTransaction,
+                    expectedMigrationOutputsValues,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
+            }
+
+            @Test
+            void buildMigrationTransaction_withMaxInputsSizeUtxosSumAboveLargeMTMUThreshold_shouldBuildTxWithMaxOutputs() {
+                // Arrange
+                int numberOfUtxos = BRIDGE_MAINNET_CONSTANTS.getMaxInputsPerMigrationTransaction(ALL_ACTIVATIONS);
+                Coin largeMultipleOutputsThresholdBtcValue = BridgeUtils.getLargeMultipleOutputsThresholdBtcValue(BRIDGE_MAINNET_CONSTANTS);
+                Coin utxoValue = largeMultipleOutputsThresholdBtcValue.div(numberOfUtxos).add(Coin.SATOSHI);
+                retiringFederationUTXOs = UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(utxoValue)
+                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+                ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
+
+                int maxOutputsPerMigrationTransaction = BRIDGE_MAINNET_CONSTANTS.getMaxOutputsPerMigrationTransaction();
+                Coin totalValue = utxoValue.multiply(numberOfUtxos);
+                Coin[] parts = totalValue.divideAndRemainder(maxOutputsPerMigrationTransaction);
+                List<Coin> expectedMigrationOutputsValues = new ArrayList<>(maxOutputsPerMigrationTransaction);
+                for (int i = 0; i < maxOutputsPerMigrationTransaction - 1; i++) {
+                    expectedMigrationOutputsValues.add(parts[0]);
+                }
+                Coin lastOutputValue = parts[0].add(parts[1]);
+                expectedMigrationOutputsValues.add(lastOutputValue);
+
+                // Act
+                BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
+                    expectedMigrationOutputsValues,
+                    newFederationAddress
+                );
+
+                // Assert
+                assertSuccessBuildResult(migrationTransactionResult);
+                BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
+                assertBtcTxVersionIs2(migrationTransaction);
+
+                assertMigrationReleaseTxInputsP2shP2wshErp(
+                    migrationTransaction,
+                    retiringFederationRedeemScript,
+                    retiringFederationUTXOs,
+                    migrationTransactionResult.selectedUTXOs()
+                );
+                assertMigrationTxWithMultipleOutputs(
+                    migrationTransaction,
+                    expectedMigrationOutputsValues,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
+                assertMigrationReleaseTxSizeIsBelowStandardSizeAllowed(retiringFederation, migrationTransaction, ALL_ACTIVATIONS);
             }
 
             /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
@@ -2556,7 +2689,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -2577,7 +2712,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2589,7 +2726,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -2613,17 +2750,20 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
             }
 
             /**
-             * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(Coin, Address)} receives the
-             * value to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
-             * no partial migration. Instead, all the UTXOs available for migration are migrated.
+             * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
+             * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
+             * receives the migration outputs as a parameter and permits their total value to differ from the federation's balance.
+             * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
+             * After RSKIP455, the method always receives migration output values computed from the full balance available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
@@ -2642,7 +2782,7 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValueRequested,
+                    List.of(migrationValueRequested),
                     newFederationAddress
                 );
 
@@ -2674,7 +2814,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -2693,7 +2835,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
@@ -2711,7 +2855,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
@@ -2730,7 +2876,7 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue,
+                    List.of(migrationValue),
                     newFederationAddress
                 );
 
@@ -2745,7 +2891,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
 
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,
@@ -2765,7 +2911,7 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue,
+                    List.of(migrationValue),
                     newFederationAddress
                 );
 
@@ -2779,8 +2925,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-
-                assertMigrationTxWithOnlyMigrationOutputs(
+                assertOneMigrationTxOutput(
                     migrationTransaction,
                     migrationValue,
                     newFederationAddress,

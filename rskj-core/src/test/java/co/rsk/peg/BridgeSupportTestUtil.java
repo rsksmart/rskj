@@ -66,23 +66,15 @@ import org.ethereum.vm.PrecompiledContracts;
 
 public final class BridgeSupportTestUtil {
 
-    public static final int STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE = 277;
-    public static final int STANDARD_MULTISIG_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
-    public static final int P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 196;
-    public static final int P2SH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
-    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER = 2438;
-    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE_VETIVER = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER - 1;
-    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 204;
-    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
-
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
 
     private BridgeSupportTestUtil() {}
 
     public static void setUpFlyoverUtxoInStorage(UTXO flyoverUtxo, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider, Keccak256 flyoverDerivationHash) {
-        Sha256Hash flyoverTransactionHash = flyoverUtxo.getHash();
-        provider.markFlyoverDerivationHashAsUsed(flyoverTransactionHash, flyoverDerivationHash);
+        setUpFlyoverUtxosInStorage(List.of(flyoverUtxo), flyoverOutputScript, federation, provider, flyoverDerivationHash);
+    }
 
+    public static void setUpFlyoverUtxosInStorage(List<UTXO> flyoverUtxos, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider, Keccak256 flyoverDerivationHash) {
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
                 flyoverDerivationHash,
@@ -90,6 +82,10 @@ public final class BridgeSupportTestUtil {
                 flyoverOutputScript.getPubKeyHash()
             );
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
+        for (UTXO flyoverUtxo : flyoverUtxos) {
+            Sha256Hash flyoverTransactionHash = flyoverUtxo.getHash();
+            provider.markFlyoverDerivationHashAsUsed(flyoverTransactionHash, flyoverDerivationHash);
+        }
         provider.save();
     }
 
@@ -225,7 +221,7 @@ public final class BridgeSupportTestUtil {
         return activations.isActive(ConsensusRule.RSKIP459) && !activations.isActive(ConsensusRule.RSKIP551);
     }
 
-    public static ReleaseRequestQueue addPegoutRequestsToQueue(
+    public static void addPegoutRequestsToQueue(
         ReleaseRequestQueue releaseRequestQueue,
         int pegoutRequestCount,
         Coin value,
@@ -235,7 +231,6 @@ public final class BridgeSupportTestUtil {
             Address receiver = BitcoinTestUtils.createP2PKHAddress(networkParameters, "receiver" + i);
             releaseRequestQueue.add(receiver, value, RskTestUtils.createHash(i));
         }
-        return releaseRequestQueue;
     }
 
     public static void assertWitnessAndScriptSigHaveExpectedInputRedeemData(TransactionWitness witness, TransactionInput input, Script expectedRedeemScript) {
@@ -301,7 +296,7 @@ public final class BridgeSupportTestUtil {
         Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, executionBlock);
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, executionBlock, ACTIVATIONS_ALL);
         assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
@@ -314,17 +309,18 @@ public final class BridgeSupportTestUtil {
         Keccak256 releaseCreationTxHash,
         BtcTransaction releaseTransaction,
         List<Coin> expectedOutpointsValues,
-        Coin totalAmountRequested
+        Coin totalAmountRequested,
+        ActivationConfig.ForBlock activations
     ) throws IOException {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock);
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock, activations);
         assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
         assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransaction.getHash(), totalAmountRequested);
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
 
-    public static void assertPegoutWasAddedToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash, long executionBlock) {
-        var pegoutEntries = pegoutsWaitingForConfirmations.getEntries(ACTIVATIONS_ALL);
+    public static void assertPegoutWasAddedToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash, long executionBlock, ActivationConfig.ForBlock activations) {
+        var pegoutEntries = pegoutsWaitingForConfirmations.getEntries(activations);
         Optional<PegoutsWaitingForConfirmations.Entry> pegoutEntry = pegoutEntries.stream()
             .filter(entry -> entry.getBtcTransaction().getHash().equals(pegoutTransactionHash) &&
                 entry.getPegoutCreationRskBlockNumber().equals(executionBlock) &&
