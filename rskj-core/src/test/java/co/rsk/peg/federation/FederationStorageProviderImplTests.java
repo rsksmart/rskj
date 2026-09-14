@@ -1394,6 +1394,19 @@ class FederationStorageProviderImplTests {
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
             assertTrue(actualUtxos.isEmpty());
         }
+
+        @Test
+        void setFederationsPendingBtcUTXOs_whenBtcTxIdWasAlreadyRemoved_shouldThrowIllegalStateException() {
+            // arrange
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId);
+
+            // act & assert
+            assertThrows(
+                IllegalStateException.class,
+                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos)
+            );
+        }
     }
 
     private static Federation createNonStandardErpFederation() {
