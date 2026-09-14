@@ -1374,25 +1374,16 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void removeFederationsPendingBtcUTXOs_whenBtcTxIdWasNeverSet_shouldNotThrow() {
-            // act & assert
-            assertDoesNotThrow(() -> federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId));
-
-            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
-            assertTrue(actualUtxos.isEmpty());
-        }
-
-        @Test
-        void removeFederationsPendingBtcUTXOs_whenCalledTwice_shouldNotThrow() {
+        void setFederationsPendingBtcUTXOs_whenBtcTxIdWasAlreadyRemoved_shouldThrowIllegalStateException() {
             // arrange
             federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
             federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId);
 
             // act & assert
-            assertDoesNotThrow(() -> federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId));
-
-            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
-            assertTrue(actualUtxos.isEmpty());
+            assertThrows(
+                IllegalStateException.class,
+                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos)
+            );
         }
 
         @Test
@@ -1407,6 +1398,30 @@ class FederationStorageProviderImplTests {
             // assert
             assertTrue(actualUtxos.isPresent());
             assertUtxosEquals(expectedOneUtxo, actualUtxos.get());
+        }
+
+        @Test
+        void removeFederationsPendingBtcUTXOs_whenBtcTxIdWasNeverSet_shouldReturnWithoutFailing() {
+            // act
+            federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId);
+
+            // assert
+            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+            assertTrue(actualUtxos.isEmpty());
+        }
+
+        @Test
+        void removeFederationsPendingBtcUTXOs_whenCalledTwice_shouldReturnWithoutFailing() {
+            // arrange
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId);
+
+            // act
+            federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId);
+
+            // assert
+            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+            assertTrue(actualUtxos.isEmpty());
         }
     }
 
