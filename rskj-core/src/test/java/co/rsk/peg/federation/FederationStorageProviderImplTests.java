@@ -1423,6 +1423,20 @@ class FederationStorageProviderImplTests {
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
             assertTrue(actualUtxos.isEmpty());
         }
+
+        @Test
+        void removeFederationsPendingBtcUTXOs_afterSave_shouldPersistRemovalToStorage() {
+            // arrange
+            storageAccessor.saveToRepository(federationPendingBtcUTXOsKey, expectedOneUtxo, BridgeSerializationUtils::serializeUTXOList);
+            federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId);
+
+            // act
+            federationStorageProvider.save(networkParameters, activations);
+            List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
+
+            // assert
+            assertTrue(actualUtxos.isEmpty());
+        }
     }
 
     private static Federation createNonStandardErpFederation() {
