@@ -34,6 +34,7 @@ import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import co.rsk.test.builders.UTXOBuilder;
@@ -1136,17 +1137,12 @@ class FederationStorageProviderImplTests {
         private static final List<UTXO> expectedOneUtxo = List.of(
             UTXOBuilder.builder()
                 .withScriptPubKey(p2shP2wshErpFederationScript)
+                .withTransactionHash(btcTxId)
                 .build()
         );
-        private static final List<UTXO> expectedThreeUtxos = UTXOBuilder.builder()
-            .withScriptPubKey(p2shP2wshErpFederationScript)
-            .buildMany(3, i -> createHash(i + 1));
-        private static final List<UTXO> expectedTwoUtxos = UTXOBuilder.builder()
-            .withScriptPubKey(p2shP2wshErpFederationScript)
-            .buildMany(2, i -> createHash(i + 2));
-        private static final List<UTXO> expectedLargeNumberOfUtxos = UTXOBuilder.builder()
-            .withScriptPubKey(p2shP2wshErpFederationScript)
-            .buildMany(200, i -> createHash(i + 1));
+        private static final List<UTXO> expectedThreeUtxos = buildManyUTXOsFromTheSameBtcTx(3, btcTxId);
+        private static final List<UTXO> expectedLargeNumberOfUtxos = buildManyUTXOsFromTheSameBtcTx(200, btcTxId);
+        private static final List<UTXO> expectedUtxosForOtherBtcTxId = buildManyUTXOsFromTheSameBtcTx(3, otherBtcTxId);
 
         private StorageAccessor storageAccessor;
         private FederationStorageProvider federationStorageProvider;
@@ -1223,7 +1219,7 @@ class FederationStorageProviderImplTests {
             // act
             Optional<List<UTXO>> actualCachedUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
 
-            storageAccessor.saveToRepository(federationPendingBtcUTXOsKey, expectedTwoUtxos, BridgeSerializationUtils::serializeUTXOList);
+            storageAccessor.saveToRepository(federationPendingBtcUTXOsKey, expectedThreeUtxos, BridgeSerializationUtils::serializeUTXOList);
 
             Optional<List<UTXO>> cachedUtxosAfterSecondGet = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
 
@@ -1235,7 +1231,7 @@ class FederationStorageProviderImplTests {
             assertUtxosEquals(expectedOneUtxo, cachedUtxosAfterSecondGet.get());
 
             List<UTXO> actualUtxosInStorage = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
-            assertUtxosEquals(expectedTwoUtxos, actualUtxosInStorage);
+            assertUtxosEquals(expectedThreeUtxos, actualUtxosInStorage);
         }
 
         @Test
@@ -1295,7 +1291,7 @@ class FederationStorageProviderImplTests {
             // act & assert
             assertThrows(
                 IllegalStateException.class,
-                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedTwoUtxos)
+                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos)
             );
         }
 
@@ -1307,7 +1303,7 @@ class FederationStorageProviderImplTests {
             // act & assert
             assertThrows(
                 IllegalStateException.class,
-                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedTwoUtxos)
+                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos)
             );
         }
 
@@ -1442,7 +1438,7 @@ class FederationStorageProviderImplTests {
         void federationsPendingBtcUTXOs_withMultipleBtcTxIds_shouldPersistEachUnderDistinctKey() {
             // arrange
             federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
-            federationStorageProvider.setFederationsPendingBtcUTXOs(otherBtcTxId, expectedThreeUtxos);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(otherBtcTxId, expectedUtxosForOtherBtcTxId);
 
             // act
             federationStorageProvider.save(networkParameters, activations);
@@ -1451,7 +1447,17 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertUtxosEquals(expectedOneUtxo, actualUtxosForBtcTxId);
-            assertUtxosEquals(expectedThreeUtxos, actualUtxosForOtherBtcTxId);
+            assertUtxosEquals(expectedUtxosForOtherBtcTxId, actualUtxosForOtherBtcTxId);
+        }
+
+        private static List<UTXO> buildManyUTXOsFromTheSameBtcTx(int numberOfUtxos, Sha256Hash transactionHash) {
+            return IntStream.range(0, numberOfUtxos)
+                .mapToObj(i -> UTXOBuilder.builder()
+                    .withScriptPubKey(p2shP2wshErpFederationScript)
+                    .withTransactionHash(transactionHash)
+                    .withOutpointIndex(i)
+                    .build())
+                .toList();
         }
     }
 
