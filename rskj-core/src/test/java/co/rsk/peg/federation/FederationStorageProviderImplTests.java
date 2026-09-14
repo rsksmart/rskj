@@ -1396,16 +1396,17 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void setFederationsPendingBtcUTXOs_whenBtcTxIdWasAlreadyRemoved_shouldThrowIllegalStateException() {
+        void setFederationsPendingBtcUTXOs_afterRemovingBtcTxIdThatWasNeverSet_shouldReturnWithoutFailing() {
             // arrange
-            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
             federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId);
 
-            // act & assert
-            assertThrows(
-                IllegalStateException.class,
-                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos)
-            );
+            // act
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+
+            // assert
+            assertTrue(actualUtxos.isPresent());
+            assertUtxosEquals(expectedOneUtxo, actualUtxos.get());
         }
     }
 
