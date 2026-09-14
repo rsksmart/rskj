@@ -1220,7 +1220,7 @@ class FederationStorageProviderImplTests {
 
             List<UTXO> extraUtxosOverwritingPreviousValue = UTXOBuilder.builder()
                 .withScriptPubKey(p2shP2wshErpFederationScript)
-                .buildMany(2, i -> expectedOneUtxo.get(0).getHash());
+                .buildMany(2, i -> createHash(i + 2));
 
             storageAccessor.saveToRepository(federationPendingBtcUTXOsKey, extraUtxosOverwritingPreviousValue, BridgeSerializationUtils::serializeUTXOList);
 
