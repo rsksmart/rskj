@@ -367,6 +367,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     public void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
         saveNewFederationBtcUTXOs(networkParameters, activations);
         saveOldFederationBtcUTXOs();
+        saveFederationsPendingBtcUTXOs();
 
         saveNewFederation(activations);
         saveOldFederation(activations);
@@ -398,6 +399,14 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         }
 
         bridgeStorageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), oldFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
+    }
+
+    private void saveFederationsPendingBtcUTXOs() {
+        federationsPendingBtcUTXOs.forEach((btcTxId, utxos) -> bridgeStorageAccessor.saveToRepository(
+            getStorageKeyForFederationsPendingBtcUTXOs(btcTxId),
+            utxos,
+            BridgeSerializationUtils::serializeUTXOList)
+        );
     }
 
     private void saveNewFederation(ActivationConfig.ForBlock activations) {
