@@ -1129,8 +1129,10 @@ class FederationStorageProviderImplTests {
     @Nested
     class PendingFederationsBtcUTXOs {
         private static final Sha256Hash btcTxId = createHash(1);
+        private static final Sha256Hash otherBtcTxId = createHash(99);
         private static final Script p2shP2wshErpFederationScript = P2shP2wshErpFederationBuilder.builder().build().getP2SHScript();
         private static final DataWord federationPendingBtcUTXOsKey = FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
+        private static final DataWord otherFederationPendingBtcUTXOsKey = FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", otherBtcTxId.toString());
         private static final List<UTXO> expectedOneUtxo = List.of(
             UTXOBuilder.builder()
                 .withScriptPubKey(p2shP2wshErpFederationScript)
@@ -1436,6 +1438,22 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertTrue(actualUtxos.isEmpty());
+        }
+
+        @Test
+        void federationsPendingBtcUTXOs_withMultipleBtcTxIds_shouldPersistEachUnderDistinctKey() {
+            // arrange
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(otherBtcTxId, expectedThreeUtxos);
+
+            // act
+            federationStorageProvider.save(networkParameters, activations);
+            List<UTXO> actualUtxosForBtcTxId = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
+            List<UTXO> actualUtxosForOtherBtcTxId = storageAccessor.getFromRepository(otherFederationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
+
+            // assert
+            assertUtxosEquals(expectedOneUtxo, actualUtxosForBtcTxId);
+            assertUtxosEquals(expectedThreeUtxos, actualUtxosForOtherBtcTxId);
         }
     }
 
