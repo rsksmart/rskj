@@ -336,9 +336,9 @@ public class TraceModuleImpl implements TraceModule {
         return null;
     }
 
-    /** Built via {@code setGasUsed(long)}, so this always fits a long. */
+    /** Built via {@code setGasUsed(long)}, so a value that does not fit is corrupt, not truncated. */
     private static long gasUsedOf(TransactionReceipt receipt) {
-        return new BigInteger(1, receipt.getGasUsed()).longValue();
+        return new BigInteger(1, receipt.getGasUsed()).longValueExact();
     }
 
     private Block getBlockByTagOrNumber(String strBlock, BigInteger biBlock) {
