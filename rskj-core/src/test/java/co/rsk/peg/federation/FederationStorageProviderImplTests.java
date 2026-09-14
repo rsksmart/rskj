@@ -1372,6 +1372,28 @@ class FederationStorageProviderImplTests {
             // assert
             assertTrue(actualUtxos.isEmpty());
         }
+
+        @Test
+        void removeFederationsPendingBtcUTXOs_whenBtcTxIdWasNeverSet_shouldNotThrow() {
+            // act & assert
+            assertDoesNotThrow(() -> federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId));
+
+            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+            assertTrue(actualUtxos.isEmpty());
+        }
+
+        @Test
+        void removeFederationsPendingBtcUTXOs_whenCalledTwice_shouldNotThrow() {
+            // arrange
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId);
+
+            // act & assert
+            assertDoesNotThrow(() -> federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId));
+
+            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+            assertTrue(actualUtxos.isEmpty());
+        }
     }
 
     private static Federation createNonStandardErpFederation() {
