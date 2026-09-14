@@ -1279,6 +1279,47 @@ class FederationStorageProviderImplTests {
             assertTrue(actualUtxos.isPresent());
             assertUtxosEquals(largeNumberOfUtxos, actualUtxos.get());
         }
+
+        @Test
+        void setFederationsPendingBtcUTXOs_withEmptyUtxoList_shouldNotModifyCache() {
+            // act
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, List.of());
+            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+
+            // assert
+            assertTrue(actualUtxos.isEmpty());
+        }
+
+        @Test
+        void setFederationsPendingBtcUTXOs_calledTwiceWithSameBtcTxId_shouldThrowIllegalStateException() {
+            // arrange
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedUtxos);
+            List<UTXO> otherUtxos = UTXOBuilder.builder()
+                .withScriptPubKey(p2shP2wshErpFederationScript)
+                .buildMany(2, i -> createHash(i + 2));
+
+            // act & assert
+            assertThrows(
+                IllegalStateException.class,
+                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, otherUtxos)
+            );
+        }
+
+        @Test
+        void setFederationsPendingBtcUTXOs_whenBtcTxIdIsAlreadyPersistedInStorage_shouldThrowIllegalStateException() {
+            // arrange
+            storageAccessor.saveToRepository(key, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
+
+            List<UTXO> newUtxos = UTXOBuilder.builder()
+                .withScriptPubKey(p2shP2wshErpFederationScript)
+                .buildMany(2, i -> createHash(i + 2));
+
+            // act & assert
+            assertThrows(
+                IllegalStateException.class,
+                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, newUtxos)
+            );
+        }
     }
 
     private static Federation createNonStandardErpFederation() {

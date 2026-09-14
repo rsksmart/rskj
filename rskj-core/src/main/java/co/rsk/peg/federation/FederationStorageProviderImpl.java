@@ -132,6 +132,14 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public void setFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos) {
+        if (utxos.isEmpty()) {
+            return;
+        }
+
+        if (federationsPendingBtcUTXOs.containsKey(btcTxId) || getFederationsPendingBtcUTXOs(btcTxId).isPresent()) {
+            throw new IllegalStateException(String.format("Given btcTxId %s already exists in federationsPendingBtcUTXOs. btcTxId entries are considered unique.", btcTxId));
+        }
+
         federationsPendingBtcUTXOs.put(btcTxId, utxos);
     }
 
