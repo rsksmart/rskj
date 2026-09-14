@@ -1349,6 +1349,16 @@ class FederationStorageProviderImplTests {
             // assert
             assertUtxosEquals(expectedLargeNumberOfUtxos, actualUtxos);
         }
+
+        @Test
+        void saveFederationsPendingBtcUTXOs_withNoUtxosSettled_shouldNotPersistAnythingToStorage() {
+            // act
+            federationStorageProvider.save(networkParameters, activations);
+            List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
+
+            // assert
+            assertTrue(actualUtxos.isEmpty());
+        }
     }
 
     private static Federation createNonStandardErpFederation() {
