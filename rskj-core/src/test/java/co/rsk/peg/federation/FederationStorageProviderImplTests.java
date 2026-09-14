@@ -1320,6 +1320,19 @@ class FederationStorageProviderImplTests {
                 () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, newUtxos)
             );
         }
+
+        @Test
+        void saveFederationsPendingBtcUTXOs_withOneUtxoSettled_shouldPersistCachedUtxosToStorage() {
+            // arrange
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedUtxos);
+
+            // act
+            federationStorageProvider.save(networkParameters, activations);
+            List<UTXO> actualUtxos = storageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
+
+            // assert
+            assertUtxosEquals(expectedUtxos, actualUtxos);
+        }
     }
 
     private static Federation createNonStandardErpFederation() {
