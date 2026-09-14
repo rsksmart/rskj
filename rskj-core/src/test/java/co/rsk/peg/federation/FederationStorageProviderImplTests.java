@@ -1179,7 +1179,7 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void getFederationsPendingBtcUTXOs_whenMultipleUtxosPresentInStorage_shouldReturnUtxosStored() {
+        void getFederationsPendingBtcUTXOs_whenThreeUtxosPresentInStorage_shouldReturnUtxosStored() {
             // arrange
             List<UTXO> multipleUtxos = UTXOBuilder.builder()
                 .withScriptPubKey(p2shP2wshErpFederationScript)
@@ -1265,7 +1265,7 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void setFederationsPendingBtcUTXOs_with200Utxos_shouldStoreInCache() {
+        void setFederationsPendingBtcUTXOs_withLargeNumberOfUtxos_shouldStoreInCache() {
             // arrange
             List<UTXO> largeNumberOfUtxos = UTXOBuilder.builder()
                 .withScriptPubKey(p2shP2wshErpFederationScript)
