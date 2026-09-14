@@ -18,6 +18,9 @@
 package co.rsk.rpc.modules.trace;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.WorldDslProcessor;
@@ -28,7 +31,12 @@ import org.ethereum.core.Transaction;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.program.invoke.TransferInvoke;
+import org.ethereum.vm.trace.ProgramTraceProcessor;
+import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -41,6 +49,12 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Parity-style traces must report the transaction's real gas on the root frame even
@@ -281,6 +295,46 @@ class TraceModuleTypedReceiptGasTest {
         }
 
         throw new AssertionError("no root trace found for " + txName);
+    }
+
+    /** No re-execution receipt must omit the trace, not report gasUsed 0 */
+    @ParameterizedTest
+    @ValueSource(strings = {"txType2", "txCreate"})
+    void whenReExecutionYieldsNoReceiptForTx_traceIsOmittedRatherThanReportingZeroGas(String txName) {
+        Transaction tx = world.getTransactionByName(txName);
+
+        TraceModuleImpl module = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(),
+                receiptStore, blindExecutorFor(tx), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        assertNull(module.traceTransaction(tx.getHash().toJsonString()),
+                "no re-execution receipt must yield no trace at all");
+    }
+
+    /** Records a program trace, so the module does not bail earlier, but returns unkeyable receipts. */
+    private static BlockExecutor blindExecutorFor(Transaction tx) {
+        BlockExecutor blindExecutor = mock(BlockExecutor.class);
+
+        when(blindExecutor.traceBlock(any(), anyInt(), any(), any(), anyBoolean(), anyBoolean()))
+                .thenAnswer(invocation -> {
+                    ProgramTraceProcessor processor = invocation.getArgument(0);
+                    Block block = invocation.getArgument(2);
+
+                    processor.processProgramTrace(
+                            new SummarizedProgramTrace(new TransferInvoke(
+                                    DataWord.valueOf(tx.getSender(world.getBlockTxSignatureCache()).getBytes()),
+                                    DataWord.valueOf(tx.getReceiveAddress().getBytes()),
+                                    0L,
+                                    DataWord.ZERO)),
+                            tx.getHash());
+
+                    TransactionReceipt receiptWithoutTransaction = new TransactionReceipt();
+                    receiptWithoutTransaction.setGasUsed(21_000L);
+
+                    return new BlockResult(block, List.of(tx), List.of(receiptWithoutTransaction),
+                            null, 0L, Coin.ZERO, null);
+                });
+
+        return blindExecutor;
     }
 
     private static String hex(long value) {

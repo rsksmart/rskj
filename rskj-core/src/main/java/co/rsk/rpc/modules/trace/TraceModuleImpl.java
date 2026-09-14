@@ -42,6 +42,8 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,7 +115,12 @@ public class TraceModuleImpl implements TraceModule {
             return null;
         }
 
-        long rootGasUsed = rootGasUsed(gasUsedByTx(blockResult), txInfo, tx.getHash());
+        Long rootGasUsed = freshGasUsedOf(blockResult, tx.getHash());
+
+        if (rootGasUsed == null) {
+            return null;
+        }
+
         List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber(), rootGasUsed);
 
         return OBJECT_MAPPER.valueToTree(traces);
@@ -283,7 +290,14 @@ public class TraceModuleImpl implements TraceModule {
                     return Collections.emptyList();
                 }
 
-                long rootGasUsed = rootGasUsed(freshGasUsed, txInfo, tx.getHash());
+                Long rootGasUsed = freshGasUsed.get(tx.getHash());
+
+                if (rootGasUsed == null) {
+                    logger.warn("No re-execution receipt for tx {}, omitting block traces", tx.getHash());
+                    blockTraces.clear();
+                    return Collections.emptyList();
+                }
+
                 List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber(), rootGasUsed);
 
                 blockTraces.addAll(traces);
@@ -293,33 +307,38 @@ public class TraceModuleImpl implements TraceModule {
         return blockTraces;
     }
 
-    /**
-     * Per-tx gas from the re-execution, keyed by tx hash: stored Type 1/2/4 receipts omit the field
-     * (RSKIP-545/546).
-     */
+    /** Re-execution gas by tx hash; for a single tx use {@link #freshGasUsedOf}. */
     private static Map<Keccak256, Long> gasUsedByTx(BlockResult blockResult) {
         Map<Keccak256, Long> gasUsedByTx = new HashMap<>();
 
         for (TransactionReceipt receipt : blockResult.getTransactionReceipts()) {
             Transaction tx = receipt.getTransaction();
             if (tx != null) {
-                gasUsedByTx.put(tx.getHash(), new BigInteger(1, receipt.getGasUsed()).longValue());
+                gasUsedByTx.put(tx.getHash(), gasUsedOf(receipt));
             }
         }
 
         return gasUsedByTx;
     }
 
-    private static long rootGasUsed(Map<Keccak256, Long> freshGasUsed, TransactionInfo txInfo, Keccak256 txHash) {
-        Long fresh = freshGasUsed.get(txHash);
-
-        if (fresh != null) {
-            return fresh;
+    /** Re-execution gas for one transaction; null when the re-execution produced no receipt for it. */
+    @Nullable
+    private static Long freshGasUsedOf(BlockResult blockResult, Keccak256 txHash) {
+        for (TransactionReceipt receipt : blockResult.getTransactionReceipts()) {
+            Transaction tx = receipt.getTransaction();
+            if (tx != null && txHash.equals(tx.getHash())) {
+                return gasUsedOf(receipt);
+            }
         }
 
-        logger.warn("No re-execution receipt for tx {}, root trace gas falls back to the stored receipt", txHash);
+        logger.warn("No re-execution receipt for tx {}, cannot report root trace gas", txHash);
 
-        return new BigInteger(1, txInfo.getReceipt().getGasUsed()).longValue();
+        return null;
+    }
+
+    /** Built via {@code setGasUsed(long)}, so this always fits a long. */
+    private static long gasUsedOf(TransactionReceipt receipt) {
+        return new BigInteger(1, receipt.getGasUsed()).longValue();
     }
 
     private Block getBlockByTagOrNumber(String strBlock, BigInteger biBlock) {
