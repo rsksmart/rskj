@@ -112,7 +112,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     @Override
     public Optional<List<UTXO>> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
         if (federationsPendingBtcUTXOs.containsKey(btcTxId)) {
-            return Optional.of(federationsPendingBtcUTXOs.get(btcTxId));
+            return Optional.ofNullable(federationsPendingBtcUTXOs.get(btcTxId));
         }
 
         DataWord key = getStorageKeyForFederationsPendingBtcUTXOs(btcTxId);
@@ -141,6 +141,11 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         }
 
         federationsPendingBtcUTXOs.put(btcTxId, utxos);
+    }
+
+    @Override
+    public void removeFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        federationsPendingBtcUTXOs.put(btcTxId, null);
     }
 
     @Override
