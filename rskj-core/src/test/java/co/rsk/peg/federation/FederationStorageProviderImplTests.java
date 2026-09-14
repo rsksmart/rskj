@@ -1235,6 +1235,27 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
+        void getFederationsPendingBtcUTXOs_whenReturnedListIsMutated_shouldAffectCachedEntry() {
+            // arrange
+            storageAccessor.saveToRepository(
+                federationPendingBtcUTXOsKey,
+                expectedOneUtxo,
+                BridgeSerializationUtils::serializeUTXOList
+            );
+
+            Optional<List<UTXO>> mutableUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+            assertTrue(mutableUtxos.isPresent());
+
+            // act
+            mutableUtxos.get().clear();
+            Optional<List<UTXO>> secondGet = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+
+            // assert
+            assertTrue(secondGet.isPresent());
+            assertTrue(secondGet.get().isEmpty());
+        }
+
+        @Test
         void setFederationsPendingBtcUTXOs_withOneUtxo_shouldStoreInCache() {
             // act
             federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
@@ -1271,6 +1292,21 @@ class FederationStorageProviderImplTests {
             assertTrue(actualUtxos.isPresent());
             assertUtxosEquals(expectedLargeNumberOfUtxos, actualUtxos.get());
             assertTrue(actualUtxosInStorage.isEmpty());
+        }
+
+        @Test
+        void setFederationsPendingBtcUTXOs_whenCallerMutatesOriginalList_shouldAffectCachedEntry() {
+            // arrange
+            List<UTXO> mutableUtxos = new ArrayList<>(expectedOneUtxo);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, mutableUtxos);
+
+            // act
+            mutableUtxos.clear();
+            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+
+            // assert
+            assertTrue(actualUtxos.isPresent());
+            assertTrue(actualUtxos.get().isEmpty());
         }
 
         @Test
