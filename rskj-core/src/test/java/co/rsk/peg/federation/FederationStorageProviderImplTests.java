@@ -1130,12 +1130,18 @@ class FederationStorageProviderImplTests {
     class PendingFederationsBtcUTXOs {
         private static final Sha256Hash btcTxId = createHash(1);
         private static final Script p2shP2wshErpFederationScript = P2shP2wshErpFederationBuilder.builder().build().getP2SHScript();
-        private static final DataWord key = FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
-        private static final List<UTXO> expectedUtxos = List.of(
+        private static final DataWord federationPendingBtcUTXOsKey = FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
+        private static final List<UTXO> expectedOneUtxo = List.of(
             UTXOBuilder.builder()
                 .withScriptPubKey(p2shP2wshErpFederationScript)
                 .build()
         );
+        private static final List<UTXO> expectedThreeUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(p2shP2wshErpFederationScript)
+            .buildMany(3, i -> createHash(i + 1));
+        private static final List<UTXO> expectedLargeNumberOfUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(p2shP2wshErpFederationScript)
+            .buildMany(200, i -> createHash(i + 1));
 
         private StorageAccessor storageAccessor;
         private FederationStorageProvider federationStorageProvider;
@@ -1147,13 +1153,13 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void storeInStorage_withFederationsPendingBtcUTXOsKey_shouldSaveAndRetrieveUtxosFromStorage() {
+        void storeFederationPendingBtcUTXOsInStorage_withFederationsPendingBtcUTXOsKey_shouldSaveAndRetrieveUtxosFromStorage() {
             // act
-            storageAccessor.saveToRepository(key, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
-            List<UTXO> actualUtxos = storageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
+            storageAccessor.saveToRepository(federationPendingBtcUTXOsKey, expectedOneUtxo, BridgeSerializationUtils::serializeUTXOList);
+            List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
-            assertUtxosEquals(expectedUtxos, actualUtxos);
+            assertUtxosEquals(expectedOneUtxo, actualUtxos);
         }
 
         @Test
@@ -1168,116 +1174,100 @@ class FederationStorageProviderImplTests {
         @Test
         void getFederationsPendingBtcUTXOs_whenPresentInStorage_shouldReturnUtxosStored() {
             // arrange
-            storageAccessor.saveToRepository(key, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
+            storageAccessor.saveToRepository(federationPendingBtcUTXOsKey, expectedOneUtxo, BridgeSerializationUtils::serializeUTXOList);
 
             // act
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosEquals(expectedUtxos, actualUtxos.get());
+            assertUtxosEquals(expectedOneUtxo, actualUtxos.get());
         }
 
         @Test
         void getFederationsPendingBtcUTXOs_whenThreeUtxosPresentInStorage_shouldReturnUtxosStored() {
             // arrange
-            List<UTXO> multipleUtxos = UTXOBuilder.builder()
-                .withScriptPubKey(p2shP2wshErpFederationScript)
-                .buildMany(3, i -> createHash(i + 1));
-            storageAccessor.saveToRepository(key, multipleUtxos, BridgeSerializationUtils::serializeUTXOList);
+            storageAccessor.saveToRepository(federationPendingBtcUTXOsKey, expectedThreeUtxos, BridgeSerializationUtils::serializeUTXOList);
 
             // act
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosEquals(multipleUtxos, actualUtxos.get());
+            assertUtxosEquals(expectedThreeUtxos, actualUtxos.get());
         }
 
         @Test
         void getFederationsPendingBtcUTXOs_whenLargeNumberOfUtxosPresentInStorage_shouldReturnUtxosStored() {
             // arrange
-            List<UTXO> largeNumberOfUtxos = UTXOBuilder.builder()
-                .withScriptPubKey(p2shP2wshErpFederationScript)
-                .buildMany(200, i -> createHash(i + 1));
-            storageAccessor.saveToRepository(key, largeNumberOfUtxos, BridgeSerializationUtils::serializeUTXOList);
+            storageAccessor.saveToRepository(federationPendingBtcUTXOsKey, expectedLargeNumberOfUtxos, BridgeSerializationUtils::serializeUTXOList);
 
             // act
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosEquals(largeNumberOfUtxos, actualUtxos.get());
+            assertUtxosEquals(expectedLargeNumberOfUtxos, actualUtxos.get());
         }
 
         @Test
         void getFederationsPendingBtcUTXOs_whenCalledTwice_shouldReturnCachedUtxos() {
             // arrange
-            storageAccessor.saveToRepository(key, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
+            storageAccessor.saveToRepository(federationPendingBtcUTXOsKey, expectedOneUtxo, BridgeSerializationUtils::serializeUTXOList);
 
             // act
             Optional<List<UTXO>> actualCachedUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
 
             List<UTXO> extraUtxosOverwritingPreviousValue = UTXOBuilder.builder()
                 .withScriptPubKey(p2shP2wshErpFederationScript)
-                .buildMany(2, i -> expectedUtxos.get(0).getHash());
+                .buildMany(2, i -> expectedOneUtxo.get(0).getHash());
 
-            storageAccessor.saveToRepository(key, extraUtxosOverwritingPreviousValue, BridgeSerializationUtils::serializeUTXOList);
+            storageAccessor.saveToRepository(federationPendingBtcUTXOsKey, extraUtxosOverwritingPreviousValue, BridgeSerializationUtils::serializeUTXOList);
 
             Optional<List<UTXO>> cachedUtxosAfterSecondGet = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
 
             // assert
             assertTrue(actualCachedUtxos.isPresent());
-            assertUtxosEquals(expectedUtxos, actualCachedUtxos.get());
+            assertUtxosEquals(expectedOneUtxo, actualCachedUtxos.get());
 
             assertTrue(cachedUtxosAfterSecondGet.isPresent());
-            assertUtxosEquals(expectedUtxos, cachedUtxosAfterSecondGet.get());
+            assertUtxosEquals(expectedOneUtxo, cachedUtxosAfterSecondGet.get());
 
-            List<UTXO> actualUtxosInStorage = storageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
+            List<UTXO> actualUtxosInStorage = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
             assertUtxosEquals(extraUtxosOverwritingPreviousValue, actualUtxosInStorage);
         }
 
         @Test
         void setFederationsPendingBtcUTXOs_withOneUtxo_shouldStoreInCache() {
             // act
-            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedUtxos);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosEquals(expectedUtxos, actualUtxos.get());
+            assertUtxosEquals(expectedOneUtxo, actualUtxos.get());
         }
 
         @Test
         void setFederationsPendingBtcUTXOs_withThreeUtxos_shouldStoreInCache() {
-            // arrange
-            List<UTXO> threeUtxos = UTXOBuilder.builder()
-                .withScriptPubKey(p2shP2wshErpFederationScript)
-                .buildMany(3, i -> createHash(i + 1));
-
             // act
-            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, threeUtxos);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos);
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosEquals(threeUtxos, actualUtxos.get());
+            assertUtxosEquals(expectedThreeUtxos, actualUtxos.get());
         }
 
         @Test
         void setFederationsPendingBtcUTXOs_withLargeNumberOfUtxos_shouldStoreInCache() {
-            // arrange
-            List<UTXO> largeNumberOfUtxos = UTXOBuilder.builder()
-                .withScriptPubKey(p2shP2wshErpFederationScript)
-                .buildMany(200, i -> createHash(i + 1));
-
             // act
-            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, largeNumberOfUtxos);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedLargeNumberOfUtxos);
             Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosEquals(largeNumberOfUtxos, actualUtxos.get());
+            assertUtxosEquals(expectedLargeNumberOfUtxos, actualUtxos.get());
         }
 
         @Test
@@ -1293,7 +1283,7 @@ class FederationStorageProviderImplTests {
         @Test
         void setFederationsPendingBtcUTXOs_calledTwiceWithSameBtcTxId_shouldThrowIllegalStateException() {
             // arrange
-            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedUtxos);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
             List<UTXO> otherUtxos = UTXOBuilder.builder()
                 .withScriptPubKey(p2shP2wshErpFederationScript)
                 .buildMany(2, i -> createHash(i + 2));
@@ -1308,7 +1298,7 @@ class FederationStorageProviderImplTests {
         @Test
         void setFederationsPendingBtcUTXOs_whenBtcTxIdIsAlreadyPersistedInStorage_shouldThrowIllegalStateException() {
             // arrange
-            storageAccessor.saveToRepository(key, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
+            storageAccessor.saveToRepository(federationPendingBtcUTXOsKey, expectedOneUtxo, BridgeSerializationUtils::serializeUTXOList);
 
             List<UTXO> newUtxos = UTXOBuilder.builder()
                 .withScriptPubKey(p2shP2wshErpFederationScript)
@@ -1324,46 +1314,40 @@ class FederationStorageProviderImplTests {
         @Test
         void saveFederationsPendingBtcUTXOs_withOneUtxoSettled_shouldPersistCachedUtxosToStorage() {
             // arrange
-            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedUtxos);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
 
             // act
             federationStorageProvider.save(networkParameters, activations);
-            List<UTXO> actualUtxos = storageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
+            List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
-            assertUtxosEquals(expectedUtxos, actualUtxos);
+            assertUtxosEquals(expectedOneUtxo, actualUtxos);
         }
 
         @Test
         void saveFederationsPendingBtcUTXOs_withThreeUtxosSettled_shouldPersistCachedUtxosToStorage() {
             // arrange
-            List<UTXO> threeUtxos = UTXOBuilder.builder()
-                .withScriptPubKey(p2shP2wshErpFederationScript)
-                .buildMany(3, i -> createHash(i + 1));
-            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, threeUtxos);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos);
 
             // act
             federationStorageProvider.save(networkParameters, activations);
-            List<UTXO> actualUtxos = storageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
+            List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
-            assertUtxosEquals(threeUtxos, actualUtxos);
+            assertUtxosEquals(expectedThreeUtxos, actualUtxos);
         }
 
         @Test
         void saveFederationsPendingBtcUTXOs_withLargeNumberOfUtxosSettled_shouldPersistCachedUtxosToStorage() {
             // arrange
-            List<UTXO> largeNumberOfUtxos = UTXOBuilder.builder()
-                .withScriptPubKey(p2shP2wshErpFederationScript)
-                .buildMany(200, i -> createHash(i + 1));
-            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, largeNumberOfUtxos);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedLargeNumberOfUtxos);
 
             // act
             federationStorageProvider.save(networkParameters, activations);
-            List<UTXO> actualUtxos = storageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
+            List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
-            assertUtxosEquals(largeNumberOfUtxos, actualUtxos);
+            assertUtxosEquals(expectedLargeNumberOfUtxos, actualUtxos);
         }
     }
 
