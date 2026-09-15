@@ -152,9 +152,14 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public void removeFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        if (btcTxId == null) {
+            throw new IllegalArgumentException("Invalid federations pending btc utxos entry, btcTxId cannot be null");
+        }
+
         if (getFederationsPendingBtcUTXOs(btcTxId).isEmpty()) {
             return;
         }
+
         federationsPendingBtcUTXOs.put(btcTxId, null);
     }
 
