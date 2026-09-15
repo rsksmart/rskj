@@ -161,7 +161,7 @@ public class BitcoinTestAssertions {
         assertArrayEquals(expectedStandardScript.getProgram(), actualStandardScript.getProgram());
     }
 
-    public static void assertUtxosEquals(List<UTXO> expected, List<UTXO> actual) {
+    public static void assertUtxosAreEquals(List<UTXO> expected, List<UTXO> actual) {
         assertEquals(expected.size(), actual.size());
         for (int i = 0; i < expected.size(); i++) {
             assertUtxoEquals(expected.get(i), actual.get(i));
