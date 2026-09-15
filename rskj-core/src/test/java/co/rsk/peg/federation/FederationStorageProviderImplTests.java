@@ -1247,7 +1247,8 @@ class FederationStorageProviderImplTests {
             assertTrue(firstGet.isPresent());
 
             // act & assert
-            assertThrows(UnsupportedOperationException.class, () -> firstGet.get().clear());
+            List<UTXO> firstsUtxos = firstGet.get();
+            assertThrows(UnsupportedOperationException.class, firstsUtxos::clear);
 
             Optional<List<UTXO>> secondGet = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
             assertTrue(secondGet.isPresent());
