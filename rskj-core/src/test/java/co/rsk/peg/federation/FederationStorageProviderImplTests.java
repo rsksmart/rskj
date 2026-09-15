@@ -1450,6 +1450,15 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
+        void removeFederationsPendingBtcUTXOs_withNullBtcTxId_shouldThrowIllegalArgumentException() {
+            // act & assert
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> federationStorageProvider.removeFederationsPendingBtcUTXOs(null)
+            );
+        }
+
+        @Test
         void removeFederationsPendingBtcUTXOs_whenBtcTxIdWasNeverSet_shouldReturnWithoutFailing() {
             // act
             federationStorageProvider.removeFederationsPendingBtcUTXOs(btcTxId);
