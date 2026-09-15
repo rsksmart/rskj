@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.Repository;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Test;
 
 
@@ -190,6 +191,22 @@ class AccountClassificationTest {
                 () -> assertFalse(repository.isExist(addr)),
                 () -> assertFalse(repository.hasInitializedStorage(addr)),
                 () -> assertFalse(repository.hasDelegationAuthorityMarker(addr))
+        );
+    }
+
+    @Test
+    void precompileWithInitializedStorageAndNoCode_matchesOnlyIsRegularContract() {
+        Repository repository = createRepository();
+        RskAddress bridge = PrecompiledContracts.BRIDGE_ADDR;
+        repository.createAccount(bridge);
+        repository.initializeStorage(bridge);
+
+        assertAll("a precompile with initialized storage and no code is a regular contract, never an EOA state",
+                () -> assertTrue(repository.isRegularContract(bridge)),
+                () -> assertFalse(repository.isPlainEOA(bridge)),
+                () -> assertFalse(repository.isActiveDelegatedEOA(bridge)),
+                () -> assertFalse(repository.isClearedDelegatedEOA(bridge)),
+                () -> assertFalse(repository.isEOA(bridge))
         );
     }
 
