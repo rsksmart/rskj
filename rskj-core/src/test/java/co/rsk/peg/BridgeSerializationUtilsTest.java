@@ -20,7 +20,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSerializationUtils.*;
 import static co.rsk.peg.PegTestUtils.createHash3;
-import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosEquals;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEquals;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -752,7 +752,7 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedNullData = BridgeSerializationUtils.deserializeUTXOList(null);
 
             // assert
-            assertUtxosEquals(Collections.emptyList(), deserializedNullData);
+            assertUtxosAreEquals(Collections.emptyList(), deserializedNullData);
         }
 
         @Test
@@ -761,7 +761,7 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedEmptyData = BridgeSerializationUtils.deserializeUTXOList(EMPTY_BYTE_ARRAY);
 
             // assert
-            assertUtxosEquals(Collections.emptyList(), deserializedEmptyData);
+            assertUtxosAreEquals(Collections.emptyList(), deserializedEmptyData);
         }
 
         @Test
@@ -779,7 +779,7 @@ class BridgeSerializationUtilsTest {
             // (OFFSET_SHORT_LIST + 0), i.e. the actual bytes persisted for "no UTXOs".
             byte[] expectedSerializationForEmptyList = {(byte) 0xc0};
             assertArrayEquals(expectedSerializationForEmptyList, serializedUtxos);
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEquals(utxos, deserializedUtxos);
         }
 
         @Test
@@ -800,7 +800,7 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
 
             // assert
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEquals(utxos, deserializedUtxos);
         }
 
         @Test
@@ -813,7 +813,7 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
 
             // assert
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEquals(utxos, deserializedUtxos);
         }
 
         @Test
@@ -858,7 +858,7 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
 
             // assert
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEquals(utxos, deserializedUtxos);
         }
 
         @Test
@@ -906,7 +906,7 @@ class BridgeSerializationUtilsTest {
             assertNotEquals(recoveredAddressForStandardFederationUtxo, recoveredAddressForErpFederationUtxo);
             assertNotEquals(recoveredAddressForStandardFederationUtxo, recoveredAddressForP2shP2wshErpFederationUtxo);
             assertNotEquals(recoveredAddressForErpFederationUtxo, recoveredAddressForP2shP2wshErpFederationUtxo);
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEquals(utxos, deserializedUtxos);
         }
 
         @Test
@@ -929,7 +929,7 @@ class BridgeSerializationUtilsTest {
 
             // assert
             assertNull(deserializedUtxos.get(0).getAddress());
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEquals(utxos, deserializedUtxos);
         }
 
         @Test
