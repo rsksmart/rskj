@@ -117,6 +117,8 @@ public class SetCodeAuthorizationTransactionExecutor {
         }
         byte[] codeToSet = DelegationCodeResolver.createDelegatedCode(delegatedAddress);
         repository.saveCode(authority, codeToSet);
+        repository.initializeStorage(authority);
+        repository.initializeDelegationAuthority(authority);
     }
 
 }

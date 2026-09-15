@@ -249,6 +249,21 @@ public class MutableRepository implements Repository {
     }
 
     @Override
+    public synchronized void initializeDelegationAuthority(RskAddress addr) {
+        byte[] key = trieKeyMapper.getDelegationAuthorityMarkerKey(addr);
+        internalPut(key, ONE_BYTE_ARRAY);
+    }
+
+    @Override
+    public synchronized boolean hasDelegationAuthorityMarker(RskAddress addr) {
+        if (!isExist(addr)) {
+            return false;
+        }
+        byte[] key = trieKeyMapper.getDelegationAuthorityMarkerKey(addr);
+        return internalGet(key) != null;
+    }
+
+    @Override
     public synchronized void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
         // DataWords are stored stripping leading zeros.
         addStorageBytes(addr, key, value.getByteArrayForStorage());
