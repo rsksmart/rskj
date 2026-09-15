@@ -122,8 +122,9 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return Optional.empty();
         }
 
-        federationsPendingBtcUTXOs.put(btcTxId, utxos);
-        return Optional.of(utxos);
+        List<UTXO> immutableUtxos = List.copyOf(utxos);
+        federationsPendingBtcUTXOs.put(btcTxId, immutableUtxos);
+        return Optional.of(immutableUtxos);
     }
 
     private DataWord getStorageKeyForFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
@@ -142,7 +143,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             throw new IllegalStateException(String.format("Given btcTxId %s already exists in federationsPendingBtcUTXOs. btcTxId entries are considered unique.", btcTxId));
         }
 
-        federationsPendingBtcUTXOs.put(btcTxId, utxos);
+        federationsPendingBtcUTXOs.put(btcTxId, List.copyOf(utxos));
     }
 
     @Override

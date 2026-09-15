@@ -1235,7 +1235,7 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void getFederationsPendingBtcUTXOs_whenReturnedListIsMutated_shouldAffectCachedEntry() {
+        void getFederationsPendingBtcUTXOs_whenCallerAttemptsToMutateReturnedList_shouldThrowUnsupportedOperationException() {
             // arrange
             storageAccessor.saveToRepository(
                 federationPendingBtcUTXOsKey,
@@ -1243,16 +1243,15 @@ class FederationStorageProviderImplTests {
                 BridgeSerializationUtils::serializeUTXOList
             );
 
-            Optional<List<UTXO>> mutableUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
-            assertTrue(mutableUtxos.isPresent());
+            Optional<List<UTXO>> firstGet = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+            assertTrue(firstGet.isPresent());
 
-            // act
-            mutableUtxos.get().clear();
+            // act & assert
+            assertThrows(UnsupportedOperationException.class, () -> firstGet.get().clear());
+
             Optional<List<UTXO>> secondGet = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
-
-            // assert
             assertTrue(secondGet.isPresent());
-            assertTrue(secondGet.get().isEmpty());
+            assertUtxosEquals(expectedOneUtxo, secondGet.get());
         }
 
         @Test
@@ -1295,7 +1294,7 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void setFederationsPendingBtcUTXOs_whenCallerMutatesOriginalList_shouldAffectCachedEntry() {
+        void setFederationsPendingBtcUTXOs_whenCallerMutatesOriginalList_shouldNotAffectCachedEntry() {
             // arrange
             List<UTXO> mutableUtxos = new ArrayList<>(expectedOneUtxo);
             federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, mutableUtxos);
@@ -1306,7 +1305,7 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertTrue(actualUtxos.get().isEmpty());
+            assertUtxosEquals(expectedOneUtxo, actualUtxos.get());
         }
 
         @Test
