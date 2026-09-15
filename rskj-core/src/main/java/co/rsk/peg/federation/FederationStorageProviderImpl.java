@@ -133,8 +133,12 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public void setFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos) {
-        if (utxos.isEmpty()) {
-            return;
+        if (btcTxId == null || utxos == null || utxos.isEmpty()) {
+            throw new IllegalArgumentException(String.format(
+                "Invalid federations pending btc utxos entry, has btcTxId %s and utxos list %s",
+                btcTxId,
+                utxos
+            ));
         }
 
         // We need to check containsKey first because if the value is null (removed), get() would

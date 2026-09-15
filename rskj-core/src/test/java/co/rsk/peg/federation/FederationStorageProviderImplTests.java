@@ -1310,13 +1310,30 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void setFederationsPendingBtcUTXOs_withEmptyUtxoList_shouldNotModifyCache() {
-            // act
-            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, List.of());
-            Optional<List<UTXO>> actualUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+        void setFederationsPendingBtcUTXOs_withEmptyUtxoList_shouldThrowIllegalArgumentException() {
+            // act & assert
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, List.of())
+            );
+        }
 
-            // assert
-            assertTrue(actualUtxos.isEmpty());
+        @Test
+        void setFederationsPendingBtcUTXOs_withNullUtxoList_shouldThrowIllegalArgumentException() {
+            // act & assert
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, null)
+            );
+        }
+
+        @Test
+        void setFederationsPendingBtcUTXOs_withNullBtcTxId_shouldThrowIllegalArgumentException() {
+            // act & assert
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> federationStorageProvider.setFederationsPendingBtcUTXOs(null, expectedOneUtxo)
+            );
         }
 
         @Test
