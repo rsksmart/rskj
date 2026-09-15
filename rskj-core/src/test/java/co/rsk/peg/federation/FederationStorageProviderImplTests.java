@@ -3,7 +3,7 @@ package co.rsk.peg.federation;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_TESTNET;
 import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
-import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEquals;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.federation.FederationStorageIndexKey.*;
@@ -1160,7 +1160,7 @@ class FederationStorageProviderImplTests {
             List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationsPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
-            assertUtxosAreEquals(expectedOneUtxo, actualUtxos);
+            assertUtxosAreEqual(expectedOneUtxo, actualUtxos);
         }
 
         @Test
@@ -1182,7 +1182,7 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosAreEquals(expectedOneUtxo, actualUtxos.get());
+            assertUtxosAreEqual(expectedOneUtxo, actualUtxos.get());
         }
 
         @Test
@@ -1195,7 +1195,7 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosAreEquals(expectedThreeUtxos, actualUtxos.get());
+            assertUtxosAreEqual(expectedThreeUtxos, actualUtxos.get());
         }
 
         @Test
@@ -1208,7 +1208,7 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosAreEquals(expectedLargeNumberOfUtxos, actualUtxos.get());
+            assertUtxosAreEqual(expectedLargeNumberOfUtxos, actualUtxos.get());
         }
 
         @Test
@@ -1225,13 +1225,13 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertTrue(actualCachedUtxos.isPresent());
-            assertUtxosAreEquals(expectedOneUtxo, actualCachedUtxos.get());
+            assertUtxosAreEqual(expectedOneUtxo, actualCachedUtxos.get());
 
             assertTrue(cachedUtxosAfterSecondGet.isPresent());
-            assertUtxosAreEquals(expectedOneUtxo, cachedUtxosAfterSecondGet.get());
+            assertUtxosAreEqual(expectedOneUtxo, cachedUtxosAfterSecondGet.get());
 
             List<UTXO> actualUtxosInStorage = storageAccessor.getFromRepository(federationsPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
-            assertUtxosAreEquals(expectedThreeUtxos, actualUtxosInStorage);
+            assertUtxosAreEqual(expectedThreeUtxos, actualUtxosInStorage);
         }
 
         @Test
@@ -1252,7 +1252,7 @@ class FederationStorageProviderImplTests {
 
             Optional<List<UTXO>> secondGet = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
             assertTrue(secondGet.isPresent());
-            assertUtxosAreEquals(expectedOneUtxo, secondGet.get());
+            assertUtxosAreEqual(expectedOneUtxo, secondGet.get());
         }
 
         @Test
@@ -1264,7 +1264,7 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosAreEquals(expectedOneUtxo, actualUtxos.get());
+            assertUtxosAreEqual(expectedOneUtxo, actualUtxos.get());
             assertTrue(actualUtxosInStorage.isEmpty());
         }
 
@@ -1277,7 +1277,7 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosAreEquals(expectedThreeUtxos, actualUtxos.get());
+            assertUtxosAreEqual(expectedThreeUtxos, actualUtxos.get());
             assertTrue(actualUtxosInStorage.isEmpty());
         }
 
@@ -1290,7 +1290,7 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosAreEquals(expectedLargeNumberOfUtxos, actualUtxos.get());
+            assertUtxosAreEqual(expectedLargeNumberOfUtxos, actualUtxos.get());
             assertTrue(actualUtxosInStorage.isEmpty());
         }
 
@@ -1306,7 +1306,7 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosAreEquals(expectedOneUtxo, actualUtxos.get());
+            assertUtxosAreEqual(expectedOneUtxo, actualUtxos.get());
         }
 
         @Test
@@ -1353,7 +1353,7 @@ class FederationStorageProviderImplTests {
             List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationsPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
-            assertUtxosAreEquals(expectedOneUtxo, actualUtxos);
+            assertUtxosAreEqual(expectedOneUtxo, actualUtxos);
         }
 
         @Test
@@ -1366,7 +1366,7 @@ class FederationStorageProviderImplTests {
             List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationsPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
-            assertUtxosAreEquals(expectedThreeUtxos, actualUtxos);
+            assertUtxosAreEqual(expectedThreeUtxos, actualUtxos);
         }
 
         @Test
@@ -1379,7 +1379,7 @@ class FederationStorageProviderImplTests {
             List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationsPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
-            assertUtxosAreEquals(expectedLargeNumberOfUtxos, actualUtxos);
+            assertUtxosAreEqual(expectedLargeNumberOfUtxos, actualUtxos);
         }
 
         @Test
@@ -1429,7 +1429,7 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertTrue(actualUtxos.isPresent());
-            assertUtxosAreEquals(expectedOneUtxo, actualUtxos.get());
+            assertUtxosAreEqual(expectedOneUtxo, actualUtxos.get());
         }
 
         @Test
@@ -1482,8 +1482,8 @@ class FederationStorageProviderImplTests {
             List<UTXO> actualUtxosForOtherBtcTxId = storageAccessor.getFromRepository(otherFederationsPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
 
             // assert
-            assertUtxosAreEquals(expectedOneUtxo, actualUtxosForBtcTxId);
-            assertUtxosAreEquals(expectedUtxosForOtherBtcTxId, actualUtxosForOtherBtcTxId);
+            assertUtxosAreEqual(expectedOneUtxo, actualUtxosForBtcTxId);
+            assertUtxosAreEqual(expectedUtxosForOtherBtcTxId, actualUtxosForOtherBtcTxId);
         }
 
         private static List<UTXO> buildUTXOsFromTheSameBtcTx(int numberOfUtxos, Sha256Hash transactionHash) {
