@@ -93,7 +93,7 @@ public class Transaction {
     public static final byte LOWER_REAL_V = 27;
     private static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
     private static final String ERR_INVALID_SIGNATURE = "Invalid transaction signature";
-    private final TransactionTypePrefix typePrefix;
+    private TransactionTypePrefix typePrefix;
 
     protected RskAddress sender;
     /* whether this is a local call transaction */
@@ -104,7 +104,6 @@ public class Transaction {
     /* the address of the destination account
      * In creation transaction the receive address is - 0 */
     private final RskAddress receiveAddress;
-    private final Coin gasPrice;
     /* the amount of "gas" to allow for the computation.
      * Gas is the fuel of the computational engine.
      * Every computational step taken and every byte added
@@ -126,15 +125,16 @@ public class Transaction {
     /** RSKIP546: Access list bytes (RLP-encoded) for Type 1 and Type 2 */
     private final byte[] accessListBytes;
 
-    @Nullable
-    private final List<SetCodeAuthorization> authorizationList;
-
     /**
      * RSKIP-546 / RSKIP-545: EIP-1559 fee fields for standard Type 2 and Type 4 ({@code null} for legacy, Type 1,
      * Type 3). Effective gas price is {@code min(maxPriorityFeePerGas, maxFeePerGas)}.
      */
-    private final Coin maxPriorityFeePerGas;
-    private final Coin maxFeePerGas;
+    // The *final* modifier has been removed for use within the setTypePrefix method only
+    private /*final*/ Coin gasPrice;
+    private /*final*/ Coin maxPriorityFeePerGas;
+    private /*final*/ Coin maxFeePerGas;
+    @Nullable
+    private /*final*/ List<SetCodeAuthorization> authorizationList;
 
     public static TransactionBuilder builder() {
         return new TransactionBuilder();
@@ -314,7 +314,25 @@ public class Transaction {
         this.maxPriorityFeePerGas = maxPriorityFeePerGas;
         this.maxFeePerGas = maxFeePerGas;
         this.authorizationList = authorizationList == null ? null : List.copyOf(authorizationList);
+    }
 
+    // Only to be used for powHSM integration tests. This is not present in mainstream code.
+    public void setTypePrefix(TransactionTypePrefix typePrefix) {
+        this.typePrefix = typePrefix;
+        if (typePrefix.equals(TransactionTypePrefix.typed(TransactionType.TYPE_2)) ||
+            typePrefix.equals(TransactionTypePrefix.typed(TransactionType.TYPE_4))) {
+            this.maxFeePerGas = new Coin(this.gasPrice.asBigInteger());
+            this.maxPriorityFeePerGas = new Coin(this.gasPrice.asBigInteger());
+            this.gasPrice = null;
+            if (typePrefix.equals(TransactionTypePrefix.typed(TransactionType.TYPE_4))) {
+                SetCodeAuthorization dummySCA = new SetCodeAuthorization(
+                        BigInteger.ONE,
+                        RskAddress.ZERO_ADDRESS,
+                        new byte[]{0},
+                        new ECDSASignature(BigInteger.ONE, BigInteger.ONE));
+                this.authorizationList = List.of(dummySCA);
+            }
+        }
     }
 
     private static void requireCanonicalTypedFields(byte[] nonce, byte[] gasLimit, byte chainId, byte[] accessListBytes) {
