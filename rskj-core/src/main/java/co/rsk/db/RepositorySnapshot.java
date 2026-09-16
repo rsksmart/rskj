@@ -80,10 +80,6 @@ public interface RepositorySnapshot extends AccountInformationProvider {
      */
     Repository startTracking();
 
-    default boolean hasInitializedStorage(RskAddress addr) {
-        return isContract(addr);
-    }
-
     boolean hasDelegationAuthorityMarker(RskAddress addr);
 
     default boolean isPlainEOA(RskAddress addr) {

@@ -89,6 +89,10 @@ public interface AccountInformationProvider {
      */
     boolean isContract(RskAddress addr);
 
+    default boolean hasInitializedStorage(RskAddress addr) {
+        return isContract(addr);
+    }
+
     /**
      * Get current nonce of a given account
      *
