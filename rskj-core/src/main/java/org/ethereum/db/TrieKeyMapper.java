@@ -42,7 +42,6 @@ public class TrieKeyMapper {
     private static final byte[] DOMAIN_PREFIX = new byte[] {0x00};
     private static final byte[] STORAGE_PREFIX = new byte[] {0x00}; // This makes the MSB 0 be branching
     private static final byte[] CODE_PREFIX = new byte[] {(byte) 0x80}; // This makes the MSB 1 be branching
-    private static final byte[] DELEGATION_AUTHORITY_PREFIX = new byte[] {0x01};
 
     private final Map<RskAddress, byte[]> accountKeys = new HashMap<>(); //map cache of address->key (1:1) ** RskAddress is immutable.
 
@@ -65,10 +64,6 @@ public class TrieKeyMapper {
 
     public byte[] getAccountStoragePrefixKey(RskAddress addr) {
         return ByteUtil.merge(getAccountKey(addr), STORAGE_PREFIX);
-    }
-
-    public byte[] getDelegationAuthorityMarkerKey(RskAddress addr) {
-        return ByteUtil.merge(getAccountKey(addr), DELEGATION_AUTHORITY_PREFIX);
     }
 
     public byte[] getAccountStorageKey(RskAddress addr, DataWord subkeyDW) {

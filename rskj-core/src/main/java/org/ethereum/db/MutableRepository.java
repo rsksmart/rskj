@@ -250,17 +250,15 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized void initializeDelegationAuthority(RskAddress addr) {
-        byte[] key = trieKeyMapper.getDelegationAuthorityMarkerKey(addr);
-        internalPut(key, ONE_BYTE_ARRAY);
+        AccountState account = getAccountStateOrCreateNew(addr);
+        account.setDelegationAuthority();
+        updateAccountState(addr, account);
     }
 
     @Override
     public synchronized boolean hasDelegationAuthorityMarker(RskAddress addr) {
-        if (!isExist(addr)) {
-            return false;
-        }
-        byte[] key = trieKeyMapper.getDelegationAuthorityMarkerKey(addr);
-        return internalGet(key) != null;
+        AccountState account = getAccountState(addr);
+        return account != null && account.hasDelegationAuthority();
     }
 
     @Override
