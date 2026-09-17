@@ -270,4 +270,13 @@ class UtxoUtilsTest {
         List<Coin> expectedOutpointValues = Stream.generate(() -> amountToSend).limit(1000).toList();
         assertArrayEquals(expectedOutpointValues.toArray(), actualOutpointValues.toArray());
     }
+
+    @Test
+    void encodeOutputIndexes_withNull_shouldReturnEmptyArray() {
+        // act
+        byte[] encodedOutputIndexes = UtxoUtils.encodeOutputIndexes(null);
+
+        // assert
+        assertArrayEquals(EMPTY_BYTE_ARRAY, encodedOutputIndexes);
+    }
 }

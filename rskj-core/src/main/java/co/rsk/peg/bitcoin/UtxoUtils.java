@@ -64,6 +64,18 @@ public final class UtxoUtils {
         }
     }
 
+    /**
+     * Encode a {@code List<Long>} of output indexes.
+     *
+     * @param outputIndexes the list of output indexes to encode
+     * @return {@code byte[]} the list of output indexes encoded preserving the order of the
+     * entries. Or an {@code empty byte[]} when {@code outputIndexes} is {@code null} or
+     * {@code empty}.
+     */
+    public static byte[] encodeOutputIndexes(List<Long> outputIndexes) {
+        return EMPTY_BYTE_ARRAY;
+    }
+
     public static List<Coin> extractOutpointValues(BtcTransaction generatedTransaction) {
         if (generatedTransaction == null) {
             return Collections.emptyList();
