@@ -308,10 +308,9 @@ public class TransactionExecutor {
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
+        track.increaseNonce(tx.getSender(signatureCache));
+
         if (!localCall) {
-
-            track.increaseNonce(tx.getSender(signatureCache));
-
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
             track.addBalance(tx.getSender(signatureCache), txGasCost.negate());

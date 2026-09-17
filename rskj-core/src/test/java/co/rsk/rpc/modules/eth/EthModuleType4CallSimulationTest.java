@@ -28,6 +28,7 @@ import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
+import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Transaction;
@@ -60,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class EthModuleType4CallSimulationTest {
 
     private static final byte CHAIN_ID = 33; // Constants.REGTEST_CHAIN_ID
+    private static final BigInteger SELF_SPONSORED_NONCE = BigInteger.ONE;
 
     /** getValue()/setValue(uint256) storage contract, reused from Rskip545RealWorldContractTest. */
     private static final byte[] SIMPLE_STORAGE_INIT = Hex.decode("603980600b6000396000f36004361060205760003560e01c806360fe47b114602557632a1afcd914602d575b600080fd5b600435600055005b60005460005260206000f3");
@@ -118,7 +120,7 @@ class EthModuleType4CallSimulationTest {
     }
 
     private void createTestAccounts() {
-        plainEoaWithNoCode = new AccountBuilder(world).name("plainEOA_WITH_NO_CODE").build();
+        plainEoaWithNoCode = new AccountBuilder(world).name("plainEOA_WITH_NO_CODE").balance(co.rsk.core.Coin.valueOf(10).multiply(BigInteger.valueOf(1_000_000_000_000_000_000L))).build();
         authorityA = new AccountBuilder(world).name("authorityA").build();
         authorityB = new AccountBuilder(world).name("authorityB").build();
     }
@@ -149,18 +151,66 @@ class EthModuleType4CallSimulationTest {
     }
 
     @Test
-    void selfAuthorization_delegateThenInvoke_runsDelegatedCodeInSingleCall() {
+    void selfAuthorization_signedForRealBroadcastNonce_ethCallShouldRunDelegatedCode() {
         assertEquals("0x", callHex(plainEoaWithNoCode.getAddress(), GET_VALUE, null));
-        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
+
+        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), simpleStorage, SELF_SPONSORED_NONCE, CHAIN_ID);
         String result = callHex(plainEoaWithNoCode.getAddress(), GET_VALUE, List.of(selfAuth));
-        assertEquals("0x" + "00".repeat(32), result);
+
+        // Delegated code runs in the authority's own storage context, and plainEOA's slot 0 was
+        // never written, so getValue() returns a real 32-byte zero word - not the empty "0x" a bare, undelegated EOA would return.
+        assertEquals("0x" + "00".repeat(32), result,
+                "eth_call must simulate the same delegation a real broadcast of this exact, " +
+                        "correctly-signed authorization would apply, not silently drop it and run against a bare EOA");
+    }
+
+    @Test
+    void selfAuthorization_signedForRealBroadcastNonce_estimateGasShouldChargeDelegatedExecution() {
+        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), simpleStorage, SELF_SPONSORED_NONCE, CHAIN_ID);
+
+        long noDelegation = estimate(plainEoaWithNoCode.getAddress(), SET_VALUE_42, null);
+        long delegated = estimate(plainEoaWithNoCode.getAddress(), SET_VALUE_42, List.of(selfAuth));
+
+        assertTrue(delegated > noDelegation + GasCost.PER_EMPTY_ACCOUNT_COST,
+                "eth_estimateGas must charge for actually executing the delegated setValue(42) (SSTORE), " +
+                        "not just the flat per-authorization intrinsic gas, when the tuple carries the real " +
+                        "broadcast nonce (senderNonce+1); noDelegation=" + noDelegation + " delegated=" + delegated);
+    }
+
+    @Test
+    void selfAuthorization_signedForRealBroadcastNonce_actuallySucceedsWhenBroadcast() {
+        BigInteger senderNonceBeforeBroadcast = BigInteger.ZERO; // plainEOA current nonce
+
+        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), simpleStorage, SELF_SPONSORED_NONCE, CHAIN_ID);
+
+        Transaction type4 = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(CHAIN_ID)
+                .nonce(senderNonceBeforeBroadcast)
+                .gasLimit(BigInteger.valueOf(200_000))
+                .maxPriorityFeePerGas(co.rsk.core.Coin.valueOf(1_000_000_000L))
+                .maxFeePerGas(co.rsk.core.Coin.valueOf(2_000_000_000L))
+                .receiveAddress(plainEoaWithNoCode.getAddress())
+                .data(GET_VALUE)
+                .value(co.rsk.core.Coin.ZERO)
+                .authorizationList(List.of(selfAuth))
+                .build();
+        type4.sign(plainEoaWithNoCode.getEcKey().getPrivKeyBytes());
+
+        Block parent = world.getBlockChain().getBestBlock();
+        Block block = mine(parent, List.of(type4));
+
+        RepositorySnapshot after = world.getRepositoryLocator().snapshotAt(block.getHeader());
+        assertTrue(DelegationCodeResolver.isDelegatedCode(after.getCode(plainEoaWithNoCode.getAddress())),
+                "the exact authorization tuple eth_call/eth_estimateGas silently rejected above " +
+                        "must, and does, apply the delegation when actually broadcast");
     }
 
     @Test
     void selfAuthorization_arbitraryAuthorityAccount_delegationStillApplies() {
         assertEquals("0x", callHex(authorityA.getAddress(), new byte[0], null));
 
-        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, SELF_SPONSORED_NONCE, CHAIN_ID);
 
         String result = callHex(authorityA.getAddress(), new byte[0], List.of(selfAuth));
         assertEquals("0x" + "00".repeat(31) + "2a", result);
@@ -168,18 +218,21 @@ class EthModuleType4CallSimulationTest {
 
     @Test
     void multipleAuthorizations_eachTupleInTheListIsApplied() {
-        SetCodeAuthorization authA = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
-        SetCodeAuthorization authB = Rskip545TestSupport.createSignedAuthorization(authorityB.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
-        List<SetCodeAuthorization> both = List.of(authA, authB);
+        SetCodeAuthorization authASelf = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, SELF_SPONSORED_NONCE, CHAIN_ID);
+        SetCodeAuthorization authBThirdParty = Rskip545TestSupport.createSignedAuthorization(authorityB.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization authAThirdParty = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization authBSelf = Rskip545TestSupport.createSignedAuthorization(authorityB.getEcKey(), const42, SELF_SPONSORED_NONCE, CHAIN_ID);
 
-        assertEquals("0x" + "00".repeat(31) + "2a", callHex(authorityA.getAddress(), new byte[0], both));
-        assertEquals("0x" + "00".repeat(31) + "2a", callHex(authorityB.getAddress(), new byte[0], both));
+        assertEquals("0x" + "00".repeat(31) + "2a", callHex(authorityA.getAddress(), new byte[0], List.of(authASelf, authBThirdParty))); //runs const42
+        assertEquals("0x" + "00".repeat(31) + "2a", callHex(authorityB.getAddress(), new byte[0], List.of(authAThirdParty, authBSelf)));
     }
 
     @Test
     void invalidAuthorizationTuple_isSkipped_validTuplesStillApply() {
-        SetCodeAuthorization valid = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
-        SetCodeAuthorization invalidNonce = Rskip545TestSupport.createSignedAuthorization(authorityB.getEcKey(), const42, BigInteger.ONE, CHAIN_ID);
+        SetCodeAuthorization valid = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, SELF_SPONSORED_NONCE, CHAIN_ID);
+
+        SetCodeAuthorization invalidNonce = Rskip545TestSupport.createSignedAuthorization(authorityB.getEcKey(), const42, BigInteger.TWO, CHAIN_ID);
+
         List<SetCodeAuthorization> list = List.of(valid, invalidNonce);
 
         assertEquals("0x" + "00".repeat(31) + "2a", callHex(authorityA.getAddress(), new byte[0], list));
@@ -191,9 +244,10 @@ class EthModuleType4CallSimulationTest {
         ECKey authorityCKey = new ECKey();
         RskAddress authorityC = new RskAddress(authorityCKey.getAddress());
 
-        SetCodeAuthorization validA = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
-        SetCodeAuthorization validB = Rskip545TestSupport.createSignedAuthorization(authorityB.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
-        SetCodeAuthorization invalidNonce = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), const42, BigInteger.ONE, CHAIN_ID);
+        SetCodeAuthorization validA = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, SELF_SPONSORED_NONCE, CHAIN_ID);
+        SetCodeAuthorization validB = Rskip545TestSupport.createSignedAuthorization(authorityB.getEcKey(), const42, SELF_SPONSORED_NONCE, CHAIN_ID);
+
+        SetCodeAuthorization invalidNonce = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), const42, BigInteger.TWO, CHAIN_ID);
         SetCodeAuthorization wrongChainId = Rskip545TestSupport.createSignedAuthorization(authorityCKey, const42, BigInteger.ZERO, (byte) (CHAIN_ID + 1));
         List<SetCodeAuthorization> mixed = List.of(validA, validB, invalidNonce, wrongChainId);
 
@@ -207,7 +261,7 @@ class EthModuleType4CallSimulationTest {
 
     @Test
     void delegatedRevert_propagatesAsEthCallRevert() {
-        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), reverter, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), reverter, SELF_SPONSORED_NONCE, CHAIN_ID);
 
         CallArgumentsParam params = callArgumentsParam(plainEoaWithNoCode.getAddress(), plainEoaWithNoCode.getAddress(), new byte[0], List.of(auth), null);
         BlockIdentifierParam latest = new BlockIdentifierParam("latest");
@@ -245,7 +299,7 @@ class EthModuleType4CallSimulationTest {
 
     @Test
     void stateChangesFromDelegatedExecution_areDiscardedAfterTheCall() {
-        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), simpleStorage, SELF_SPONSORED_NONCE, CHAIN_ID);
 
         String result = callHex(plainEoaWithNoCode.getAddress(), SET_VALUE_42, List.of(selfAuth));
         assertEquals("0x", result);
@@ -258,7 +312,7 @@ class EthModuleType4CallSimulationTest {
 
     @Test
     void call_type4WithAccessList_executesDelegatedCode() {
-        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, SELF_SPONSORED_NONCE, CHAIN_ID);
 
         List<CallArguments.AccessListEntry> accessList = List.of(accessListEntry(const42));
 
@@ -303,7 +357,7 @@ class EthModuleType4CallSimulationTest {
 
     @Test
     void estimateGas_type4_executesDelegatedCode() {
-        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), simpleStorage, SELF_SPONSORED_NONCE, CHAIN_ID);
 
         long noDelegation = estimate(authorityA.getAddress(), SET_VALUE_42, null);
         long delegated = estimate(authorityA.getAddress(), SET_VALUE_42, List.of(auth));
@@ -314,7 +368,7 @@ class EthModuleType4CallSimulationTest {
 
     @Test
     void estimateGas_type4DelegatedExecutionReverts_propagatesError() {
-        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), reverter, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), reverter, SELF_SPONSORED_NONCE, CHAIN_ID);
         RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> estimate(authorityA.getAddress(), new byte[0], List.of(auth)));
 
         assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("revert"), "expected delegated revert to propagate through eth_estimateGas");
@@ -339,7 +393,7 @@ class EthModuleType4CallSimulationTest {
 
     @Test
     void call_type4_authorizationNonceMismatch_doesNotMutateAuthority() {
-        SetCodeAuthorization invalidNonce = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ONE, CHAIN_ID);
+        SetCodeAuthorization invalidNonce = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.TWO, CHAIN_ID);
 
         RepositorySnapshot before = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
         BigInteger nonceBefore = before.getNonce(authorityA.getAddress());
@@ -364,7 +418,7 @@ class EthModuleType4CallSimulationTest {
         BigInteger nonceBefore = before.getNonce(authority);
         byte[] codeBefore = normalizeCode(before.getCode(authority));
 
-        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, SELF_SPONSORED_NONCE, CHAIN_ID);
 
         String result = callHex(authority, new byte[0], List.of(auth));
         assertEquals("0x" + "00".repeat(31) + "2a", result);
@@ -385,7 +439,7 @@ class EthModuleType4CallSimulationTest {
         BigInteger nonceBefore = before.getNonce(authority);
         byte[] codeBefore = normalizeCode(before.getCode(authority));
 
-        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), simpleStorage, SELF_SPONSORED_NONCE, CHAIN_ID);
 
         long estimated = estimate(authority, SET_VALUE_42, List.of(auth));
         assertTrue(estimated > 0);
@@ -418,7 +472,7 @@ class EthModuleType4CallSimulationTest {
         BigInteger nonceBefore = before.getNonce(authority);
         byte[] codeBefore = normalizeCode(before.getCode(authority));
 
-        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), reverter, BigInteger.ZERO, CHAIN_ID);
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), reverter, SELF_SPONSORED_NONCE, CHAIN_ID);
         CallArgumentsParam params = callArgumentsParam(authority, authority, new byte[0], List.of(auth), null);
 
         RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> eth.call(params, new BlockIdentifierParam("latest")));
