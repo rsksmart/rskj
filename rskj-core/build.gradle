@@ -87,8 +87,8 @@ def runGit(List<String> command) {
 }
 
 // getFilteredFilesForCheckstyle() below is called once per Checkstyle task (main, test,
-// integrationTest, jmh, fuzzTest, file) during configureEach, and again for
-// jmh/integrationTest/fuzzTest in the afterEvaluate block further down -- each call would
+// integrationTest, fuzzTest, file) during configureEach, and again for
+// integrationTest/fuzzTest in the afterEvaluate block further down -- each call would
 // otherwise re-run the 3 git subprocesses above from scratch. The git diff state can't change
 // mid-build, so it's safe to compute this once per build invocation and cache it.
 @Field def ratchetedFilesComputed = false
@@ -183,7 +183,6 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
             'checkstyleMain'           : 'src/main/java',
             'checkstyleTest'           : 'src/test/java',
             'checkstyleIntegrationTest': 'src/integrationTest/java',
-            'checkstyleJmh'            : 'src/jmh/java',
             'checkstyleFuzzTest'       : 'src/fuzzTest/java',
             'checkstyleFile'           : ''
     ]
@@ -197,7 +196,7 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
     task.dependsOn processResources
 }
 
-// jmh/integrationTest/fuzzTest are wired up later in this file (see sourceSets{}/testing{}
+// integrationTest/fuzzTest are wired up later in this file (see sourceSets{}/testing{}
 // below), which resets task.source after the configureEach block above runs. Re-applying the
 // filter in a task.doFirst {} used to "win" that race, but doFirst runs at task EXECUTION
 // time, after Gradle has already snapshotted task.source for its up-to-date check -- so the
@@ -209,9 +208,8 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
 // up-to-date check like any other configuration-time input.
 project.afterEvaluate {
     tasks.withType(Checkstyle).configureEach { Checkstyle task ->
-        if (task.name in ['checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzzTest']) {
-            def relevantSourceDir = task.name == 'checkstyleJmh' ? 'src/jmh/java'
-                    : task.name == 'checkstyleIntegrationTest' ? 'src/integrationTest/java'
+        if (task.name in ['checkstyleIntegrationTest', 'checkstyleFuzzTest']) {
+            def relevantSourceDir = task.name == 'checkstyleIntegrationTest' ? 'src/integrationTest/java'
                     : 'src/fuzzTest/java'
             def checkstyleFiles = getFilteredFilesForCheckstyle(relevantSourceDir)
 
@@ -224,19 +222,7 @@ project.afterEvaluate {
     }
 }
 
-configurations {
-    jmh
-}
-
 sourceSets {
-    jmh {
-        java {
-            srcDirs = ['src/jmh/java']
-        }
-        resources {
-            srcDirs = ['src/jmh/resources']
-        }
-    }
     fuzzTest {
         java {
             srcDirs = ['src/fuzzTest/java']
@@ -394,11 +380,6 @@ ext {
             jazzerJunitVer   : '0.24.0',
     ]
 
-    jmhLibVersions = [
-            jmh  : "1.36",
-            web3j: "4.9.8",
-    ]
-
     testLibs = [
             junitLib       : "org.junit.jupiter:junit-jupiter-engine:${testLibVersions.junitVer}",
             junitParams    : "org.junit.jupiter:junit-jupiter-params:${testLibVersions.junitVer}",
@@ -415,27 +396,11 @@ ext {
 
             jazzerJunit    : "com.code-intelligence:jazzer-junit:${testLibVersions.jazzerJunitVer}",
     ]
-
-    jmhLibs = [
-            jmhCore       : "org.openjdk.jmh:jmh-core:${jmhLibVersions.jmh}",
-            jmhAnnotations: "org.openjdk.jmh:jmh-generator-annprocess:${jmhLibVersions.jmh}",
-            web3jCore     : "org.web3j:core:${jmhLibVersions.web3j}",
-    ]
-
 }
 
 // WARN: consider different setups and sure to not use GPG elements without checksums or without signature file
 // in the remote repository (see https://github.com/gradle/gradle/security/advisories/GHSA-j6wc-xfg8-jx2j)
 dependencies {
-    jmhImplementation project(path: ':rskj-core')
-    jmhImplementation "${jmhLibs.jmhCore}"
-    jmhImplementation "${jmhLibs.web3jCore}"
-    jmhImplementation "${libs.slf4jApiLib}"
-    jmhAnnotationProcessor "${jmhLibs.jmhAnnotations}"
-    jmhRuntimeOnly "${libs.log4jOverSlf4jLib}"
-    jmhRuntimeOnly "${libs.logbackCoreLib}"
-    jmhRuntimeOnly "${libs.logbackClassicLib}"
-
     implementation "${libs.nettyLib}"
     implementation "${libs.spongyCastleLib}"
     implementation "${libs.bouncyCastleLib}"
@@ -622,42 +587,6 @@ task fatJar(type: Jar, dependsOn: jar) {
     with jar
 }
 
-task jmhJar(type: Jar) {
-    from sourceSets.jmh.output
-    archiveClassifier = 'jmh'
-}
-
-task jmh(type: JavaExec) {
-    doLast {
-        mkdir "${buildDir}/reports/jmh"
-    }
-
-    classpath = sourceSets.jmh.runtimeClasspath
-
-    // provide -PjmhArgs="<regular jmh parameters format>", ie: -PjmhArgs="-wi 5 -i 5 -f 1 -p suite=e2e -p host=http://localhost:4444 co.rsk.jmh.web3.BenchmarkWeb3"
-    if (project.hasProperty('jmhArgs')) {
-        mainClass = 'org.openjdk.jmh.Main'
-        args(jmhArgs.split("\\s+"))
-    }
-    // provide predefined Benchmark Runner task and optionally other known parameters, ie: -Pbenchmark=BenchmarkWeb3E2ERunner -Phost=http://localhost:4444 -Pnetwork=regtest
-    else if (project.hasProperty('benchmark')) {
-        mainClass = "co.rsk.jmh.runners.${project.getProperty("benchmark")}"
-
-        def customArgs = []
-
-        if (project.hasProperty('host')) {
-            customArgs << "-p" << "host=${project.getProperty("host")}"
-        }
-
-        if (project.hasProperty('config')) {
-            customArgs << "-p" << "config=${project.getProperty("config")}"
-        }
-
-        args(customArgs)
-    }
-
-}
-
 tasks.withType(Tar) {
     compression = Compression.GZIP
     archiveExtension.set('tar.gz')
@@ -710,7 +639,7 @@ static def amendPathIfNeeded(details) {
 task checkstyleAll {
     group = 'Verification'
     description = 'Run all Checkstyle checks'
-    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzzTest'
+    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleIntegrationTest', 'checkstyleFuzzTest'
 }
 
 task checkstyleFile(type: Checkstyle) {
