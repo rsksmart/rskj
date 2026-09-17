@@ -303,4 +303,13 @@ class UtxoUtilsTest {
         assertArrayEquals(expectedEncodedOutputIndexes, encodedOutputIndexes);
     }
 
+
+    @Test
+    void decodeOutputIndexes_withNull_shouldReturnEmptyList() {
+        // act
+        List<Long> outputIndexes = UtxoUtils.decodeOutputIndexes(null);
+
+        // assert
+        assertEquals(List.of(), outputIndexes);
+    }
 }

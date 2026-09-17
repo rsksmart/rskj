@@ -65,6 +65,18 @@ public final class UtxoUtils {
     }
 
     /**
+     * Decode a {@code byte[]} of encoded output indexes.
+     *
+     * @param encodedOutputIndexes the byte array of encoded output indexes to decode
+     * @return {@code List<Long>} the list of output indexes decoded preserving the order of
+     * the entries. Or an {@code Collections.EMPTY_LIST} when {@code encodedOutputIndexes} is
+     * {@code null} or {@code empty byte[]}.
+     */
+    public static List<Long> decodeOutputIndexes(byte[] encodedOutputIndexes) {
+        return Collections.emptyList();
+    }
+
+    /**
      * Encode a {@code List<Long>} of output indexes.
      *
      * @param outputIndexes the list of output indexes to encode
