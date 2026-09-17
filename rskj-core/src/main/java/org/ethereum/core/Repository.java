@@ -40,7 +40,7 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
      * To create a contract, internally the account node is extended with a root node
      * for storage. To avoid creating the root node for storage each time a storage cell
      * is added, we pre-create the storage node when we know the account will become a
-     * contract. This is done in setupContract().
+     * contract. This is done in initializeStorage().
      * Note that we can't use the length or existence of the code node for this,
      * because a contract's code can be empty!
      *

@@ -154,7 +154,7 @@ class NetworkStateExporterTest {
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
 
-        repository.initializeStorage(addr1); // necessary for isContract() to return true.
+        repository.initializeStorage(addr1); // necessary for hasInitializedStorage() to return true.
         repository.saveCode(addr1, new byte[]{1, 2, 3, 4});
         repository.addStorageRow(addr1, DataWord.ZERO, DataWord.ONE);
         repository.addStorageBytes(addr1, DataWord.ONE, new byte[]{5, 6, 7, 8});
@@ -194,7 +194,7 @@ class NetworkStateExporterTest {
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
 
-        repository.initializeStorage(addr1); // necessary for isContract() to return true.
+        repository.initializeStorage(addr1); // necessary for hasInitializedStorage() to return true.
         repository.saveCode(addr1, new byte[]{1, 2, 3, 4});
         repository.addStorageRow(addr1, DataWord.ZERO, DataWord.ONE);
         repository.addStorageBytes(addr1, DataWord.ONE, new byte[]{5, 6, 7, 8});
