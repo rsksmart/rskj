@@ -279,4 +279,13 @@ class UtxoUtilsTest {
         // assert
         assertArrayEquals(EMPTY_BYTE_ARRAY, encodedOutputIndexes);
     }
+
+    @Test
+    void encodeOutputIndexes_withEmptyList_shouldReturnEmptyArray() {
+        // act
+        byte[] encodedOutputIndexes = UtxoUtils.encodeOutputIndexes(List.of());
+
+        // assert
+        assertArrayEquals(EMPTY_BYTE_ARRAY, encodedOutputIndexes);
+    }
 }
