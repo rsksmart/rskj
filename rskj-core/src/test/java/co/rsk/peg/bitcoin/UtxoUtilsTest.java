@@ -312,4 +312,13 @@ class UtxoUtilsTest {
         // assert
         assertEquals(List.of(), outputIndexes);
     }
+
+    @Test
+    void decodeOutputIndexes_withEmptyArray_shouldReturnEmptyList() {
+        // act
+        List<Long> outputIndexes = UtxoUtils.decodeOutputIndexes(EMPTY_BYTE_ARRAY);
+
+        // assert
+        assertEquals(List.of(), outputIndexes);
+    }
 }
