@@ -20,15 +20,15 @@ public final class UtxoUtils {
      * Decode a {@code byte[]} of encoded outpoint values.
      *
      * @param encodedOutpointValues the byte array of encoded outpoint values to decode
-     * @return {@code List<Coin>} the list of outpoint values decoded preserving
-     * the order of the entries. Or an {@code Collections.EMPTY_LIST} when {@code encodedOutpointValues} is
-     * {@code null} or {@code empty byte[]}.
+     * @return {@code List<Coin>} an unmodifiable list of the outpoint's values decoded,
+     * preserving the order of the entries. Empty when {@code encodedOutpointValues}
+     * is {@code null} or an {@code empty byte[]}.
      */
     public static List<Coin> decodeOutpointValues(byte[] encodedOutpointValues) {
         try {
             return VarIntUtils.decode(encodedOutpointValues).stream()
                 .map(Coin::valueOf)
-                .collect(Collectors.toList());
+                .toList();
         } catch (VarIntException ex) {
             throw new InvalidOutpointValueException(ex.getMessage(), ex);
         }
