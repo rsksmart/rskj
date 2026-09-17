@@ -187,8 +187,41 @@ class VarIntUtilsTest {
     void decode_withValueAboveMaximumLong_shouldThrowVarIntException() {
         // arrange
         // 2^63, one above Long.MAX_VALUE. A VarInt encodes an unsigned integer, but it is
-        // read back into a signed long, so this value wraps around to Long.MIN_VALUE
+        // read back into a signed long, so this value wraps around to Long.MIN_VALUE. The
+        // same bytes are what encoding Long.MIN_VALUE produces
         byte[] encodedValues = Hex.decode("FF0000000000000080");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void decode_withEncodedNegativeValues_shouldThrowVarIntException() {
+        // arrange
+        // -100, -200 and -300 encoded as VarInts: a negative value always takes the nine
+        // byte form, and reads back as the same negative value
+        byte[] encodedValues = Hex.decode("FF9CFFFFFFFFFFFFFFFF38FFFFFFFFFFFFFFFFD4FEFFFFFFFFFFFF");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void decode_withEncodedNegativeValueAfterValidValues_shouldThrowVarIntException() {
+        // arrange
+        // 100, 200 and 300, followed by -400 encoded as a VarInt
+        byte[] encodedValues = Hex.decode("64C8FD2C01FF70FEFFFFFFFFFFFF");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void decode_withTruncatedVarIntAfterValidValues_shouldThrowVarIntException() {
+        // arrange
+        // 252 (FC), 145 (91), 69 (45), 220 (DC), 0 (00) and 250 (FA), followed by an FF
+        // announcing an eight byte value when only two bytes remain
+        byte[] encodedValues = Hex.decode("FC9145DC00FAFF00FE");
 
         // act & assert
         assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
@@ -198,7 +231,7 @@ class VarIntUtilsTest {
     void decode_withMaximumUnsignedValue_shouldThrowVarIntException() {
         // arrange
         // eight bytes of ones is 2^64 - 1, the largest value a VarInt can encode, which read
-        // back into a signed long is -1
+        // back into a signed long is -1. The same bytes are what encoding -1 produces
         byte[] encodedValues = Hex.decode("FFFFFFFFFFFFFFFFFF");
 
         // act & assert
