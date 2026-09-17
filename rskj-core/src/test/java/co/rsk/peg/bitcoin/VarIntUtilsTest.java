@@ -136,4 +136,13 @@ class VarIntUtilsTest {
         // act & assert
         assertThrows(VarIntException.class, () -> VarIntUtils.encode(values));
     }
+
+    @Test
+    void encode_withNegativeValue_shouldThrowVarIntException() {
+        // arrange
+        List<Long> values = List.of(-1L);
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.encode(values));
+    }
 }

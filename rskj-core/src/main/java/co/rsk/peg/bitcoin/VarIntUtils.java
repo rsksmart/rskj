@@ -33,9 +33,9 @@ public final class VarIntUtils {
     }
 
     private static void validateValue(Long value) {
-        if (value == null) {
+        if (value == null || value < 0) {
             throw new VarIntException(String.format(
-                "Invalid value: %s. Null values are not allowed.", value));
+                "Invalid value: %s. Negative and null values are not allowed.", value));
         }
     }
 }
