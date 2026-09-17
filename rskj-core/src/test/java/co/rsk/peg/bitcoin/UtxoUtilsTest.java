@@ -335,4 +335,13 @@ class UtxoUtilsTest {
         List<Long> expectedOutputIndexes = List.of(0L, 252L, 10_000L);
         assertEquals(expectedOutputIndexes, outputIndexes);
     }
+
+    @Test
+    void encodeOutputIndexes_withNegativeOutputIndex_shouldThrowInvalidOutputIndexException() {
+        // arrange
+        List<Long> outputIndexes = List.of(-1L);
+
+        // act & assert
+        assertThrows(InvalidOutputIndexException.class, () -> UtxoUtils.encodeOutputIndexes(outputIndexes));
+    }
 }

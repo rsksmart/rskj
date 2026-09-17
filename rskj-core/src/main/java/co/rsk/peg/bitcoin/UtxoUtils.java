@@ -73,7 +73,11 @@ public final class UtxoUtils {
      * {@code null} or {@code empty byte[]}.
      */
     public static List<Long> decodeOutputIndexes(byte[] encodedOutputIndexes) {
-        return List.copyOf(VarIntUtils.decode(encodedOutputIndexes));
+        try {
+            return List.copyOf(VarIntUtils.decode(encodedOutputIndexes));
+        } catch (VarIntException ex) {
+            throw new InvalidOutputIndexException(ex.getMessage(), ex);
+        }
     }
 
     /**
@@ -89,7 +93,11 @@ public final class UtxoUtils {
             return EMPTY_BYTE_ARRAY;
         }
 
-        return VarIntUtils.encode(outputIndexes);
+        try {
+            return VarIntUtils.encode(outputIndexes);
+        } catch (VarIntException ex) {
+            throw new InvalidOutputIndexException(ex.getMessage(), ex);
+        }
     }
 
     public static List<Coin> extractOutpointValues(BtcTransaction generatedTransaction) {
