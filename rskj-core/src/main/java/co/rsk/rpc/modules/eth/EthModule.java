@@ -32,6 +32,7 @@ import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
@@ -170,14 +171,9 @@ public class EthModule
 
         String hReturn = null;
         try {
-            ProgramResult programResult;
-            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(callArgs);
-            ReversibleTransactionExecutor.ReversibleTransactionParams params = buildParams(hexArgs, hexArgs.gasLimitForCall(this.gasCallCap), this.chainId);
-            if (mutableRepository != null) {
-                programResult = reversibleTransactionExecutor.executeTransactionOnSnapshot(mutableRepository, block, block.getCoinbase(), overrideablePrecompiledContracts, params);
-            } else {
-                programResult = reversibleTransactionExecutor.executeTransactionAtBlock(block, block.getCoinbase(), params);
-            }
+            ProgramResult programResult = mutableRepository != null
+                    ? callConstant(callArgs, block, mutableRepository, overrideablePrecompiledContracts)
+                    : callConstant(callArgs, block);
             handleTransactionRevertIfHappens(programResult);
             hReturn = HexUtils.toUnformattedJsonHex(programResult.getHReturn());
             return hReturn;
@@ -186,6 +182,20 @@ public class EthModule
         } finally {
             LOGGER.debug("eth_call(): {}", hReturn);
         }
+    }
+
+    @VisibleForTesting
+    public ProgramResult callConstant(CallArguments args, Block executionBlock) {
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = buildParams(hexArgs, hexArgs.gasLimitForCall(this.gasCallCap), this.chainId);
+        return reversibleTransactionExecutor.executeTransactionAtBlock(executionBlock, executionBlock.getCoinbase(), params);
+    }
+
+    public ProgramResult callConstant(CallArguments args, Block executionBlock,
+                                       MutableRepository snapshot, OverrideablePrecompiledContracts precompiledContracts) {
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = buildParams(hexArgs, hexArgs.gasLimitForCall(this.gasCallCap), this.chainId);
+        return reversibleTransactionExecutor.executeTransactionOnSnapshot(snapshot, executionBlock, executionBlock.getCoinbase(), precompiledContracts, params);
     }
 
     private void validateStateOverrideAllowance(boolean shouldPerformStateOverride) {
@@ -360,7 +370,7 @@ public class EthModule
         }
     }
 
-    public static ReversibleTransactionExecutor.ReversibleTransactionParams buildParams(CallArgumentsToByteArray hexArgs, byte[] gasLimit, byte defaultChainId) {
+    private static ReversibleTransactionExecutor.ReversibleTransactionParams buildParams(CallArgumentsToByteArray hexArgs, byte[] gasLimit, byte defaultChainId) {
         TransactionType type = hexArgs.resolveType();
         return new ReversibleTransactionExecutor.ReversibleTransactionParams(
                 hexArgs.getGasPrice(),
