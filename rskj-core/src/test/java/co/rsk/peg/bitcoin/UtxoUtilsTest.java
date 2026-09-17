@@ -117,6 +117,23 @@ class UtxoUtilsTest {
         assertArrayEquals(expectedEncodedValues, outpointValues);
     }
 
+    @Test
+    void encodeOutpointValues_whenListContainsNullValue_shouldThrowInvalidOutpointValueException() {
+        // arrange
+        List<Coin> outpointValues = Arrays.asList(Coin.valueOf(100), null, Coin.valueOf(300));
+
+        // act
+        InvalidOutpointValueException invalidOutpointValueException = assertThrows(
+            InvalidOutpointValueException.class,
+            () -> UtxoUtils.encodeOutpointValues(outpointValues));
+        String actualMessage = invalidOutpointValueException.getMessage();
+
+        // assert
+        String expectedMessage =
+            "Invalid outpoint value: null. Negative and null values are not allowed.";
+        assertEquals(expectedMessage, actualMessage);
+    }
+
     @ParameterizedTest
     @MethodSource("invalidOutpointValues")
     void encodeOutpointValues_invalidOutpointValues_shouldThrowInvalidOutpointValueException(

@@ -45,26 +45,17 @@ public final class UtxoUtils {
      * {@code empty}.
      */
     public static byte[] encodeOutpointValues(List<Coin> outpointValues) {
-        if (outpointValues == null || outpointValues.isEmpty()) {
+        if (outpointValues == null) {
             return new byte[]{};
         }
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        List<Long> values = new ArrayList<>(outpointValues.size());
         for (Coin outpointValue : outpointValues) {
             validateOutpointValue(outpointValue);
-            VarInt varIntOutpointValue = new VarInt(outpointValue.getValue());
-            try {
-                outputStream.write(varIntOutpointValue.encode());
-            } catch (IOException ex) {
-                throw new InvalidOutpointValueException(
-                    String.format("I/O exception for value: %s",
-                        outpointValue
-                    ),
-                    ex
-                );
-            }
+            values.add(outpointValue.getValue());
         }
-        return outputStream.toByteArray();
+
+        return VarIntUtils.encode(values);
     }
 
     private static void validateOutpointValue(Coin outpointValue) {
