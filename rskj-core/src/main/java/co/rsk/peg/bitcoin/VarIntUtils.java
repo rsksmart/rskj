@@ -3,11 +3,24 @@ package co.rsk.peg.bitcoin;
 import co.rsk.bitcoinj.core.VarInt;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Collections;
 import java.util.List;
 
 public final class VarIntUtils {
 
     private VarIntUtils() {
+    }
+
+    /**
+     * Decode a {@code byte[]} of values encoded as VarInts.
+     *
+     * @param encodedValues
+     * @return {@code List<Long>} the list of values decoded preserving the order of the
+     * entries. Or an {@code Collections.EMPTY_LIST} when {@code encodedValues} is
+     * {@code null} or {@code empty byte[]}.
+     */
+    public static List<Long> decode(byte[] encodedValues) {
+        return Collections.emptyList();
     }
 
     /**

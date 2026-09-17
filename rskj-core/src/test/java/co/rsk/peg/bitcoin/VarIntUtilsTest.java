@@ -1,13 +1,13 @@
 package co.rsk.peg.bitcoin;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.spongycastle.util.encoders.Hex;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class VarIntUtilsTest {
 
@@ -163,5 +163,15 @@ class VarIntUtilsTest {
 
         // act & assert
         assertThrows(VarIntException.class, () -> VarIntUtils.encode(values));
+    }
+
+    @Test
+    void decode_withNull_shouldReturnEmptyList() {
+        // act
+        List<Long> values = VarIntUtils.decode(null);
+
+        // assert
+        List<Long> expectedValues = List.of();
+        assertArrayEquals(expectedValues.toArray(), values.toArray());
     }
 }
