@@ -1,5 +1,8 @@
 package co.rsk.peg.bitcoin;
 
+import co.rsk.bitcoinj.core.VarInt;
+
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 
 public final class VarIntUtils {
@@ -16,6 +19,15 @@ public final class VarIntUtils {
      * {@code empty}.
      */
     public static byte[] encode(List<Long> values) {
-        return new byte[]{};
+        if (values == null || values.isEmpty()) {
+            return new byte[]{};
+        }
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        for (Long value : values) {
+            VarInt valueAsVarInt = new VarInt(value);
+            outputStream.writeBytes(valueAsVarInt.encode());
+        }
+        return outputStream.toByteArray();
     }
 }
