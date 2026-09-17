@@ -29,7 +29,6 @@ import co.rsk.rpc.modules.eth.*;
 import co.rsk.test.World;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.Blockchain;
