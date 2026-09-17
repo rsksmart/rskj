@@ -19,6 +19,7 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
@@ -33,6 +34,7 @@ import org.ethereum.core.ImportResult;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
+import org.ethereum.config.Constants;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AccessListCodec;
@@ -484,6 +486,74 @@ class EthModuleType4CallSimulationTest {
                 () -> assertEquals(nonceBefore, after.getNonce(authority), "reverted eth_call must not persist authority nonce"),
                 () -> assertArrayEquals(codeBefore, normalizeCode(after.getCode(authority)), "reverted eth_call must not persist delegation code")
         );
+    }
+
+    @Test
+    void call_type4BeforeRskip545Activation_isRejectedNotSilentlyExecuted() {
+        EthModule ethBeforeActivation = buildEthModuleWithRskip545Inactive();
+        SetCodeAuthorization unrelatedAuth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
+        CallArgumentsParam params = callArgumentsParam(plainEoaWithNoCode.getAddress(), const42, new byte[0], List.of(unrelatedAuth), null);
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethBeforeActivation.call(params, latest));
+        assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not supported before its activation"), "expected a not-yet-active error, got: " + ex.getMessage());
+    }
+
+    @Test
+    void estimateGas_type4BeforeRskip545Activation_isRejectedNotSilentlyEstimated() {
+        EthModule ethBeforeActivation = buildEthModuleWithRskip545Inactive();
+
+        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), simpleStorage, SELF_SPONSORED_NONCE, CHAIN_ID);
+        CallArgumentsParam params = callArgumentsParam(authorityA.getAddress(), authorityA.getAddress(), SET_VALUE_42, List.of(selfAuth), null);
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethBeforeActivation.estimateGas(params, latest));
+        assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not supported before its activation"),
+                "expected a not-yet-active error, got: " + ex.getMessage());
+    }
+
+    private EthModule buildEthModuleWithRskip545Inactive() {
+        TestSystemProperties rskip545NotYetActive = new TestSystemProperties(rawConfig -> rawConfig.withValue("blockchain.config.consensusRules.rskip545", ConfigValueFactory.fromAnyRef(1_000_000)));
+        TransactionExecutorFactory executorFactory = EthModuleTestUtils.buildCustomExecutorFactory(world, rskip545NotYetActive, null, null, null);
+        return EthModuleTestUtils.buildCustomEthModule(world, executorFactory, rskip545NotYetActive);
+    }
+
+    @Test
+    void estimateGas_contractCreationInitCodeTooLarge_isRejectedNotSilentlyExecuted() {
+        byte[] oversizedInitCode = new byte[(int) Constants.getMaxInitCodeSize() + 1];
+        System.arraycopy(CONST42_INIT, 0, oversizedInitCode, 0, CONST42_INIT.length);
+
+        CallArguments args = new CallArguments();
+        args.setFrom(authorityA.getAddress().toJsonString());
+        args.setGas("0x5B8D80");
+        args.setData("0x" + Hex.toHexString(oversizedInitCode));
+        CallArgumentsParam params = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethGas.estimateGas(params, latest));
+        assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("initcode size"), "expected an init-code-size error, got: " + ex.getMessage());
+    }
+
+    @Test
+    void call_type4WithContractAsSender_isRejectedNotSilentlyExecuted() {
+        // const42 is a real, deployed contract - an invalid `from` for a Type 4 tx per RSKIP-545
+        // (the sender must be an EOA, or an EOA already delegated).
+        SetCodeAuthorization someAuth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
+        CallArgumentsParam params = callArgumentsParam(const42, const42, new byte[0], List.of(someAuth), null);
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> eth.call(params, latest));
+        assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("must be an eoa"), "expected an invalid-sender error, got: " + ex.getMessage());
+    }
+
+    @Test
+    void estimateGas_type4WithContractAsSender_isRejectedNotSilentlyEstimated() {
+        SetCodeAuthorization someAuth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
+        CallArgumentsParam params = callArgumentsParam(const42, const42, new byte[0], List.of(someAuth), null);
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethGas.estimateGas(params, latest));
+        assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("must be an eoa"), "expected an invalid-sender error, got: " + ex.getMessage());
     }
 
     private static byte[] normalizeCode(byte[] code) {

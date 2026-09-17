@@ -18,6 +18,7 @@
  */
 package co.rsk.core;
 
+import co.rsk.core.exception.TransactionExecutionRejectedException;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import org.ethereum.core.Block;
@@ -104,7 +105,9 @@ public class ReversibleTransactionExecutor {
                 .newInstance(tx, 0, coinbase, track, executionBlock, 0, precompiledContracts)
                 .setLocalCall(true);
 
-        executor.executeTransaction();
+        if (!executor.executeTransaction()) {
+            throw new TransactionExecutionRejectedException(executor.getExecutionError());
+        }
 
         return executor;
     }

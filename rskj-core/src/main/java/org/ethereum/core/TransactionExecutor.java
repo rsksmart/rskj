@@ -167,10 +167,6 @@ public class TransactionExecutor {
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
-        if (localCall) {
-            return true;
-        }
-
         if (tx.isTypedTransactionNotAllowed(activations)) {
             logger.warn("Transaction type {} is not supported before its activation, tx {}", tx.getTypePrefix(), tx.getHash());
             execError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
@@ -183,6 +179,8 @@ public class TransactionExecutor {
                 return false;
             }
             if (!isSenderCodeValid()) {
+                logger.warn("Transaction type {} sender has non-delegated code, tx {}", tx.getTypePrefix(), tx.getHash());
+                execError("transaction type " + tx.getTypePrefix() + " sender must be an EOA or an already-delegated account");
                 return false;
             }
 
@@ -194,6 +192,11 @@ public class TransactionExecutor {
                 return false;
             }
         }
+
+        if (localCall) {
+            return true;
+        }
+
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
         long gasLimit = (activations.isActive(RSKIP351) && activations.isActive(RSKIP144)) ? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
@@ -782,6 +785,10 @@ public class TransactionExecutor {
 
     public ProgramResult getResult() {
         return result;
+    }
+
+    public String getExecutionError() {
+        return executionError;
     }
 
     public long getGasConsumed() {

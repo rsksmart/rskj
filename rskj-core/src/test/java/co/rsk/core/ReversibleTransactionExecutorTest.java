@@ -458,6 +458,7 @@ class ReversibleTransactionExecutorTest {
         )).thenReturn(transactionExecutor);
 
         when(transactionExecutor.setLocalCall(true)).thenReturn(transactionExecutor);
+        when(transactionExecutor.executeTransaction()).thenReturn(true);
 
         ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(
                         mock(co.rsk.db.RepositoryLocator.class),
