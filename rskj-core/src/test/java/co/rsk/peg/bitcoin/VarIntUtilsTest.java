@@ -1,6 +1,7 @@
 package co.rsk.peg.bitcoin;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
 import java.util.List;
@@ -125,5 +126,14 @@ class VarIntUtilsTest {
         byte[] expectedEncodedValues =
             Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES.repeat(LARGE_LIST_SIZE));
         assertArrayEquals(expectedEncodedValues, encodedValues);
+    }
+
+    @Test
+    void encode_withNullValue_shouldThrowVarIntException() {
+        // arrange
+        List<Long> values = Collections.singletonList(null);
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.encode(values));
     }
 }

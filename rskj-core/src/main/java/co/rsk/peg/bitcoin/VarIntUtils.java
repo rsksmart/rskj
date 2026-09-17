@@ -25,9 +25,17 @@ public final class VarIntUtils {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         for (Long value : values) {
+            validateValue(value);
             VarInt valueAsVarInt = new VarInt(value);
             outputStream.writeBytes(valueAsVarInt.encode());
         }
         return outputStream.toByteArray();
+    }
+
+    private static void validateValue(Long value) {
+        if (value == null) {
+            throw new VarIntException(String.format(
+                "Invalid value: %s. Null values are not allowed.", value));
+        }
     }
 }
