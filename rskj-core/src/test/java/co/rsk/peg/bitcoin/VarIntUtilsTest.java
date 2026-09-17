@@ -260,4 +260,19 @@ class VarIntUtilsTest {
         List<Long> expectedValues = List.of(5L, 5L, 0L, 0L);
         assertEquals(expectedValues, values);
     }
+
+    @Test
+    void decode_withEncodedNegativeValueBeforeTruncatedVarInt_shouldThrowForTheValue() {
+        // arrange
+        // -1 encoded as a VarInt, followed by an FE announcing a four byte value when only
+        // one byte remains. Values are validated as they are read, so the negative value is
+        // rejected before the truncated VarInt is ever reached.
+        // Both failures throw a VarIntException, so they are told apart by their cause: a
+        // value rejected by validation has none, while a truncated VarInt wraps the
+        // ArrayIndexOutOfBoundsException that reading it raises
+        byte[] encodedValues = Hex.decode("FFFFFFFFFFFFFFFFFFFE01");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
 }
