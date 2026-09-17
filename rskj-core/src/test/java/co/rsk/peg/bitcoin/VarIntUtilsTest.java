@@ -6,6 +6,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.spongycastle.util.encoders.Hex;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,8 +25,7 @@ class VarIntUtilsTest {
         byte[] encodedValues = VarIntUtils.encode(null);
 
         // assert
-        byte[] expectedEncodedValues = new byte[]{};
-        assertArrayEquals(expectedEncodedValues, encodedValues);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, encodedValues);
     }
 
     @Test
@@ -34,8 +34,7 @@ class VarIntUtilsTest {
         byte[] encodedValues = VarIntUtils.encode(List.of());
 
         // assert
-        byte[] expectedEncodedValues = new byte[]{};
-        assertArrayEquals(expectedEncodedValues, encodedValues);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, encodedValues);
     }
 
     @Test
@@ -166,7 +165,7 @@ class VarIntUtilsTest {
     @Test
     void decode_withEmptyArray_shouldReturnEmptyList() {
         // act
-        List<Long> values = VarIntUtils.decode(new byte[]{});
+        List<Long> values = VarIntUtils.decode(EMPTY_BYTE_ARRAY);
 
         // assert
         List<Long> expectedValues = List.of();

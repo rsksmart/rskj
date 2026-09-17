@@ -3,15 +3,13 @@ package co.rsk.peg.bitcoin;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.VarInt;
-import co.rsk.core.types.bytes.Bytes;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public final class UtxoUtils {
 
@@ -21,7 +19,7 @@ public final class UtxoUtils {
     /**
      * Decode a {@code byte[]} of encoded outpoint values.
      *
-     * @param encodedOutpointValues
+     * @param encodedOutpointValues the byte array of encoded outpoint values to decode
      * @return {@code List<Coin>} the list of outpoint values decoded preserving
      * the order of the entries. Or an {@code Collections.EMPTY_LIST} when {@code encodedOutpointValues} is
      * {@code null} or {@code empty byte[]}.
@@ -37,16 +35,16 @@ public final class UtxoUtils {
     }
 
     /**
-     * Encode a {@code List<Coin} of outpoint values.
+     * Encode a {@code List<Coin>} of outpoint values.
      *
-     * @param outpointValues
+     * @param outpointValues the list of outpoint values to encode
      * @return {@code byte[]} the list of outpoint values encoded preserving the order of the
      * entries. Or an {@code empty byte[]} when {@code outpointValues} is {@code null} or
      * {@code empty}.
      */
     public static byte[] encodeOutpointValues(List<Coin> outpointValues) {
         if (outpointValues == null) {
-            return new byte[]{};
+            return EMPTY_BYTE_ARRAY;
         }
 
         List<Long> values = new ArrayList<>(outpointValues.size());

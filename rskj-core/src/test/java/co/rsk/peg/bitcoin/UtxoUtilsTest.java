@@ -1,6 +1,7 @@
 package co.rsk.peg.bitcoin;
 
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.coinListOf;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -72,7 +73,7 @@ class UtxoUtilsTest {
             bigListOfOutpointValues
         ));
 
-        arguments.add(Arguments.of(new byte[]{}, Collections.EMPTY_LIST));
+        arguments.add(Arguments.of(EMPTY_BYTE_ARRAY, Collections.EMPTY_LIST));
 
         return arguments.stream();
     }
@@ -113,7 +114,7 @@ class UtxoUtilsTest {
         byte[] outpointValues = UtxoUtils.encodeOutpointValues(null);
 
         // assert
-        byte[] expectedEncodedValues = new byte[]{};
+        byte[] expectedEncodedValues = EMPTY_BYTE_ARRAY;
         assertArrayEquals(expectedEncodedValues, outpointValues);
     }
 
@@ -208,7 +209,7 @@ class UtxoUtilsTest {
         fundingTransaction.addInput(
             BitcoinTestUtils.createHash(1),
             FIRST_OUTPUT_INDEX,
-            new Script(new byte[]{})
+            new Script(EMPTY_BYTE_ARRAY)
         );
         fundingTransaction.addOutput(amountToSend, TEST_ERP_FEDERATION.getAddress());
 
@@ -258,7 +259,7 @@ class UtxoUtilsTest {
             fundingTransaction.addInput(
                 BitcoinTestUtils.createHash(i),
                 FIRST_OUTPUT_INDEX,
-                new Script(new byte[]{})
+                new Script(EMPTY_BYTE_ARRAY)
             );
             fundingTransaction.addOutput(amountToSend, TEST_ERP_FEDERATION.getAddress());
             pegout.addInput(fundingTransaction.getOutput(FIRST_OUTPUT_INDEX));
@@ -266,8 +267,7 @@ class UtxoUtilsTest {
         List<Coin> actualOutpointValues = UtxoUtils.extractOutpointValues(pegout);
 
         // assert
-        List<Coin> expectedOutpointValues = Stream.generate(() -> amountToSend).limit(1000)
-            .collect(Collectors.toList());
+        List<Coin> expectedOutpointValues = Stream.generate(() -> amountToSend).limit(1000).toList();
         assertArrayEquals(expectedOutpointValues.toArray(), actualOutpointValues.toArray());
     }
 }

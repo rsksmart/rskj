@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 public final class VarIntUtils {
 
     private VarIntUtils() {
@@ -16,7 +18,7 @@ public final class VarIntUtils {
     /**
      * Decode a {@code byte[]} of values encoded as VarInts.
      *
-     * @param encodedValues
+     * @param encodedValues the byte array of encoded values to decode
      * @return {@code List<Long>} the list of values decoded preserving the order of the
      * entries. Or an {@code Collections.EMPTY_LIST} when {@code encodedValues} is
      * {@code null} or {@code empty byte[]}.
@@ -52,14 +54,14 @@ public final class VarIntUtils {
     /**
      * Encode a {@code List<Long>} of values.
      *
-     * @param values
+     * @param values the list of values to encode
      * @return {@code byte[]} the list of values encoded as VarInts preserving the order of
      * the entries. Or an {@code empty byte[]} when {@code values} is {@code null} or
      * {@code empty}.
      */
     public static byte[] encode(List<Long> values) {
         if (values == null || values.isEmpty()) {
-            return new byte[]{};
+            return EMPTY_BYTE_ARRAY;
         }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
