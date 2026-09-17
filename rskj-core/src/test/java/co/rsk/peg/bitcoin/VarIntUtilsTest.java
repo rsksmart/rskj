@@ -3,6 +3,7 @@ package co.rsk.peg.bitcoin;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -141,6 +142,24 @@ class VarIntUtilsTest {
     void encode_withNegativeValue_shouldThrowVarIntException() {
         // arrange
         List<Long> values = List.of(-1L);
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.encode(values));
+    }
+
+    @Test
+    void encode_withNegativeValueAfterValidValues_shouldThrowVarIntException() {
+        // arrange
+        List<Long> values = List.of(0L, 1L, -1L);
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.encode(values));
+    }
+
+    @Test
+    void encode_withNullValueAfterValidValues_shouldThrowVarIntException() {
+        // arrange
+        List<Long> values = Arrays.asList(0L, 1L, null);
 
         // act & assert
         assertThrows(VarIntException.class, () -> VarIntUtils.encode(values));
