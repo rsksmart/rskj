@@ -321,4 +321,18 @@ class UtxoUtilsTest {
         // assert
         assertEquals(List.of(), outputIndexes);
     }
+
+    @Test
+    void decodeOutputIndexes_withDifferentEncodedOutputIndexes_shouldReturnOutputIndexesPreservingOrder() {
+        // arrange
+        // 00 = 0, FC = 252, FD1027 = 10_000
+        byte[] encodedOutputIndexes = Hex.decode("00FCFD1027");
+
+        // act
+        List<Long> outputIndexes = UtxoUtils.decodeOutputIndexes(encodedOutputIndexes);
+
+        // assert
+        List<Long> expectedOutputIndexes = List.of(0L, 252L, 10_000L);
+        assertEquals(expectedOutputIndexes, outputIndexes);
+    }
 }

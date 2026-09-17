@@ -73,7 +73,7 @@ public final class UtxoUtils {
      * {@code null} or {@code empty byte[]}.
      */
     public static List<Long> decodeOutputIndexes(byte[] encodedOutputIndexes) {
-        return Collections.emptyList();
+        return List.copyOf(VarIntUtils.decode(encodedOutputIndexes));
     }
 
     /**
