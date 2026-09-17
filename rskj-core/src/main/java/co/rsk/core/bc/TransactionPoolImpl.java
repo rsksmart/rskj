@@ -264,16 +264,18 @@ public class TransactionPoolImpl implements TransactionPool {
         }
         PendingState pendingState = getPendingState(currentRepository);
 
-        Optional<TransactionPoolAddResult> delegatedAccountResult = rejectIfDelegatedAccountCannotBeAccepted(tx, tx.getSender(signatureCache), currentRepository, pendingState);
+        Keccak256 hash = tx.getHash();
+        logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+
+        Optional<Transaction> replacedTx = pendingTransactions.getTransactionsWithSender(tx.getSender(signatureCache)).stream().filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger())).findFirst();
+
+        Optional<TransactionPoolAddResult> delegatedAccountResult = rejectIfDelegatedAccountCannotBeAccepted
+                (tx, tx.getSender(signatureCache), currentRepository, pendingState, replacedTx.isPresent());
 
         if (delegatedAccountResult.isPresent()) {
             return delegatedAccountResult.get();
         }
 
-        Keccak256 hash = tx.getHash();
-        logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
-
-        Optional<Transaction> replacedTx = pendingTransactions.getTransactionsWithSender(tx.getSender(signatureCache)).stream().filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger())).findFirst();
         if (replacedTx.isPresent() && !isBumpingGasPriceForSameNonceTx(tx, replacedTx.get())) {
             return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
         }
@@ -533,11 +535,19 @@ public class TransactionPoolImpl implements TransactionPool {
             Transaction tx,
             RskAddress sender,
             RepositorySnapshot repository,
-            PendingState pendingState
+            PendingState pendingState,
+            boolean isSameNonceReplacement
     ) {
         byte[] code = repository.getCode(sender);
 
         if (!DelegationCodeResolver.isDelegatedCode(code)) {
+            return Optional.empty();
+        }
+
+        // EIP-7702 delegated accounts are intentionally limited to one transaction
+        // in the pool. Same-nonce replacements are allowed to preserve the normal
+        // replace-by-fee flow without increasing the number of occupied txpool slots.
+        if (isSameNonceReplacement) {
             return Optional.empty();
         }
 

@@ -19,8 +19,6 @@ package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.Type0SignatureUtils;
@@ -69,14 +67,8 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
     }
 
     @Override
-    public void validate(long bestBlock, ActivationConfig activationConfig, Constants constants) {
-
-
-    }
-
-    @Override
     public ParsedType0Transaction parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId) {
-        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce(), false);
+        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce());
         BigInteger gasLimit = TransactionInput.resolveGasLimit(input.gasLimit());
         Coin gasPrice = CommonParsingUtils.defaultValue(input.gasPrice());
         Coin value = CommonParsingUtils.defaultValue(input.value());

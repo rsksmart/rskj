@@ -19,9 +19,6 @@ package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AccessListCodec;
@@ -31,8 +28,6 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class Type1RawTransactionParser implements RawTransactionTypeParser<ParsedType1Transaction> {
 
@@ -78,19 +73,8 @@ public class Type1RawTransactionParser implements RawTransactionTypeParser<Parse
     }
 
     @Override
-    public void validate(long bestBlock, ActivationConfig activationConfig, Constants constants) {
-        ActivationConfig.ForBlock activations = activationConfig.forBlock(bestBlock);
-        if (!activations.isActive(ConsensusRule.RSKIP543)) {
-            throw invalidParamError("Typed transactions (type " + TransactionType.TYPE_1 + ") is not supported before RSKIP-543 activation");
-        }
-        if (!activations.isActive(ConsensusRule.RSKIP546)) {
-            throw invalidParamError("Type 1 / Type 2 transactions are not supported before RSKIP-546 activation");
-        }
-    }
-
-    @Override
     public ParsedType1Transaction parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId) {
-        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce(), true);
+        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce());
         Coin gasPrice = CommonParsingUtils.defaultValue(input.gasPrice());
         BigInteger gasLimit = TransactionInput.resolveGasLimit(input.gasLimit());
         RskAddress receiveAddress = CommonParsingUtils.defaultAddress(input.receiveAddress());
