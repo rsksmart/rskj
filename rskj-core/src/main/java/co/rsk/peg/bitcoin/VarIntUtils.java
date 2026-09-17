@@ -1,5 +1,7 @@
 package co.rsk.peg.bitcoin;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.bitcoinj.core.VarInt;
 import co.rsk.core.types.bytes.Bytes;
 
@@ -7,8 +9,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public final class VarIntUtils {
 

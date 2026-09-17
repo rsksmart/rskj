@@ -1,5 +1,7 @@
 package co.rsk.peg.bitcoin;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.TransactionInput;
@@ -8,8 +10,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public final class UtxoUtils {
 
