@@ -214,7 +214,7 @@ public class TransactionReceipt {
         byte[] statusRLP = RLP.encodeElement(this.status);
 
         byte[] receiptData;
-        if (usesFourFieldReceiptEncodingForTransaction()) {
+        if (usesFourFieldReceiptEncoding()) {
             receiptData = RLP.encodeList(statusRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP);
         } else {
             byte[] postTxStateRLP = RLP.encodeElement(this.postTxState);
@@ -229,24 +229,20 @@ public class TransactionReceipt {
         return rlpEncoded;
     }
 
-    private boolean usesFourFieldReceiptEncodingForTransaction() {
-        if (transaction == null) {
-            return false;
-        }
-        return usesFourFieldReceiptBody(transaction.getTypePrefix());
+    private boolean usesFourFieldReceiptEncoding() {
+        return usesFourFieldReceiptBody(typePrefix);
     }
 
     private byte[] getReceiptTypePrefix() {
-        if (transaction != null) {
-            return transaction.getTypePrefix().toBytes();
-        }
         return typePrefix.toBytes();
     }
 
     public void setStatus(byte[] status) {
         if (Arrays.equals(status, FAILED_STATUS)){
+            this.rlpEncoded = null;
             this.status = FAILED_STATUS;
         } else if (Arrays.equals(status, SUCCESS_STATUS)){
+            this.rlpEncoded = null;
             this.status = SUCCESS_STATUS;
         }
     }
