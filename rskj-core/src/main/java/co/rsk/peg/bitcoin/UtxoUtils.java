@@ -73,7 +73,11 @@ public final class UtxoUtils {
      * {@code empty}.
      */
     public static byte[] encodeOutputIndexes(List<Long> outputIndexes) {
-        return EMPTY_BYTE_ARRAY;
+        if (outputIndexes == null) {
+            return EMPTY_BYTE_ARRAY;
+        }
+
+        return VarIntUtils.encode(outputIndexes);
     }
 
     public static List<Coin> extractOutpointValues(BtcTransaction generatedTransaction) {
