@@ -172,4 +172,14 @@ class VarIntUtilsTest {
         List<Long> expectedValues = List.of();
         assertArrayEquals(expectedValues.toArray(), values.toArray());
     }
+
+    @Test
+    void decode_withTruncatedVarInt_shouldThrowVarIntException() {
+        // arrange
+        // FE (254) announces a five byte VarInt, but only two bytes follow it
+        byte[] encodedValues = Hex.decode("FE0100");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
 }

@@ -1,6 +1,7 @@
 package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.VarInt;
+import co.rsk.core.types.bytes.Bytes;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -29,7 +30,17 @@ public final class VarIntUtils {
         List<Long> values = new ArrayList<>();
 
         while (encodedValues.length > offset) {
-            VarInt valueAsVarInt = new VarInt(encodedValues, offset);
+            VarInt valueAsVarInt;
+            try {
+                valueAsVarInt = new VarInt(encodedValues, offset);
+            } catch (Exception ex) {
+                throw new VarIntException(
+                    String.format("Invalid value with invalid VarInt format: %s",
+                        Bytes.toPrintableString(encodedValues).toUpperCase()
+                    ),
+                    ex
+                );
+            }
 
             offset += valueAsVarInt.getSizeInBytes();
             values.add(valueAsVarInt.value);
