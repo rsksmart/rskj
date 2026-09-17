@@ -30,7 +30,7 @@ class VarIntUtilsTest {
     @Test
     void encode_withEmptyList_shouldReturnEmptyArray() {
         // act
-        byte[] encodedValues = VarIntUtils.encode(Collections.emptyList());
+        byte[] encodedValues = VarIntUtils.encode(List.of());
 
         // assert
         byte[] expectedEncodedValues = new byte[]{};
@@ -40,7 +40,7 @@ class VarIntUtilsTest {
     @Test
     void encode_withSingleZeroValue_shouldReturnEncodedValue() {
         // arrange
-        List<Long> values = Collections.singletonList(0L);
+        List<Long> values = List.of(0L);
 
         // act
         byte[] encodedValues = VarIntUtils.encode(values);
@@ -53,7 +53,7 @@ class VarIntUtilsTest {
     @Test
     void encode_withSingleOneValue_shouldReturnEncodedValue() {
         // arrange
-        List<Long> values = Collections.singletonList(1L);
+        List<Long> values = List.of(1L);
 
         // act
         byte[] encodedValues = VarIntUtils.encode(values);
