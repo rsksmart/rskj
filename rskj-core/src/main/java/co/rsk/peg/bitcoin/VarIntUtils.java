@@ -43,6 +43,7 @@ public final class VarIntUtils {
             }
 
             offset += valueAsVarInt.getSizeInBytes();
+            validateValue(valueAsVarInt.value);
             values.add(valueAsVarInt.value);
         }
         return values;

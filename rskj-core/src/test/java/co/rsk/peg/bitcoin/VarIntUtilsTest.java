@@ -182,4 +182,26 @@ class VarIntUtilsTest {
         // act & assert
         assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
     }
+
+    @Test
+    void decode_withValueAboveMaximumLong_shouldThrowVarIntException() {
+        // arrange
+        // 2^63, one above Long.MAX_VALUE. A VarInt encodes an unsigned integer, but it is
+        // read back into a signed long, so this value wraps around to Long.MIN_VALUE
+        byte[] encodedValues = Hex.decode("FF0000000000000080");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void decode_withMaximumUnsignedValue_shouldThrowVarIntException() {
+        // arrange
+        // eight bytes of ones is 2^64 - 1, the largest value a VarInt can encode, which read
+        // back into a signed long is -1
+        byte[] encodedValues = Hex.decode("FFFFFFFFFFFFFFFFFF");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
 }
