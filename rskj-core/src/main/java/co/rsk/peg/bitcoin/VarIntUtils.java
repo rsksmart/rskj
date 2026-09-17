@@ -3,6 +3,7 @@ package co.rsk.peg.bitcoin;
 import co.rsk.bitcoinj.core.VarInt;
 
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -20,7 +21,20 @@ public final class VarIntUtils {
      * {@code null} or {@code empty byte[]}.
      */
     public static List<Long> decode(byte[] encodedValues) {
-        return Collections.emptyList();
+        if (encodedValues == null || encodedValues.length == 0) {
+            return Collections.emptyList();
+        }
+
+        int offset = 0;
+        List<Long> values = new ArrayList<>();
+
+        while (encodedValues.length > offset) {
+            VarInt valueAsVarInt = new VarInt(encodedValues, offset);
+
+            offset += valueAsVarInt.getSizeInBytes();
+            values.add(valueAsVarInt.value);
+        }
+        return values;
     }
 
     /**

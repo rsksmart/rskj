@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.spongycastle.util.encoders.Hex;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class VarIntUtilsTest {
@@ -38,95 +39,82 @@ class VarIntUtilsTest {
     }
 
     @Test
-    void encode_withSingleZeroValue_shouldReturnEncodedValue() {
+    void encodeDecode_withSingleZeroValue_shouldMatchEncodedValues() {
         // arrange
         List<Long> values = List.of(0L);
+        byte[] encodedValues = Hex.decode("00");
 
-        // act
-        byte[] encodedValues = VarIntUtils.encode(values);
-
-        // assert
-        byte[] expectedEncodedValues = Hex.decode("00");
-        assertArrayEquals(expectedEncodedValues, encodedValues);
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
     }
 
     @Test
-    void encode_withSingleOneValue_shouldReturnEncodedValue() {
+    void encodeDecode_withSingleOneValue_shouldMatchEncodedValues() {
         // arrange
         List<Long> values = List.of(1L);
+        byte[] encodedValues = Hex.decode("01");
 
-        // act
-        byte[] encodedValues = VarIntUtils.encode(values);
-
-        // assert
-        byte[] expectedEncodedValues = Hex.decode("01");
-        assertArrayEquals(expectedEncodedValues, encodedValues);
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
     }
 
     @Test
-    void encode_withRepeatedValues_shouldReturnEachValueEncoded() {
+    void encodeDecode_withRepeatedValues_shouldMatchEncodedValues() {
         // arrange
         List<Long> values = Collections.nCopies(10, 1L);
+        byte[] encodedValues = Hex.decode("01010101010101010101");
 
-        // act
-        byte[] encodedValues = VarIntUtils.encode(values);
-
-        // assert
-        byte[] expectedEncodedValues = Hex.decode("01010101010101010101");
-        assertArrayEquals(expectedEncodedValues, encodedValues);
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
     }
 
     @Test
-    void encode_withMaximumOneByteValue_shouldReturnOneByte() {
+    void encodeDecode_withMaximumOneByteValue_shouldMatchEncodedValues() {
         // arrange
         List<Long> values = List.of(252L);
+        byte[] encodedValues = Hex.decode("FC");
 
-        // act
-        byte[] encodedValues = VarIntUtils.encode(values);
-
-        // assert
-        byte[] expectedEncodedValues = Hex.decode("FC");
-        assertArrayEquals(expectedEncodedValues, encodedValues);
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
     }
 
     @Test
-    void encode_withValuesOfDifferentSizes_shouldReturnEncodedValuesPreservingOrder() {
-        // act
-        byte[] encodedValues = VarIntUtils.encode(VALUES_OF_DIFFERENT_SIZES);
+    void encodeDecode_withValuesOfDifferentSizes_shouldMatchEncodedValuesPreservingOrder() {
+        // arrange
+        byte[] encodedValues = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES);
 
-        // assert
-        byte[] expectedEncodedValues = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES);
-        assertArrayEquals(expectedEncodedValues, encodedValues);
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(VALUES_OF_DIFFERENT_SIZES));
+        assertEquals(VALUES_OF_DIFFERENT_SIZES, VarIntUtils.decode(encodedValues));
     }
 
     @Test
-    void encode_withMaximumLongValue_shouldReturnNineBytes() {
+    void encodeDecode_withMaximumLongValue_shouldMatchEncodedValues() {
         // arrange
         List<Long> values = List.of(Long.MAX_VALUE);
+        byte[] encodedValues = Hex.decode("FFFFFFFFFFFFFFFF7F");
 
-        // act
-        byte[] encodedValues = VarIntUtils.encode(values);
-
-        // assert
-        byte[] expectedEncodedValues = Hex.decode("FFFFFFFFFFFFFFFF7F");
-        assertArrayEquals(expectedEncodedValues, encodedValues);
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
     }
 
     @Test
-    void encode_withLargeListOfValues_shouldReturnEncodedValuesPreservingOrder() {
+    void encodeDecode_withLargeListOfValues_shouldMatchEncodedValuesPreservingOrder() {
         // arrange
         List<Long> values = Collections.nCopies(LARGE_LIST_SIZE, VALUES_OF_DIFFERENT_SIZES)
             .stream()
             .flatMap(List::stream)
             .toList();
+        byte[] encodedValues = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES.repeat(LARGE_LIST_SIZE));
 
-        // act
-        byte[] encodedValues = VarIntUtils.encode(values);
-
-        // assert
-        byte[] expectedEncodedValues =
-            Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES.repeat(LARGE_LIST_SIZE));
-        assertArrayEquals(expectedEncodedValues, encodedValues);
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
     }
 
     @Test
