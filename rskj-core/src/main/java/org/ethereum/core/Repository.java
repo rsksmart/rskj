@@ -69,11 +69,8 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
         return newAccount;
     }
 
-    void setupContract(RskAddress addr);
 
-   default void initializeStorage(RskAddress addr) {
-        setupContract(addr);
-    }
+    void initializeStorage(RskAddress addr);
 
     void initializeDelegationAuthority(RskAddress addr);
 

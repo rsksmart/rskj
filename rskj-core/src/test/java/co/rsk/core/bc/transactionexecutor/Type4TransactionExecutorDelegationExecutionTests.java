@@ -240,9 +240,9 @@ import static org.mockito.Mockito.when;
         verifyTransfer(cacheTracker, sender, 2);
         verifyTransactionCostBiggerOrEqualThan(tx, GasCost.PER_EMPTY_ACCOUNT_COST);
         verify(tracker, never()).createAccount(any());
-        verify(tracker, never()).setupContract(any());
+        verify(tracker, never()).initializeStorage(any());
         verify(cacheTracker, never()).createAccount(any());
-        verify(cacheTracker, never()).setupContract(any());
+        verify(cacheTracker, never()).initializeStorage(any());
         verify(cacheTracker, never()).saveCode(any(), any());
     }
 

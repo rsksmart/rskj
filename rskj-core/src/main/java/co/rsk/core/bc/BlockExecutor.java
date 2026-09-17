@@ -147,7 +147,7 @@ public class BlockExecutor {
                 if (!track.isExist(addr)) {
                     track.createAccount(addr);
                 }
-                track.setupContract(addr);
+                track.initializeStorage(addr);
             }
         }
 
@@ -156,7 +156,7 @@ public class BlockExecutor {
             if (activations.isActivating(contractActivationRule)) {
                 RskAddress addr = e.getKey();
                 track.createAccount(addr);
-                track.setupContract(addr);
+                track.initializeStorage(addr);
             }
         }
     }
