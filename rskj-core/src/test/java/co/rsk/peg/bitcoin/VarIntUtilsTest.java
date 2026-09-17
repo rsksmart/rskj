@@ -174,4 +174,14 @@ class VarIntUtilsTest {
         List<Long> expectedValues = List.of();
         assertArrayEquals(expectedValues.toArray(), values.toArray());
     }
+
+    @Test
+    void decode_withEmptyArray_shouldReturnEmptyList() {
+        // act
+        List<Long> values = VarIntUtils.decode(new byte[]{});
+
+        // assert
+        List<Long> expectedValues = List.of();
+        assertArrayEquals(expectedValues.toArray(), values.toArray());
+    }
 }
