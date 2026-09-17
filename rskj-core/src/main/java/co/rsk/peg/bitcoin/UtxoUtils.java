@@ -27,33 +27,13 @@ public final class UtxoUtils {
      * {@code null} or {@code empty byte[]}.
      */
     public static List<Coin> decodeOutpointValues(byte[] encodedOutpointValues) {
-        if (encodedOutpointValues == null || encodedOutpointValues.length == 0) {
-            return Collections.emptyList();
+        try {
+            return VarIntUtils.decode(encodedOutpointValues).stream()
+                .map(Coin::valueOf)
+                .collect(Collectors.toList());
+        } catch (VarIntException ex) {
+            throw new InvalidOutpointValueException(ex.getMessage(), ex);
         }
-        int offset = 0;
-        List<Coin> outpointValues = new ArrayList<>();
-
-        while (encodedOutpointValues.length > offset) {
-            VarInt valueAsVarInt;
-            try {
-                valueAsVarInt = new VarInt(encodedOutpointValues, offset);
-            } catch (Exception ex) {
-                throw new InvalidOutpointValueException(
-                    String.format("Invalid value with invalid VarInt format: %s",
-                        Bytes.toPrintableString(encodedOutpointValues).toUpperCase()
-                    ),
-                    ex
-                );
-            }
-
-            offset += valueAsVarInt.getSizeInBytes();
-            Coin outpointValue = Coin.valueOf(valueAsVarInt.value);
-            validateOutpointValue(outpointValue);
-
-            outpointValues.add(outpointValue);
-        }
-        return outpointValues;
-
     }
 
     /**

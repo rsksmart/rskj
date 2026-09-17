@@ -164,12 +164,12 @@ class UtxoUtilsTest {
 
         // -100, -200, -300
         final byte[] negativeOutpointValues = Hex.decode("FF9CFFFFFFFFFFFFFFFF38FFFFFFFFFFFFFFFFD4FEFFFFFFFFFFFF");
-        String expectedMessageForNegativeOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -100);
+        String expectedMessageForNegativeOutpointValues = String.format("Invalid value: %s. Negative and null values are not allowed.", -100);
         arguments.add(Arguments.of(negativeOutpointValues, expectedMessageForNegativeOutpointValues));
 
         // 100, 200, 300, -400
         final byte[] negativeAndPositiveOutpointValues = Hex.decode("64C8FD2C01FF70FEFFFFFFFFFFFF");
-        String expectedMessageForNegativeAndPositiveOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -400);
+        String expectedMessageForNegativeAndPositiveOutpointValues = String.format("Invalid value: %s. Negative and null values are not allowed.", -400);
         arguments.add(Arguments.of(negativeAndPositiveOutpointValues, expectedMessageForNegativeAndPositiveOutpointValues));
 
         final byte[] invalidOutpointValues = Hex.decode("FC9145DC00FAFF00FE");
