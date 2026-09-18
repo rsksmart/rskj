@@ -60,6 +60,7 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
         Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(valueData));
         byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
         CommonParsingUtils.requireListFramed(txFields.get(ACCESS_LIST_INDEX), "Access list");
+        CommonParsingUtils.requireByteStringFields(txFields, ACCESS_LIST_INDEX);
         byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(txFields.get(ACCESS_LIST_INDEX).getRLPRawData());
         byte[] maxPriorityFeeData = txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData();
         byte[] maxFeeData = txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData();

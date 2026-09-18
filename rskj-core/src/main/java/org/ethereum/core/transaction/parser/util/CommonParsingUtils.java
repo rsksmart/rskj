@@ -186,6 +186,38 @@ public final class CommonParsingUtils {
         }
     }
 
+    /**
+     * Requires every envelope field other than the given list-valued ones to be a byte string.
+     * The counterpart of {@link #requireListFramed}, which covers the list-valued fields: between
+     * them each field carries the framing its schema calls for.
+     *
+     * <p>Both directions matter because {@link RLPElement#getRLPData()} yields a list's whole frame
+     * but a byte string's payload, so a list in a byte-string slot is read as the bytes of its own
+     * frame and re-emitted by the encoders as a byte string.
+     *
+     * <p>Raw ingress only. Structured ingress builds these fields itself and has no frame to check.
+     */
+    public static void requireByteStringFields(RLPList txFields, int... listFieldIndices) {
+        for (int i = 0; i < txFields.size(); i++) {
+            if (isListField(i, listFieldIndices)) {
+                continue;
+            }
+            if (txFields.get(i) instanceof RLPList) {
+                throw new IllegalArgumentException(
+                        "Transaction field at index " + i + " must be encoded as an RLP byte string");
+            }
+        }
+    }
+
+    private static boolean isListField(int index, int... listFieldIndices) {
+        for (int listFieldIndex : listFieldIndices) {
+            if (listFieldIndex == index) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static byte[] nullToEmpty(byte[] value) {
         return value == null ? new byte[0] : value;
     }
