@@ -23,6 +23,8 @@ public final class UtxoUtils {
      * @return {@code List<Coin>} an unmodifiable list of the outpoint's values decoded,
      * preserving the order of the entries. Empty when {@code encodedOutpointValues}
      * is {@code null} or an {@code empty byte[]}.
+     * @throws InvalidOutpointValueException when the bytes are not a valid sequence of
+     * VarInts, or a value decodes to a negative number.
      */
     public static List<Coin> decodeOutpointValues(byte[] encodedOutpointValues) {
         try {
@@ -41,6 +43,8 @@ public final class UtxoUtils {
      * @return {@code byte[]} the list of outpoint values encoded preserving the order of the
      * entries. Or an {@code empty byte[]} when {@code outpointValues} is {@code null} or
      * {@code empty}.
+     * @throws InvalidOutpointValueException when a value is {@code null} or negative. Zero
+     * is valid
      */
     public static byte[] encodeOutpointValues(List<Coin> outpointValues) {
         if (outpointValues == null || outpointValues.isEmpty()) {
@@ -71,6 +75,8 @@ public final class UtxoUtils {
      * @return {@code List<Long>} the list of output indexes decoded preserving the order of
      * the entries. Or an {@code Collections.EMPTY_LIST} when {@code encodedOutputIndexes} is
      * {@code null} or {@code empty byte[]}.
+     * @throws InvalidOutputIndexException when the bytes are not a valid sequence of
+     * VarInts, or a value decodes to a negative number.
      */
     public static List<Long> decodeOutputIndexes(byte[] encodedOutputIndexes) {
         try {
@@ -87,6 +93,7 @@ public final class UtxoUtils {
      * @return {@code byte[]} the list of output indexes encoded preserving the order of the
      * entries. Or an {@code empty byte[]} when {@code outputIndexes} is {@code null} or
      * {@code empty}.
+     * @throws InvalidOutputIndexException when an output index is {@code null} or negative.
      */
     public static byte[] encodeOutputIndexes(List<Long> outputIndexes) {
         if (outputIndexes == null || outputIndexes.isEmpty()) {

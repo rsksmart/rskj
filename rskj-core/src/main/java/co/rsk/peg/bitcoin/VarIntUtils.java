@@ -22,6 +22,8 @@ public final class VarIntUtils {
      * @return {@code List<Long>} the list of values decoded preserving the order of the
      * entries. Or an {@code Collections.EMPTY_LIST} when {@code encodedValues} is
      * {@code null} or {@code empty byte[]}.
+     * @throws VarIntException when a VarInt cannot be read, or a value does not fit in a
+     * signed long. A VarInt encodes an unsigned integer.
      */
     public static List<Long> decode(byte[] encodedValues) {
         if (encodedValues == null || encodedValues.length == 0) {
@@ -58,6 +60,8 @@ public final class VarIntUtils {
      * @return {@code byte[]} the list of values encoded as VarInts preserving the order of
      * the entries. Or an {@code empty byte[]} when {@code values} is {@code null} or
      * {@code empty}.
+     * @throws VarIntException when a value is {@code null} or negative. A VarInt encodes an
+     * unsigned integer, so a negative value has no representation. Zero is valid
      */
     public static byte[] encode(List<Long> values) {
         if (values == null || values.isEmpty()) {
