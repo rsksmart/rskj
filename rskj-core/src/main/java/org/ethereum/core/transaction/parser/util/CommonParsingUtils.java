@@ -22,12 +22,26 @@ import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+/**
+ * Shared field checks for the transaction parsers. The {@code require*Bytes} / {@code require*Coin}
+ * family bounds the value a field carries; the {@code requireCanonical*} family checks the bytes the
+ * encoding carried, and is for typed transactions only — Type-0 is live consensus code and still
+ * accepts non-minimal scalars.
+ *
+ * <p>Ingress rule: a received RLP encoding is validated, never rewritten, since the sender's
+ * signature commits to the exact bytes. Structured ingress minimises instead, because it receives a
+ * value and chooses the encoding itself.
+ *
+ * <p>Each {@code requireCanonical*ScalarFields} mirrors a bounds sibling field for field; a scalar
+ * added to one must be added to the other.
+ */
 public final class CommonParsingUtils {
 
     private CommonParsingUtils() {}
@@ -54,6 +68,9 @@ public final class CommonParsingUtils {
 
     /**
      * Rejects a scalar field that was received with a leading zero byte.
+     *
+     * <p>{@code null} and empty are canonical: a zero-length item is how zero, or an absent field,
+     * is spelled, so call sites may pass {@code getRLPData()} straight through.
      */
     public static void requireCanonicalScalar(byte[] field, String fieldLabel) {
         if (field != null && field.length > 0 && field[0] == 0) {
@@ -82,8 +99,17 @@ public final class CommonParsingUtils {
     }
 
     /**
+     * Bounds and encoding check for an r/s component on a canonical-RLP path. The strict
+     * counterpart of {@link #requireNormalizedSignatureComponent}.
+     */
+    public static void requireCanonicalSignatureComponent(byte[] component, String fieldLabel) {
+        requireDataWordBytes(component, fieldLabel + " is not valid");
+        requireCanonicalScalar(component, fieldLabel);
+    }
+
+    /**
      * Checks the component's numeric value, ignoring leading zeros, so it accepts non-minimal
-     * encodings. On a canonical-RLP path use requireDataWordBytes + requireCanonicalScalar instead.
+     * encodings. On a canonical-RLP path use {@link #requireCanonicalSignatureComponent} instead.
      */
     public static void requireNormalizedSignatureComponent(byte[] component, String message) {
         if (component == null) {
@@ -111,6 +137,28 @@ public final class CommonParsingUtils {
         requireDataWordCoin(value, "Value is not valid");
     }
 
+    /**
+     * Encoding counterpart of {@link #requireLegacyScalarFields}, for the field set carrying a
+     * {@code gasPrice}. Named for the field set, not the type: the bounds sibling serves Type-0 and
+     * Type-1, but only Type-1 checks encodings. Any field may be {@code null}.
+     */
+    public static void requireCanonicalGasPriceScalarFields(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] value) {
+        requireCanonicalScalar(nonce, "Nonce");
+        requireCanonicalScalar(gasPrice, "Gas Price");
+        requireCanonicalScalar(gasLimit, "Gas Limit");
+        requireCanonicalScalar(value, "Value");
+    }
+
+    /** Encoding counterpart of {@link #requireTypedScalarFields}, for Type-2 and Type-4. */
+    public static void requireCanonicalTypedScalarFields(byte[] nonce, byte[] gasLimit, byte[] value,
+                                                         byte[] maxPriorityFeePerGas, byte[] maxFeePerGas) {
+        requireCanonicalScalar(nonce, "Nonce");
+        requireCanonicalScalar(gasLimit, "Gas Limit");
+        requireCanonicalScalar(value, "Value");
+        requireCanonicalScalar(maxPriorityFeePerGas, "Max priority fee per gas");
+        requireCanonicalScalar(maxFeePerGas, "Max fee per gas");
+    }
+
     public static void requireTypedScalarFields(byte[] nonce, byte[] gasLimit, Coin value, Coin... feeFields) {
         requireDataWordBytes(nonce, "Nonce is not valid");
         requireDataWordBytes(gasLimit, "Gas Limit is not valid");
@@ -124,6 +172,50 @@ public final class CommonParsingUtils {
         if (txFields.size() != expected) {
             throw new IllegalArgumentException(typeName + " transaction must have exactly " + expected + " elements");
         }
+    }
+
+    /**
+     * Requires a nested-list field — access list, authorization list — to have arrived framed as an
+     * RLP list. {@link RLPElement#getRLPRawData()} returns a list's whole frame but a byte string's
+     * payload, and both then decode as RLP, so the distinction survives only here while the element
+     * is still typed. Raw ingress only.
+     */
+    public static void requireListFramed(RLPElement field, String fieldLabel) {
+        if (!(field instanceof RLPList)) {
+            throw new IllegalArgumentException(fieldLabel + " must be encoded as an RLP list");
+        }
+    }
+
+    /**
+     * Requires every envelope field other than the given list-valued ones to be a byte string.
+     * The counterpart of {@link #requireListFramed}, which covers the list-valued fields: between
+     * them each field carries the framing its schema calls for.
+     *
+     * <p>Both directions matter because {@link RLPElement#getRLPData()} yields a list's whole frame
+     * but a byte string's payload, so a list in a byte-string slot is read as the bytes of its own
+     * frame and re-emitted by the encoders as a byte string.
+     *
+     * <p>Raw ingress only. Structured ingress builds these fields itself and has no frame to check.
+     */
+    public static void requireByteStringFields(RLPList txFields, int... listFieldIndices) {
+        for (int i = 0; i < txFields.size(); i++) {
+            if (isListField(i, listFieldIndices)) {
+                continue;
+            }
+            if (txFields.get(i) instanceof RLPList) {
+                throw new IllegalArgumentException(
+                        "Transaction field at index " + i + " must be encoded as an RLP byte string");
+            }
+        }
+    }
+
+    private static boolean isListField(int index, int... listFieldIndices) {
+        for (int listFieldIndex : listFieldIndices) {
+            if (listFieldIndex == index) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static byte[] nullToEmpty(byte[] value) {

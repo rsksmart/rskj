@@ -64,20 +64,27 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
             throw new IllegalArgumentException("Set-code transaction must have a non-null destination");
         }
         // value
-        Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(txFields.get(VALUE_INDEX).getRLPData()));
+        byte[] valueData = txFields.get(VALUE_INDEX).getRLPData();
+        Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(valueData));
         // data
         byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
         // access list
+        CommonParsingUtils.requireListFramed(txFields.get(ACCESS_LIST_INDEX), "Access list");
         byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(txFields.get(ACCESS_LIST_INDEX).getRLPRawData());
         // authorization list
+        CommonParsingUtils.requireListFramed(txFields.get(AUTHORIZATION_LIST_INDEX), "Authorization list");
+        CommonParsingUtils.requireByteStringFields(txFields, ACCESS_LIST_INDEX, AUTHORIZATION_LIST_INDEX);
         byte[] authorizationListBytes = AuthorizationListCodec.requireAuthorizationListBytes(
                 txFields.get(AUTHORIZATION_LIST_INDEX).getRLPRawData());
         var authorizationList = AuthorizationListCodec.decodeListUnchecked(authorizationListBytes);
         // max priority fee per gas and max fee per gas
-        Coin maxPriorityFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData()));
-        Coin maxFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData()));
+        byte[] maxPriorityFeeData = txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData();
+        byte[] maxFeeData = txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData();
+        Coin maxPriorityFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(maxPriorityFeeData));
+        Coin maxFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(maxFeeData));
         Rskip546FeeValidation.requireFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
         CommonParsingUtils.requireTypedScalarFields(nonce, gasLimit, value, maxPriorityFeePerGas, maxFeePerGas);
+        CommonParsingUtils.requireCanonicalTypedScalarFields(nonce, gasLimit, valueData, maxPriorityFeeData, maxFeeData);
 
         ParsedType4Transaction parsed = new ParsedType4Transaction(
                 typePrefix,

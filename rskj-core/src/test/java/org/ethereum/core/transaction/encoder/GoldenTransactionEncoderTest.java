@@ -71,6 +71,8 @@ class GoldenTransactionEncoderTest {
                 Arguments.of("type2-chain33", (Supplier<Transaction>) EncoderTestSupport::unsignedType2, FIXED_V),
                 Arguments.of("type2-chain33-yParity0", (Supplier<Transaction>) EncoderTestSupport::unsignedType2, FIXED_V_Y_PARITY_0),
                 Arguments.of("type2-chain200", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType2(HIGH_CHAIN_ID), FIXED_V),
+                Arguments.of("type2-zero-fees",
+                        (Supplier<Transaction>) EncoderTestSupport::unsignedType2ZeroFees, FIXED_V),
                 Arguments.of("type4-chain0", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType4((byte) 0), FIXED_V),
                 Arguments.of("type4-chain33", (Supplier<Transaction>) EncoderTestSupport::unsignedType4, FIXED_V),
                 Arguments.of("type4-chain200", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType4(HIGH_CHAIN_ID), FIXED_V)

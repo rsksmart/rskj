@@ -62,9 +62,15 @@ public final class AccessListCodec {
         return accessListBytes;
     }
 
+    /**
+     * Each entry is a list of {@code [address, [storageKey, ...]]}, and so is its storage-key slot.
+     * Both are checked while the element is still typed: {@link RLPElement#getRLPRawData()} returns a
+     * list's whole frame but a byte string's payload, after which the two are indistinguishable.
+     */
     private static void validateAccessListEntries(RLPList accessList) {
         for (int i = 0; i < accessList.size(); i++) {
             RLPElement entryElement = accessList.get(i);
+            CommonParsingUtils.requireListFramed(entryElement, "Access list entry at index " + i);
             byte[] entryBytes = entryElement.getRLPRawData();
             if (entryBytes == null || entryBytes.length == 0) {
                 throw new IllegalArgumentException("Access list entry at index " + i + " must not be empty");
@@ -80,6 +86,8 @@ public final class AccessListCodec {
                         "Access list entry address at index " + i + " must be exactly 20 bytes");
             }
 
+            CommonParsingUtils.requireListFramed(
+                    entry.get(1), "Access list storage keys at index " + i);
             byte[] storageKeyListBytes = entry.get(1).getRLPRawData();
             if (storageKeyListBytes == null) {
                 throw new IllegalArgumentException("Access list storage keys at index " + i + " must be an RLP list");
