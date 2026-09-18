@@ -1,18 +1,20 @@
 package co.rsk.peg.bitcoin;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.VarInt;
-import co.rsk.core.types.bytes.Bytes;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Codecs and extraction helpers for the parts of a transaction outpoint that the bridge
+ * persists and logs: the outpoint values and the output indexes.
+ */
 public final class UtxoUtils {
 
     private UtxoUtils() {
@@ -21,77 +23,94 @@ public final class UtxoUtils {
     /**
      * Decode a {@code byte[]} of encoded outpoint values.
      *
-     * @param encodedOutpointValues
-     * @return {@code List<Coin>} the list of outpoint values decoded preserving
-     * the order of the entries. Or an {@code Collections.EMPTY_LIST} when {@code encodedOutpointValues} is
-     * {@code null} or {@code empty byte[]}.
+     * @param encodedOutpointValues the byte array of encoded outpoint values to decode
+     * @return {@code List<Coin>} an unmodifiable list of the outpoint's values decoded,
+     * preserving the order of the entries. Empty when {@code encodedOutpointValues}
+     * is {@code null} or an {@code empty byte[]}.
+     * @throws InvalidOutpointValueException when the bytes are not a valid sequence of
+     * VarInts, or a value decodes to a negative number.
      */
     public static List<Coin> decodeOutpointValues(byte[] encodedOutpointValues) {
-        if (encodedOutpointValues == null || encodedOutpointValues.length == 0) {
-            return Collections.emptyList();
+        try {
+            return VarIntUtils.decode(encodedOutpointValues).stream()
+                .map(Coin::valueOf)
+                .toList();
+        } catch (VarIntException ex) {
+            throw new InvalidOutpointValueException(ex.getMessage(), ex);
         }
-        int offset = 0;
-        List<Coin> outpointValues = new ArrayList<>();
-
-        while (encodedOutpointValues.length > offset) {
-            VarInt valueAsVarInt;
-            try {
-                valueAsVarInt = new VarInt(encodedOutpointValues, offset);
-            } catch (Exception ex) {
-                throw new InvalidOutpointValueException(
-                    String.format("Invalid value with invalid VarInt format: %s",
-                        Bytes.toPrintableString(encodedOutpointValues).toUpperCase()
-                    ),
-                    ex
-                );
-            }
-
-            offset += valueAsVarInt.getSizeInBytes();
-            Coin outpointValue = Coin.valueOf(valueAsVarInt.value);
-            validateOutpointValue(outpointValue);
-
-            outpointValues.add(outpointValue);
-        }
-        return outpointValues;
-
     }
 
     /**
-     * Encode a {@code List<Coin} of outpoint values.
+     * Encode a {@code List<Coin>} of outpoint values.
      *
-     * @param outpointValues
+     * @param outpointValues the list of outpoint values to encode
      * @return {@code byte[]} the list of outpoint values encoded preserving the order of the
      * entries. Or an {@code empty byte[]} when {@code outpointValues} is {@code null} or
      * {@code empty}.
+     * @throws InvalidOutpointValueException when a value is {@code null} or negative. Zero
+     * is valid
      */
     public static byte[] encodeOutpointValues(List<Coin> outpointValues) {
         if (outpointValues == null || outpointValues.isEmpty()) {
-            return new byte[]{};
+            return EMPTY_BYTE_ARRAY;
         }
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        List<Long> values = new ArrayList<>(outpointValues.size());
         for (Coin outpointValue : outpointValues) {
             validateOutpointValue(outpointValue);
-            VarInt varIntOutpointValue = new VarInt(outpointValue.getValue());
-            try {
-                outputStream.write(varIntOutpointValue.encode());
-            } catch (IOException ex) {
-                throw new InvalidOutpointValueException(
-                    String.format("I/O exception for value: %s",
-                        outpointValue
-                    ),
-                    ex
-                );
-            }
+            values.add(outpointValue.getValue());
         }
-        return outputStream.toByteArray();
+
+        try {
+            return VarIntUtils.encode(values);
+        } catch (VarIntException ex) {
+            throw new InvalidOutpointValueException(ex.getMessage(), ex);
+        }
     }
 
     private static void validateOutpointValue(Coin outpointValue) {
-        if (outpointValue == null || outpointValue.isNegative()) {
-            throw new InvalidOutpointValueException(String.format(
-                "Invalid outpoint value: %s. Negative and null values are not allowed.",
-                outpointValue));
+        if (outpointValue == null) {
+            throw new InvalidOutpointValueException(
+                "Invalid outpoint value: null values are not allowed.");
+        }
+    }
+
+    /**
+     * Decode a {@code byte[]} of encoded output indexes.
+     *
+     * @param encodedOutputIndexes the byte array of encoded output indexes to decode
+     * @return {@code List<Long>} an unmodifiable list of the output indexes decoded,
+     * preserving the order of the entries. Empty when {@code encodedOutputIndexes}
+     * is {@code null} or an {@code empty byte[]}.
+     * @throws InvalidOutputIndexException when the bytes are not a valid sequence of
+     * VarInts, or a value decodes to a negative number.
+     */
+    public static List<Long> decodeOutputIndexes(byte[] encodedOutputIndexes) {
+        try {
+            return VarIntUtils.decode(encodedOutputIndexes);
+        } catch (VarIntException ex) {
+            throw new InvalidOutputIndexException(ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Encode a {@code List<Long>} of output indexes.
+     *
+     * @param outputIndexes the list of output indexes to encode
+     * @return {@code byte[]} the list of output indexes encoded preserving the order of the
+     * entries. Or an {@code empty byte[]} when {@code outputIndexes} is {@code null} or
+     * {@code empty}.
+     * @throws InvalidOutputIndexException when an output index is {@code null} or negative.
+     */
+    public static byte[] encodeOutputIndexes(List<Long> outputIndexes) {
+        if (outputIndexes == null || outputIndexes.isEmpty()) {
+            return EMPTY_BYTE_ARRAY;
+        }
+
+        try {
+            return VarIntUtils.encode(outputIndexes);
+        } catch (VarIntException ex) {
+            throw new InvalidOutputIndexException(ex.getMessage(), ex);
         }
     }
 

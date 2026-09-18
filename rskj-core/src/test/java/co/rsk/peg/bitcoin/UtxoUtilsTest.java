@@ -1,6 +1,7 @@
 package co.rsk.peg.bitcoin;
 
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.coinListOf;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -50,7 +51,7 @@ class UtxoUtilsTest {
 
         arguments.add(Arguments.of(Hex.decode("FC"), coinListOf(252)));
 
-        // 252 = FC, 187 = BB, 13_337 = FE9145DC00, 14_435_729 = FEDC4591
+        // 252 = FC, 187 = BB, 13_337 = FD1934, 14_435_729 = FE9145DC00
         arguments.add(Arguments.of(Hex.decode("FCFCBBBBBBFD1934FE9145DC00"), coinListOf(252, 252, 187, 187, 187, 13_337, 14_435_729)));
 
         arguments.add(Arguments.of(Hex.decode("FF0040075AF0750700"), Collections.singletonList(MAX_BTC)));
@@ -72,7 +73,7 @@ class UtxoUtilsTest {
             bigListOfOutpointValues
         ));
 
-        arguments.add(Arguments.of(new byte[]{}, Collections.EMPTY_LIST));
+        arguments.add(Arguments.of(EMPTY_BYTE_ARRAY, Collections.EMPTY_LIST));
 
         return arguments.stream();
     }
@@ -113,8 +114,25 @@ class UtxoUtilsTest {
         byte[] outpointValues = UtxoUtils.encodeOutpointValues(null);
 
         // assert
-        byte[] expectedEncodedValues = new byte[]{};
+        byte[] expectedEncodedValues = EMPTY_BYTE_ARRAY;
         assertArrayEquals(expectedEncodedValues, outpointValues);
+    }
+
+    @Test
+    void encodeOutpointValues_whenListContainsNullValue_shouldThrowInvalidOutpointValueException() {
+        // arrange
+        List<Coin> outpointValues = Arrays.asList(Coin.valueOf(100), null, Coin.valueOf(300));
+
+        // act
+        InvalidOutpointValueException invalidOutpointValueException = assertThrows(
+            InvalidOutpointValueException.class,
+            () -> UtxoUtils.encodeOutpointValues(outpointValues));
+        String actualMessage = invalidOutpointValueException.getMessage();
+
+        // assert
+        String expectedMessage =
+            "Invalid outpoint value: null values are not allowed.";
+        assertEquals(expectedMessage, actualMessage);
     }
 
     @ParameterizedTest
@@ -135,11 +153,11 @@ class UtxoUtilsTest {
         List<Arguments> arguments = new ArrayList<>();
 
         List<Coin> negativeOutpointValues = Arrays.asList(Coin.valueOf(-10), Coin.valueOf(-1000), Coin.valueOf(-100));
-        String expectedMessageForNegativeOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -10);
+        String expectedMessageForNegativeOutpointValues = String.format("Invalid value: %s. Negative and null values are not allowed.", -10);
         arguments.add(Arguments.of(negativeOutpointValues, expectedMessageForNegativeOutpointValues));
 
         List<Coin> negativeAndPositiveOutpointValues = Arrays.asList(Coin.valueOf(200), Coin.valueOf(-100), Coin.valueOf(300));
-        String expectedMessageForNegativeAndPositiveOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -100);
+        String expectedMessageForNegativeAndPositiveOutpointValues = String.format("Invalid value: %s. Negative and null values are not allowed.", -100);
         arguments.add(Arguments.of(negativeAndPositiveOutpointValues, expectedMessageForNegativeAndPositiveOutpointValues));
 
         return arguments.stream();
@@ -164,12 +182,12 @@ class UtxoUtilsTest {
 
         // -100, -200, -300
         final byte[] negativeOutpointValues = Hex.decode("FF9CFFFFFFFFFFFFFFFF38FFFFFFFFFFFFFFFFD4FEFFFFFFFFFFFF");
-        String expectedMessageForNegativeOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -100);
+        String expectedMessageForNegativeOutpointValues = String.format("Invalid value: %s. Negative and null values are not allowed.", -100);
         arguments.add(Arguments.of(negativeOutpointValues, expectedMessageForNegativeOutpointValues));
 
         // 100, 200, 300, -400
         final byte[] negativeAndPositiveOutpointValues = Hex.decode("64C8FD2C01FF70FEFFFFFFFFFFFF");
-        String expectedMessageForNegativeAndPositiveOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -400);
+        String expectedMessageForNegativeAndPositiveOutpointValues = String.format("Invalid value: %s. Negative and null values are not allowed.", -400);
         arguments.add(Arguments.of(negativeAndPositiveOutpointValues, expectedMessageForNegativeAndPositiveOutpointValues));
 
         final byte[] invalidOutpointValues = Hex.decode("FC9145DC00FAFF00FE");
@@ -191,7 +209,7 @@ class UtxoUtilsTest {
         fundingTransaction.addInput(
             BitcoinTestUtils.createHash(1),
             FIRST_OUTPUT_INDEX,
-            new Script(new byte[]{})
+            new Script(EMPTY_BYTE_ARRAY)
         );
         fundingTransaction.addOutput(amountToSend, TEST_ERP_FEDERATION.getAddress());
 
@@ -241,7 +259,7 @@ class UtxoUtilsTest {
             fundingTransaction.addInput(
                 BitcoinTestUtils.createHash(i),
                 FIRST_OUTPUT_INDEX,
-                new Script(new byte[]{})
+                new Script(EMPTY_BYTE_ARRAY)
             );
             fundingTransaction.addOutput(amountToSend, TEST_ERP_FEDERATION.getAddress());
             pegout.addInput(fundingTransaction.getOutput(FIRST_OUTPUT_INDEX));
@@ -249,8 +267,101 @@ class UtxoUtilsTest {
         List<Coin> actualOutpointValues = UtxoUtils.extractOutpointValues(pegout);
 
         // assert
-        List<Coin> expectedOutpointValues = Stream.generate(() -> amountToSend).limit(1000)
-            .collect(Collectors.toList());
+        List<Coin> expectedOutpointValues = Stream.generate(() -> amountToSend).limit(1000).toList();
         assertArrayEquals(expectedOutpointValues.toArray(), actualOutpointValues.toArray());
+    }
+
+    @Test
+    void encodeOutputIndexes_withNull_shouldReturnEmptyArray() {
+        // act
+        byte[] encodedOutputIndexes = UtxoUtils.encodeOutputIndexes(null);
+
+        // assert
+        assertArrayEquals(EMPTY_BYTE_ARRAY, encodedOutputIndexes);
+    }
+
+    @Test
+    void encodeOutputIndexes_withEmptyList_shouldReturnEmptyArray() {
+        // act
+        byte[] encodedOutputIndexes = UtxoUtils.encodeOutputIndexes(List.of());
+
+        // assert
+        assertArrayEquals(EMPTY_BYTE_ARRAY, encodedOutputIndexes);
+    }
+
+    @Test
+    void encodeOutputIndexes_withDifferentOutputIndexes_shouldReturnEncodedOutputIndexesPreservingOrder() {
+        // arrange
+        // 0 = 00, 252 = FC, 10_000 = FD1027
+        List<Long> outputIndexes = List.of(0L, 252L, 10_000L);
+
+        // act
+        byte[] encodedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+
+        // assert
+        byte[] expectedEncodedOutputIndexes = Hex.decode("00FCFD1027");
+        assertArrayEquals(expectedEncodedOutputIndexes, encodedOutputIndexes);
+    }
+
+    @Test
+    void decodeOutputIndexes_withNull_shouldReturnEmptyList() {
+        // act
+        List<Long> outputIndexes = UtxoUtils.decodeOutputIndexes(null);
+
+        // assert
+        assertEquals(List.of(), outputIndexes);
+    }
+
+    @Test
+    void decodeOutputIndexes_withEmptyArray_shouldReturnEmptyList() {
+        // act
+        List<Long> outputIndexes = UtxoUtils.decodeOutputIndexes(EMPTY_BYTE_ARRAY);
+
+        // assert
+        assertEquals(List.of(), outputIndexes);
+    }
+
+    @Test
+    void decodeOutputIndexes_withDifferentEncodedOutputIndexes_shouldReturnOutputIndexesPreservingOrder() {
+        // arrange
+        // 00 = 0, FC = 252, FD1027 = 10_000
+        byte[] encodedOutputIndexes = Hex.decode("00FCFD1027");
+
+        // act
+        List<Long> outputIndexes = UtxoUtils.decodeOutputIndexes(encodedOutputIndexes);
+
+        // assert
+        List<Long> expectedOutputIndexes = List.of(0L, 252L, 10_000L);
+        assertEquals(expectedOutputIndexes, outputIndexes);
+    }
+
+    @Test
+    void encodeOutputIndexes_withNegativeOutputIndex_shouldThrowInvalidOutputIndexException() {
+        // arrange
+        List<Long> outputIndexes = List.of(-1L);
+
+        // act & assert
+        assertThrows(InvalidOutputIndexException.class, () -> UtxoUtils.encodeOutputIndexes(outputIndexes));
+    }
+
+    @Test
+    void decodeOutputIndexes_withMalformedVarInt_shouldThrowInvalidOutputIndexException() {
+        // arrange
+        // FE (254) announces a five byte VarInt, but only two bytes follow it
+        byte[] encodedOutputIndexes = Hex.decode("FE0100");
+
+        // act & assert
+        assertThrows(InvalidOutputIndexException.class,
+            () -> UtxoUtils.decodeOutputIndexes(encodedOutputIndexes));
+    }
+
+    @Test
+    void encodeOutputIndexes_withNullOutputIndex_shouldThrowInvalidOutputIndexException() {
+        // arrange
+        List<Long> outputIndexes = Collections.singletonList(null);
+
+        // act & assert
+        assertThrows(InvalidOutputIndexException.class,
+            () -> UtxoUtils.encodeOutputIndexes(outputIndexes));
     }
 }

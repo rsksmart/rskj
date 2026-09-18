@@ -1,0 +1,287 @@
+package co.rsk.peg.bitcoin;
+
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.spongycastle.util.encoders.Hex;
+
+class VarIntUtilsTest {
+
+    // 252 = FC, 187 = BB, 13_337 = FD1934, 14_435_729 = FE9145DC00
+    private static final List<Long> VALUES_OF_DIFFERENT_SIZES =
+        List.of(252L, 252L, 187L, 187L, 187L, 13_337L, 14_435_729L);
+    private static final String ENCODED_VALUES_OF_DIFFERENT_SIZES = "FCFCBBBBBBFD1934FE9145DC00";
+    private static final int LARGE_LIST_SIZE = 1000;
+
+    @Test
+    void encode_withNull_shouldReturnEmptyArray() {
+        // act
+        byte[] encodedValues = VarIntUtils.encode(null);
+
+        // assert
+        assertArrayEquals(EMPTY_BYTE_ARRAY, encodedValues);
+    }
+
+    @Test
+    void encode_withEmptyList_shouldReturnEmptyArray() {
+        // act
+        byte[] encodedValues = VarIntUtils.encode(List.of());
+
+        // assert
+        assertArrayEquals(EMPTY_BYTE_ARRAY, encodedValues);
+    }
+
+    @Test
+    void encodeDecode_withSingleZeroValue_shouldMatchEncodedValues() {
+        // arrange
+        List<Long> values = List.of(0L);
+        byte[] encodedValues = Hex.decode("00");
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void encodeDecode_withSingleOneValue_shouldMatchEncodedValues() {
+        // arrange
+        List<Long> values = List.of(1L);
+        byte[] encodedValues = Hex.decode("01");
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void encodeDecode_withRepeatedValues_shouldMatchEncodedValues() {
+        // arrange
+        List<Long> values = Collections.nCopies(10, 1L);
+        byte[] encodedValues = Hex.decode("01010101010101010101");
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void encodeDecode_withMaximumOneByteValue_shouldMatchEncodedValues() {
+        // arrange
+        List<Long> values = List.of(252L);
+        byte[] encodedValues = Hex.decode("FC");
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void encodeDecode_withValuesOfDifferentSizes_shouldMatchEncodedValuesPreservingOrder() {
+        // arrange
+        byte[] encodedValues = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES);
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(VALUES_OF_DIFFERENT_SIZES));
+        assertEquals(VALUES_OF_DIFFERENT_SIZES, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void encodeDecode_withMaximumLongValue_shouldMatchEncodedValues() {
+        // arrange
+        List<Long> values = List.of(Long.MAX_VALUE);
+        byte[] encodedValues = Hex.decode("FFFFFFFFFFFFFFFF7F");
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void encodeDecode_withLargeListOfValues_shouldMatchEncodedValuesPreservingOrder() {
+        // arrange
+        List<Long> values = Collections.nCopies(LARGE_LIST_SIZE, VALUES_OF_DIFFERENT_SIZES)
+            .stream()
+            .flatMap(List::stream)
+            .toList();
+        byte[] encodedValues = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES.repeat(LARGE_LIST_SIZE));
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void encode_withNullValue_shouldThrowVarIntException() {
+        // arrange
+        List<Long> values = Collections.singletonList(null);
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.encode(values));
+    }
+
+    @Test
+    void encode_withNegativeValue_shouldThrowVarIntException() {
+        // arrange
+        List<Long> values = List.of(-1L);
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.encode(values));
+    }
+
+    @Test
+    void encode_withNegativeValueAfterValidValues_shouldThrowVarIntException() {
+        // arrange
+        List<Long> values = List.of(0L, 1L, -1L);
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.encode(values));
+    }
+
+    @Test
+    void encode_withNullValueAfterValidValues_shouldThrowVarIntException() {
+        // arrange
+        List<Long> values = Arrays.asList(0L, 1L, null);
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.encode(values));
+    }
+
+    @Test
+    void decode_withNull_shouldReturnEmptyList() {
+        // act
+        List<Long> values = VarIntUtils.decode(null);
+
+        // assert
+        assertEquals(List.of(), values);
+    }
+
+    @Test
+    void decode_withEmptyArray_shouldReturnEmptyList() {
+        // act
+        List<Long> values = VarIntUtils.decode(EMPTY_BYTE_ARRAY);
+
+        // assert
+        assertEquals(List.of(), values);
+    }
+
+    @Test
+    void decode_withValues_shouldReturnAnUnmodifiableList() {
+        // arrange
+        byte[] encodedValues = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES);
+
+        // act
+        List<Long> values = VarIntUtils.decode(encodedValues);
+
+        // assert
+        assertThrows(UnsupportedOperationException.class, () -> values.add(1L));
+    }
+
+    @Test
+    void decode_withTruncatedVarInt_shouldThrowVarIntException() {
+        // arrange
+        // FE (254) announces a five byte VarInt, but only two bytes follow it
+        byte[] encodedValues = Hex.decode("FE0100");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void decode_withValueAboveMaximumLong_shouldThrowVarIntException() {
+        // arrange
+        // 2^63, one above Long.MAX_VALUE. A VarInt encodes an unsigned integer, but it is
+        // read back into a signed long, so this value wraps around to Long.MIN_VALUE. The
+        // same bytes are what encoding Long.MIN_VALUE produces
+        byte[] encodedValues = Hex.decode("FF0000000000000080");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void decode_withEncodedNegativeValues_shouldThrowVarIntException() {
+        // arrange
+        // -100, -200 and -300 encoded as VarInts: a negative value always takes the nine
+        // byte form, and reads back as the same negative value
+        byte[] encodedValues = Hex.decode("FF9CFFFFFFFFFFFFFFFF38FFFFFFFFFFFFFFFFD4FEFFFFFFFFFFFF");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void decode_withEncodedNegativeValueAfterValidValues_shouldThrowVarIntException() {
+        // arrange
+        // 100, 200 and 300, followed by -400 encoded as a VarInt
+        byte[] encodedValues = Hex.decode("64C8FD2C01FF70FEFFFFFFFFFFFF");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void decode_withTruncatedVarIntAfterValidValues_shouldThrowVarIntException() {
+        // arrange
+        // 252 (FC), 145 (91), 69 (45), 220 (DC), 0 (00) and 250 (FA), followed by an FF
+        // announcing an eight byte value when only two bytes remain
+        byte[] encodedValues = Hex.decode("FC9145DC00FAFF00FE");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void decode_withMaximumUnsignedValue_shouldThrowVarIntException() {
+        // arrange
+        // eight bytes of ones is 2^64 - 1, the largest value a VarInt can encode, which read
+        // back into a signed long is -1. The same bytes are what encoding -1 produces
+        byte[] encodedValues = Hex.decode("FFFFFFFFFFFFFFFFFF");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void decode_withNonCanonicalVarInt_shouldAdvanceByTheCanonicalSizeOfTheValue() {
+        // arrange
+        // FD announces a three byte VarInt holding 5 (FD 05 00), but 5 fits in a single
+        // byte, so this is a non-canonical encoding (0x0005) of it. The walk advances by the
+        // canonical size of the decoded value, one byte, landing back inside the encoding it
+        // has just read and decoding its remaining bytes as values of their own.
+
+        // These bytes cannot be produced by encoding: the FD form is only used for values
+        // from 253 to 65535, so encoding 5 always yields the single byte 05. They can only
+        // reach the decoder from another implementation, a crafted input or corrupted
+        // storage, which is why they are written here as a literal.
+
+        byte[] encodedValues = Hex.decode("FD050000");
+
+        // act
+        List<Long> values = VarIntUtils.decode(encodedValues);
+
+        // assert
+        List<Long> expectedValues = List.of(5L, 5L, 0L, 0L);
+        assertEquals(expectedValues, values);
+    }
+
+    @Test
+    void decode_withEncodedNegativeValueBeforeTruncatedVarInt_shouldThrowForTheValue() {
+        // arrange
+        // -1 encoded as a VarInt, followed by an FE announcing a four byte value when only
+        // one byte remains. Values are validated as they are read, so the negative value is
+        // rejected before the truncated VarInt is ever reached.
+        // Both failures throw a VarIntException, so they are told apart by their cause: a
+        // value rejected by validation has none, while a truncated VarInt wraps the
+        // ArrayIndexOutOfBoundsException that reading it raises
+        byte[] encodedValues = Hex.decode("FFFFFFFFFFFFFFFFFFFE01");
+
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+    }
+}
