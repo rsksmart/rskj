@@ -576,6 +576,30 @@ class RepositoryTest {
         assertEquals(tenCoins, newBalance);
     }
 
+    @Test
+    void initializeDelegationAuthorityInTrackAndRollback() {
+        repository.createAccount(COW);
+
+        Repository track = repository.startTracking();
+        track.initializeDelegationAuthority(COW);
+        assertTrue(track.hasDelegationAuthorityMarker(COW));
+
+        track.rollback();
+
+        assertFalse(repository.hasDelegationAuthorityMarker(COW));
+    }
+
+    @Test
+    void initializeDelegationAuthorityInTrackAndCommit() {
+        repository.createAccount(COW);
+
+        Repository track = repository.startTracking();
+        track.initializeDelegationAuthority(COW);
+        track.commit();
+
+        assertTrue(repository.hasDelegationAuthorityMarker(COW));
+    }
+
     private static Keccak256 getKeccak256Hash(byte[] emptyCode) {
         return new Keccak256(Keccak256Helper.keccak256(emptyCode));
     }

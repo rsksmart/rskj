@@ -279,6 +279,24 @@ class NetworkStateExporterTest {
         Assertions.assertFalse(address1Value.containsKey("delegatedAuthority"));
     }
 
+    @Test
+    void delegatedAndHibernatedAccount_exportsDelegatedAuthorityCorrectly() throws Exception {
+        String address1String = "3000000000000000000000000000000000000000";
+        RskAddress addr1 = new RskAddress(address1String);
+        RskAddress delegate = new RskAddress("4000000000000000000000000000000000000000");
+        repository.createAccount(addr1);
+        repository.initializeStorage(addr1);
+        repository.initializeDelegationAuthority(addr1);
+        repository.saveCode(addr1, DelegationCodeResolver.createDelegatedCode(delegate));
+        repository.hibernate(addr1);
+
+        Map result = writeAndReadJson("", false, true);
+
+        Map address1Value = (Map) result.get(address1String);
+        Assertions.assertEquals(Boolean.TRUE, address1Value.get("delegatedAuthority"), "delegatedAuthority must still be reported correctly when the hibernation bit is also set");
+        Assertions.assertFalse(address1Value.containsKey("hibernated"), "hibernation is not exported today - this documents that asymmetry rather than asserting a requirement");
+    }
+
     private Map writeAndReadJson(String singleAccount,boolean exportStorageKeys,boolean exportCode) throws Exception {
         Assertions.assertTrue(nse.exportStatus(jsonFileName,singleAccount,exportStorageKeys,exportCode));
 

@@ -87,7 +87,8 @@ public interface RepositorySnapshot extends AccountInformationProvider {
     }
 
     default boolean isActiveDelegatedEOA(RskAddress addr) {
-        return isExist(addr) && DelegationCodeResolver.isDelegatedCode(getCode(addr));
+        return isExist(addr) && hasDelegationAuthorityMarker(addr)
+                && DelegationCodeResolver.isDelegatedCode(getCode(addr));
     }
 
     default boolean isClearedDelegatedEOA(RskAddress addr) {

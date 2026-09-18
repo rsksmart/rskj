@@ -211,6 +211,22 @@ class AccountClassificationTest {
     }
 
     @Test
+    void codeShapedAsDelegation_withoutTheMarker_isNotClassifiedAsActiveDelegatedEOA() {
+        Repository repository = createRepository();
+        RskAddress addr = generateAddress("bypassed-install-path");
+        RskAddress delegate = generateAddress("delegate-x");
+        repository.createAccount(addr);
+
+        // saveCode() called directly, bypassing writeDelegation() -
+        // no initializeStorage(), no initializeDelegationAuthority().
+        repository.saveCode(addr, DelegationCodeResolver.createDelegatedCode(delegate));
+
+        assertFalse(repository.isActiveDelegatedEOA(addr),
+                "the code shape alone must not be enough - without the persistent marker "
+                        + "the account must not classify as an active delegated EOA");
+    }
+
+    @Test
     void nonExistentAccount_matchesNoClassification() {
         Repository repository = createRepository();
         RskAddress addr = generateAddress("does-not-exist");
