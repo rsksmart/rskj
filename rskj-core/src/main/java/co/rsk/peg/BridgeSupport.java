@@ -17,8 +17,9 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeUtils.simulatePegoutTxSize;
+import static co.rsk.peg.BridgeUtils.calculateMigrationTransactionOutputsValues;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
+import static co.rsk.peg.BridgeUtils.simulatePegoutTxSize;
 import static co.rsk.peg.PegUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
@@ -1248,71 +1249,137 @@ public class BridgeSupport {
 
     private void processFundsMigration(Transaction rskTx) throws IOException {
         Optional<Wallet> retiringFederationWalletOptional = activations.isActive(RSKIP294) ?
-            getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction()) :
+            getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerMigrationTransaction(activations)) :
             getRetiringFederationWallet(true);
 
         if (retiringFederationWalletOptional.isEmpty()) {
             return;
         }
 
+        Keccak256 rskTxHash = rskTx.getHash();
         Wallet retiringFederationWallet = retiringFederationWalletOptional.get();
         List<UTXO> availableUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
 
         if (federationSupport.isActiveFederationInMigrationAge() && hasMinimumFundsToMigrate(retiringFederationWallet)) {
-            migrateFunds(
-                rskTx.getHash(),
-                retiringFederationWallet,
-                availableUTXOs
-            );
+            processFundsMigrationInMigrationAge(rskTxHash, retiringFederationWallet, availableUTXOs);
         }
 
         if (federationSupport.isActiveFederationPastMigrationAge()) {
-            boolean hasBalance = retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO);
-            if (hasBalance) {
-                try {
-                    migrateFunds(
-                        rskTx.getHash(),
-                        retiringFederationWallet,
-                        availableUTXOs
-                    );
-                } catch (Exception e) {
-                    logger.error(
-                        "[processFundsMigration] Unable to complete retiring federation migration. Balance left: {} in {}",
-                        retiringFederationWallet.getBalance().toFriendlyString(),
-                        retiringFederationWallet.getWatchedAddresses()
-                    );
-                    panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
-                }
-            }
-
-            logger.info(
-                "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
-                availableUTXOs.size()
-            );
-            federationSupport.clearRetiredFederation();
+            processFundsMigrationPastMigrationAge(rskTxHash, retiringFederationWallet, availableUTXOs);
         }
     }
 
+    private void processFundsMigrationInMigrationAge(Keccak256 rskTxHash, Wallet retiringFederationWallet, List<UTXO> availableUTXOs) throws IOException {
+        ReleaseTransactionBuilder.BuildResult migrationTransactionResult = buildMigrationTransaction(rskTxHash, retiringFederationWallet);
+        boolean migrationTransactionCreated = isMigrationTransactionCreated(migrationTransactionResult);
+        if (migrationTransactionCreated) {
+            settleMigrationTransaction(migrationTransactionResult, rskTxHash, availableUTXOs);
+        }
+    }
+
+    private void processFundsMigrationPastMigrationAge(Keccak256 rskTxHash, Wallet retiringFederationWallet, List<UTXO> availableUTXOs) {
+        boolean migrationTransactionCreated = false;
+        boolean hasBalance = retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO);
+        if (!hasBalance) {
+            logger.info("[processFundsMigrationPastMigrationAge] Retiring federation wallet has no balance, clearing retiring federation");
+            clearRetiringFederation(availableUTXOs);
+            return;
+        }
+
+        try {
+            ReleaseTransactionBuilder.BuildResult migrationTransactionResult = buildMigrationTransaction(rskTxHash, retiringFederationWallet);
+            migrationTransactionCreated = isMigrationTransactionCreated(migrationTransactionResult);
+            if (migrationTransactionCreated) {
+                settleMigrationTransaction(migrationTransactionResult, rskTxHash, availableUTXOs);
+            }
+        } catch (Exception e) {
+            logger.error(
+                "[processFundsMigration] Unable to complete retiring federation migration. Balance left: {} in {}",
+                retiringFederationWallet.getBalance().toFriendlyString(),
+                retiringFederationWallet.getWatchedAddresses()
+            );
+        }
+
+        if (shouldClearRetiredFederation(migrationTransactionCreated)) {
+            clearRetiringFederation(availableUTXOs);
+        }
+    }
+
+    private void clearRetiringFederation(List<UTXO> availableUTXOs) {
+        logger.info(
+            "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
+            availableUTXOs.size()
+        );
+        federationSupport.clearRetiredFederation();
+    }
+
+    /**
+     * Pre-RSKIP455 always clears once past migration age.
+     * Post-RSKIP455: clears only when a migration tx was not created (builder did not return SUCCESS).
+     * This could be due to only having dust UTXOs left to migrate. If the migration tx can't be created
+     * and migration age has passed, then just clear the retiring federation.
+     */
+    private boolean shouldClearRetiredFederation(boolean migrationTransactionCreated) {
+        if (!activations.isActive(RSKIP455)) {
+            return true;
+        }
+
+        return !migrationTransactionCreated;
+    }
+
+    /**
+     * @deprecated Post RSKIP455, if the retiring federation does not have enough funds to pay
+     * for fees is handled by ReleaseTransactionBuilder instead of relying on this pre-check.
+     * In the future, we are performing tests to see whether any migration transactions ever hit
+     * that federation's balance <= feePerKb/2. If not, this guard can be removed entirely.
+     */
+    @Deprecated(since="CARDAMOM-10.0.0")
     private boolean hasMinimumFundsToMigrate(Wallet retiringFederationWallet) {
+        if (activations.isActive(RSKIP455)) {
+            return true;
+        }
+
         // This value is set according to the average 500 bytes transaction size
         Coin minimumFundsToMigrate = getFeePerKb().divide(2);
         return retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
     }
 
-    private void migrateFunds(
+    private ReleaseTransactionBuilder.BuildResult buildMigrationTransaction(
         Keccak256 rskTxHash,
-        Wallet retiringFederationWallet,
+        Wallet retiringFederationWallet
+    ) {
+        logRetiringFederationBalance(retiringFederationWallet.getBalance());
+        Address activeFederationAddress = getActiveFederationAddress();
+        ReleaseTransactionBuilder.BuildResult migrationTransactionResult = activations.isActive(RSKIP455) ?
+            createMigrationTransaction(retiringFederationWallet, activeFederationAddress) :
+            createMigrationTransactionLegacy(retiringFederationWallet, activeFederationAddress);
+
+        if (!isMigrationTransactionCreated(migrationTransactionResult)) {
+            logger.warn(
+                "[buildMigrationTransaction] Unable to create migration transaction for rskTxHash {}. Response code: {}",
+                rskTxHash,
+                migrationTransactionResult.responseCode()
+            );
+        }
+
+        return migrationTransactionResult;
+    }
+
+    private boolean isMigrationTransactionCreated(ReleaseTransactionBuilder.BuildResult migrationTransactionResult) {
+        return migrationTransactionResult.responseCode() == ReleaseTransactionBuilder.Response.SUCCESS;
+    }
+
+    private void settleMigrationTransaction(
+        ReleaseTransactionBuilder.BuildResult migrationTransactionResult,
+        Keccak256 rskTxHash,
         List<UTXO> utxosToUse
     ) throws IOException {
-        logRetiringFederationBalance(retiringFederationWallet.getBalance());
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
-        Address activeFederationAddress = getActiveFederationAddress();
-        ReleaseTransactionBuilder.BuildResult migrationTransactionResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
         BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
         List<UTXO> selectedUTXOs = migrationTransactionResult.selectedUTXOs();
 
         logger.debug(
-            "[migrateFunds] consumed {} UTXOs.",
+            "[settleMigrationTransaction] consumed {} UTXOs.",
             selectedUTXOs.size()
         );
 
@@ -1326,7 +1393,7 @@ public class BridgeSupport {
     private void logRetiringFederationBalance(Coin retiringFederationBalance) {
         String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
         logger.info(
-            "[migrateFunds] Retiring federation has funds to migrate: {}.",
+            "[logRetiringFederationBalance] Retiring federation has funds to migrate: {}.",
             retiringFederationBalanceInFriendlyFormat
         );
     }
@@ -3086,9 +3153,13 @@ public class BridgeSupport {
         return manager.getCheckpointBefore(time);
     }
 
-    private ReleaseTransactionBuilder.BuildResult createMigrationTransaction(Wallet retiringFederationWallet, Address destinationAddress) {
+    /**
+     * @deprecated Use {@link #createMigrationTransaction(Wallet, Address)} instead.
+     */
+    @Deprecated(since="CARDAMOM-10.0.0")
+    private ReleaseTransactionBuilder.BuildResult createMigrationTransactionLegacy(Wallet retiringFederationWallet, Address destinationAddress) {
         Coin expectedMigrationValue = retiringFederationWallet.getBalance();
-        logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
+        logger.debug("[createMigrationTransactionLegacy] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
             Federation retiringFederation = getRetiringFederation().orElseThrow(() -> new IllegalStateException("No retiring federation is present"));
             ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
@@ -3099,7 +3170,7 @@ public class BridgeSupport {
                 getFeePerKb(),
                 activations
             );
-            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(expectedMigrationValue, destinationAddress);
+            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(List.of(expectedMigrationValue), destinationAddress);
 
             switch (result.responseCode()) {
                 case SUCCESS -> {
@@ -3107,15 +3178,32 @@ public class BridgeSupport {
                 }
 
                 case UTXO_PROVIDER_EXCEPTION ->
-                    throw new RuntimeException("[createMigrationTransaction] Unexpected UTXO provider error");
+                    throw new RuntimeException("[createMigrationTransactionLegacy] Unexpected UTXO provider error");
 
                 case DUSTY_SEND_REQUESTED ->
-                    throw new IllegalStateException("[createMigrationTransaction] Retiring federation wallet cannot be emptied");
+                    throw new IllegalStateException("[createMigrationTransactionLegacy] Retiring federation wallet cannot be emptied");
 
                 case INSUFFICIENT_MONEY, EXCEED_MAX_TRANSACTION_SIZE, COULD_NOT_ADJUST_DOWNWARDS ->
                     expectedMigrationValue = expectedMigrationValue.divide(2);
             }
         }
+    }
+
+    private ReleaseTransactionBuilder.BuildResult createMigrationTransaction(Wallet retiringFederationWallet, Address destinationAddress) {
+        Coin expectedMigrationValue = retiringFederationWallet.getBalance();
+        logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
+        Federation retiringFederation = getRetiringFederation().orElseThrow(() -> new IllegalStateException("No retiring federation is present"));
+        ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+            networkParameters,
+            retiringFederationWallet,
+            retiringFederation,
+            destinationAddress,
+            getFeePerKb(),
+            activations
+        );
+
+        List<Coin> outputs = calculateMigrationTransactionOutputsValues(expectedMigrationValue, bridgeConstants);
+        return txBuilder.buildMigrationTransaction(outputs, destinationAddress);
     }
 
     // Make sure the local bitcoin blockchain is instantiated
