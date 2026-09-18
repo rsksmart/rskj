@@ -158,8 +158,7 @@ class VarIntUtilsTest {
         List<Long> values = VarIntUtils.decode(null);
 
         // assert
-        List<Long> expectedValues = List.of();
-        assertArrayEquals(expectedValues.toArray(), values.toArray());
+        assertEquals(List.of(), values);
     }
 
     @Test
@@ -168,8 +167,19 @@ class VarIntUtilsTest {
         List<Long> values = VarIntUtils.decode(EMPTY_BYTE_ARRAY);
 
         // assert
-        List<Long> expectedValues = List.of();
-        assertArrayEquals(expectedValues.toArray(), values.toArray());
+        assertEquals(List.of(), values);
+    }
+
+    @Test
+    void decode_withValues_shouldReturnAnUnmodifiableList() {
+        // arrange
+        byte[] encodedValues = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES);
+
+        // act
+        List<Long> values = VarIntUtils.decode(encodedValues);
+
+        // assert
+        assertThrows(UnsupportedOperationException.class, () -> values.add(1L));
     }
 
     @Test
