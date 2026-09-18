@@ -131,7 +131,7 @@ class UtxoUtilsTest {
 
         // assert
         String expectedMessage =
-            "Invalid outpoint value: null. Negative and null values are not allowed.";
+            "Invalid outpoint value: null values are not allowed.";
         assertEquals(expectedMessage, actualMessage);
     }
 
@@ -153,11 +153,11 @@ class UtxoUtilsTest {
         List<Arguments> arguments = new ArrayList<>();
 
         List<Coin> negativeOutpointValues = Arrays.asList(Coin.valueOf(-10), Coin.valueOf(-1000), Coin.valueOf(-100));
-        String expectedMessageForNegativeOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -10);
+        String expectedMessageForNegativeOutpointValues = String.format("Invalid value: %s. Negative and null values are not allowed.", -10);
         arguments.add(Arguments.of(negativeOutpointValues, expectedMessageForNegativeOutpointValues));
 
         List<Coin> negativeAndPositiveOutpointValues = Arrays.asList(Coin.valueOf(200), Coin.valueOf(-100), Coin.valueOf(300));
-        String expectedMessageForNegativeAndPositiveOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -100);
+        String expectedMessageForNegativeAndPositiveOutpointValues = String.format("Invalid value: %s. Negative and null values are not allowed.", -100);
         arguments.add(Arguments.of(negativeAndPositiveOutpointValues, expectedMessageForNegativeAndPositiveOutpointValues));
 
         return arguments.stream();

@@ -57,14 +57,17 @@ public final class UtxoUtils {
             values.add(outpointValue.getValue());
         }
 
-        return VarIntUtils.encode(values);
+        try {
+            return VarIntUtils.encode(values);
+        } catch (VarIntException ex) {
+            throw new InvalidOutpointValueException(ex.getMessage(), ex);
+        }
     }
 
     private static void validateOutpointValue(Coin outpointValue) {
-        if (outpointValue == null || outpointValue.isNegative()) {
-            throw new InvalidOutpointValueException(String.format(
-                "Invalid outpoint value: %s. Negative and null values are not allowed.",
-                outpointValue));
+        if (outpointValue == null) {
+            throw new InvalidOutpointValueException(
+                "Invalid outpoint value: null values are not allowed.");
         }
     }
 
