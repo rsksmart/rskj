@@ -236,6 +236,32 @@ class CanonicalScalarEncodingTest {
         }
 
         @Test
+        void unsignedEnvelopeWithNonZeroYParityIsRejected() {
+            // An unsigned envelope reports no parity; the encoders emit zero for one.
+            byte[] body = RLP.encodeList(
+                    RLP.encodeByte(REGTEST_CHAIN_ID),
+                    RLP.encodeElement(new byte[]{0x05}),
+                    RLP.encodeElement(new byte[]{0x01}),
+                    RLP.encodeElement(new byte[]{0x02}),
+                    RLP.encodeElement(new byte[]{0x52, 0x08}),
+                    RLP.encodeElement(DEFAULT_RECEIVER.getBytes()),
+                    RLP.encodeElement(null),
+                    RLP.encodeElement(null),
+                    RLP.encodeList(),
+                    RLP.encodeByte((byte) 1),
+                    RLP.encodeElement(null),
+                    RLP.encodeElement(null));
+            byte[] raw = new byte[body.length + 1];
+            raw[0] = 0x02;
+            System.arraycopy(body, 0, raw, 1, body.length);
+
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class, () -> Transaction.fromRaw(raw));
+            assertTrue(e.getMessage().contains(
+                    "yParity must be 0 when the signature is absent"), e.getMessage());
+        }
+
+        @Test
         void zeroFeesEncodeAsTheEmptyStringAndSurviveRawIngress() {
             // encodeCoinNonNullZero spells zero as 0x00, which a node could not re-parse itself.
             Transaction tx = Transaction.builder()
@@ -616,6 +642,45 @@ class CanonicalScalarEncodingTest {
                     IllegalArgumentException.class, () -> Transaction.fromRaw(mutated));
             assertTrue(e.getMessage().contains("Access list storage keys at index 0 must be encoded as an RLP list"),
                     e.getMessage());
+        }
+
+        @Test
+        void type2ByteStringFieldFramedAsAListIsRejected() {
+            Transaction canonical = type2Builder().nonce(BigInteger.valueOf(5)).build();
+            canonical.sign(PRIVATE_KEY);
+
+            // The data field is a byte string; 0xc0 is the empty list.
+            byte[] mutated = replaceField(canonical.getEncoded(), 7, new byte[]{(byte) 0xc0});
+
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class, () -> Transaction.fromRaw(mutated));
+            assertTrue(e.getMessage().contains(
+                    "Transaction field at index 7 must be encoded as an RLP byte string"), e.getMessage());
+        }
+
+        @Test
+        void type2ScalarFieldFramedAsAListIsRejected() {
+            Transaction canonical = type2Builder().nonce(BigInteger.valueOf(5)).build();
+            canonical.sign(PRIVATE_KEY);
+
+            byte[] mutated = replaceField(canonical.getEncoded(), 1, new byte[]{(byte) 0xc0});
+
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class, () -> Transaction.fromRaw(mutated));
+            assertTrue(e.getMessage().contains(
+                    "Transaction field at index 1 must be encoded as an RLP byte string"), e.getMessage());
+        }
+
+        @Test
+        void type4ByteStringFieldFramedAsAListIsRejected() {
+            Transaction canonical = signedType4WithOneAuthorization();
+
+            byte[] mutated = replaceField(canonical.getEncoded(), 7, new byte[]{(byte) 0xc0});
+
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class, () -> Transaction.fromRaw(mutated));
+            assertTrue(e.getMessage().contains(
+                    "Transaction field at index 7 must be encoded as an RLP byte string"), e.getMessage());
         }
 
         @Test

@@ -45,6 +45,12 @@ public final class TypedTransactionCodec {
                 txFields.get(yParityIndex).getRLPData(), "Typed transaction yParity");
 
         if (r == null && s == null) {
+            // An unsigned envelope carries no parity to report, and the encoders emit zero for one,
+            // so zero is the only spelling that survives a re-encode unchanged.
+            if (yParity != 0) {
+                throw new IllegalArgumentException(
+                        "Typed transaction yParity must be 0 when the signature is absent");
+            }
             byte chainId = parseTypedTxChainId(txFields.get(chainIdIndex).getRLPData());
             return new UnsignedSignature(chainId);
         }
