@@ -355,4 +355,14 @@ class UtxoUtilsTest {
         assertThrows(InvalidOutputIndexException.class,
             () -> UtxoUtils.decodeOutputIndexes(encodedOutputIndexes));
     }
+
+    @Test
+    void encodeOutputIndexes_withNullOutputIndex_shouldThrowInvalidOutputIndexException() {
+        // arrange
+        List<Long> outputIndexes = Collections.singletonList(null);
+
+        // act & assert
+        assertThrows(InvalidOutputIndexException.class,
+            () -> UtxoUtils.encodeOutputIndexes(outputIndexes));
+    }
 }
