@@ -62,9 +62,9 @@ public class Type2TransactionEncoder implements TransactionEncoder {
 
         return new byte[][]{
                 RLP.encodeByte(transaction.getChainId()),
-                TransactionEncodingUtils.encodeNonce(transaction.getNonce()),
-                RLP.encodeCoinNonNullZero(transaction.getMaxPriorityFeePerGas()),
-                RLP.encodeCoinNonNullZero(transaction.getMaxFeePerGas()),
+                TransactionEncodingUtils.encodeTypedNonce(transaction.getNonce()),
+                TransactionEncodingUtils.encodeFeeScalar(transaction.getMaxPriorityFeePerGas()),
+                TransactionEncodingUtils.encodeFeeScalar(transaction.getMaxFeePerGas()),
                 RLP.encodeElement(transaction.getGasLimit()),
                 RLP.encodeRskAddress(transaction.getReceiveAddress()),
                 RLP.encodeCoinNullZero(transaction.getValue()),

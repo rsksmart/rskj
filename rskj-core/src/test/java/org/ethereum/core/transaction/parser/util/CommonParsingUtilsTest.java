@@ -23,6 +23,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
@@ -270,5 +271,115 @@ class CommonParsingUtilsTest {
     void parseCanonicalYParity_outOfRange_throws(byte value) {
         assertThrows(IllegalArgumentException.class,
                 () -> CommonParsingUtils.parseCanonicalYParity(new byte[]{value}, "y"));
+    }
+
+    // -------------------------------------------------------------------------
+    // requireCanonicalSignatureComponent — the strict counterpart used on RLP paths
+    // -------------------------------------------------------------------------
+
+    @Test
+    void requireCanonicalSignatureComponent_minimalWord_isAccepted() {
+        byte[] word = new byte[32];
+        word[0] = 0x11;
+        assertDoesNotThrow(() -> CommonParsingUtils.requireCanonicalSignatureComponent(word, "Signature R"));
+    }
+
+    @Test
+    void requireCanonicalSignatureComponent_nullOrEmpty_isAccepted() {
+        assertDoesNotThrow(() -> CommonParsingUtils.requireCanonicalSignatureComponent(null, "Signature R"));
+        assertDoesNotThrow(() -> CommonParsingUtils.requireCanonicalSignatureComponent(new byte[0], "Signature R"));
+    }
+
+    @Test
+    void requireCanonicalSignatureComponent_leadingZero_throws() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.requireCanonicalSignatureComponent(new byte[32], "Signature R"));
+        assertTrue(ex.getMessage().contains("Signature R must not have leading zero bytes"), ex.getMessage());
+    }
+
+    @Test
+    void requireCanonicalSignatureComponent_overDataWord_throws() {
+        byte[] tooWide = new byte[33];
+        tooWide[0] = 0x11;
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.requireCanonicalSignatureComponent(tooWide, "Signature S"));
+        assertEquals("Signature S is not valid", ex.getMessage());
+    }
+
+    // -------------------------------------------------------------------------
+    // requireCanonical*ScalarFields — one call per raw typed parser
+    // -------------------------------------------------------------------------
+
+    @Test
+    void requireCanonicalGasPriceScalarFields_canonicalOrAbsentFields_areAccepted() {
+        assertDoesNotThrow(() -> CommonParsingUtils.requireCanonicalGasPriceScalarFields(
+                new byte[]{0x01}, new byte[]{0x02}, new byte[]{0x52, 0x08}, new byte[]{0x03}));
+        assertDoesNotThrow(() -> CommonParsingUtils.requireCanonicalGasPriceScalarFields(
+                null, null, null, null));
+        assertDoesNotThrow(() -> CommonParsingUtils.requireCanonicalGasPriceScalarFields(
+                new byte[0], new byte[0], new byte[0], new byte[0]));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0,Nonce", "1,Gas Price", "2,Gas Limit", "3,Value"})
+    void requireCanonicalGasPriceScalarFields_leadingZero_throwsNamingTheField(int index, String label) {
+        byte[][] fields = {new byte[]{0x01}, new byte[]{0x02}, new byte[]{0x03}, new byte[]{0x04}};
+        fields[index] = new byte[]{0x00, 0x01};
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.requireCanonicalGasPriceScalarFields(
+                        fields[0], fields[1], fields[2], fields[3]));
+        assertTrue(ex.getMessage().startsWith(label + " must not have leading zero bytes"), ex.getMessage());
+    }
+
+    @Test
+    void requireCanonicalTypedScalarFields_canonicalOrAbsentFields_areAccepted() {
+        assertDoesNotThrow(() -> CommonParsingUtils.requireCanonicalTypedScalarFields(
+                new byte[]{0x01}, new byte[]{0x52, 0x08}, new byte[]{0x02}, new byte[]{0x03}, new byte[]{0x04}));
+        assertDoesNotThrow(() -> CommonParsingUtils.requireCanonicalTypedScalarFields(
+                null, null, null, null, null));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "0,Nonce",
+            "1,Gas Limit",
+            "2,Value",
+            "3,Max priority fee per gas",
+            "4,Max fee per gas"})
+    void requireCanonicalTypedScalarFields_leadingZero_throwsNamingTheField(int index, String label) {
+        byte[][] fields = {
+                new byte[]{0x01}, new byte[]{0x02}, new byte[]{0x03}, new byte[]{0x04}, new byte[]{0x05}};
+        fields[index] = new byte[]{0x00, 0x01};
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.requireCanonicalTypedScalarFields(
+                        fields[0], fields[1], fields[2], fields[3], fields[4]));
+        assertTrue(ex.getMessage().startsWith(label + " must not have leading zero bytes"), ex.getMessage());
+    }
+
+    @Test
+    void requireListFramed_listElement_doesNotThrow() {
+        RLPList fields = RLP.decodeList(RLP.encodeList(RLP.encodeList(), RLP.encodeElement(new byte[]{0x01})));
+
+        assertDoesNotThrow(() -> CommonParsingUtils.requireListFramed(fields.get(0), "Access list"));
+    }
+
+    @Test
+    void requireListFramed_stringElement_throws() {
+        // A string whose content happens to decode as a list is still a string.
+        RLPList fields = RLP.decodeList(RLP.encodeList(RLP.encodeElement(new byte[]{(byte) 0xc0})));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.requireListFramed(fields.get(0), "Access list"));
+        assertTrue(ex.getMessage().contains("Access list must be encoded as an RLP list"), ex.getMessage());
+    }
+
+    @Test
+    void requireListFramed_emptyStringElement_throws() {
+        RLPList fields = RLP.decodeList(RLP.encodeList(RLP.encodeElement(null)));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.requireListFramed(fields.get(0), "Authorization list"));
     }
 }

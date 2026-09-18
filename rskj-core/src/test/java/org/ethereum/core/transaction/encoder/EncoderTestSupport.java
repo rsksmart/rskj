@@ -137,6 +137,15 @@ public final class EncoderTestSupport {
                 EMPTY_ACCESS_LIST, MAX_PRIORITY_FEE, MAX_FEE, null, RECEIVER, EMPTY_DATA);
     }
 
+    /**
+     * Type-2 with both fee fields at zero — the boundary spelling of a typed fee scalar, which is
+     * the empty string rather than a zero byte.
+     */
+    public static Transaction unsignedType2ZeroFees() {
+        return build(TransactionTypePrefix.typed(TransactionType.TYPE_2), CHAIN_ID,
+                EMPTY_ACCESS_LIST, Coin.ZERO, Coin.ZERO, null, RECEIVER, EMPTY_DATA);
+    }
+
     public static Transaction unsignedType4() {
         return unsignedType4(CHAIN_ID);
     }
@@ -145,14 +154,6 @@ public final class EncoderTestSupport {
         return build(TransactionTypePrefix.typed(TransactionType.TYPE_4), chainId,
                 EMPTY_ACCESS_LIST, MAX_PRIORITY_FEE, MAX_FEE, List.of(deterministicAuthorization(chainId)),
                 RECEIVER, EMPTY_DATA);
-    }
-
-    /**
-     * RSKIP-545 authorization tuple with fixed components so the encoding is fully deterministic:
-     * {@code [chainId, 0x...03, nonce=1, yParity=0, r=1, s=1]}.
-     */
-    public static SetCodeAuthorization deterministicAuthorization() {
-        return deterministicAuthorization(CHAIN_ID);
     }
 
     public static SetCodeAuthorization deterministicAuthorization(byte chainId) {

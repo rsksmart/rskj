@@ -17,6 +17,8 @@
  */
 package org.ethereum.core.transaction.encoder.util;
 
+import co.rsk.core.Coin;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.util.RLP;
 
 public final class TransactionEncodingUtils {
@@ -31,6 +33,34 @@ public final class TransactionEncodingUtils {
             return RLP.encodeElement(null);
         }
         return RLP.encodeElement(nonce);
+    }
+
+    /**
+     * RLP-encoded nonce for a typed envelope. Unlike {@link #encodeNonce} this asserts minimality
+     * rather than canonicalising, because rewriting would change the hash on the raw path, where the
+     * signature commits to the bytes received. Typed ingress guarantees a minimal nonce from both
+     * directions, so a failure here means a construction path bypassed both.
+     */
+    public static byte[] encodeTypedNonce(byte[] nonce) {
+        if (nonce != null && nonce.length > 0 && nonce[0] == 0) {
+            throw new IllegalStateException(
+                    "Typed transaction nonce must be minimally encoded; zero is the empty string");
+        }
+        return encodeNonce(nonce);
+    }
+
+    /**
+     * RLP-encoded fee scalar for typed envelopes: {@link RLP#encodeCoinNonNullZero} spells zero as
+     * {@code 0x00}, which typed ingress rejects, so zero becomes the empty string. Typed only —
+     * {@code Type0TransactionEncoder} keeps {@code encodeCoinNonNullZero} because legacy hashes are
+     * consensus history. Zero is spelled out rather than left to
+     * {@code BigIntegers.asUnsignedByteArray}, whose result for it varies between BouncyCastle builds.
+     */
+    public static byte[] encodeFeeScalar(Coin coin) {
+        if (coin == null || coin.asBigInteger().signum() == 0) {
+            return RLP.encodeElement(null);
+        }
+        return RLP.encodeElement(BigIntegers.asUnsignedByteArray(coin.asBigInteger()));
     }
 
     /** RLP access list bytes for typed txs, or empty list {@link #EMPTY_ACCESS_LIST_RLP} when absent. */

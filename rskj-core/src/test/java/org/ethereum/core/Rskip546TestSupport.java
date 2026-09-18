@@ -137,6 +137,24 @@ public final class Rskip546TestSupport {
         return ByteUtil.merge(new byte[]{TransactionType.TYPE_2.getByteCode()}, RLP.encodeList(encodedFields));
     }
 
+    /**
+     * A canonical 32-byte signature component for fixtures. r and s are scalars, so an all-zero
+     * placeholder is a non-canonical encoding that the typed parser rejects.
+     */
+    public static byte[] signatureWord() {
+        byte[] word = new byte[32];
+        word[0] = 0x11;
+        return word;
+    }
+
+    /**
+     * Typed envelopes carry scalars minimally encoded, with zero as the empty string, so fixtures
+     * built here look like real wire data: the raw parsers reject a non-canonical scalar.
+     */
+    private static byte[] encodeScalar(byte[] value) {
+        return RLP.encodeElement(ByteUtil.stripLeadingZeroes(value, ByteUtil.EMPTY_BYTE_ARRAY));
+    }
+
     private static byte[][] type1Fields(
             byte chainId,
             RskAddress to,
@@ -149,9 +167,9 @@ public final class Rskip546TestSupport {
     ) {
         return new byte[][]{
                 RLP.encodeByte(chainId),
-                RLP.encodeElement(nonce == null ? new byte[]{0x01} : nonce),
+                encodeScalar(nonce == null ? new byte[]{0x01} : nonce),
                 RLP.encodeCoinNonNullZero(gasPrice),
-                RLP.encodeElement(gasLimit.toByteArray()),
+                encodeScalar(gasLimit.toByteArray()),
                 RLP.encodeRskAddress(to),
                 RLP.encodeBigInteger(value.asBigInteger()),
                 RLP.encodeElement(data == null ? new byte[0] : data),
@@ -175,10 +193,10 @@ public final class Rskip546TestSupport {
     ) {
         return new byte[][]{
                 RLP.encodeByte(chainId),
-                RLP.encodeElement(nonce == null ? new byte[]{0x01} : nonce),
+                encodeScalar(nonce == null ? new byte[]{0x01} : nonce),
                 RLP.encodeCoinNonNullZero(maxPriorityFeePerGas),
                 RLP.encodeCoinNonNullZero(maxFeePerGas),
-                RLP.encodeElement(gasLimit.toByteArray()),
+                encodeScalar(gasLimit.toByteArray()),
                 RLP.encodeRskAddress(to),
                 RLP.encodeBigInteger(value.asBigInteger()),
                 RLP.encodeElement(data == null ? new byte[0] : data),

@@ -52,8 +52,10 @@ public final class TypedTransactionCodec {
         if (r == null || s == null) {
             throw new IllegalArgumentException("Typed transaction signature is incomplete");
         }
-        CommonParsingUtils.requireNormalizedSignatureComponent(r, "Signature R is not valid");
-        CommonParsingUtils.requireNormalizedSignatureComponent(s, "Signature S is not valid");
+        // Canonical, like the authorization tuple's r/s: the components are held as values, so a
+        // non-minimal encoding would not survive a re-encode unchanged.
+        CommonParsingUtils.requireCanonicalSignatureComponent(r, "Signature R");
+        CommonParsingUtils.requireCanonicalSignatureComponent(s, "Signature S");
         byte v = (byte) (LOWER_REAL_V + yParity);
         byte chainId = parseTypedTxChainId(txFields.get(chainIdIndex).getRLPData());
         return new SignedSignature(chainId, ECDSASignature.fromComponents(r, s, v));
@@ -69,10 +71,10 @@ public final class TypedTransactionCodec {
         if (chainIdData == null || chainIdData.length == 0) {
             throw new IllegalArgumentException("Typed transaction chainId must not be zero or absent");
         }
+        // Canonical plus non-empty already implies non-zero: the first byte cannot be 0x00, so no
+        // separate zero check is needed below.
+        CommonParsingUtils.requireCanonicalScalar(chainIdData, "Typed transaction chainId");
         BigInteger chainIdValue = new BigInteger(1, chainIdData);
-        if (chainIdValue.signum() == 0) {
-            throw new IllegalArgumentException("Typed transaction chainId must not be zero");
-        }
         if (chainIdValue.compareTo(BigInteger.valueOf(255)) > 0) {
             throw new IllegalArgumentException("Typed transaction chainId exceeds maximum supported value of 255, got: " + chainIdValue);
         }
