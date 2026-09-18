@@ -55,8 +55,8 @@ public class Type1TransactionEncoder  implements TransactionEncoder {
     protected byte[][] encodeUnsignedFields(Transaction tx) {
         return new byte[][]{
                 RLP.encodeByte(tx.getChainId()),
-                TransactionEncodingUtils.encodeNonce(tx.getNonce()),
-                RLP.encodeCoinNonNullZero(tx.getGasPrice()),
+                TransactionEncodingUtils.encodeTypedNonce(tx.getNonce()),
+                TransactionEncodingUtils.encodeFeeScalar(tx.getGasPrice()),
                 RLP.encodeElement(tx.getGasLimit()),
                 RLP.encodeRskAddress(tx.getReceiveAddress()),
                 RLP.encodeCoinNullZero(tx.getValue()),

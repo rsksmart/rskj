@@ -249,11 +249,17 @@ public final class TransactionInput {
             return null;
         }
         try {
-            byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
-            if (bytes.length != 1) {
+            // Structured ingress normalises, so "0x0021" is a legal quantity for 33. "0x" carries
+            // no value at all and stays a parameter error, rather than failing later in the encoder.
+            byte[] decoded = HexUtils.strHexOrStrNumberToByteArray(hex);
+            if (decoded.length == 0) {
                 throw invalidParamError(ERR_INVALID_CHAIN_ID + hex);
             }
-            return bytes[0];
+            byte[] bytes = ByteUtil.stripLeadingZeroes(decoded, ByteUtil.EMPTY_BYTE_ARRAY);
+            if (bytes.length > 1) {
+                throw invalidParamError(ERR_INVALID_CHAIN_ID + hex);
+            }
+            return bytes.length == 0 ? (byte) 0 : bytes[0];
         } catch (RskJsonRpcRequestException e) {
             throw e;
         } catch (Exception e) {
@@ -275,18 +281,22 @@ public final class TransactionInput {
         return chainId;
     }
 
-    static BigInteger resolveGasLimit(@Nullable byte[] gasLimitBytes) {
-        if (gasLimitBytes == null) {
-            return DEFAULT_GAS_LIMIT;
-        }
+    /**
+     * Callers pass {@code gasLimit()}, which clones through {@link ByteUtil#cloneBytes} and yields
+     * an empty array rather than null, so an omitted gas limit resolves to zero;
+     * {@link #DEFAULT_GAS_LIMIT} applies only on the {@code CallArguments} path.
+     */
+    static BigInteger resolveGasLimit(byte[] gasLimitBytes) {
         CommonParsingUtils.requireDataWordBytes(gasLimitBytes, "Gas Limit is not valid");
         return new BigInteger(1, gasLimitBytes);
     }
 
-    // nonceBytes is always TransactionInput.nonce(), which never surfaces a true null
-    // (ByteUtil.cloneBytes(null) -> empty array), so no null-defaulting is needed here.
+    /**
+     * Structured ingress accepts caller-supplied bytes, so the nonce is minimised here: leading
+     * zeros are dropped and zero becomes the empty string, giving one encoding per transaction.
+     */
     static byte[] resolveNonceBytes(byte[] nonceBytes) {
         CommonParsingUtils.requireDataWordBytes(nonceBytes, "Nonce is not valid");
-        return nonceBytes;
+        return CommonParsingUtils.unsignedBytes(new BigInteger(1, nonceBytes));
     }
 }
