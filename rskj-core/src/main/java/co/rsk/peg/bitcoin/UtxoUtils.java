@@ -87,7 +87,7 @@ public final class UtxoUtils {
      */
     public static List<Long> decodeOutputIndexes(byte[] encodedOutputIndexes) {
         try {
-            return List.copyOf(VarIntUtils.decode(encodedOutputIndexes));
+            return VarIntUtils.decode(encodedOutputIndexes);
         } catch (VarIntException ex) {
             throw new InvalidOutputIndexException(ex.getMessage(), ex);
         }

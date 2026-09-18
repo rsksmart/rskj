@@ -50,7 +50,7 @@ public final class VarIntUtils {
             validateValue(valueAsVarInt.value);
             values.add(valueAsVarInt.value);
         }
-        return values;
+        return Collections.unmodifiableList(values);
     }
 
     /**
