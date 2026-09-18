@@ -43,7 +43,7 @@ public final class UtxoUtils {
      * {@code empty}.
      */
     public static byte[] encodeOutpointValues(List<Coin> outpointValues) {
-        if (outpointValues == null) {
+        if (outpointValues == null || outpointValues.isEmpty()) {
             return EMPTY_BYTE_ARRAY;
         }
 
@@ -89,7 +89,7 @@ public final class UtxoUtils {
      * {@code empty}.
      */
     public static byte[] encodeOutputIndexes(List<Long> outputIndexes) {
-        if (outputIndexes == null) {
+        if (outputIndexes == null || outputIndexes.isEmpty()) {
             return EMPTY_BYTE_ARRAY;
         }
 
