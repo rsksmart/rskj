@@ -69,15 +69,15 @@ class InternalDelegationExecutionTest {
          *     CALL target
          *     return CALL result (0/1)
          */
-        track.setupContract(caller.getAddress());
+        track.initializeStorage(caller.getAddress());
         track.saveCode(caller.getAddress(), buildInternalCallCode(target.getAddress()));
 
 
         // Historical state containing: target.code = EF0100 || delegated
-        track.setupContract(target.getAddress());
+        track.initializeStorage(target.getAddress());
         track.saveCode(target.getAddress(), DelegationCodeResolver.createDelegatedCode(delegated.getAddress()));
 
-        track.setupContract(delegated.getAddress());
+        track.initializeStorage(delegated.getAddress());
         track.saveCode(delegated.getAddress(), new byte[] { 0x00 });
 
         track.commit();
@@ -121,15 +121,15 @@ class InternalDelegationExecutionTest {
         Account target = createAccount("internalCallAfterRskip545Target", track, Coin.ZERO);
         Account delegated = createAccount("internalCallAfterRskip545Delegate", track, Coin.ZERO);
 
-        track.setupContract(caller.getAddress());
+        track.initializeStorage(caller.getAddress());
         track.saveCode(caller.getAddress(), buildInternalCallCode(target.getAddress()));
 
-        track.setupContract(target.getAddress());
+        track.initializeStorage(target.getAddress());
         track.saveCode(target.getAddress(), DelegationCodeResolver.createDelegatedCode(delegated.getAddress()));
 
 
         // Delegated runtime: STOP
-        track.setupContract(delegated.getAddress());
+        track.initializeStorage(delegated.getAddress());
         track.saveCode(delegated.getAddress(), new byte[] { 0x00 });
         track.commit();
 

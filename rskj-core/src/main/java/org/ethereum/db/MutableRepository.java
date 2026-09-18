@@ -103,7 +103,7 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public synchronized void setupContract(RskAddress addr) {
+    public synchronized void initializeStorage(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
         internalPut(prefix, ONE_BYTE_ARRAY);
     }
@@ -199,7 +199,7 @@ public class MutableRepository implements Repository {
             return Keccak256.ZERO_HASH;
         }
 
-        if (!isContract(addr)) {
+        if (!hasInitializedStorage(addr)) {
             return KECCAK_256_OF_EMPTY_ARRAY;
         }
 
@@ -218,7 +218,7 @@ public class MutableRepository implements Repository {
             return Keccak256.ZERO_HASH;
         }
 
-        if (!isContract(addr)) {
+        if (!hasInitializedStorage(addr)) {
             return KECCAK_256_OF_EMPTY_ARRAY;
         }
 
@@ -243,9 +243,22 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public boolean isContract(RskAddress addr) {
+    public boolean hasInitializedStorage(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
         return internalGet(prefix) != null;
+    }
+
+    @Override
+    public synchronized void initializeDelegationAuthority(RskAddress addr) {
+        AccountState account = getAccountStateOrCreateNew(addr);
+        account.setDelegationAuthority();
+        updateAccountState(addr, account);
+    }
+
+    @Override
+    public synchronized boolean hasDelegationAuthorityMarker(RskAddress addr) {
+        AccountState account = getAccountState(addr);
+        return account != null && account.hasDelegationAuthority();
     }
 
     @Override
@@ -260,7 +273,7 @@ public class MutableRepository implements Repository {
         // But it happens in Repository tests, that create only storage row cells.
         if (!isExist(addr)) {
             createAccount(addr);
-            setupContract(addr);
+            initializeStorage(addr);
         }
 
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);

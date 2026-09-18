@@ -78,10 +78,10 @@ class Rskip545DelegatedOpcodeTest {
     void setupRepository() {
         repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
         repository.createAccount(AUTHORITY);
-        repository.setupContract(AUTHORITY);
+        repository.initializeStorage(AUTHORITY);
         repository.saveCode(AUTHORITY, DelegationCodeResolver.createDelegatedCode(DELEGATE));
         repository.createAccount(DELEGATE);
-        repository.setupContract(DELEGATE);
+        repository.initializeStorage(DELEGATE);
         repository.saveCode(DELEGATE, Hex.decode("60006000f3"));
 
         invoke = new ProgramInvokeMockImpl(true);
@@ -338,10 +338,10 @@ class Rskip545DelegatedOpcodeTest {
     void delegatedExecution_extcodesizeOnThirdPartyDelegatedAccountReturns23() {
         byte[] impl = Hex.decode("6001600101505000");
         repository.createAccount(OTHER_DELEGATED);
-        repository.setupContract(OTHER_DELEGATED);
+        repository.initializeStorage(OTHER_DELEGATED);
         repository.saveCode(OTHER_DELEGATED, DelegationCodeResolver.createDelegatedCode(OTHER_DELEGATE_TARGET));
         repository.createAccount(OTHER_DELEGATE_TARGET);
-        repository.setupContract(OTHER_DELEGATE_TARGET);
+        repository.initializeStorage(OTHER_DELEGATE_TARGET);
         repository.saveCode(OTHER_DELEGATE_TARGET, impl);
 
         String code = "PUSH20 0X00000000000000000000000000000000000000CC EXTCODESIZE";
@@ -358,10 +358,10 @@ class Rskip545DelegatedOpcodeTest {
     void delegatedExecution_extcodecopyOnThirdPartyDelegatedAccountCopiesIndicator() {
         byte[] impl = Hex.decode("6001600101505000");
         repository.createAccount(OTHER_DELEGATED);
-        repository.setupContract(OTHER_DELEGATED);
+        repository.initializeStorage(OTHER_DELEGATED);
         repository.saveCode(OTHER_DELEGATED, DelegationCodeResolver.createDelegatedCode(OTHER_DELEGATE_TARGET));
         repository.createAccount(OTHER_DELEGATE_TARGET);
-        repository.setupContract(OTHER_DELEGATE_TARGET);
+        repository.initializeStorage(OTHER_DELEGATE_TARGET);
         repository.saveCode(OTHER_DELEGATE_TARGET, impl);
 
         String code = "PUSH1 0x17 PUSH1 0x00 PUSH1 0x00 "
@@ -394,10 +394,10 @@ class Rskip545DelegatedOpcodeTest {
     void delegatedExecution_extcodehashOnThirdPartyDelegatedAccountReturnsHashOfIndicator() {
         byte[] impl = Hex.decode("6001600101505000");
         repository.createAccount(OTHER_DELEGATED);
-        repository.setupContract(OTHER_DELEGATED);
+        repository.initializeStorage(OTHER_DELEGATED);
         repository.saveCode(OTHER_DELEGATED, DelegationCodeResolver.createDelegatedCode(OTHER_DELEGATE_TARGET));
         repository.createAccount(OTHER_DELEGATE_TARGET);
-        repository.setupContract(OTHER_DELEGATE_TARGET);
+        repository.initializeStorage(OTHER_DELEGATE_TARGET);
         repository.saveCode(OTHER_DELEGATE_TARGET, impl);
 
         String code = "PUSH20 0X00000000000000000000000000000000000000CC EXTCODEHASH";
@@ -429,7 +429,7 @@ class Rskip545DelegatedOpcodeTest {
         // Probe stores tx.origin in slot 0 and msg.sender in slot 1.
         byte[] probeCode = compiler.compile("ORIGIN PUSH1 0x00 SSTORE CALLER PUSH1 0x01 SSTORE");
         repository.createAccount(NESTED_CALL_PROBE);
-        repository.setupContract(NESTED_CALL_PROBE);
+        repository.initializeStorage(NESTED_CALL_PROBE);
         repository.saveCode(NESTED_CALL_PROBE, probeCode);
 
         String callProbe = " PUSH1 0x00 PUSH1 0x00 PUSH1 0x00 PUSH1 0x00 PUSH1 0x00"

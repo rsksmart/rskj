@@ -29,6 +29,7 @@ import java.math.BigInteger;
 public class AccountState {
 
     private static final int ACC_HIBERNATED_MASK = 1;
+    private static final int ACC_DELEGATION_AUTHORITY_MASK = 2;
     private byte[] rlpEncoded;
 
     /* A value equalBytes to the number of transactions sent
@@ -160,5 +161,14 @@ public class AccountState {
 
     public void wakeUp() {
         stateFlags = stateFlags & ~ACC_HIBERNATED_MASK;
+    }
+
+    public boolean hasDelegationAuthority() {
+        return (stateFlags & ACC_DELEGATION_AUTHORITY_MASK) != 0;
+    }
+
+    public void setDelegationAuthority() {
+        stateFlags = stateFlags | ACC_DELEGATION_AUTHORITY_MASK;
+        rlpEncoded = null;
     }
 }

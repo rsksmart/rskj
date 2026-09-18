@@ -588,7 +588,7 @@ public class Program {
         }
 
         track.createAccount(contractAddress, existingAccount);
-        track.setupContract(contractAddress);
+        track.initializeStorage(contractAddress);
 
         if (getActivations().isActive(ConsensusRule.RSKIP125)) {
             track.increaseNonce(contractAddress);
@@ -1264,7 +1264,7 @@ public class Program {
 
             RskAddress ownerAddress = new RskAddress(getOwnerAddress());
             StringBuilder storageData = new StringBuilder();
-            if (getStorage().isContract(ownerAddress)) {
+            if (getStorage().hasInitializedStorage(ownerAddress)) {
                 Iterator<DataWord> it = getStorage().getStorageKeys(ownerAddress);
                 while (it.hasNext()) {
                     DataWord key = it.next();
@@ -1515,8 +1515,8 @@ public class Program {
 
         // we are assuming that transfer is already creating destination account even if
         // the amount is zero
-        if (!track.isContract(codeAddress)) {
-            track.setupContract(codeAddress);
+        if (!track.hasInitializedStorage(codeAddress)) {
+            track.initializeStorage(codeAddress);
         }
 
         if (byTestingSuite()) {

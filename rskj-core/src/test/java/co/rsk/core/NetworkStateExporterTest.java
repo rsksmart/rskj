@@ -31,6 +31,7 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
@@ -153,7 +154,7 @@ class NetworkStateExporterTest {
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
 
-        repository.setupContract(addr1); // necessary for isContract() to return true.
+        repository.initializeStorage(addr1); // necessary for hasInitializedStorage() to return true.
         repository.saveCode(addr1, new byte[]{1, 2, 3, 4});
         repository.addStorageRow(addr1, DataWord.ZERO, DataWord.ONE);
         repository.addStorageBytes(addr1, DataWord.ONE, new byte[]{5, 6, 7, 8});
@@ -193,7 +194,7 @@ class NetworkStateExporterTest {
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
 
-        repository.setupContract(addr1); // necessary for isContract() to return true.
+        repository.initializeStorage(addr1); // necessary for hasInitializedStorage() to return true.
         repository.saveCode(addr1, new byte[]{1, 2, 3, 4});
         repository.addStorageRow(addr1, DataWord.ZERO, DataWord.ONE);
         repository.addStorageBytes(addr1, DataWord.ONE, new byte[]{5, 6, 7, 8});
@@ -219,6 +220,81 @@ class NetworkStateExporterTest {
         Assertions.assertEquals(1, contract.keySet().size());
         String codeHash =(String) contract.get("codeHash");
         Assertions.assertEquals("a6885b3731702da62e8e4a8f584ac46a7f6822f4e2ba50fba902f67b1588d23b", codeHash);
+    }
+
+    @Test
+    void testActiveDelegatedEOA() throws Exception {
+        String address1String = "3000000000000000000000000000000000000000";
+        RskAddress addr1 = new RskAddress(address1String);
+        RskAddress delegate = new RskAddress("4000000000000000000000000000000000000000");
+        repository.createAccount(addr1);
+        repository.initializeStorage(addr1);
+        repository.initializeDelegationAuthority(addr1);
+        byte[] delegatedCode = DelegationCodeResolver.createDelegatedCode(delegate);
+        repository.saveCode(addr1, delegatedCode);
+
+        Map result = writeAndReadJson("", false, true);
+
+        Map address1Value = (Map) result.get(address1String);
+        Assertions.assertEquals(Boolean.TRUE, address1Value.get("delegatedAuthority"));
+        Map contract = (Map) address1Value.get("contract");
+        Assertions.assertEquals(ByteUtil.toHexString(delegatedCode), contract.get("code"));
+    }
+
+    @Test
+    void testClearedDelegatedEOA() throws Exception {
+        String address1String = "3000000000000000000000000000000000000000";
+        RskAddress addr1 = new RskAddress(address1String);
+        RskAddress delegate = new RskAddress("4000000000000000000000000000000000000000");
+        repository.createAccount(addr1);
+        repository.initializeStorage(addr1);
+        repository.initializeDelegationAuthority(addr1);
+
+        repository.saveCode(addr1, DelegationCodeResolver.createDelegatedCode(delegate));
+        repository.addStorageRow(addr1, DataWord.ZERO, DataWord.ONE);
+        repository.saveCode(addr1, new byte[0]);
+
+        Assertions.assertTrue(repository.isClearedDelegatedEOA(addr1));
+        Assertions.assertFalse(repository.isActiveDelegatedEOA(addr1));
+
+        Map result = writeAndReadJson("", true, true);
+
+        Map address1Value = (Map) result.get(address1String);
+        Assertions.assertEquals(Boolean.TRUE, address1Value.get("delegatedAuthority"), "The authority marker must survive delegation clearing, and the export must reflect it");
+        Map contract = (Map) address1Value.get("contract");
+        Assertions.assertEquals("", contract.get("code"), "Cleared delegation must export empty code");
+        Map data = (Map) contract.get("data");
+        Assertions.assertEquals(1, data.keySet().size(), "Storage written while delegated must survive clearing");
+    }
+
+    @Test
+    void testPlainAccountHasNoDelegatedAuthorityField() throws Exception {
+        String address1String = "1000000000000000000000000000000000000000";
+        RskAddress addr1 = new RskAddress(address1String);
+        repository.createAccount(addr1);
+
+        Map result = writeAndReadJson("", true, true);
+
+        Map address1Value = (Map) result.get(address1String);
+        Assertions.assertFalse(address1Value.containsKey("delegatedAuthority"));
+    }
+
+    @Test
+    void delegatedAndHibernatedAccount_exportsDelegatedAuthorityCorrectly() throws Exception {
+        String address1String = "3000000000000000000000000000000000000000";
+        RskAddress addr1 = new RskAddress(address1String);
+        RskAddress delegate = new RskAddress("4000000000000000000000000000000000000000");
+        repository.createAccount(addr1);
+        repository.initializeStorage(addr1);
+        repository.initializeDelegationAuthority(addr1);
+        repository.saveCode(addr1, DelegationCodeResolver.createDelegatedCode(delegate));
+        repository.hibernate(addr1);
+
+        Map result = writeAndReadJson("", false, true);
+
+        Map address1Value = (Map) result.get(address1String);
+        Assertions.assertEquals(Boolean.TRUE, address1Value.get("delegatedAuthority"), "delegatedAuthority must still be reported correctly when the hibernation bit is also set");
+        Assertions.assertFalse(address1Value.containsKey("hibernated"), "hibernation is not exported today - this documents that asymmetry rather than asserting a requirement");
     }
 
     private Map writeAndReadJson(String singleAccount,boolean exportStorageKeys,boolean exportCode) throws Exception {

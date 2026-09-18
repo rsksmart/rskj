@@ -67,8 +67,13 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void setupContract(RskAddress addr) {
-        repository.setupContract(addr);
+    public void initializeStorage(RskAddress addr) {
+        repository.initializeStorage(addr);
+    }
+
+    @Override
+    public void initializeDelegationAuthority(RskAddress addr) {
+        repository.initializeDelegationAuthority(addr);
     }
 
     @Override
@@ -136,8 +141,13 @@ public class Storage implements Repository, ProgramListenerAware {
 
 
     @Override
-    public boolean isContract(RskAddress addr) {
-        return repository.isContract(addr);
+    public boolean hasInitializedStorage(RskAddress addr) {
+        return repository.hasInitializedStorage(addr);
+    }
+
+    @Override
+    public boolean hasDelegationAuthorityMarker(RskAddress addr) {
+        return repository.hasDelegationAuthorityMarker(addr);
     }
 
     @Override

@@ -22,6 +22,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.Repository;
 
 import java.util.Set;
@@ -78,4 +79,28 @@ public interface RepositorySnapshot extends AccountInformationProvider {
      * NOT represent an immutable value.
      */
     Repository startTracking();
+
+    boolean hasDelegationAuthorityMarker(RskAddress addr);
+
+    default boolean isPlainEOA(RskAddress addr) {
+        return isExist(addr) && !hasInitializedStorage(addr) && !hasDelegationAuthorityMarker(addr);
+    }
+
+    default boolean isActiveDelegatedEOA(RskAddress addr) {
+        return isExist(addr) && hasDelegationAuthorityMarker(addr)
+                && DelegationCodeResolver.isDelegatedCode(getCode(addr));
+    }
+
+    default boolean isClearedDelegatedEOA(RskAddress addr) {
+        return isExist(addr) && hasDelegationAuthorityMarker(addr)
+                && !DelegationCodeResolver.isDelegatedCode(getCode(addr));
+    }
+
+    default boolean isRegularContract(RskAddress addr) {
+        return isExist(addr) && hasInitializedStorage(addr) && !hasDelegationAuthorityMarker(addr);
+    }
+
+    default boolean isEOA(RskAddress addr) {
+        return isPlainEOA(addr) || isClearedDelegatedEOA(addr);
+    }
 }
