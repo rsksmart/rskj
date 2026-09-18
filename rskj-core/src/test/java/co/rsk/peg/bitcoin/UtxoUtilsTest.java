@@ -51,7 +51,7 @@ class UtxoUtilsTest {
 
         arguments.add(Arguments.of(Hex.decode("FC"), coinListOf(252)));
 
-        // 252 = FC, 187 = BB, 13_337 = FE9145DC00, 14_435_729 = FEDC4591
+        // 252 = FC, 187 = BB, 13_337 = FD1934, 14_435_729 = FE9145DC00
         arguments.add(Arguments.of(Hex.decode("FCFCBBBBBBFD1934FE9145DC00"), coinListOf(252, 252, 187, 187, 187, 13_337, 14_435_729)));
 
         arguments.add(Arguments.of(Hex.decode("FF0040075AF0750700"), Collections.singletonList(MAX_BTC)));
@@ -302,7 +302,6 @@ class UtxoUtilsTest {
         byte[] expectedEncodedOutputIndexes = Hex.decode("00FCFD1027");
         assertArrayEquals(expectedEncodedOutputIndexes, encodedOutputIndexes);
     }
-
 
     @Test
     void decodeOutputIndexes_withNull_shouldReturnEmptyList() {

@@ -11,6 +11,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Codecs and extraction helpers for the parts of a transaction outpoint that the bridge
+ * persists and logs: the outpoint values and the output indexes.
+ */
 public final class UtxoUtils {
 
     private UtxoUtils() {
@@ -75,9 +79,9 @@ public final class UtxoUtils {
      * Decode a {@code byte[]} of encoded output indexes.
      *
      * @param encodedOutputIndexes the byte array of encoded output indexes to decode
-     * @return {@code List<Long>} the list of output indexes decoded preserving the order of
-     * the entries. Or an {@code Collections.EMPTY_LIST} when {@code encodedOutputIndexes} is
-     * {@code null} or {@code empty byte[]}.
+     * @return {@code List<Long>} an unmodifiable list of the output indexes decoded,
+     * preserving the order of the entries. Empty when {@code encodedOutputIndexes}
+     * is {@code null} or an {@code empty byte[]}.
      * @throws InvalidOutputIndexException when the bytes are not a valid sequence of
      * VarInts, or a value decodes to a negative number.
      */

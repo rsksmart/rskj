@@ -19,9 +19,9 @@ public final class VarIntUtils {
      * Decode a {@code byte[]} of values encoded as VarInts.
      *
      * @param encodedValues the byte array of encoded values to decode
-     * @return {@code List<Long>} the list of values decoded preserving the order of the
-     * entries. Or an {@code Collections.EMPTY_LIST} when {@code encodedValues} is
-     * {@code null} or {@code empty byte[]}.
+     * @return {@code List<Long>} an unmodifiable list of the values decoded, preserving the
+     * order of the entries. Empty when {@code encodedValues} is {@code null} or an
+     * {@code empty byte[]}.
      * @throws VarIntException when a VarInt cannot be read, or a value does not fit in a
      * signed long. A VarInt encodes an unsigned integer.
      */
