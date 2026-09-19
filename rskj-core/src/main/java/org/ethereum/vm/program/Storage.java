@@ -57,6 +57,11 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public java.util.Set<RskAddress> getModifiedAccounts() {
+        return repository.getModifiedAccounts();
+    }
+
+    @Override
     public Trie getTrie() {
         return repository.getTrie();
     }
