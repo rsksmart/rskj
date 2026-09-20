@@ -327,6 +327,58 @@ class CliToolsTest {
     }
 
     /**
+     * The default must not write to the database: the tool's main use is verifying that a change
+     * did not break consensus, and doing that should not mutate the state it is verifying against.
+     */
+    @Test
+    void executeBlocksDoesNotSaveStateUnlessAsked() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        BlockExecutor blockExecutor = Mockito.spy(world.getBlockExecutor());
+
+        RskContext rskContext = executeBlocksContext(world);
+        doReturn(blockExecutor).when(rskContext).getBlockExecutor();
+
+        // No --saveState on the command line.
+        new ExecuteBlocks().execute(new String[]{"--fromBlock", "1", "--toBlock", "2"},
+                () -> rskContext, mock(NodeStopper.class));
+
+        // The last argument of execute(...) is saveState.
+        verify(blockExecutor, atLeastOnce()).execute(
+                Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.any(),
+                Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.eq(false));
+        verify(blockExecutor, never()).execute(
+                Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.any(),
+                Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.eq(true));
+    }
+
+    @Test
+    void executeBlocksSavesStateWhenAsked() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        BlockExecutor blockExecutor = Mockito.spy(world.getBlockExecutor());
+
+        RskContext rskContext = executeBlocksContext(world);
+        doReturn(blockExecutor).when(rskContext).getBlockExecutor();
+
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        new ExecuteBlocks().execute(new String[]{"--fromBlock", "1", "--toBlock", "2", "--saveState=true"},
+                () -> rskContext, stopper);
+
+        verify(blockExecutor, atLeastOnce()).execute(
+                Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.any(),
+                Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.eq(true));
+        verify(stopper).stop(0);
+    }
+
+    /**
      * The rejection reasons themselves, so the mapping is pinned independently of how the tool is
      * driven.
      */

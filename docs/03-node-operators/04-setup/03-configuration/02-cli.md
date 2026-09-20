@@ -434,7 +434,7 @@ The tool exits with a non-zero status if any block fails, so it can be used as a
 
 - `-fb, --fromBlock`: The starting block number.
 - `-tb, --toBlock`: The ending block number.
-- `-ss, --saveState`: Whether to persist the state produced by each block. Defaults to `true`. Pass `--saveState=false` to verify without writing to the database; the state roots are still checked, because executing a block only needs its parent's state, which is already in the store.
+- `-ss, --saveState`: Whether to persist the state produced by each block. Defaults to `false`, so verifying a range does not write to the database. The state roots are still checked, because executing a block only needs its parent's state, which is already in the store. Pass `--saveState=true` to write the produced state back.
 
 **Example:**
 

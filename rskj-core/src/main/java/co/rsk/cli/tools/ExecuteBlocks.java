@@ -51,11 +51,11 @@ public class ExecuteBlocks extends PicoCliToolRskContextAware {
     @CommandLine.Option(names = {"-tb", "--toBlock"}, description = "To block number", required = true)
     private Long toBlockNumber;
 
-    @CommandLine.Option(names = {"-ss", "--saveState"}, arity = "1", defaultValue = "true",
+    @CommandLine.Option(names = {"-ss", "--saveState"}, arity = "1", defaultValue = "false",
             description = "Whether to persist the state produced by each block (default: ${DEFAULT-VALUE}). "
-                    + "Pass --saveState=false to verify without writing to the database; the state roots are "
-                    + "still checked, because executing a block only needs its parent's state, which is "
-                    + "already in the store.")
+                    + "Verifying does not need it: the state roots are still checked, because executing a "
+                    + "block only needs its parent's state, which is already in the store. Pass "
+                    + "--saveState=true to write the produced state back to the database.")
     private boolean saveState;
 
     public static void main(String[] args) {
