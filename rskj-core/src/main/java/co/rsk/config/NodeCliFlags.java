@@ -36,6 +36,11 @@ public enum NodeCliFlags implements CliArg {
     NETWORK_TESTNET2("testnet2", SystemProperties.PROPERTY_BC_CONFIG_NAME, "testnet2"),
     NETWORK_REGTEST("regtest", SystemProperties.PROPERTY_BC_CONFIG_NAME, "regtest"),
     NETWORK_MAINNET("main", SystemProperties.PROPERTY_BC_CONFIG_NAME, "main"),
+    /**
+     * Deliberately breaks supply conservation so that the check can be seen to reject a block.
+     * Refused on mainnet. See {@link co.rsk.core.bc.supply.SupplyBug}.
+     */
+    ADD_SUPPLY_BUG("add-supply-bug", RskSystemProperties.PROPERTY_ADD_SUPPLY_BUG, true),
     HELP("help", "help", true),
     VERSION("version", "version", true)
     ;
