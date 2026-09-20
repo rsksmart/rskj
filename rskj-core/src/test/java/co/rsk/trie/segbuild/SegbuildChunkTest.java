@@ -18,7 +18,11 @@
 package co.rsk.trie.segbuild;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -33,8 +37,34 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class SegbuildChunkTest {
 
+    @TempDir
+    Path root;
+
+    /** Creates a well-formed chunk directory, then parses it. */
     private Optional<SegbuildChunk> parse(String name) {
-        return SegbuildChunk.parse(Paths.get("/segbuild", name));
+        Path directory = root.resolve(name);
+        try {
+            Files.createDirectories(directory.resolve(SegbuildChunk.SEALED_DIRECTORY));
+            Files.writeString(directory.resolve(SegbuildChunk.SEGMENTS_MANIFEST), "seq,start_block,bytes\n");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return SegbuildChunk.parse(directory);
+    }
+
+    /**
+     * A build or repair pass can leave a directory that is named like a chunk but holds nothing.
+     * Treating it as a chunk makes the set look as though its ranges overlap.
+     */
+    @Test
+    void aDirectoryNamedLikeAChunkButEmptyIsNotAChunk() throws IOException {
+        Path emptyish = root.resolve("012-2938787-3081559");
+        Files.createDirectories(emptyish.resolve(SegbuildChunk.SEALED_DIRECTORY));
+
+        assertFalse(SegbuildChunk.parse(emptyish).isPresent(), "no segment manifest, so not a chunk");
+
+        Files.createDirectories(root.resolve("013-1-2"));
+        assertFalse(SegbuildChunk.parse(root.resolve("013-1-2")).isPresent(), "no sealed store, so not a chunk");
     }
 
     @Test
@@ -61,7 +91,7 @@ class SegbuildChunkTest {
     void theSealedStoreIsInsideTheChunk() {
         SegbuildChunk chunk = parse("096-9229944-9230008").orElseThrow();
 
-        assertEquals(Paths.get("/segbuild", "096-9229944-9230008", "sealed"), chunk.getSealedDirectory());
+        assertEquals(root.resolve("096-9229944-9230008").resolve("sealed"), chunk.getSealedDirectory());
     }
 
     /**

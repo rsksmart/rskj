@@ -35,7 +35,21 @@ class SegbuildChunkIndexTest {
     Path root;
 
     private void chunk(String name) throws IOException {
-        Files.createDirectories(root.resolve(name).resolve("sealed"));
+        Files.createDirectories(root.resolve(name).resolve(SegbuildChunk.SEALED_DIRECTORY));
+        Files.writeString(root.resolve(name).resolve(SegbuildChunk.SEGMENTS_MANIFEST), "seq,start_block,bytes\n");
+    }
+
+    /** A leftover directory that is named like a chunk but holds nothing must not join the set. */
+    @Test
+    void anEmptyDirectoryNamedLikeAChunkDoesNotCreateAnOverlap() throws IOException {
+        chunk("007-2863735-2996489");
+        chunk("008-2996490-3096243");
+        Files.createDirectories(root.resolve("012-2938787-3081559").resolve(SegbuildChunk.SEALED_DIRECTORY));
+
+        SegbuildChunkIndex index = SegbuildChunkIndex.scan(root);
+
+        assertEquals(2, index.size());
+        assertEquals(7, index.requireChunkFor(2900000L).getIndex());
     }
 
     @Test

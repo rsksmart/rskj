@@ -18,6 +18,7 @@
 package co.rsk.trie.segbuild;
 
 import javax.annotation.Nonnull;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -42,6 +43,12 @@ public final class SegbuildChunk implements Comparable<SegbuildChunk> {
     /** The trie store lives in this subdirectory of the chunk. */
     public static final String SEALED_DIRECTORY = "sealed";
 
+    /**
+     * The segment manifest. A reader needs nothing from it, but its presence is what tells a real
+     * chunk from a directory that merely looks like one.
+     */
+    public static final String SEGMENTS_MANIFEST = "segments.csv";
+
     private final int index;
     private final long firstBlock;
     private final long lastBlock;
@@ -55,7 +62,13 @@ public final class SegbuildChunk implements Comparable<SegbuildChunk> {
     }
 
     /**
-     * Parses a chunk directory, or returns empty if the name is not exactly a chunk name.
+     * Parses a chunk directory, or returns empty if it is not a chunk.
+     *
+     * <p>A chunk must both be named like one and contain one. Matching the name alone is not
+     * enough: a build or repair pass can leave an empty directory whose name parses, and taking
+     * that for a chunk makes the set look as though its ranges overlap -- or, worse, could serve
+     * reads from a store with nothing in it. The segment manifest is required because every real
+     * chunk has one, while the resume checkpoint is not, because a complete chunk may lack it.
      */
     public static Optional<SegbuildChunk> parse(@Nonnull Path directory) {
         Path fileName = directory.getFileName();
@@ -80,6 +93,11 @@ public final class SegbuildChunk implements Comparable<SegbuildChunk> {
         }
 
         if (firstBlock > lastBlock) {
+            return Optional.empty();
+        }
+
+        if (!Files.isDirectory(directory.resolve(SEALED_DIRECTORY))
+                || !Files.isRegularFile(directory.resolve(SEGMENTS_MANIFEST))) {
             return Optional.empty();
         }
 

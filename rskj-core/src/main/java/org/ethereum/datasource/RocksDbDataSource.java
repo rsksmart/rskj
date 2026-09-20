@@ -44,6 +44,11 @@ import static java.lang.System.getProperty;
 public class RocksDbDataSource implements KeyValueDataSource {
 
     private static final Long GENERAL_SIZE = 10L * 1024L * 1024L;
+
+    /**
+     * The block-based table format version this node writes. See {@link #createTableConfig()}.
+     */
+    private static final int WRITE_FORMAT_VERSION = 5;
     private static final int MAX_RETRIES = 2;
 
     private static final Logger logger = LoggerFactory.getLogger("db");
@@ -414,6 +419,25 @@ public class RocksDbDataSource implements KeyValueDataSource {
         options.setArenaBlockSize(GENERAL_SIZE);
         options.setWriteBufferSize(GENERAL_SIZE);
         options.setParanoidChecks(true);
+        options.setTableFormatConfig(createTableConfig());
         return options;
+    }
+
+    /**
+     * Pins the table format this node writes.
+     *
+     * <p>RocksDB reads older table formats but not newer ones, so the format a build writes decides
+     * which other builds can read its databases. Left to the library's default this moves with the
+     * library: databases written after an upgrade become unreadable by the version before it, and
+     * the upgrade is one-way for anyone running a node.
+     *
+     * <p>Pinning keeps that decision explicit and separate from the choice of library version.
+     * {@link #WRITE_FORMAT_VERSION} is the format this node has always written; raising it is a
+     * deliberate change that stops older builds reading any database written afterwards.
+     */
+    private static BlockBasedTableConfig createTableConfig() {
+        BlockBasedTableConfig tableConfig = new BlockBasedTableConfig();
+        tableConfig.setFormatVersion(WRITE_FORMAT_VERSION);
+        return tableConfig;
     }
 }
