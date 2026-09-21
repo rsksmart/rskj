@@ -54,6 +54,21 @@ public final class CommonParsingUtils {
         return coin != null && coin.getBytes().length > Transaction.DATAWORD_LENGTH;
     }
 
+    /** Inclusive upper bound of a typed transaction chainId; RSKj carries it in a single byte. */
+    public static final int MAX_TYPED_CHAIN_ID = 255;
+
+    /**
+     * Value rule for a typed transaction chainId: {@code [1, MAX_TYPED_CHAIN_ID]}. Both ingress
+     * paths share the rule but raise different errors — a JSON-RPC parameter error on the
+     * structured path, an {@link IllegalArgumentException} on the raw one — so this reports
+     * validity rather than throwing. Encoding rules stay with each path.
+     */
+    public static boolean isValidTypedChainId(BigInteger chainId) {
+        return chainId != null
+                && chainId.signum() > 0
+                && chainId.compareTo(BigInteger.valueOf(MAX_TYPED_CHAIN_ID)) <= 0;
+    }
+
     public static void requireDataWordBytes(byte[] field, String message) {
         if (exceedsDataWordLength(field)) {
             throw new IllegalArgumentException(message);
