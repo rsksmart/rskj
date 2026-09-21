@@ -140,6 +140,7 @@ public class AccountState {
     /*
      * Below are methods for hibernating an account that aren't used at the moment (only from tests).
      * TODO(mc) we should decide whether to finish this feature or delete unused code
+     * WARNING: shares stateFlags with ACC_DELEGATION_AUTHORITY_MASK - never reset it wholesale.
      */
 
     public int getStateFlags() {
