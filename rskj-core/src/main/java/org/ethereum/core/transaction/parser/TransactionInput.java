@@ -45,6 +45,9 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
  */
 public final class TransactionInput {
 
+    /** chainId is stored in a byte, so any ingress value must fit 0..255 regardless of type. */
+    private static final int MAX_CHAIN_ID_VALUE = 0xFF;
+
     private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
     private static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
 
@@ -251,15 +254,14 @@ public final class TransactionInput {
         try {
             // Structured ingress normalises, so "0x0021" is a legal quantity for 33. "0x" carries
             // no value at all and stays a parameter error, rather than failing later in the encoder.
-            byte[] decoded = HexUtils.strHexOrStrNumberToByteArray(hex);
-            if (decoded.length == 0) {
+            if (HexUtils.strHexOrStrNumberToByteArray(hex).length == 0) {
                 throw invalidParamError(ERR_INVALID_CHAIN_ID + hex);
             }
-            byte[] bytes = ByteUtil.stripLeadingZeroes(decoded, ByteUtil.EMPTY_BYTE_ARRAY);
-            if (bytes.length > 1) {
+            BigInteger value = HexUtils.strHexOrStrNumberToBigInteger(hex);
+            if (value.signum() < 0 || value.compareTo(BigInteger.valueOf(MAX_CHAIN_ID_VALUE)) > 0) {
                 throw invalidParamError(ERR_INVALID_CHAIN_ID + hex);
             }
-            return bytes.length == 0 ? (byte) 0 : bytes[0];
+            return (byte) value.intValueExact();
         } catch (RskJsonRpcRequestException e) {
             throw e;
         } catch (Exception e) {
@@ -284,7 +286,7 @@ public final class TransactionInput {
         if (chainId == null) {
             throw invalidParamError("Typed transaction requires chainId");
         }
-        if (!CommonParsingUtils.isValidTypedChainId(BigInteger.valueOf(chainId & 0xFF))) {
+        if (!CommonParsingUtils.isValidTypedChainId(BigInteger.valueOf(Byte.toUnsignedInt(chainId)))) {
             throw invalidParamError("Typed transaction chainId must be between 1 and "
                     + CommonParsingUtils.MAX_TYPED_CHAIN_ID);
         }

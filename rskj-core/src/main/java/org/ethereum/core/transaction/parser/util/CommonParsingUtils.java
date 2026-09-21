@@ -22,6 +22,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
@@ -231,6 +232,21 @@ public final class CommonParsingUtils {
             }
         }
         return false;
+    }
+
+    /**
+     * Re-encodes a decoded element, so comparing the result with the bytes received proves the
+     * whole RLP frame was minimal: list headers, item prefixes and nested lists alike.
+     */
+    public static byte[] reencodeCanonical(RLPElement element) {
+        if (element instanceof RLPList list) {
+            byte[][] items = new byte[list.size()][];
+            for (int i = 0; i < list.size(); i++) {
+                items[i] = reencodeCanonical(list.get(i));
+            }
+            return RLP.encodeList(items);
+        }
+        return RLP.encodeElement(element.getRLPData());
     }
 
     public static byte[] nullToEmpty(byte[] value) {

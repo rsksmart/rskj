@@ -27,6 +27,7 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 public final class AccessListCodec {
@@ -54,6 +55,12 @@ public final class AccessListCodec {
                 throw new IllegalArgumentException("Access list must be an RLP list");
             }
             validateAccessListEntries(accessList);
+            // Structured ingress accepts caller-supplied bytes and the encoders emit them verbatim,
+            // so non-minimal framing here would produce a transaction the raw parser rejects. On the
+            // raw path the envelope check has already proven this, and re-proving it is cheap.
+            if (!Arrays.equals(accessListBytes, CommonParsingUtils.reencodeCanonical(accessList))) {
+                throw new IllegalArgumentException("Access list is not canonically encoded");
+            }
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
