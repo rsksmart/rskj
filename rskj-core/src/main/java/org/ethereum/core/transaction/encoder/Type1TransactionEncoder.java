@@ -57,7 +57,7 @@ public class Type1TransactionEncoder  implements TransactionEncoder {
                 RLP.encodeByte(tx.getChainId()),
                 TransactionEncodingUtils.encodeTypedNonce(tx.getNonce()),
                 TransactionEncodingUtils.encodeFeeScalar(tx.getGasPrice()),
-                RLP.encodeElement(tx.getGasLimit()),
+                TransactionEncodingUtils.encodeTypedGasLimit(tx.getGasLimit()),
                 RLP.encodeRskAddress(tx.getReceiveAddress()),
                 RLP.encodeCoinNullZero(tx.getValue()),
                 RLP.encodeElement(tx.getData()),

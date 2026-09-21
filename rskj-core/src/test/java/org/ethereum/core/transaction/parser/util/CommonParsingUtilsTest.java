@@ -30,6 +30,7 @@ import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -381,5 +382,23 @@ class CommonParsingUtilsTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> CommonParsingUtils.requireListFramed(fields.get(0), "Authorization list"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"1", "33", "200", "255"})
+    void isValidTypedChainId_inRange_isTrue(int chainId) {
+        assertTrue(CommonParsingUtils.isValidTypedChainId(BigInteger.valueOf(chainId)));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0", "256", "1000"})
+    void isValidTypedChainId_outOfRange_isFalse(int chainId) {
+        assertFalse(CommonParsingUtils.isValidTypedChainId(BigInteger.valueOf(chainId)));
+    }
+
+    @Test
+    void isValidTypedChainId_nullOrNegative_isFalse() {
+        assertFalse(CommonParsingUtils.isValidTypedChainId(null));
+        assertFalse(CommonParsingUtils.isValidTypedChainId(BigInteger.valueOf(-1)));
     }
 }

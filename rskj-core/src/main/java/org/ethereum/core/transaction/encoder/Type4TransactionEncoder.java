@@ -66,7 +66,7 @@ public class Type4TransactionEncoder implements TransactionEncoder {
                 TransactionEncodingUtils.encodeTypedNonce(transaction.getNonce()),
                 TransactionEncodingUtils.encodeFeeScalar(transaction.getMaxPriorityFeePerGas()),
                 TransactionEncodingUtils.encodeFeeScalar(transaction.getMaxFeePerGas()),
-                RLP.encodeElement(transaction.getGasLimit()),
+                TransactionEncodingUtils.encodeTypedGasLimit(transaction.getGasLimit()),
                 RLP.encodeRskAddress(transaction.getReceiveAddress()),
                 RLP.encodeCoinNullZero(transaction.getValue()),
                 RLP.encodeElement(transaction.getData()),

@@ -305,6 +305,17 @@ class CanonicalScalarEncodingTest {
         }
 
         @Test
+        void rpcZeroChainIdIsRejectedForTypedTransactions() {
+            // The typed encoders spell zero as an empty chainId field, which the parser refuses, so
+            // accepting it would build a transaction that cannot be reparsed from its own encoding.
+            CallArguments args = type2Args("0x1", "0x5208");
+            args.setChainId("0x0");
+
+            assertThrows(RskJsonRpcRequestException.class,
+                    () -> Transaction.fromCallArguments(args, () -> "0x1", REGTEST_CHAIN_ID));
+        }
+
+        @Test
         void rpcChainIdWithNoDigitsIsRejectedAsAParameterError() {
             // "0x" carries no value; normalising it to zero would defer the failure to the encoder.
             CallArguments args = type2Args("0x1", "0x5208");
@@ -467,6 +478,21 @@ class CanonicalScalarEncodingTest {
                     TransactionEncodingUtils.encodeTypedNonce(new byte[0]));
             assertArrayEquals(RLP.encodeElement(null),
                     TransactionEncodingUtils.encodeTypedNonce(null));
+        }
+
+        @Test
+        void encodeTypedGasLimitRejectsALeadingZero() {
+            IllegalStateException e = assertThrows(IllegalStateException.class,
+                    () -> TransactionEncodingUtils.encodeTypedGasLimit(new byte[]{0x00, 0x52, 0x08}));
+            assertTrue(e.getMessage().contains("minimally encoded"), e.getMessage());
+        }
+
+        @Test
+        void encodeTypedGasLimitAcceptsMinimalAndEmpty() {
+            assertArrayEquals(RLP.encodeElement(new byte[]{0x52, 0x08}),
+                    TransactionEncodingUtils.encodeTypedGasLimit(new byte[]{0x52, 0x08}));
+            assertArrayEquals(RLP.encodeElement(null),
+                    TransactionEncodingUtils.encodeTypedGasLimit(new byte[0]));
         }
 
         @Test

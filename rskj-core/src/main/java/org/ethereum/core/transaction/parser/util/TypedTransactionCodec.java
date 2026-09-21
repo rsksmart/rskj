@@ -81,8 +81,9 @@ public final class TypedTransactionCodec {
         // separate zero check is needed below.
         CommonParsingUtils.requireCanonicalScalar(chainIdData, "Typed transaction chainId");
         BigInteger chainIdValue = new BigInteger(1, chainIdData);
-        if (chainIdValue.compareTo(BigInteger.valueOf(255)) > 0) {
-            throw new IllegalArgumentException("Typed transaction chainId exceeds maximum supported value of 255, got: " + chainIdValue);
+        if (!CommonParsingUtils.isValidTypedChainId(chainIdValue)) {
+            throw new IllegalArgumentException("Typed transaction chainId must be between 1 and "
+                    + CommonParsingUtils.MAX_TYPED_CHAIN_ID + ", got: " + chainIdValue);
         }
         return chainIdValue.byteValue();
     }

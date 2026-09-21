@@ -42,11 +42,21 @@ public final class TransactionEncodingUtils {
      * directions, so a failure here means a construction path bypassed both.
      */
     public static byte[] encodeTypedNonce(byte[] nonce) {
-        if (nonce != null && nonce.length > 0 && nonce[0] == 0) {
-            throw new IllegalStateException(
-                    "Typed transaction nonce must be minimally encoded; zero is the empty string");
-        }
+        requireMinimalTypedScalar(nonce, "nonce");
         return encodeNonce(nonce);
+    }
+
+    /** RLP-encoded gas limit for a typed envelope, asserted like {@link #encodeTypedNonce}. */
+    public static byte[] encodeTypedGasLimit(byte[] gasLimit) {
+        requireMinimalTypedScalar(gasLimit, "gas limit");
+        return RLP.encodeElement(gasLimit);
+    }
+
+    private static void requireMinimalTypedScalar(byte[] scalar, String fieldLabel) {
+        if (scalar != null && scalar.length > 0 && scalar[0] == 0) {
+            throw new IllegalStateException("Typed transaction " + fieldLabel
+                    + " must be minimally encoded; zero is the empty string");
+        }
     }
 
     /**
