@@ -34,6 +34,8 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.ParameterizedTest;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -315,6 +317,29 @@ class CanonicalScalarEncodingTest {
                     () -> Transaction.fromCallArguments(args, () -> "0x1", REGTEST_CHAIN_ID));
         }
 
+        @ParameterizedTest
+        @ValueSource(strings = {"-56", "-1", "256", "1000"})
+        void rpcChainIdOutsideByteRangeIsRejected(String chainId) {
+            // "-56" renders as two's-complement 0xc8, which is byte-identical to "200"; the sign is
+            // only visible before the value is narrowed, so that is where the range is enforced.
+            CallArguments args = type2Args("0x1", "0x5208");
+            args.setChainId(chainId);
+
+            assertThrows(RskJsonRpcRequestException.class,
+                    () -> Transaction.fromCallArguments(args, () -> "0x1", REGTEST_CHAIN_ID));
+        }
+
+        @Test
+        void rpcChainIdAboveSignedByteRangeIsStillAccepted() {
+            // 200 does not fit a signed byte, but is a legal chainId and must survive.
+            CallArguments args = type2Args("0x1", "0x5208");
+            args.setChainId("200");
+
+            TransactionInput input = TransactionInput.fromCallArguments(args, null);
+
+            assertEquals(200, Byte.toUnsignedInt(input.chainId()));
+        }
+
         @Test
         void rpcChainIdWithNoDigitsIsRejectedAsAParameterError() {
             // "0x" carries no value; normalising it to zero would defer the failure to the encoder.
@@ -404,6 +429,26 @@ class CanonicalScalarEncodingTest {
             Transaction type4 = Rskip545TestSupport.unsignedType4();
             type4.sign(PRIVATE_KEY);
             assertEquals(type4.getHash(), Transaction.fromRaw(type4.getEncoded()).getHash());
+        }
+
+        @Test
+        void builderRejectsNonCanonicallyFramedAccessList() {
+            // 0xf800 is the long form of the empty list 0xc0. The encoders emit caller-supplied
+            // access-list bytes verbatim, so accepting it would build a transaction that the raw
+            // parser refuses to read back.
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> type2Builder().nonce(BigInteger.ONE)
+                            .accessList(new byte[]{(byte) 0xf8, 0x00}).build());
+
+            assertTrue(e.getMessage().contains("not canonically encoded"), e.getMessage());
+        }
+
+        @Test
+        void builderAcceptsTheCanonicalEmptyAccessList() {
+            Transaction tx = type2Builder().nonce(BigInteger.ONE).accessList(EMPTY_ACCESS_LIST).build();
+            tx.sign(PRIVATE_KEY);
+
+            assertEquals(tx.getHash(), Transaction.fromRaw(tx.getEncoded()).getHash());
         }
 
         @Test

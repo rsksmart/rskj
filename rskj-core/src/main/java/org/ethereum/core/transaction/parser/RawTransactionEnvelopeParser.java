@@ -23,7 +23,6 @@ import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import java.util.Arrays;
@@ -94,21 +93,10 @@ public final class RawTransactionEnvelopeParser {
         if (typePrefix.type() == TransactionType.LEGACY) {
             return;
         }
-        if (!Arrays.equals(payload.copyArray(), reencode(txFields))) {
+        if (!Arrays.equals(payload.copyArray(), CommonParsingUtils.reencodeCanonical(txFields))) {
             throw new IllegalArgumentException(
                     "Typed transaction envelope is not canonically encoded");
         }
-    }
-
-    private static byte[] reencode(RLPElement element) {
-        if (element instanceof RLPList list) {
-            byte[][] items = new byte[list.size()][];
-            for (int i = 0; i < list.size(); i++) {
-                items[i] = reencode(list.get(i));
-            }
-            return RLP.encodeList(items);
-        }
-        return RLP.encodeElement(element.getRLPData());
     }
 
     private static void rejectUnsupportedNamespace(TransactionTypePrefix typePrefix) {
