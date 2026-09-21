@@ -24,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapConstants;
+import co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -37,6 +38,7 @@ public abstract class BridgeConstants {
     protected FederationConstants federationConstants;
     protected LockingCapConstants lockingCapConstants;
     protected UnionBridgeConstants unionBridgeConstants;
+    protected HistoricalPegoutSelectionsConstants historicalPegoutSelectionsConstants;
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int rsk2BtcMinimumAcceptableConfirmations;
@@ -75,6 +77,8 @@ public abstract class BridgeConstants {
     public FederationConstants getFederationConstants() { return federationConstants; }
 
     public LockingCapConstants getLockingCapConstants() { return lockingCapConstants; }
+
+    public HistoricalPegoutSelectionsConstants getHistoricalPegoutSelectionsConstants() { return historicalPegoutSelectionsConstants; }
 
     public UnionBridgeConstants getUnionBridgeConstants() {
         return unionBridgeConstants;
