@@ -358,3 +358,12 @@ jobs:
       - name: Run tests
         run: |
           ./gradlew --no-daemon --stacktrace integrationTest
+
+      - name: Upload HTML Test Report
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
+        with:
+          retention-days: 7
+          name: integration-tests-html-test-report
+          path: |
+            rskj-core/build/reports/tests/integrationTest/

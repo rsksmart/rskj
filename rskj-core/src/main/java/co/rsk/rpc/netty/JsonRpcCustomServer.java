@@ -96,6 +96,13 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
         return moduleDescription.getTimeout(methodName);
     }
 
+    /**
+     * The dispatchable method names, taken from the class handed in at construction.
+     *
+     * <p>{@code JsonRpcDocCoverageTest} mirrors this reflection to decide what the JSON-RPC reference under
+     * {@code doc/rpc} must cover, so changing what is reflected over here changes what that guard considers
+     * the node's surface.
+     */
     private Set<String> extractMethodNames(Class<?> remoteInterface) {
         if (remoteInterface == null) {
             return Collections.emptySet();

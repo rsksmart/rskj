@@ -1,0 +1,33 @@
+{
+  "name": "rsk_getRawTransactionReceiptByHash",
+  "summary": "Returns the RLP-encoded receipt of the given transaction.",
+  "description": "Returns the receipt exactly as it is encoded into the receipts trie, so it can be verified against a block header. Only transactions on the main chain are considered; anything else returns `null`.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/TransactionHash"
+    }
+  ],
+  "result": {
+    "name": "rawTransactionReceipt",
+    "description": "The RLP-encoded transaction receipt, or `null` if the transaction is not on the main chain",
+    "schema": {
+      "$ref": "#/components/schemas/BytesOrNull"
+    }
+  },
+  "examples": [
+    {
+      "name": "getRawTransactionReceiptByHashExample",
+      "description": "The result is abridged; a real encoded receipt also carries the bloom filter and the logs",
+      "params": [
+        {
+          "name": "transactionHash",
+          "value": "0xb903239f8543d04b5dc1ba6579132b143087c68db1b2168786408fcbce568238"
+        }
+      ],
+      "result": {
+        "name": "rawTransactionReceiptResult",
+        "value": "0xf9010c8302a3f8825208b9010000000000000000000000000000000000000000"
+      }
+    }
+  ]
+}

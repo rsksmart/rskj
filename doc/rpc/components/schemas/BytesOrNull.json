@@ -1,0 +1,13 @@
+{
+  "BytesOrNull": {
+    "title": "bytesOrNull",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/Bytes"
+      },
+      {
+        "$ref": "#/components/schemas/Null"
+      }
+    ]
+  }
+}
