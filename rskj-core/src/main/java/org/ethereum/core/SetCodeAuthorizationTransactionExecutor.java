@@ -32,6 +32,8 @@ public class SetCodeAuthorizationTransactionExecutor {
     public static final byte[] CODE_FOR_CLEANING_DELEGATED_ADDRESS = new byte[0];
     private static final BigInteger UNIVERSAL_CHAIN_ID = BigInteger.ZERO;
 
+    // Precondition: this method must only be called when RSKIP545 is active. Today that's enforced
+    // by TransactionExecutor.init() rejecting Type-4 txs before this method's only caller can run.
     public long processAuthorizationTuple(Repository repository, BigInteger outerTransactionChainId, SetCodeAuthorization authorization) {
         verifyChainId(authorization.getChainId(), outerTransactionChainId);
         authorization.verifyNonceRange();
