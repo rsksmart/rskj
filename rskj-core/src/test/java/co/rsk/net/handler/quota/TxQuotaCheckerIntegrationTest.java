@@ -107,9 +107,9 @@ class TxQuotaCheckerIntegrationTest {
         when(repository.isRegularContract(contractB.getAddress())).thenReturn(true);
 
 
-        when(repository.hasDelegationAuthorityMarker(delegatedActiveAccount.getAddress())).thenReturn(true);
+        when(repository.hasDelegationAuthority(delegatedActiveAccount.getAddress())).thenReturn(true);
         when(repository.getCode(delegatedActiveAccount.getAddress())).thenReturn(DelegationCodeResolver.createDelegatedCode(TestUtils.generateAddress("delegate")));
-        when(repository.hasDelegationAuthorityMarker(delegatedClearedAccount.getAddress())).thenReturn(true);
+        when(repository.hasDelegationAuthority(delegatedClearedAccount.getAddress())).thenReturn(true);
         when(repository.getCode(delegatedClearedAccount.getAddress())).thenReturn(new byte[0]);
 
         gasPriceTracker = mock(GasPriceTracker.class);

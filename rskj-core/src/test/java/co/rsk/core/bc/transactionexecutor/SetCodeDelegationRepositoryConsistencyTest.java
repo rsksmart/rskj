@@ -65,7 +65,7 @@ class SetCodeDelegationRepositoryConsistencyTest {
         SetCodeAuthorization tuple = Rskip545TestSupport.createSignedAuthorization(authorityKey, generateAddress("delegate"), BigInteger.ZERO, UNIVERSAL_CHAIN_ID_BYTE);
         executor.processAuthorizationTuple(repository, UNIVERSAL_CHAIN_ID, tuple);
 
-        assertTrue(repository.hasDelegationAuthorityMarker(authority), "Installing a nonzero delegation must set the persistent EIP-7702 authority marker");
+        assertTrue(repository.hasDelegationAuthority(authority), "Installing a nonzero delegation must set the persistent EIP-7702 authority marker");
     }
 
     @Test
@@ -114,7 +114,7 @@ class SetCodeDelegationRepositoryConsistencyTest {
         executor.processAuthorizationTuple(repository, UNIVERSAL_CHAIN_ID, clear);
 
         assertTrue(repository.hasInitializedStorage(authority), "Clearing a delegation must not un-initialize repository storage");
-        assertTrue(repository.hasDelegationAuthorityMarker(authority), "Clearing a delegation must not remove the persistent authority marker");
+        assertTrue(repository.hasDelegationAuthority(authority), "Clearing a delegation must not remove the persistent authority marker");
         assertTrue(repository.isClearedDelegatedEOA(authority), "Account must classify as a cleared delegated EOA, not a plain EOA");
         assertFalse(repository.isPlainEOA(authority), "A previously-delegated authority must never collapse back into a plain EOA");
     }

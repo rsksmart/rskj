@@ -229,7 +229,7 @@ class NetworkStateExporterTest {
         RskAddress delegate = new RskAddress("4000000000000000000000000000000000000000");
         repository.createAccount(addr1);
         repository.initializeStorage(addr1);
-        repository.initializeDelegationAuthority(addr1);
+        repository.setDelegationAuthority(addr1);
         byte[] delegatedCode = DelegationCodeResolver.createDelegatedCode(delegate);
         repository.saveCode(addr1, delegatedCode);
 
@@ -248,7 +248,7 @@ class NetworkStateExporterTest {
         RskAddress delegate = new RskAddress("4000000000000000000000000000000000000000");
         repository.createAccount(addr1);
         repository.initializeStorage(addr1);
-        repository.initializeDelegationAuthority(addr1);
+        repository.setDelegationAuthority(addr1);
 
         repository.saveCode(addr1, DelegationCodeResolver.createDelegatedCode(delegate));
         repository.addStorageRow(addr1, DataWord.ZERO, DataWord.ONE);
@@ -286,7 +286,7 @@ class NetworkStateExporterTest {
         RskAddress delegate = new RskAddress("4000000000000000000000000000000000000000");
         repository.createAccount(addr1);
         repository.initializeStorage(addr1);
-        repository.initializeDelegationAuthority(addr1);
+        repository.setDelegationAuthority(addr1);
         repository.saveCode(addr1, DelegationCodeResolver.createDelegatedCode(delegate));
         repository.hibernate(addr1);
 

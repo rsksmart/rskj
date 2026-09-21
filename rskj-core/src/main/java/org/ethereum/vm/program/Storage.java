@@ -72,8 +72,8 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void initializeDelegationAuthority(RskAddress addr) {
-        repository.initializeDelegationAuthority(addr);
+    public void setDelegationAuthority(RskAddress addr) {
+        repository.setDelegationAuthority(addr);
     }
 
     @Override
@@ -146,8 +146,8 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public boolean hasDelegationAuthorityMarker(RskAddress addr) {
-        return repository.hasDelegationAuthorityMarker(addr);
+    public boolean hasDelegationAuthority(RskAddress addr) {
+        return repository.hasDelegationAuthority(addr);
     }
 
     @Override

@@ -80,24 +80,24 @@ public interface RepositorySnapshot extends AccountInformationProvider {
      */
     Repository startTracking();
 
-    boolean hasDelegationAuthorityMarker(RskAddress addr);
+    boolean hasDelegationAuthority(RskAddress addr);
 
     default boolean isPlainEOA(RskAddress addr) {
-        return isExist(addr) && !hasInitializedStorage(addr) && !hasDelegationAuthorityMarker(addr);
+        return isExist(addr) && !hasInitializedStorage(addr) && !hasDelegationAuthority(addr);
     }
 
     default boolean isActiveDelegatedEOA(RskAddress addr) {
-        return isExist(addr) && hasDelegationAuthorityMarker(addr)
+        return isExist(addr) && hasDelegationAuthority(addr)
                 && DelegationCodeResolver.isDelegatedCode(getCode(addr));
     }
 
     default boolean isClearedDelegatedEOA(RskAddress addr) {
-        return isExist(addr) && hasDelegationAuthorityMarker(addr)
+        return isExist(addr) && hasDelegationAuthority(addr)
                 && !DelegationCodeResolver.isDelegatedCode(getCode(addr));
     }
 
     default boolean isRegularContract(RskAddress addr) {
-        return isExist(addr) && hasInitializedStorage(addr) && !hasDelegationAuthorityMarker(addr);
+        return isExist(addr) && hasInitializedStorage(addr) && !hasDelegationAuthority(addr);
     }
 
     default boolean isEOA(RskAddress addr) {

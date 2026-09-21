@@ -39,7 +39,7 @@ class AccountClassificationTest {
         Repository repository = createRepository();
         RskAddress addr = generateAddress("fresh");
         repository.createAccount(addr);
-        assertFalse(repository.hasDelegationAuthorityMarker(addr));
+        assertFalse(repository.hasDelegationAuthority(addr));
     }
 
     @Test
@@ -48,18 +48,18 @@ class AccountClassificationTest {
         RskAddress addr = generateAddress("never-created");
 
         assertFalse(repository.isExist(addr));
-        assertFalse(repository.hasDelegationAuthorityMarker(addr));
+        assertFalse(repository.hasDelegationAuthority(addr));
     }
 
     @Test
-    void initializeDelegationAuthority_setsMarkerPersistently() {
+    void setDelegationAuthority_setsMarkerPersistently() {
         Repository repository = createRepository();
         RskAddress addr = generateAddress("authority");
         repository.createAccount(addr);
 
-        repository.initializeDelegationAuthority(addr);
+        repository.setDelegationAuthority(addr);
 
-        assertTrue(repository.hasDelegationAuthorityMarker(addr));
+        assertTrue(repository.hasDelegationAuthority(addr));
     }
 
     @Test
@@ -68,12 +68,12 @@ class AccountClassificationTest {
         RskAddress addr = generateAddress("cleared-marker");
         repository.createAccount(addr);
 
-        repository.initializeDelegationAuthority(addr);
+        repository.setDelegationAuthority(addr);
         repository.saveCode(addr, DelegationCodeResolver.createDelegatedCode(generateAddress("delegate")));
 
         repository.saveCode(addr, new byte[0]);
 
-        assertTrue(repository.hasDelegationAuthorityMarker(addr), "The authority marker must survive delegation clearing - only account deletion removes it");
+        assertTrue(repository.hasDelegationAuthority(addr), "The authority marker must survive delegation clearing - only account deletion removes it");
     }
 
     @Test
@@ -82,7 +82,7 @@ class AccountClassificationTest {
         RskAddress addr = generateAddress("independent");
         repository.createAccount(addr);
 
-        repository.initializeDelegationAuthority(addr);
+        repository.setDelegationAuthority(addr);
 
         assertFalse(repository.hasInitializedStorage(addr), "Setting the authority marker must not, by itself, initialize storage");
     }
@@ -110,7 +110,7 @@ class AccountClassificationTest {
         RskAddress delegate = generateAddress("delegate-1");
         repository.createAccount(addr);
         repository.initializeStorage(addr);
-        repository.initializeDelegationAuthority(addr);
+        repository.setDelegationAuthority(addr);
         repository.saveCode(addr, DelegationCodeResolver.createDelegatedCode(delegate));
 
         assertAll("active delegated EOA: storage initialized, marker set, current code is the designator",
@@ -129,7 +129,7 @@ class AccountClassificationTest {
         RskAddress delegate = generateAddress("delegate-2");
         repository.createAccount(addr);
         repository.initializeStorage(addr);
-        repository.initializeDelegationAuthority(addr);
+        repository.setDelegationAuthority(addr);
         repository.saveCode(addr, DelegationCodeResolver.createDelegatedCode(delegate));
 
         repository.saveCode(addr, new byte[0]);
@@ -182,7 +182,7 @@ class AccountClassificationTest {
         RskAddress addr = generateAddress("deleted-account");
         repository.createAccount(addr);
         repository.initializeStorage(addr);
-        repository.initializeDelegationAuthority(addr);
+        repository.setDelegationAuthority(addr);
         repository.saveCode(addr, DelegationCodeResolver.createDelegatedCode(generateAddress("delegate-3")));
 
         repository.delete(addr);
@@ -190,7 +190,7 @@ class AccountClassificationTest {
         assertAll("full account deletion must remove every marker, not just the code",
                 () -> assertFalse(repository.isExist(addr)),
                 () -> assertFalse(repository.hasInitializedStorage(addr)),
-                () -> assertFalse(repository.hasDelegationAuthorityMarker(addr))
+                () -> assertFalse(repository.hasDelegationAuthority(addr))
         );
     }
 
@@ -218,7 +218,7 @@ class AccountClassificationTest {
         repository.createAccount(addr);
 
         // saveCode() called directly, bypassing writeDelegation() -
-        // no initializeStorage(), no initializeDelegationAuthority().
+        // no initializeStorage(), no setDelegationAuthority().
         repository.saveCode(addr, DelegationCodeResolver.createDelegatedCode(delegate));
 
         assertFalse(repository.isActiveDelegatedEOA(addr),

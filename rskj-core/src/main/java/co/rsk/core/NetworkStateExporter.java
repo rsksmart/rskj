@@ -131,7 +131,7 @@ public class NetworkStateExporter {
         BigInteger nonce = accountInformation.getNonce(addr);
         accountNode.put("nonce", nonce.toString());
 
-        if (accountInformation.hasDelegationAuthorityMarker(addr)) {
+        if (accountInformation.hasDelegationAuthority(addr)) {
             accountNode.put("delegatedAuthority", true);
         }
 

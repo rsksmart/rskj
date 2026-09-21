@@ -72,7 +72,7 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
 
     void initializeStorage(RskAddress addr);
 
-    void initializeDelegationAuthority(RskAddress addr);
+    void setDelegationAuthority(RskAddress addr);
 
     /**
      * Deletes the account. This is recursive: all storage keys are deleted

@@ -577,27 +577,27 @@ class RepositoryTest {
     }
 
     @Test
-    void initializeDelegationAuthorityInTrackAndRollback() {
+    void setDelegationAuthorityInTrackAndRollback() {
         repository.createAccount(COW);
 
         Repository track = repository.startTracking();
-        track.initializeDelegationAuthority(COW);
-        assertTrue(track.hasDelegationAuthorityMarker(COW));
+        track.setDelegationAuthority(COW);
+        assertTrue(track.hasDelegationAuthority(COW));
 
         track.rollback();
 
-        assertFalse(repository.hasDelegationAuthorityMarker(COW));
+        assertFalse(repository.hasDelegationAuthority(COW));
     }
 
     @Test
-    void initializeDelegationAuthorityInTrackAndCommit() {
+    void setDelegationAuthorityInTrackAndCommit() {
         repository.createAccount(COW);
 
         Repository track = repository.startTracking();
-        track.initializeDelegationAuthority(COW);
+        track.setDelegationAuthority(COW);
         track.commit();
 
-        assertTrue(repository.hasDelegationAuthorityMarker(COW));
+        assertTrue(repository.hasDelegationAuthority(COW));
     }
 
     private static Keccak256 getKeccak256Hash(byte[] emptyCode) {
