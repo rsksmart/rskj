@@ -20,6 +20,8 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.peg.constants.PegoutsHistory;
+
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -36,10 +38,13 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PegoutsWaitingForConfirmationsTest {
+    
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
 
     private Set<PegoutsWaitingForConfirmations.Entry> setEntries;
+
     private PegoutsWaitingForConfirmations set;
+
     private final TestSystemProperties config = new TestSystemProperties();
 
     @BeforeEach
@@ -228,6 +233,65 @@ class PegoutsWaitingForConfirmationsTest {
         );
     }
 
+    @Test
+    void getNextPegoutWithEnoughConfirmations_rskip559_overwrites() {
+        Map<Long, PegoutsHistory.Ref[]> hardPegouts = new HashMap<>();
+        // Populate hardcoded refs for "current network"
+        hardPegouts.put(10L, new PegoutsHistory.Ref[]{
+            // First entry would never exist in entry set
+            PegoutsHistory.Ref.from( "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", 5L),
+            // So we should fallback to the second one if it exists
+            PegoutsHistory.Ref.from( "7ff02a735d691a94cd4a08c13b60b86b3e055505dcceabd305c6772043e4a423", 5L)
+            // Or proceed with standard ordering if no matching entries exist
+        });
+
+        try (var mocked = mockStatic(PegoutsHistory.class)) {
+            mocked
+                .when(() -> PegoutsHistory.getHardcodedPegouts(any()))
+                .thenReturn(hardPegouts);
+
+            set = new PegoutsWaitingForConfirmations(setEntries);
+            getNextPegoutWithEnoughConfirmations_rskip559_overwrites_test();
+        }
+    }
+
+    void getNextPegoutWithEnoughConfirmations_rskip559_overwrites_test() {
+        // Use vetiver900 (RSKIP559 off) so the overwrite logic is active
+        var activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
+
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, activations);
+
+        Assertions.assertTrue(result.isPresent());
+
+        var entry = result.get();
+        var hash = entry.getBtcTransaction().getHash().toString();
+
+        // This output does not appear for regular rskip559 on/off cases
+        // but must be returned when hardcoded
+        Assertions.assertEquals(
+            "7ff02a735d691a94cd4a08c13b60b86b3e055505dcceabd305c6772043e4a423",
+            hash,
+            "Overwrite entry from hardcoded ref must be returned"
+        );
+
+        // Remove the matched entry
+        Assertions.assertTrue(set.removeEntry(entry));
+
+        result = set.getNextPegoutWithEnoughConfirmations(10L, 5, activations);
+
+        Assertions.assertTrue(result.isPresent());
+
+        entry = result.get();
+        hash = entry.getBtcTransaction().getHash().toString();
+
+        // All hardcoded refs are now unmatched -> fall back to regular selection (RSKIP559 off)
+        Assertions.assertEquals(
+            "53efc6f78eb9d159cfee76ec45bcffb08fd11f85c762e1eacf54e5c014da219d",
+            hash,
+            "Default candidate should be returned when no hardcoded ref matches any entry"
+        );
+    }
+
     private BtcTransaction createTransaction(int toPk, Coin value) {
         return createTransaction(toPk, value, BtcECKey.fromPrivate(BigInteger.valueOf(123456)));
     }
@@ -256,4 +320,5 @@ class PegoutsWaitingForConfirmationsTest {
         when(result.bitcoinSerialize()).thenReturn(Hex.decode(serializationHex));
         return result;
     }
+
 }
