@@ -1,27 +1,42 @@
 name: RSKj Core Automated Tests
 
-# Umbrella check: on an rskj PR (or manual dispatch), trigger the three external
-# test suites against this rskj change in parallel, wait for all of them, and
-# surface a single concise pass/fail report.
+# Umbrella check: on an rskj PR (or manual dispatch), trigger the external test
+# suites against this rskj change in parallel, wait for all of them, and surface
+# a single concise pass/fail report.
 #
 #   JSON-RPC  -> rsksmart/rskj-json-rpc-tests   (rskj-json-rpc-tests.yml,     test_branch)
 #   Hardhat   -> rsksmart/rskj-hardhat-tests     (rskj-smart-contract-tests.yml, hardhat_branch)
 #   K6        -> rsksmart/rskj-k6-tests           (rskj-k6-tests.yml,           test_branch)
+#   Sync      -> rsksmart/rskj-sync-tests         (pr.yml,                      test_branch)   [ADVISORY]
+#
+# The first three GATE this check. Sync is ADVISORY: it is listed in
+# ADVISORY_SUITES in the report job below, so a non-success from it is a
+# ::warning:: and never a failure of the required check. See the block comment
+# on ADVISORY_SUITES for why, and for what graduating it to enforcing means.
 #
 # gh / gh api / jq are all preinstalled on the runner. Cross-repo auth uses a
 # short-lived GitHub App installation token, minted per suite via
 # actions/create-github-app-token (pinned by SHA) from the GH_APP_ID /
-# GH_APP_PRIVATE_KEY secrets. The App is installed on the three test repos with
+# GH_APP_PRIVATE_KEY secrets. The App is installed on the test repos with
 # Actions: read+write and Contents: read. Each token lasts ~1h, which comfortably
 # covers a job's dispatch + poll-to-completion (all suites finish well under that,
 # and timeout-minutes keeps every job inside the token's lifetime). The dispatch
 # endpoint returns the created run id directly via return_run_details=true
 # (GitHub, 2026-02-19), so there is no poll-to-correlate step.
 #
+# OPS PREREQUISITE (for the advisory suite only): the App should also be
+# installed on rsksmart/rskj-sync-tests with the same scopes. The required path
+# does not depend on it — the sync suite's token is minted in its own steps,
+# every one of which is contained — so a missing installation degrades the
+# advisory row to warnings and never reddens this check. That containment is
+# structural, not a convention: the three-suite token's `repositories:` line
+# must stay limited to the gating suites, and each of the three comments saying
+# so is load-bearing.
+#
 # The per-suite dispatch + poll logic lives once in the reusable workflow
-# .github/workflows/_dispatch-suite.yml; the three suite jobs below are thin
-# callers that pass per-suite parameters and expose its conclusion / run_url
-# outputs to the report job.
+# .github/workflows/_dispatch-suite.yml; the suite jobs below are thin callers
+# that pass per-suite parameters and expose its conclusion / run_url outputs to
+# the report job.
 
 on:
   pull_request:
@@ -43,6 +58,10 @@ on:
         required: false
       k6_branch:
         description: "rskj-k6-tests branch (default: auto-match, else main)"
+        type: string
+        required: false
+      sync_branch:
+        description: "rskj-sync-tests branch (default: auto-match, else main)"
         type: string
         required: false
 
@@ -68,6 +87,7 @@ jobs:
       jsonrpc_ref: ${{ steps.refs.outputs.jsonrpc_ref }}
       hardhat_ref: ${{ steps.refs.outputs.hardhat_ref }}
       k6_ref: ${{ steps.refs.outputs.k6_ref }}
+      sync_ref: ${{ steps.refs.outputs.sync_ref }}
     steps:
       # App secrets are withheld from fork pull_request runs (GitHub does not expose
       # secrets to runs triggered by forks). An empty private key is our fork-PR
@@ -100,7 +120,7 @@ jobs:
             exit 1
           fi
 
-      # Mint a short-lived (~1h) installation token scoped to the three test repos.
+      # Mint a short-lived (~1h) installation token scoped to the test repos.
       - name: Generate GitHub App token
         id: app-token
         if: steps.token.outputs.has_token == 'true'
@@ -112,13 +132,37 @@ jobs:
           # Comma-separated single line: this action version does not split a
           # multi-line block into a list (it took the whole newline-joined string
           # as one repo name and 404'd looking up its installation).
+          #
+          # DO NOT ADD THE ADVISORY SUITE (or any other new repo) HERE. Every
+          # name on this line must be covered by the App installation: the token
+          # request is rejected outright if one is not, and this step is a hard
+          # dependency of the three REQUIRED suites — so one uninstalled repo on
+          # this line turns the required check red on every rskj PR. The advisory
+          # sync suite therefore mints its own token in the next step, where a
+          # failure is contained. Keep this line to the gating suites.
           repositories: rskj-json-rpc-tests,rskj-hardhat-tests,rskj-k6-tests
+
+      # Separate token for the ADVISORY sync suite, deliberately not merged into
+      # the line above. continue-on-error keeps a missing/rescoped installation
+      # from failing this job, which the three required suites depend on; the
+      # resolve step below falls back to `main` when the token is absent.
+      - name: Generate GitHub App token for the advisory sync suite
+        id: sync-app-token
+        if: steps.token.outputs.has_token == 'true'
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: rsksmart
+          repositories: rskj-sync-tests
 
       - name: Resolve rskj + per-suite test refs
         id: refs
         if: steps.token.outputs.has_token == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SYNC_TOKEN: ${{ steps.sync-app-token.outputs.token }}
           EVENT: ${{ github.event_name }}
           HEAD_REF: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
@@ -126,6 +170,7 @@ jobs:
           IN_JSONRPC: ${{ inputs.jsonrpc_branch }}
           IN_HARDHAT: ${{ inputs.hardhat_branch }}
           IN_K6: ${{ inputs.k6_branch }}
+          IN_SYNC: ${{ inputs.sync_branch }}
         run: |
           set -euo pipefail
 
@@ -180,12 +225,42 @@ jobs:
           resolve_ref rsksmart/rskj-hardhat-tests "$IN_HARDHAT"; HARDHAT_REF="$RESOLVED"
           resolve_ref rsksmart/rskj-k6-tests "$IN_K6"; K6_REF="$RESOLVED"
 
+          # The advisory sync suite is resolved with its OWN token, which may be
+          # absent (its mint step is continue-on-error precisely so that a
+          # missing App installation cannot fail this job and take the three
+          # required suites down with it). Set and restore GH_TOKEN explicitly
+          # rather than prefixing the call: POSIX leaves a variable-assignment
+          # prefix on a shell-function invocation unspecified.
+          if [ -n "${SYNC_TOKEN:-}" ]; then
+            OLD_TOKEN="$GH_TOKEN"
+            GH_TOKEN="$SYNC_TOKEN"; export GH_TOKEN
+            # Called as an `if` condition on purpose: that suspends `set -e`, so
+            # resolve_ref's non-404 `return 1` — which SHOULD fail this job for a
+            # gating suite, and does, three lines up — degrades to main here
+            # instead of taking the required suites down for a transient API
+            # error in an advisory suite's branch lookup.
+            if resolve_ref rsksmart/rskj-sync-tests "$IN_SYNC"; then
+              SYNC_REF="$RESOLVED"
+            else
+              SYNC_REF="${IN_SYNC:-main}"
+              echo "::warning::could not resolve a branch in rsksmart/rskj-sync-tests; the advisory sync suite will run '$SYNC_REF'"
+            fi
+            GH_TOKEN="$OLD_TOKEN"; export GH_TOKEN
+          else
+            # No token: do not guess from an unauthenticated 404, which is
+            # indistinguishable from "branch absent". An explicit input still
+            # wins; otherwise main.
+            SYNC_REF="${IN_SYNC:-main}"
+            echo "::warning::no App token for rsksmart/rskj-sync-tests (is the App installed on it?); the advisory sync suite will run '$SYNC_REF'"
+          fi
+
           {
             echo "jsonrpc_ref=$JSONRPC_REF"
             echo "hardhat_ref=$HARDHAT_REF"
             echo "k6_ref=$K6_REF"
+            echo "sync_ref=$SYNC_REF"
           } >> "$GITHUB_OUTPUT"
-          echo "json-rpc ref: $JSONRPC_REF | hardhat ref: $HARDHAT_REF | k6 ref: $K6_REF"
+          echo "json-rpc ref: $JSONRPC_REF | hardhat ref: $HARDHAT_REF | k6 ref: $K6_REF | sync ref: $SYNC_REF"
 
   # Each suite is dispatched + polled by the shared reusable workflow
   # (_dispatch-suite.yml); these jobs only supply the per-suite parameters. Their
@@ -238,15 +313,60 @@ jobs:
       app_id: ${{ secrets.GH_APP_ID }}
       app_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
+  # ADVISORY (see ADVISORY_SUITES in the report job). rskj-sync-tests replays
+  # testnet through the candidate node and compares block hashes / state roots
+  # against the public network, so it detects a consensus divergence this
+  # umbrella's other three suites structurally cannot. It is new, it depends on
+  # a third-party public RPC and on a periodically refreshed bootstrap snapshot,
+  # and it therefore must not be able to redden someone else's rskj PR yet.
+  #
+  # WHY THE ACTIONS TAB MAY SHOW THIS WORKFLOW RED WHILE THE PR IS GREEN.
+  # GitHub rolls a workflow RUN's conclusion up over all of its jobs, so when
+  # this advisory job fails the RUN shows ❌ — even though the check pinned in
+  # branch protection, "Automated Regression Report", is green. Branch
+  # protection keys on that CHECK, not on the run, so gating is unaffected.
+  # Measured: run 34865590358 on PR #3720 — `Sync suite / Sync` failed,
+  # `Automated Regression Report` concluded success and printed "All gating
+  # downstream suites passed."
+  #
+  # DO NOT "FIX" THE RED RUN BY SUPPRESSING THIS JOB'S FAILURE.
+  #  * `continue-on-error` is not even a legal key here: a job that calls a
+  #    reusable workflow with `uses:` accepts only name / uses / with / secrets /
+  #    needs / if / permissions. (Verified with actionlint, which rejects it.)
+  #  * More importantly, do not restructure the job to get around that. This
+  #    job's failure is what gives the report job something specific to say: it
+  #    is what makes `needs.sync.result` report `failure`, which is what fires
+  #    the "advisory suite sync did not succeed" warning and what renders the
+  #    Sync row as a pointed ❌ failure instead of a vague ❓ unknown. Laundering
+  #    it into a success would silence the one annotation that reports the
+  #    problem — a false green bought to tidy a tab, which is the exact shape
+  #    the advisory design exists to refuse. Accept the cosmetic red.
+  sync:
+    name: Sync suite
+    needs: resolve
+    if: needs.resolve.outputs.has_token == 'true'
+    uses: ./.github/workflows/_dispatch-suite.yml
+    with:
+      name: Sync
+      repo: rskj-sync-tests
+      workflow: pr.yml
+      test_input: test_branch
+      rskj_ref: ${{ needs.resolve.outputs.rskj_ref }}
+      test_ref: ${{ needs.resolve.outputs.sync_ref }}
+    secrets:
+      app_id: ${{ secrets.GH_APP_ID }}
+      app_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
   # This is the authoritative gate: it always runs (if: always()), consolidates
-  # the three suite conclusions, and exits non-zero on any failure. Pin THIS check
+  # the suite conclusions, and exits non-zero on any failure of a suite that is
+  # not listed in ADVISORY_SUITES. Pin THIS check
   # (name: "Automated Regression Report") as the required status check in branch
   # protection — never the per-suite checks, whose names change if the suites are
   # refactored (e.g. the reusable-workflow extraction renamed them to
   # "<suite> suite / <suite>"). Its name is intentionally stable for that reason.
   report:
     name: Automated Regression Report
-    needs: [resolve, json_rpc, hardhat, k6]
+    needs: [resolve, json_rpc, hardhat, k6, sync]
     if: always()
     runs-on: ubuntu-latest
     # Only this job writes with GITHUB_TOKEN (the sticky PR comment). The other
@@ -254,6 +374,32 @@ jobs:
     permissions:
       pull-requests: write
     steps:
+      # The advisory Sync row shows the suite's OWN verdict, which lives in an
+      # artifact in another repository; GITHUB_TOKEN cannot read across repos, so
+      # a second, separately scoped installation token is minted here.
+      #
+      # DO NOT DELETE THE continue-on-error BELOW AS A POLICY VIOLATION. The
+      # rule it appears to bend — no continue-on-error in this workflow — exists
+      # so that a failing SUITE can never be masked. This step is not a suite: it
+      # is a best-effort token mint for reading an advisory artifact from another
+      # repo. Without continue-on-error, a mint that fails for a reason that has
+      # nothing to do with the rskj change (App not installed on rskj-sync-tests,
+      # App suspended, rate limit) fails THIS job — which is the authoritative,
+      # branch-protection-pinned required check. That is categorically worse than
+      # the rule it bends. A mint that does not happen leaves SYNC_TOKEN empty,
+      # which the script below renders as "outcome unknown", never as a tick, so
+      # nothing is masked either way. Do NOT copy this onto any suite job.
+      - name: Generate App token for the sync suite's artifacts
+        id: sync-token
+        if: needs.resolve.outputs.has_token == 'true'
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: rsksmart
+          repositories: rskj-sync-tests
+
       - name: Build report, comment and gate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -274,6 +420,48 @@ jobs:
           K6_RESULT: ${{ needs.k6.result }}
           K6_URL: ${{ needs.k6.outputs.run_url }}
           K6_REF: ${{ needs.resolve.outputs.k6_ref }}
+          SYNC_CONCLUSION: ${{ needs.sync.outputs.conclusion }}
+          SYNC_RESULT: ${{ needs.sync.result }}
+          SYNC_URL: ${{ needs.sync.outputs.run_url }}
+          SYNC_REF: ${{ needs.resolve.outputs.sync_ref }}
+          SYNC_TOKEN: ${{ steps.sync-token.outputs.token }}
+          # ------------------------------------------------------------------
+          # ADVISORY_SUITES: space-separated job ids whose non-success is a
+          # ::warning:: instead of a failure of this required check.
+          #
+          # Why `sync` is here:
+          #  * rskj-sync-tests is new, and it is the only suite here that depends
+          #    on a third-party public RPC (public-node.testnet.rsk.co) and on a
+          #    periodically refreshed testnet bootstrap snapshot. Neither is
+          #    under rskj's control, and neither should be able to redden a
+          #    contributor's PR.
+          #  * The most likely reason it goes non-green is NOT a consensus
+          #    divergence. Every MANIFEST_* finding in that suite is graded FAIL,
+          #    so an ordinary rskj PR that merely adds a consensus rule to
+          #    reference.conf trips MANIFEST_RULES_DRIFT -> FAIL -> a `failure`
+          #    conclusion here. That is the suite telling its own maintainers to
+          #    update a manifest; it is not a statement about the rskj PR. This
+          #    guard is the mitigation for exactly that case.
+          #
+          # Graduating it to enforcing = delete `sync` from this list
+          # (RSKCORE-5789). Whoever does that must ALSO decide what the gate
+          # should read: the suite's pr.yml exits 0 for PASS, WARN, INFRA *and*
+          # SKIPPED, so a `success` conclusion here does not by itself mean the
+          # run compared anything. The Sync ROW below already reads the suite's
+          # own outcome for that reason; the gate loop still reads the dispatch
+          # conclusion, which is correct only while the suite is advisory.
+          #
+          # Patience budget, stated here so it is not discovered by whoever first
+          # sees a `timed_out` row: _dispatch-suite.yml stops polling at ~50 min
+          # (100 x 30 s) inside timeout-minutes: 55. The sync suite's pr.yml
+          # declares ceilings summing to 76 min worst case, but that requires
+          # every phase to exhaust its budget simultaneously; the first real run
+          # (rsksmart/rskj-sync-tests run 34852163884, 2026-09-14) took 33.0 min
+          # end to end, critical path 32.8 min — 17 min of headroom. A run that
+          # does exceed the 50 min renders as `timed_out` with no artifact, which
+          # the rule below shows as "outcome unknown", never as a tick.
+          # ------------------------------------------------------------------
+          ADVISORY_SUITES: "sync"
         run: |
           set -euo pipefail
 
@@ -289,7 +477,7 @@ jobs:
               echo ""
               echo "GitHub App credentials (\`GH_APP_ID\` / \`GH_APP_PRIVATE_KEY\`) were"
               echo "unavailable (expected on fork PRs, where secrets are withheld). The"
-              echo "JSON-RPC / Hardhat / K6 suites were not dispatched."
+              echo "JSON-RPC / Hardhat / K6 / Sync suites were not dispatched."
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
@@ -303,6 +491,45 @@ jobs:
           JSONRPC_CONCLUSION="${JSONRPC_CONCLUSION:-$JSONRPC_RESULT}"
           HARDHAT_CONCLUSION="${HARDHAT_CONCLUSION:-$HARDHAT_RESULT}"
           K6_CONCLUSION="${K6_CONCLUSION:-$K6_RESULT}"
+          SYNC_CONCLUSION="${SYNC_CONCLUSION:-$SYNC_RESULT}"
+
+          # --- Sync row (advisory): the verdict comes from the SUITE, not from
+          # the dispatcher. rskj-sync-tests' pr.yml gate exits 0 for PASS, WARN,
+          # INFRA *and* SKIPPED and non-zero only for FAIL, so a `success`
+          # conclusion here covers both "replayed 7k testnet heights, every hash
+          # and state root matched" and "compared nothing at all". Rendering the
+          # conclusion would put a green tick on the second one — and INFRA is
+          # not exotic: it is what a stale bootstrap snapshot produces, every
+          # run, until the snapshot is refreshed. So read the suite's own
+          # sync-report.json and show ITS outcome; when the artifact cannot be
+          # read, say so instead of inheriting the tick.
+          SYNC_OUTCOME=""
+          SYNC_DETAIL=""
+          # The dispatcher's run_url ends in the run id. Validate it before it
+          # reaches gh: it is data that came back from another repo's API.
+          SYNC_RUN_ID="${SYNC_URL##*/}"
+          case "$SYNC_RUN_ID" in
+            ""|*[!0-9]*) SYNC_RUN_ID="";;
+          esac
+          if [ -n "$SYNC_RUN_ID" ] && [ -n "${SYNC_TOKEN:-}" ] \
+             && GH_TOKEN="$SYNC_TOKEN" gh run download "$SYNC_RUN_ID" \
+                  -R rsksmart/rskj-sync-tests -n sync-report -D sync-report >/dev/null 2>&1; then
+            # `// empty` keeps a JSON null out of the table; tr flattens anything
+            # that would break a markdown row or a ::warning:: annotation.
+            SYNC_OUTCOME=$(jq -r '.outcome // empty' sync-report/sync-report.json 2>/dev/null \
+              | tr -d '\n' | tr '|`' '  ' | head -c 32 || true)
+            SYNC_DETAIL=$(jq -r '(.reason // "no reason recorded") + (if .firstBlock then " (first block \(.firstBlock.height))" else "" end)' \
+              sync-report/sync-report.json 2>/dev/null | tr '\n' ' ' | tr '|`' '  ' | head -c 300 || true)
+          fi
+
+          if [ -n "$SYNC_OUTCOME" ]; then
+            SYNC_DISPLAY="$SYNC_OUTCOME"
+          elif [ "$SYNC_CONCLUSION" = "success" ]; then
+            # The dangerous case: green dispatch, no verdict. Never a tick.
+            SYNC_DISPLAY="unknown (report artifact unavailable)"
+          else
+            SYNC_DISPLAY="$SYNC_CONCLUSION"
+          fi
 
           emoji() {
             case "$1" in
@@ -311,6 +538,16 @@ jobs:
               cancelled) echo "🚫";;
               timed_out) echo "⏱️";;
               skipped) echo "⏭️";;
+              # Verdicts of the advisory Sync row, read from that suite's own
+              # report artifact. Distinct tokens from the run conclusions above
+              # (which are all lower case), so the three required rows are
+              # unaffected. Anything else — including
+              # "unknown (report artifact unavailable)" — falls through to ❓.
+              PASS) echo "✅";;
+              WARN) echo "⚠️";;
+              INFRA) echo "⚠️";;
+              SKIPPED) echo "⏭️";;
+              FAIL) echo "❌";;
               "") echo "⚠️";;
               *) echo "❓";;
             esac
@@ -334,14 +571,43 @@ jobs:
             row "JSON-RPC" "$JSONRPC_CONCLUSION" "$JSONRPC_REF" "$JSONRPC_URL"
             row "Hardhat"  "$HARDHAT_CONCLUSION" "$HARDHAT_REF" "$HARDHAT_URL"
             row "K6"       "$K6_CONCLUSION"      "$K6_REF"      "$K6_URL"
+            row "Sync"     "$SYNC_DISPLAY"       "$SYNC_REF"    "$SYNC_URL"
+            echo ""
+            # Keyed on SYNC_OUTCOME, not on SYNC_DETAIL, so this line always
+            # agrees with the row above: a readable artifact carrying no outcome
+            # renders as unknown in both places.
+            if [ -n "$SYNC_OUTCOME" ]; then
+              echo "Sync is advisory and never fails this check — ${SYNC_DETAIL}"
+            else
+              echo "Sync is advisory and never fails this check — outcome unknown: no verdict was readable from the suite's report artifact (the run did not finish, or the artifact could not be read)."
+            fi
           } > "$REPORT_FILE"
 
           cat "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
 
-          # Determine overall result up front (drives the final gate).
+          # Annotations for the advisory Sync row. The gate loop below only sees
+          # the dispatch conclusion, which is `success` for WARN / INFRA /
+          # SKIPPED as well, so these two cases would otherwise pass silently.
+          if [ -n "$SYNC_OUTCOME" ] && [ "$SYNC_OUTCOME" != "PASS" ]; then
+            echo "::warning::advisory suite sync reported $SYNC_OUTCOME: ${SYNC_DETAIL:-no reason recorded}"
+          elif [ -z "$SYNC_OUTCOME" ] && [ "$SYNC_CONCLUSION" = "success" ]; then
+            echo "::warning::advisory suite sync: the dispatched run concluded 'success' but its sync-report artifact could not be read, so no verdict was established (shown as 'unknown')"
+          fi
+
+          # Determine overall result up front (drives the final gate). A suite
+          # named in ADVISORY_SUITES annotates instead of failing the check;
+          # graduating one to enforcing is deleting it from that list.
           OVERALL=success
-          for c in "$JSONRPC_CONCLUSION" "$HARDHAT_CONCLUSION" "$K6_CONCLUSION"; do
-            [ "$c" = "success" ] || OVERALL=failure
+          is_advisory() { case " $ADVISORY_SUITES " in *" $1 "*) return 0;; *) return 1;; esac; }
+          for pair in "json_rpc:$JSONRPC_CONCLUSION" "hardhat:$HARDHAT_CONCLUSION" "k6:$K6_CONCLUSION" "sync:$SYNC_CONCLUSION"; do
+            name="${pair%%:*}"; c="${pair#*:}"
+            if [ "$c" != "success" ]; then
+              if is_advisory "$name"; then
+                echo "::warning::advisory suite $name did not succeed ($c)"
+              else
+                OVERALL=failure
+              fi
+            fi
           done
 
           # Sticky PR comment: upsert by a hidden marker so each push updates the
@@ -366,7 +632,7 @@ jobs:
 
           # Authoritative gate.
           if [ "$OVERALL" != "success" ]; then
-            echo "::error::one or more downstream suites did not succeed (JSON-RPC=$JSONRPC_CONCLUSION, Hardhat=$HARDHAT_CONCLUSION, K6=$K6_CONCLUSION)"
+            echo "::error::one or more downstream suites did not succeed (JSON-RPC=$JSONRPC_CONCLUSION, Hardhat=$HARDHAT_CONCLUSION, K6=$K6_CONCLUSION; Sync=$SYNC_CONCLUSION is advisory and never gates)"
             exit 1
           fi
-          echo "All downstream suites passed."
+          echo "All gating downstream suites passed."
