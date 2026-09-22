@@ -1013,6 +1013,19 @@ class BridgeTest {
         }
 
         @Test
+        void registerPegoutTransaction_afterRSKIP643_shouldNotThrowVMException() {
+            // arrange
+            byte[] btcTxId = BitcoinTestUtils.createHash(1).getBytes();
+            int height = 100;
+            byte[] pmt = Hex.decode("ab");
+
+            byte[] data = registerPegoutTransactionFunction.encode(btcTxId, height, pmt);
+
+            // act & assert
+            assertDoesNotThrow(() -> bridge.execute(data));
+        }
+
+        @Test
         void registerPegoutTransaction_withEmptyData_shouldThrowVMException() {
             // arrange
             final byte[] emptyData = registerPegoutTransactionFunction.encodeSignature();
