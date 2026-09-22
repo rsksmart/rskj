@@ -413,9 +413,9 @@ public class TransactionExecutor {
                 result.setHReturn(out);
                 if (!track.isExist(targetAddress)) {
                     track.createAccount(targetAddress);
-                    track.setupContract(targetAddress);
-                } else if (!track.isContract(targetAddress)) {
-                    track.setupContract(targetAddress);
+                    track.initializeStorage(targetAddress);
+                } else if (!track.hasInitializedStorage(targetAddress)) {
+                    track.initializeStorage(targetAddress);
                 }
             } catch (VMException | RuntimeException e) {
                 if (!localCall && activations.isActive(ConsensusRule.RSKIP560)) {
@@ -451,9 +451,9 @@ public class TransactionExecutor {
         if (isEmpty(tx.getData())) {
             gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
             // If there is no data, then the account is created, but without code nor
-            // storage. It doesn't even call setupContract() to setup a storage root
+            // storage. It doesn't even call initializeStorage() to setup a storage root
         } else {
-            cacheTrack.setupContract(newContractAddress);
+            cacheTrack.initializeStorage(newContractAddress);
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
 
             this.vm = new VM(vmConfig, precompiledContracts);

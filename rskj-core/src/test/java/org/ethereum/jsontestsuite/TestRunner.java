@@ -406,7 +406,7 @@ public class TestRunner {
 
                         RskAddress accountAddress = accountState.getAddress();
 
-                        if (!program.getStorage().isContract(accountAddress)) {
+                        if (!program.getStorage().hasInitializedStorage(accountAddress)) {
                             String output =
                                     String.format("Storage raw doesn't exist: key [ %s ], expectedValue: [ %s ]",
                                             ByteUtil.toHexString(storageKey.getData()),
@@ -656,8 +656,13 @@ public class TestRunner {
 
             track.addBalance(addr, accountState.getBalance());
             track.setNonce(addr, new BigInteger(1, accountState.getNonce()));
-            track.setupContract(addr);
-            track.saveCode(addr, accountState.getCode());
+            byte[] code = accountState.getCode();
+            boolean hasCode = code != null && code.length > 0;
+            boolean hasStorage = !accountState.getStorage().isEmpty();
+            if (hasCode || hasStorage) {
+                track.initializeStorage(addr);
+            }
+            track.saveCode(addr, code);
 
             for (DataWord storageKey : accountState.getStorage().keySet()) {
                 track.addStorageRow(addr, storageKey, accountState.getStorage().get(storageKey));

@@ -136,7 +136,9 @@ public class TxQuotaChecker {
     }
 
     private boolean isEOA(RskAddress receiverAddress, RepositorySnapshot repository) {
-        return !repository.isContract(receiverAddress);
+        // A delegated EOA (active or cleared) still sends its own transactions like any EOA, so it
+        // deserves the same early quota head-start as a receiver. Only real contracts don't.
+        return !repository.isRegularContract(receiverAddress);
     }
 
     /**

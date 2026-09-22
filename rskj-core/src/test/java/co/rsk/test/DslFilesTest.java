@@ -178,12 +178,12 @@ class DslFilesTest {
         // Sender account in branch 1
         // Null means no code
         Assertions.assertNull(repo1.getCode(addr1));
-        Assertions.assertFalse(repo1.isContract(addr1));
+        Assertions.assertFalse(repo1.isRegularContract(addr1));
 
 
         // "Creator" Contract account in branch 1
         // This contract has storage.
-        Assertions.assertTrue(repo1.isContract(addr2));
+        Assertions.assertTrue(repo1.isRegularContract(addr2));
 
         Assertions.assertNotNull(repo1.getCode(addr2));
         Assertions.assertNotEquals(0, repo1.getCode(addr2).length);
@@ -194,16 +194,16 @@ class DslFilesTest {
 
         // Sender account in branch 2
         Assertions.assertNull(repo2.getCode(addr1));
-        Assertions.assertFalse(repo2.isContract(addr1));
+        Assertions.assertFalse(repo2.isRegularContract(addr1));
 
         // "Creator" Contract account in branch 2
         // This contract has no childs?
-        Assertions.assertTrue(repo2.isContract(addr2));
+        Assertions.assertTrue(repo2.isRegularContract(addr2));
         Assertions.assertNotNull(repo2.getCode(addr2));
         Assertions.assertNotEquals(0, repo2.getCode(addr2).length);
 
         // Subcontract account in branch 2
-        Assertions.assertTrue(repo2.isContract(addr3));
+        Assertions.assertTrue(repo2.isRegularContract(addr3));
         Assertions.assertNotNull(repo2.getCode(addr3));
         Assertions.assertNotEquals(0, repo2.getCode(addr3).length);
     }
