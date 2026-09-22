@@ -288,14 +288,13 @@ class CanonicalScalarEncodingTest {
         }
 
         @Test
-        void rpcChainIdWithLeadingZeroIsNormalised() {
-            // Structured ingress normalises: 0x0021 is a legal hex quantity for 33.
+        void rpcChainIdWithLeadingZeroIsRejected() {
+            // Kept as in production: a JSON-RPC chainId must be a single byte as written.
             CallArguments args = type2Args("0x1", "0x5208");
             args.setChainId("0x0021");
 
-            TransactionInput input = TransactionInput.fromCallArguments(args, null);
-
-            assertEquals(Byte.valueOf((byte) 33), input.chainId());
+            assertThrows(RskJsonRpcRequestException.class,
+                    () -> TransactionInput.fromCallArguments(args, null));
         }
 
         @Test
@@ -318,10 +317,8 @@ class CanonicalScalarEncodingTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {"-56", "-1", "256", "1000"})
+        @ValueSource(strings = {"256", "1000"})
         void rpcChainIdOutsideByteRangeIsRejected(String chainId) {
-            // "-56" renders as two's-complement 0xc8, which is byte-identical to "200"; the sign is
-            // only visible before the value is narrowed, so that is where the range is enforced.
             CallArguments args = type2Args("0x1", "0x5208");
             args.setChainId(chainId);
 
@@ -342,12 +339,67 @@ class CanonicalScalarEncodingTest {
 
         @Test
         void rpcChainIdWithNoDigitsIsRejectedAsAParameterError() {
-            // "0x" carries no value; normalising it to zero would defer the failure to the encoder.
+            // "0x" carries no value, so it is not a single byte.
             CallArguments args = type2Args("0x1", "0x5208");
             args.setChainId("0x");
 
             assertThrows(RskJsonRpcRequestException.class,
                     () -> TransactionInput.fromCallArguments(args, null));
+        }
+
+        /** Type-1 layout: [chainId, nonce, gasPrice, gasLimit, to, value, data, accessList, yParity, r, s]. */
+        @ParameterizedTest
+        @ValueSource(ints = {9, 10})
+        void type1RawSignatureComponentWithLeadingZeroIsRejected(int index) {
+            Transaction canonical = Rskip546TestSupport.unsignedType1();
+            canonical.sign(PRIVATE_KEY);
+
+            byte[] mutated = zeroLeadByte(canonical.getEncoded(), index, true);
+
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class, () -> Transaction.fromRaw(mutated));
+            assertTrue(e.getMessage().contains("must not have leading zero bytes"), e.getMessage());
+        }
+
+        @Test
+        void type1RawChainIdWithLeadingZeroIsRejected() {
+            Transaction canonical = Rskip546TestSupport.unsignedType1();
+            canonical.sign(PRIVATE_KEY);
+
+            byte[] mutated = padScalar(canonical.getEncoded(), 0, true);
+
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class, () -> Transaction.fromRaw(mutated));
+            assertTrue(e.getMessage().contains("chainId must not have leading zero bytes"), e.getMessage());
+        }
+
+        /**
+         * Type-4 layout: [chainId, nonce, maxPriorityFee, maxFee, gasLimit, to, value, data,
+         * accessList, authorizationList, yParity, r, s].
+         */
+        @ParameterizedTest
+        @ValueSource(ints = {11, 12})
+        void type4RawSignatureComponentWithLeadingZeroIsRejected(int index) {
+            Transaction canonical = Rskip545TestSupport.unsignedType4();
+            canonical.sign(PRIVATE_KEY);
+
+            byte[] mutated = zeroLeadByte(canonical.getEncoded(), index, true);
+
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class, () -> Transaction.fromRaw(mutated));
+            assertTrue(e.getMessage().contains("must not have leading zero bytes"), e.getMessage());
+        }
+
+        @Test
+        void type4RawChainIdWithLeadingZeroIsRejected() {
+            Transaction canonical = Rskip545TestSupport.unsignedType4();
+            canonical.sign(PRIVATE_KEY);
+
+            byte[] mutated = padScalar(canonical.getEncoded(), 0, true);
+
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class, () -> Transaction.fromRaw(mutated));
+            assertTrue(e.getMessage().contains("chainId must not have leading zero bytes"), e.getMessage());
         }
 
         private byte[] padSignedType2Field(int index) {
@@ -444,6 +496,47 @@ class CanonicalScalarEncodingTest {
         }
 
         @Test
+        void accessListAddressFramedAsAListOfExactlyTwentyBytesIsRejected() {
+            // A list frame of exactly 20 bytes measures the same as a 20-byte address, so the length
+            // check alone cannot tell them apart.
+            byte[] listAddress = RLP.encodeList(RLP.encodeElement(new byte[18]));
+            assertEquals(20, listAddress.length);
+
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> type2Builder().nonce(BigInteger.ONE)
+                            .accessList(RLP.encodeList(RLP.encodeList(listAddress, RLP.encodeList())))
+                            .build());
+
+            assertTrue(e.getMessage().contains("must be encoded as an RLP byte string"), e.getMessage());
+        }
+
+        @Test
+        void accessListStorageKeyFramedAsAListOfExactlyThirtyTwoBytesIsRejected() {
+            byte[] listKey = RLP.encodeList(RLP.encodeElement(new byte[30]));
+            assertEquals(32, listKey.length);
+
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> type2Builder().nonce(BigInteger.ONE)
+                            .accessList(RLP.encodeList(RLP.encodeList(
+                                    RLP.encodeElement(new byte[20]), RLP.encodeList(listKey))))
+                            .build());
+
+            assertTrue(e.getMessage().contains("must be encoded as an RLP byte string"), e.getMessage());
+        }
+
+        @Test
+        void accessListWithAProperAddressAndKeyIsAccepted() {
+            Transaction tx = type2Builder().nonce(BigInteger.ONE)
+                    .accessList(RLP.encodeList(RLP.encodeList(
+                            RLP.encodeElement(new byte[20]),
+                            RLP.encodeList(RLP.encodeElement(new byte[32])))))
+                    .build();
+            tx.sign(PRIVATE_KEY);
+
+            assertEquals(tx.getHash(), Transaction.fromRaw(tx.getEncoded()).getHash());
+        }
+
+        @Test
         void builderAcceptsTheCanonicalEmptyAccessList() {
             Transaction tx = type2Builder().nonce(BigInteger.ONE).accessList(EMPTY_ACCESS_LIST).build();
             tx.sign(PRIVATE_KEY);
@@ -457,6 +550,24 @@ class CanonicalScalarEncodingTest {
             canonical.sign(PRIVATE_KEY);
 
             assertEquals(canonical.getHash(), Transaction.fromRaw(canonical.getEncoded()).getHash());
+        }
+
+        @Test
+        void schemaViolationIsReportedBeforeNonCanonicalFraming() {
+            Transaction canonical = type2Builder().nonce(BigInteger.valueOf(5)).build();
+            canonical.sign(PRIVATE_KEY);
+
+            // A nested list in the data slot, which is a byte string, plus a long-form nonce.
+            byte[] nested = RLP.encodeList();
+            for (int i = 0; i < 1_000; i++) {
+                nested = RLP.encodeList(nested);
+            }
+            byte[] mutated = longFormScalar(replaceField(canonical.getEncoded(), 7, nested), 1);
+
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class, () -> Transaction.fromRaw(mutated));
+            assertTrue(e.getMessage().contains(
+                    "Transaction field at index 7 must be encoded as an RLP byte string"), e.getMessage());
         }
 
         /** Re-frames one scalar in long form, leaving the decoded payload identical. */
