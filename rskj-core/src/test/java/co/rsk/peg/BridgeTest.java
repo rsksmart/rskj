@@ -991,7 +991,7 @@ class BridgeTest {
         }
 
         @Test
-        void registerPegoutTransaction_beforeRskip643_shouldThrowVMException() {
+        void registerPegoutTransaction_beforeRSKIP643_shouldThrowVMException() {
             // arrange
             ActivationConfig.ForBlock vetiverActivation = vetiver900Config.forBlock(0);
             BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
