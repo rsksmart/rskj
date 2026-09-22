@@ -58,9 +58,8 @@ public class Type1RawTransactionParser implements RawTransactionTypeParser<Parse
         byte[] valueData = txFields.get(VALUE_INDEX).getRLPData();
         Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(valueData));
         byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
-        CommonParsingUtils.requireListFramed(txFields.get(ACCESS_LIST_INDEX), "Access list");
         CommonParsingUtils.requireByteStringFields(txFields, ACCESS_LIST_INDEX);
-        byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(txFields.get(ACCESS_LIST_INDEX).getRLPRawData());
+        byte[] accessListBytes = AccessListCodec.requireRawAccessListBytes(txFields.get(ACCESS_LIST_INDEX));
         CommonParsingUtils.requireLegacyScalarFields(nonce, gasPrice, gasLimit, value);
         CommonParsingUtils.requireCanonicalGasPriceScalarFields(nonce, gasPriceData, gasLimit, valueData);
 

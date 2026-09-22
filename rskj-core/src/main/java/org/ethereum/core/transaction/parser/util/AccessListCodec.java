@@ -39,7 +39,8 @@ public final class AccessListCodec {
 
     /**
      * Validates that the access list field contains well-formed RLP and normalizes a missing
-     * value to the canonical empty-list encoding.
+     * value to the canonical empty-list encoding. Structured ingress only; raw ingress uses
+     * {@link #requireRawAccessListBytes}.
      *
      * <p>Per RSKIP-546, Type 1 and standard Type 2 transactions reserve an access-list slot in
      * their RLP layout. That slot must always be a (possibly empty) RLP list — the canonical
@@ -56,8 +57,7 @@ public final class AccessListCodec {
             }
             validateAccessListEntries(accessList);
             // Structured ingress accepts caller-supplied bytes and the encoders emit them verbatim,
-            // so non-minimal framing here would produce a transaction the raw parser rejects. On the
-            // raw path the envelope check proves this as well, and proving it twice is cheap.
+            // so non-minimal framing here would produce a transaction the raw parser rejects.
             if (!Arrays.equals(accessListBytes, CommonParsingUtils.reencodeCanonical(accessList))) {
                 throw new IllegalArgumentException("Access list is not canonically encoded");
             }
@@ -67,6 +67,23 @@ public final class AccessListCodec {
             throw new IllegalArgumentException("Access list contains invalid RLP encoding", e);
         }
         return accessListBytes;
+    }
+
+    /**
+     * Raw-ingress form of {@link #defaultAccessListBytes}, for the slot as decoded from the
+     * envelope. Checks that it is list-framed and that its entries are well formed; canonical
+     * framing is proven once for the whole payload by the envelope check, not again here.
+     */
+    public static byte[] requireRawAccessListBytes(RLPElement accessListField) {
+        CommonParsingUtils.requireListFramed(accessListField, "Access list");
+        try {
+            validateAccessListEntries((RLPList) accessListField);
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Access list contains invalid RLP encoding", e);
+        }
+        return accessListField.getRLPRawData();
     }
 
     /**

@@ -298,9 +298,11 @@ public final class TransactionInput {
     /**
      * Structured ingress accepts caller-supplied bytes, so the nonce is minimised here: leading
      * zeros are dropped and zero becomes the empty string, giving one encoding per transaction.
+     * The width bound applies to the minimised value, not to the spelling received.
      */
     static byte[] resolveNonceBytes(byte[] nonceBytes) {
-        CommonParsingUtils.requireDataWordBytes(nonceBytes, "Nonce is not valid");
-        return CommonParsingUtils.unsignedBytes(new BigInteger(1, nonceBytes));
+        byte[] minimal = CommonParsingUtils.unsignedBytes(new BigInteger(1, nonceBytes));
+        CommonParsingUtils.requireDataWordBytes(minimal, "Nonce is not valid");
+        return minimal;
     }
 }

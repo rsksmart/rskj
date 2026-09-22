@@ -84,6 +84,23 @@ class CanonicalScalarEncodingTest {
         }
 
         @Test
+        void resolveNonceBytesBoundsTheMinimisedValue() {
+            // 33 bytes as spelled, one byte as a value.
+            byte[] padded = new byte[33];
+            padded[32] = 0x05;
+
+            assertArrayEquals(new byte[]{0x05}, TransactionInput.resolveNonceBytes(padded));
+        }
+
+        @Test
+        void resolveNonceBytesRejectsAValueWiderThanADataWord() {
+            byte[] wide = new byte[33];
+            wide[0] = 0x01;
+
+            assertThrows(IllegalArgumentException.class, () -> TransactionInput.resolveNonceBytes(wide));
+        }
+
+        @Test
         void builderNonceWithLeadingZeroIsMinimisedIntoTheSignedTransaction() {
             Transaction nonCanonical = legacyBuilder().nonce(NON_CANONICAL_128).build();
             Transaction canonical = legacyBuilder().nonce(CANONICAL_128).build();
