@@ -1035,10 +1035,11 @@ class BridgeTest {
         @Test
         void registerPegoutTransaction_withNotEnoughDataForSecondParam_shouldThrowVMException() {
             // arrange
-            // this literal is exactly 32 bytes, so btcTxId decodes fine; height then has no bytes left -> IntType.decode throws
+            // btcTxId decodes fine; height then has no bytes left -> IntType.decode throws
+            byte[] btcTxId = Hex.decode("1111111111111111111111111111111111111111111111111111111111111111");
             final byte[] invalidHexData = ByteUtil.merge(
                 registerPegoutTransactionFunction.encodeSignature(),
-                Hex.decode("1111111111111111111111111111111111111111111111111111111111111111")
+                btcTxId
             );
 
             // act & assert
