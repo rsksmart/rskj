@@ -135,6 +135,17 @@ class UtxoUtilsTest {
         assertEquals(expectedMessage, actualMessage);
     }
 
+    @Test
+    void encodeOutpointValues_whenNegativeValueComesBeforeNullValue_shouldThrowForTheNullValue() {
+        // arrange
+        // every value is checked for null before any is checked for being negative, so the
+        // null is reported even though the negative value comes first in the list
+        List<Coin> outpointValues = Arrays.asList(Coin.valueOf(-100), null);
+
+        // act & assert
+        assertThrows(InvalidOutpointValueException.class, () -> UtxoUtils.encodeOutpointValues(outpointValues));
+    }
+
     @ParameterizedTest
     @MethodSource("invalidOutpointValues")
     void encodeOutpointValues_invalidOutpointValues_shouldThrowInvalidOutpointValueException(
