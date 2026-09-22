@@ -54,7 +54,7 @@ public class Type1TransactionEncoder  implements TransactionEncoder {
     /** Encodes the 8 shared Type 1 fields: [chainId, nonce, gasPrice, gasLimit, to, value, data, accessList] */
     protected byte[][] encodeUnsignedFields(Transaction tx) {
         return new byte[][]{
-                RLP.encodeByte(tx.getChainId()),
+                TransactionEncodingUtils.encodeTypedChainId(tx.getChainId()),
                 TransactionEncodingUtils.encodeTypedNonce(tx.getNonce()),
                 TransactionEncodingUtils.encodeFeeScalar(tx.getGasPrice()),
                 TransactionEncodingUtils.encodeTypedGasLimit(tx.getGasLimit()),
