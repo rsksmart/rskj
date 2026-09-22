@@ -1018,25 +1018,6 @@ class TransactionPoolImplTest {
     }
 
     @Test
-    void delegatedAccount_replacementTransactionRejectedWhenAlreadyHasPendingTransaction() {
-        createTestAccounts(2,  Coin.valueOf(1000000));
-        makeAccountDelegated(1,2);
-
-        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 1);
-        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 2000, 0, 2);
-
-        Assertions.assertTrue(transactionPool.addTransaction(tx1).transactionsWereAdded());
-
-        TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
-
-        Assertions.assertFalse(result.transactionsWereAdded());
-        Assertions.assertEquals("delegated account already has a transaction in the pool", result.getErrorMessage());
-        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
-        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx1));
-        Assertions.assertEquals(0, transactionPool.getQueuedTransactions().size());
-    }
-
-    @Test
     void delegatedAccounts_eachAccountCanHaveOneTransaction() {
         createTestAccounts(3, Coin.valueOf(1000000));
 
@@ -1068,6 +1049,90 @@ class TransactionPoolImplTest {
         Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
         Assertions.assertEquals(1, transactionPool.getQueuedTransactions().size());
         Assertions.assertTrue(transactionPool.getQueuedTransactions().contains(tx));
+    }
+
+    @Test
+    void delegatedAccount_replacementTransactionWithValidGasBumpAcceptedAndOnlyOneTransactionRemainsInPool() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        makeAccountDelegated(1, 2);
+
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 1);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 2000, 0, 2);
+
+        TransactionPoolAddResult result1 = transactionPool.addTransaction(tx1);
+        TransactionPoolAddResult result2 = transactionPool.addTransaction(tx2);
+
+        Assertions.assertTrue(result1.transactionsWereAdded());
+        Assertions.assertTrue(result2.transactionsWereAdded());
+
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx2));
+        Assertions.assertFalse(transactionPool.getPendingTransactions().contains(tx1));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void delegatedAccount_replacementTransactionWithInsufficientGasBumpRejected() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        makeAccountDelegated(1, 2);
+
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 10);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 2000, 0, 10);
+
+        Assertions.assertTrue(transactionPool.addTransaction(tx1).transactionsWereAdded());
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
+
+        Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertEquals("gas price not enough to bump transaction", result.getErrorMessage());
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx1));
+        Assertions.assertFalse(transactionPool.getPendingTransactions().contains(tx2));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void delegatedAccount_replacementAcceptedButDifferentNonceStillRejected() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        makeAccountDelegated(1, 2);
+
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 1);
+        Transaction tx1Replacement = createSampleTransactionWithGasPrice(1, 2, 2000, 0, 2);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 3000, 1, 3);
+
+        Assertions.assertTrue(transactionPool.addTransaction(tx1).transactionsWereAdded());
+        Assertions.assertTrue(transactionPool.addTransaction(tx1Replacement).transactionsWereAdded());
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
+
+        Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertEquals("delegated account already has a transaction in the pool", result.getErrorMessage());
+
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx1Replacement));
+        Assertions.assertFalse(transactionPool.getPendingTransactions().contains(tx1));
+        Assertions.assertFalse(transactionPool.getPendingTransactions().contains(tx2));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void delegatedAccount_replacementTransactionChecksQuotaAsReplacement() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        makeAccountDelegated(1, 2);
+
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 1);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 2000, 0, 2);
+
+        Assertions.assertTrue(transactionPool.addTransaction(tx1).transactionsWereAdded());
+        Assertions.assertTrue(transactionPool.addTransaction(tx2).transactionsWereAdded());
+
+        verify(quotaChecker).acceptTx(eq(tx1), isNull(), any());
+        verify(quotaChecker).acceptTx(eq(tx2), eq(tx1), any());
+
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx2));
+        Assertions.assertFalse(transactionPool.getPendingTransactions().contains(tx1));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
     }
 
     @Test

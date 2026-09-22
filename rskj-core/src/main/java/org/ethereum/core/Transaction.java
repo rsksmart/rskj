@@ -39,7 +39,6 @@ import org.ethereum.core.transaction.parser.ParsedRawTransaction;
 import org.ethereum.core.transaction.parser.ParsedRawTransactionVisitor;
 import org.ethereum.core.transaction.parser.ParsedType0Transaction;
 import org.ethereum.core.transaction.parser.ParsedType1Transaction;
-import org.ethereum.core.transaction.parser.ParsedType2RSKTransaction;
 import org.ethereum.core.transaction.parser.ParsedType2Transaction;
 import org.ethereum.core.transaction.parser.ParsedType4Transaction;
 import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
@@ -130,7 +129,7 @@ public class Transaction {
 
     /**
      * RSKIP-546 / RSKIP-545: EIP-1559 fee fields for standard Type 2 and Type 4 ({@code null} for legacy, Type 1,
-     * Type 3, and RSK-namespace Type 2). Effective gas price is {@code min(maxPriorityFeePerGas, maxFeePerGas)}.
+     * Type 3). Effective gas price is {@code min(maxPriorityFeePerGas, maxFeePerGas)}.
      */
     private final Coin maxPriorityFeePerGas;
     private final Coin maxFeePerGas;
@@ -193,6 +192,9 @@ public class Transaction {
         return parsed.accept(new ParsedRawTransactionToTransaction(isLocalCall));
     }
 
+    // Rootstock has no EIP-1559 base fee. The effective gas price is therefore
+    // min(maxPriorityFeePerGas, maxFeePerGas). For valid transactions,
+    // maxPriorityFeePerGas <= maxFeePerGas, so this resolves to the priority fee.
     private static Coin effectiveGasPrice(Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
         return maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
     }
@@ -228,11 +230,6 @@ public class Transaction {
                     parsed.chainId(),
                     null
             );
-        }
-
-        @Override
-        public Transaction visitType2Rsk(ParsedType2RSKTransaction parsed) {
-            return assemble(parsed, parsed.gasPrice(), null, null, null, parsed.chainId(), null);
         }
 
         @Override
@@ -284,6 +281,10 @@ public class Transaction {
                           @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas,
                           @Nullable List<SetCodeAuthorization> authorizationList) {
 
+        if (typePrefix.isRskNamespace()) {
+            throw new IllegalArgumentException(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
+        }
+
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = gasPriceRaw;
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
@@ -320,15 +321,15 @@ public class Transaction {
 
         long accessListGas = 0;
         if (activations.isActive(ConsensusRule.RSKIP546)
-                && isType1OrStandardType2()
+                && usesAccessListFields()
                 && accessListBytes != null && accessListBytes.length > 1) {
-            // RSKIP-546: 80 gas/byte of access-list RLP; only standard Type 1 / EIP-1559 Type 2 (not RSK-namespace 0x02||subtype).
+            // RSKIP-546: 80 gas/byte of access-list RLP.
             // length > 1: empty list (0xc0) is 1 byte and should not be charged.
             accessListGas = accessListBytes.length * GasCost.ACCESS_LIST_GAS_PER_BYTE;
         }
 
         long authorizationListGas = 0;
-        if (isType4()) {
+        if (isType4() && authorizationList != null) {
             authorizationListGas = Math.multiplyExact(GasCost.PER_EMPTY_ACCOUNT_COST, authorizationList.size());
         }
 
@@ -343,7 +344,9 @@ public class Transaction {
             return true;
         }
         TransactionType type = typePrefix.type();
-        if ((type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2)
+        // Type 1 / 2 / 4 all depend on RSKIP-546 fields (access_list, and for type 2/4 fee caps).
+        // Type 4 additionally requires RSKIP-545 (set-code / authorization_list).
+        if ((type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2 || type == TransactionType.TYPE_4)
                 && !activations.isActive(ConsensusRule.RSKIP546)) {
             return true;
         }
@@ -440,10 +443,8 @@ public class Transaction {
     }
 
     public Coin getGasPrice() {
-        // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
-        // give a different value than the original.
         if (usesRskip546FeeFields() && maxPriorityFeePerGas != null && maxFeePerGas != null) {
-            return maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
+            return effectiveGasPrice(maxPriorityFeePerGas, maxFeePerGas);
         }
         if (gasPrice == null) {
             return Coin.ZERO;
@@ -462,23 +463,21 @@ public class Transaction {
         return maxFeePerGas;
     }
 
-    /** Standard EIP-1559 Type 2 ({@code 0x02} + 12-field RLP), not RSK namespace ({@code 0x02} || subtype || legacy). */
-    private boolean isStandardType2() {
-        return typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace();
+    private boolean isType2() {
+        return typePrefix.type() == TransactionType.TYPE_2;
     }
 
     public boolean isType4() {
         return typePrefix.type() == TransactionType.TYPE_4;
     }
 
-    /** Type 2 (standard) and Type 4 carry RSKIP-546 fee caps in their payload. */
+    /** Type 2 and Type 4 carry RSKIP-546 fee caps in their payload. */
     private boolean usesRskip546FeeFields() {
-        return isStandardType2() || isType4();
+        return isType2() || isType4();
     }
 
-    /** Types that use RSKIP-546 access-list field and intrinsic gas for that field (excludes RSK-namespace Type 2). */
-    private boolean isType1OrStandardType2() {
-        return typePrefix.type() == TransactionType.TYPE_1 || isStandardType2() || isType4();
+    private boolean usesAccessListFields() {
+        return typePrefix.type() == TransactionType.TYPE_1 || isType2() || isType4();
     }
 
     public byte[] getGasLimit() {
@@ -498,7 +497,9 @@ public class Transaction {
             return false;
         }
 
-        if (typePrefix.type() == TransactionType.TYPE_1 || isStandardType2() || isType4()) {
+        if (typePrefix.type() == TransactionType.TYPE_1
+                || isType2()
+                || isType4()) {
             return this.chainId != 0 && this.chainId == currentChainId;
         }
 
@@ -637,14 +638,6 @@ public class Transaction {
         return typePrefix.type();
     }
 
-    public boolean isRskNamespaceTransaction() {
-        return typePrefix.isRskNamespace();
-    }
-
-    public byte getRskSubtype() {
-        return typePrefix.subtype();
-    }
-
     public String getFullTypeString() {
         return typePrefix.toFullString();
     }
@@ -734,7 +727,7 @@ public class Transaction {
     }
 
     private static byte[] nullToZeroArray(byte[] data) {
-        return data == null ? ZERO_BYTE_ARRAY.clone() : data;
+        return data == null ? ZERO_BYTE_ARRAY.clone() : data.clone();
     }
 
     public boolean isLocalCallTransaction() {

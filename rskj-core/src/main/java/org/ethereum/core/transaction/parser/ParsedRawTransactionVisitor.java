@@ -28,7 +28,5 @@ public interface ParsedRawTransactionVisitor<R> {
 
     R visitType2(ParsedType2Transaction transaction);
 
-    R visitType2Rsk(ParsedType2RSKTransaction transaction);
-
     R visitType4(ParsedType4Transaction transaction);
 }

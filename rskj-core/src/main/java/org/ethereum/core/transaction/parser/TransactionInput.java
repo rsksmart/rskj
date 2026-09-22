@@ -102,11 +102,15 @@ public final class TransactionInput {
 
     public static TransactionInput fromCallArguments(CallArguments args, Supplier<String> nonceSupplier) {
         Objects.requireNonNull(args, "args");
+        TransactionTypePrefix typePrefix = TransactionTypePrefix.fromHex(args.getType(), args.getRskSubtype());
+        if (typePrefix.isRskNamespace()) {
+            throw invalidParamError(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
+        }
+
         if (args.getNonce() == null && nonceSupplier != null) {
             args.setNonce(nonceSupplier.get());
         }
 
-        TransactionTypePrefix typePrefix = TransactionTypePrefix.fromHex(args.getType(), args.getRskSubtype());
         BigInteger nonce = Optional.ofNullable(args.getNonce())
                 .map(HexUtils::strHexOrStrNumberToBigInteger)
                 .orElse(null);
@@ -128,11 +132,11 @@ public final class TransactionInput {
 
         return new TransactionInput(
                 typePrefix,
-                nonce == null ? null : nonce.toByteArray(),
+                nonce == null ? null : CommonParsingUtils.unsignedBytes(nonce),
                 gasPrice,
                 maxPriorityFeePerGas,
                 maxFeePerGas,
-                gasLimit.toByteArray(),
+                CommonParsingUtils.unsignedBytes(gasLimit),
                 receiveAddress,
                 value,
                 data,
@@ -279,11 +283,10 @@ public final class TransactionInput {
         return new BigInteger(1, gasLimitBytes);
     }
 
-    static byte[] resolveNonceBytes(@Nullable byte[] nonceBytes, boolean defaultToZero) {
-        if (nonceBytes != null) {
-            CommonParsingUtils.requireDataWordBytes(nonceBytes, "Nonce is not valid");
-            return nonceBytes;
-        }
-        return defaultToZero ? BigInteger.ZERO.toByteArray() : null;
+    // nonceBytes is always TransactionInput.nonce(), which never surfaces a true null
+    // (ByteUtil.cloneBytes(null) -> empty array), so no null-defaulting is needed here.
+    static byte[] resolveNonceBytes(byte[] nonceBytes) {
+        CommonParsingUtils.requireDataWordBytes(nonceBytes, "Nonce is not valid");
+        return nonceBytes;
     }
 }

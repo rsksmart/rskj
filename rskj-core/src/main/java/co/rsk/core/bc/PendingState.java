@@ -97,8 +97,8 @@ public class PendingState implements AccountInformationProvider {
         return postExecutionReturn(executedRepository -> executedRepository.getCodeHashStandard(addr));
     }
     @Override
-    public boolean isContract(RskAddress addr) {
-        return postExecutionReturn(executedRepository -> executedRepository.isContract(addr));
+    public boolean hasInitializedStorage(RskAddress addr) {
+        return postExecutionReturn(executedRepository -> executedRepository.hasInitializedStorage(addr));
     }
 
     @Override

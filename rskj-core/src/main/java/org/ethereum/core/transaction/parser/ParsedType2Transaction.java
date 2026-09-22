@@ -69,6 +69,10 @@ public record ParsedType2Transaction(
         return data.clone();
     }
 
+    public byte[] accessListBytes() {
+        return accessListBytes.clone();
+    }
+
     @Override
     public Coin maxFeePerGas() {
         return maxFeePerGas;

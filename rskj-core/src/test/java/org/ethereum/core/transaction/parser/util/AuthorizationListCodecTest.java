@@ -40,6 +40,7 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,9 +53,11 @@ class AuthorizationListCodecTest {
 
     private static final BigInteger SECP256K1N_HALF =
             Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
+    private static final int R_FIELD_INDEX = 4;
+    private static final int S_FIELD_INDEX = 5;
 
     // -------------------------------------------------------------------------
-    // encodeList / decodeList
+    // encodeList / decodeListUnchecked
     // -------------------------------------------------------------------------
 
     @Test
@@ -62,7 +65,7 @@ class AuthorizationListCodecTest {
         SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
         byte[] encoded = AuthorizationListCodec.encodeList(List.of(auth));
 
-        List<SetCodeAuthorization> decoded = AuthorizationListCodec.decodeList(encoded);
+        List<SetCodeAuthorization> decoded = AuthorizationListCodec.decodeListUnchecked(encoded);
 
         assertEquals(1, decoded.size());
         assertEquals(auth, decoded.get(0));
@@ -151,7 +154,43 @@ class AuthorizationListCodecTest {
 
         assertEquals(BigInteger.valueOf(33), auth.getChainId());
         assertEquals(reference.getAddress(), auth.getAddress());
-        assertEquals(BigInteger.ONE, new BigInteger(1, auth.getNonce()));
+        assertEquals(BigInteger.ONE, new BigInteger(1, auth.getNonceBytes()));
+    }
+
+    @Test
+    void parseFromCallArguments_nonceAtMaxUint64MinusOne_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setNonce("0xffffffffffffffff");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertTrue(ex.getMessage().contains("2^64 - 1"), ex.getMessage());
+    }
+
+    @Test
+    void parseFromCallArguments_yParityOutsideParityRange_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setYParity("0x4");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertTrue(ex.getMessage().contains("y_parity"), ex.getMessage());
+    }
+
+    @Test
+    void parseFromCallArguments_zeroSignatureR_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setR("0x0");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertTrue(ex.getMessage().contains("secp256k1n"), ex.getMessage());
     }
 
     @Test
@@ -266,7 +305,7 @@ class AuthorizationListCodecTest {
         byte[] list = RLP.encodeList(badTuple);
 
         assertThrows(IllegalArgumentException.class,
-                () -> AuthorizationListCodec.decodeList(list));
+                () -> AuthorizationListCodec.decodeListUnchecked(list));
     }
 
     @Test
@@ -306,15 +345,14 @@ class AuthorizationListCodecTest {
     }
 
     @Test
-    void decodeTuple_nonceAtMaxUint64MinusOne_throws() {
+    void decodeTuple_nonceAtMaxUint64MinusOne_decodes() {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
-        byte[] tuple = rebuildTupleField(reference, 2,
-                RLP.encodeBigInteger(BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE)));
+        BigInteger maxUint64MinusOne = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
+        byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeBigInteger(maxUint64MinusOne));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> decodeSingleTuple(tuple));
-        assertTrue(ex.getMessage().contains("2^64"),
-                "Expected nonce range error, got: " + ex.getMessage());
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(maxUint64MinusOne, new BigInteger(1, decoded.getNonceBytes()));
     }
 
     @Test
@@ -324,19 +362,38 @@ class AuthorizationListCodecTest {
         byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeBigInteger(maxAllowed));
 
         SetCodeAuthorization decoded = decodeSingleTuple(tuple);
-        assertEquals(maxAllowed, new BigInteger(1, decoded.getNonce()));
+        assertEquals(maxAllowed, new BigInteger(1, decoded.getNonceBytes()));
     }
 
-    @Test
-    void decodeTuple_missingSignatureComponents_throws() {
+    @ParameterizedTest
+    @ValueSource(ints = {R_FIELD_INDEX, S_FIELD_INDEX})
+    void decodeTuple_zeroSignatureComponent_decodes(int fieldIndex) {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
-        byte[] tuple = rebuildTupleField(reference, 4, RLP.encodeElement(null));
+        byte[] tuple = rebuildTupleField(reference, fieldIndex, RLP.encodeElement(new byte[0]));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> AuthorizationListCodec.decodeTuple(RLP.decode2(tuple).get(0)));
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
 
-        assertTrue(ex.getMessage().contains("incomplete"),
-                "Expected incomplete signature error, got: " + ex.getMessage());
+        assertEquals(BigInteger.ZERO, signatureComponent(decoded, fieldIndex));
+        assertArrayEquals(tuple, AuthorizationListCodec.encodeTuple(decoded));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {R_FIELD_INDEX, S_FIELD_INDEX})
+    void decodeTuple_signatureComponentAtCurveOrder_decodes(int fieldIndex) {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger curveOrder = Constants.getSECP256K1N();
+        byte[] tuple = rebuildTupleField(reference, fieldIndex, RLP.encodeBigInteger(curveOrder));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(curveOrder, signatureComponent(decoded, fieldIndex));
+        assertArrayEquals(tuple, AuthorizationListCodec.encodeTuple(decoded));
+    }
+
+    private static BigInteger signatureComponent(SetCodeAuthorization authorization, int fieldIndex) {
+        return fieldIndex == R_FIELD_INDEX
+                ? authorization.getSignature().getR()
+                : authorization.getSignature().getS();
     }
 
     @Test
@@ -348,12 +405,28 @@ class AuthorizationListCodecTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {2, 5})
-    void decodeTuple_invalidYParityValue_throws(int yParityValue) {
+    @ValueSource(ints = {2, 5, 255})
+    void decodeTuple_yParityOutsideParityRange_decodes(int yParityValue) {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
         byte[] tuple = rebuildTupleField(reference, 3, RLP.encodeByte((byte) yParityValue));
 
-        assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(yParityValue, (decoded.getSignature().getV() - Transaction.LOWER_REAL_V) & 0xFF);
+    }
+
+    /**
+     * A tuple carrying an out-of-range y_parity must re-encode to the exact bytes it was decoded
+     * from, otherwise admitting it at decode time would shift the enclosing transaction hash.
+     */
+    @Test
+    void encodeTuple_yParityOutsideParityRange_roundTrips() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 3, RLP.encodeByte((byte) 255));
+
+        byte[] reencoded = AuthorizationListCodec.encodeTuple(decodeSingleTuple(tuple));
+
+        assertArrayEquals(tuple, reencoded);
     }
 
     @Test
@@ -412,20 +485,114 @@ class AuthorizationListCodecTest {
     }
 
     @Test
-    void encodeTuple_highSignatureS_throws() {
+    void encodeTuple_highSignatureS_succeeds() {
         SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
         BigInteger highS = SECP256K1N_HALF.add(BigInteger.ONE);
-        SetCodeAuthorization bad = new SetCodeAuthorization(
+        SetCodeAuthorization authorization = new SetCodeAuthorization(
                 auth.getChainId(),
                 auth.getAddress(),
-                auth.getNonce(),
+                auth.getNonceBytes(),
                 ECDSASignature.fromComponents(
                         BigIntegers.asUnsignedByteArray(auth.getSignature().getR()),
                         BigIntegers.asUnsignedByteArray(highS),
                         auth.getSignature().getV()));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> AuthorizationListCodec.encodeTuple(bad));
+        byte[] encoded = AuthorizationListCodec.encodeTuple(authorization);
+        SetCodeAuthorization decoded = AuthorizationListCodec.decodeTuple(RLP.decode2(encoded).get(0));
+
+        assertEquals(highS, decoded.getSignature().getS());
+    }
+
+    @Test
+    void encodeTuple_halfCurveOrderS_succeeds() {
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        SetCodeAuthorization boundary = new SetCodeAuthorization(
+                auth.getChainId(),
+                auth.getAddress(),
+                auth.getNonceBytes(),
+                ECDSASignature.fromComponents(
+                        BigIntegers.asUnsignedByteArray(auth.getSignature().getR()),
+                        BigIntegers.asUnsignedByteArray(SECP256K1N_HALF),
+                        auth.getSignature().getV()));
+
+        byte[] encoded = AuthorizationListCodec.encodeTuple(boundary);
+        SetCodeAuthorization decoded = AuthorizationListCodec.decodeTuple(RLP.decode2(encoded).get(0));
+
+        assertEquals(SECP256K1N_HALF, decoded.getSignature().getS());
+    }
+
+    @Test
+    void encodeTuple_justBelowHalfCurveOrderS_succeeds() {
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger justBelowHalf = SECP256K1N_HALF.subtract(BigInteger.ONE);
+        SetCodeAuthorization boundary = new SetCodeAuthorization(
+                auth.getChainId(),
+                auth.getAddress(),
+                auth.getNonceBytes(),
+                ECDSASignature.fromComponents(
+                        BigIntegers.asUnsignedByteArray(auth.getSignature().getR()),
+                        BigIntegers.asUnsignedByteArray(justBelowHalf),
+                        auth.getSignature().getV()));
+
+        byte[] encoded = AuthorizationListCodec.encodeTuple(boundary);
+        SetCodeAuthorization decoded = AuthorizationListCodec.decodeTuple(RLP.decode2(encoded).get(0));
+
+        assertEquals(justBelowHalf, decoded.getSignature().getS());
+    }
+
+    @Test
+    void decodeTuple_halfCurveOrderS_succeeds() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(
+                reference,
+                5,
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(SECP256K1N_HALF)));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(SECP256K1N_HALF, decoded.getSignature().getS());
+    }
+
+    @Test
+    void decodeTuple_highSignatureS_succeeds() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger highS = SECP256K1N_HALF.add(BigInteger.ONE);
+        byte[] tuple = rebuildTupleField(
+                reference,
+                5,
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(highS)));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(highS, decoded.getSignature().getS());
+    }
+
+    @Test
+    void decodeTuple_justBelowHalfCurveOrderS_succeeds() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger justBelowHalf = SECP256K1N_HALF.subtract(BigInteger.ONE);
+        byte[] tuple = rebuildTupleField(
+                reference,
+                5,
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(justBelowHalf)));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(justBelowHalf, decoded.getSignature().getS());
+    }
+
+    @Test
+    void decodeTuple_highS_decodes() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger maxDecodableS = BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE);
+        byte[] tuple = rebuildTupleField(
+                reference,
+                5,
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(maxDecodableS)));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(maxDecodableS, decoded.getSignature().getS());
     }
 
     @Test
@@ -435,7 +602,7 @@ class AuthorizationListCodecTest {
 
         SetCodeAuthorization decoded = decodeSingleTuple(tuple);
 
-        assertEquals(BigInteger.ZERO, new BigInteger(1, decoded.getNonce()));
+        assertEquals(BigInteger.ZERO, new BigInteger(1, decoded.getNonceBytes()));
     }
 
     @Test
@@ -457,7 +624,7 @@ class AuthorizationListCodecTest {
 
         SetCodeAuthorization auth = AuthorizationListCodec.parseFromCallArguments(List.of(entry)).get(0);
 
-        assertEquals(BigInteger.ZERO, new BigInteger(1, auth.getNonce()));
+        assertEquals(BigInteger.ZERO, new BigInteger(1, auth.getNonceBytes()));
     }
 
     @Test
@@ -472,12 +639,12 @@ class AuthorizationListCodecTest {
     }
 
     @Test
-    void privateDecodeNonce_null_returnsZero() throws Exception {
-        java.lang.reflect.Method decodeNonce = AuthorizationListCodec.class.getDeclaredMethod(
-                "decodeNonce", byte[].class);
-        decodeNonce.setAccessible(true);
+    void privateDecodeUnsignedBigInteger_null_returnsZero() throws Exception {
+        java.lang.reflect.Method decodeUnsignedBigInteger = AuthorizationListCodec.class.getDeclaredMethod(
+                "decodeUnsignedBigInteger", byte[].class);
+        decodeUnsignedBigInteger.setAccessible(true);
 
-        assertEquals(BigInteger.ZERO, decodeNonce.invoke(null, (Object) null));
+        assertEquals(BigInteger.ZERO, decodeUnsignedBigInteger.invoke(null, (Object) null));
     }
 
     @Test
@@ -505,7 +672,7 @@ class AuthorizationListCodecTest {
 
             SetCodeAuthorization auth = (SetCodeAuthorization) parseEntry.invoke(null, entry, 0);
 
-            assertEquals(BigInteger.ZERO, new BigInteger(1, auth.getNonce()));
+            assertEquals(BigInteger.ZERO, new BigInteger(1, auth.getNonceBytes()));
         }
     }
 
@@ -548,7 +715,7 @@ class AuthorizationListCodecTest {
 
         SetCodeAuthorization auth = Mockito.mock(SetCodeAuthorization.class);
         Mockito.when(auth.getChainId()).thenReturn(BigInteger.ONE.shiftLeft(256));
-        Mockito.when(auth.getNonce()).thenReturn(new byte[]{0x01});
+        Mockito.when(auth.getNonceBytes()).thenReturn(new byte[]{0x01});
 
         InvocationTargetException ex = assertThrows(InvocationTargetException.class,
                 () -> validate.invoke(null, auth));
@@ -564,7 +731,7 @@ class AuthorizationListCodecTest {
         SetCodeAuthorization auth = Mockito.mock(SetCodeAuthorization.class);
         ECDSASignature signature = Mockito.mock(ECDSASignature.class);
         Mockito.when(auth.getChainId()).thenReturn(BigInteger.ZERO);
-        Mockito.when(auth.getNonce()).thenReturn(new byte[]{0x01});
+        Mockito.when(auth.getNonceBytes()).thenReturn(new byte[]{0x01});
         Mockito.when(auth.getSignature()).thenReturn(signature);
         Mockito.when(signature.validateComponentsWithoutV()).thenReturn(true);
         Mockito.when(signature.getR()).thenReturn(BigInteger.ONE.shiftLeft(256));
@@ -583,7 +750,7 @@ class AuthorizationListCodecTest {
         SetCodeAuthorization bad = new SetCodeAuthorization(
                 auth.getChainId(),
                 auth.getAddress(),
-                auth.getNonce(),
+                auth.getNonceBytes(),
                 ECDSASignature.fromComponents(
                         oversized,
                         BigIntegers.asUnsignedByteArray(auth.getSignature().getS()),
@@ -591,6 +758,190 @@ class AuthorizationListCodecTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> AuthorizationListCodec.encodeTuple(bad));
+    }
+
+    /** {@code asUnsignedByteArray} drops the sign rather than failing, so -1 would encode as 0xff. */
+    @ParameterizedTest
+    @ValueSource(ints = {R_FIELD_INDEX, S_FIELD_INDEX})
+    void encodeTuple_negativeSignatureComponent_throws(int fieldIndex) {
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger negative = BigInteger.valueOf(-1);
+        SetCodeAuthorization bad = new SetCodeAuthorization(
+                auth.getChainId(),
+                auth.getAddress(),
+                auth.getNonceBytes(),
+                new ECDSASignature(
+                        fieldIndex == R_FIELD_INDEX ? negative : auth.getSignature().getR(),
+                        fieldIndex == S_FIELD_INDEX ? negative : auth.getSignature().getS(),
+                        auth.getSignature().getV()));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AuthorizationListCodec.encodeTuple(bad));
+        assertEquals("Authorization signature r and s must be non-negative", ex.getMessage());
+    }
+
+    // -------------------------------------------------------------------------
+    // Canonical RLP scalar encodings
+    // -------------------------------------------------------------------------
+
+    @Test
+    void decodeTuple_nonMinimalChainId_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 0, RLP.encodeElement(new byte[]{0x00, 0x21}));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("chain_id"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_nonMinimalNonce_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeElement(new byte[]{0x00, 0x01}));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("nonce"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_nonMinimalZeroNonce_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 2, new byte[]{0x00});
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("nonce"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_nonCanonicalZeroYParity_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 3, new byte[]{0x00});
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("y_parity"), ex.getMessage());
+    }
+
+    /**
+     * Padded to exactly 32 bytes, so the data-word length check passes and the minimality check is
+     * what rejects it. A 33-byte payload would be caught by the length rule instead and would not
+     * exercise this at all.
+     */
+    @Test
+    void decodeTuple_nonMinimalSignatureR_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 4,
+                RLP.encodeElement(zeroPaddedToDataWord(reference.getSignature().getR())));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("signature r must not have leading zero bytes"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_nonMinimalSignatureS_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 5,
+                RLP.encodeElement(zeroPaddedToDataWord(reference.getSignature().getS())));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("signature s must not have leading zero bytes"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_oversizeSignatureRWithLeadingZero_reportsLengthError() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 4,
+                RLP.encodeElement(zeroPaddedBeyondDataWord(reference.getSignature().getR())));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("Authorization signature r is not valid"), ex.getMessage());
+    }
+
+    @Test
+    void encodeTuple_zeroNonce_emitsCanonicalEmptyString() {
+        SetCodeAuthorization auth = new SetCodeAuthorization(
+                BigInteger.valueOf(33),
+                Rskip545TestSupport.minimalAuthorization((byte) 33).getAddress(),
+                new byte[]{0x00},
+                Rskip545TestSupport.minimalAuthorization((byte) 33).getSignature());
+
+        byte[] tuple = AuthorizationListCodec.encodeTuple(auth);
+
+        RLPList inner = RLP.decodeList(tuple);
+        assertEquals(0, inner.get(2).getRLPRawData().length,
+                "nonce zero must be encoded as the empty string 0x80, not as 0x00");
+    }
+
+    @Test
+    void parseFromCallArguments_zeroNonce_normalizesToCanonicalBytes() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setNonce("0x0");
+
+        SetCodeAuthorization auth = AuthorizationListCodec.parseFromCallArguments(List.of(entry)).get(0);
+
+        assertEquals(0, auth.getNonceBytes().length,
+                "nonce zero must be held as the empty byte array so the signing hash matches the canonical form");
+    }
+
+    /**
+     * The low 31 bytes of {@code value}, left-padded with one zero byte to a full 32-byte data word.
+     * Still a valid curve scalar, so the tuple fails on encoding rather than on its signature value.
+     */
+    private static byte[] zeroPaddedToDataWord(BigInteger value) {
+        byte[] magnitude = BigIntegers.asUnsignedByteArray(value);
+        byte[] padded = new byte[32];
+        int taken = Math.min(31, magnitude.length);
+        System.arraycopy(magnitude, magnitude.length - taken, padded, 32 - taken, taken);
+        return padded;
+    }
+
+    /**
+     * Always 33 bytes with a leading zero, so the length rule fires whatever the signature draw:
+     * r is only 32 bytes while r >= 2**248, so a bare prepend gives 32 bytes about 1 draw in 256.
+     */
+    private static byte[] zeroPaddedBeyondDataWord(BigInteger value) {
+        byte[] magnitude = BigIntegers.asUnsignedByteArray(value);
+        byte[] padded = new byte[Transaction.DATAWORD_LENGTH + 1];
+        int taken = Math.min(Transaction.DATAWORD_LENGTH, magnitude.length);
+        System.arraycopy(magnitude, magnitude.length - taken, padded, padded.length - taken, taken);
+        return padded;
+    }
+
+    @Test
+    void decodeTuple_overlongItemPrefixOnChainId_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 0, new byte[]{(byte) 0x81, 0x21});
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("canonically encoded"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_longFormLengthOnShortNonce_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 2, new byte[]{(byte) 0xb8, 0x01, 0x01});
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("canonically encoded"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_leadingZeroNonce_reportsFieldSpecificMessage() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeElement(new byte[]{0x00, 0x01}));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("Authorization nonce must not have leading zero bytes"),
+                ex.getMessage());
     }
 
     // -------------------------------------------------------------------------

@@ -17,7 +17,6 @@
  */
 package org.ethereum.core.transaction.parser.util;
 
-import co.rsk.util.HexUtils;
 import org.ethereum.core.transaction.parser.SignatureState;
 import org.ethereum.core.transaction.parser.SignedSignature;
 import org.ethereum.core.transaction.parser.UnsignedSignature;
@@ -25,8 +24,6 @@ import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public final class TypedTransactionCodec {
 
@@ -42,6 +39,10 @@ public final class TypedTransactionCodec {
                                                       int sIndex) {
         byte[] r = txFields.get(rIndex).getRLPData();
         byte[] s = txFields.get(sIndex).getRLPData();
+        // Validated before the unsigned early return so the field is checked on every path.
+        // Callers run requireFieldCount first, so the index always exists.
+        byte yParity = CommonParsingUtils.parseCanonicalYParity(
+                txFields.get(yParityIndex).getRLPData(), "Typed transaction yParity");
 
         if (r == null && s == null) {
             byte chainId = parseTypedTxChainId(txFields.get(chainIdIndex).getRLPData());
@@ -51,28 +52,11 @@ public final class TypedTransactionCodec {
         if (r == null || s == null) {
             throw new IllegalArgumentException("Typed transaction signature is incomplete");
         }
-        CommonParsingUtils.requireSignatureComponent(r, "Signature R is not valid");
-        CommonParsingUtils.requireSignatureComponent(s, "Signature S is not valid");
-        byte yParity = parseTypedYParity(txFields.get(yParityIndex).getRLPData());
+        CommonParsingUtils.requireNormalizedSignatureComponent(r, "Signature R is not valid");
+        CommonParsingUtils.requireNormalizedSignatureComponent(s, "Signature S is not valid");
         byte v = (byte) (LOWER_REAL_V + yParity);
         byte chainId = parseTypedTxChainId(txFields.get(chainIdIndex).getRLPData());
         return new SignedSignature(chainId, ECDSASignature.fromComponents(r, s, v));
-    }
-
-    public static byte parseRequiredTypedChainId(String chainIdHex) {
-        if (chainIdHex == null) {
-            throw invalidParamError("Typed transaction requires chainId");
-        }
-
-        return parseTypedTxChainId(HexUtils.strHexOrStrNumberToByteArray(chainIdHex));
-    }
-
-    private static byte parseTypedYParity(byte[] yParityData) {
-        byte yParity = (yParityData != null && yParityData.length > 0) ? yParityData[0] : 0;
-        if (yParity != 0 && yParity != 1) {
-            throw new IllegalArgumentException("Typed transaction yParity must be 0 or 1, got: " + (yParity & 0xFF));
-        }
-        return yParity;
     }
 
     /**

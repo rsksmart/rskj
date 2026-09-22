@@ -58,7 +58,7 @@ public final class Type4TransactionValidation {
             throw new IllegalArgumentException("Type 4 transaction signature components are invalid");
         }
         if (signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
-            throw new IllegalArgumentException("Type 4 transaction signature s must be at most secp256k1n/2");
+            throw new IllegalArgumentException("Type 4 transaction signature s must be less than secp256k1n/2");
         }
     }
 

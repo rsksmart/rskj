@@ -18,16 +18,14 @@
 package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.types.bytes.BytesSlice;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.util.function.Supplier;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public final class RawTransactionEnvelopeParser {
 
@@ -44,24 +42,11 @@ public final class RawTransactionEnvelopeParser {
         }
 
         TransactionTypePrefix typePrefix = TransactionTypePrefix.fromRawData(rawData);
+        rejectUnsupportedNamespace(typePrefix);
         BytesSlice payload = TransactionTypePrefix.stripPrefix(rawData, typePrefix);
         RLPList txFields = RLP.decodeList(payload);
 
         return resolveParser(typePrefix).parse(typePrefix, txFields);
-    }
-
-    /**
-     * Parses raw transaction bytes and validates fork activation rules for the transaction type.
-     */
-    public static ParsedRawTransaction parse(
-            byte[] rawData,
-            long bestBlock,
-            ActivationConfig activationConfig,
-            Constants constants
-    ) {
-        ParsedRawTransaction parsed = parse(rawData);
-        validateActivation(parsed, bestBlock, activationConfig, constants);
-        return parsed;
     }
 
     public static ParsedRawTransaction parse(CallArguments argsParam, Supplier<String> nonceSupplier, byte defaultChainId) {
@@ -74,47 +59,8 @@ public final class RawTransactionEnvelopeParser {
     public static ParsedRawTransaction parse(TransactionInput input, byte defaultChainId) {
         Objects.requireNonNull(input, "input");
         TransactionTypePrefix typePrefix = input.typePrefix();
+        rejectUnsupportedNamespace(typePrefix);
         return resolveParser(typePrefix).parse(typePrefix, input, defaultChainId);
-    }
-
-    /**
-     * Parses JSON-RPC call arguments and validates fork activation rules for the transaction type.
-     */
-    public static ParsedRawTransaction parse(
-            CallArguments argsParam,
-            Supplier<String> nonceSupplier,
-            byte defaultChainId,
-            long bestBlock,
-            ActivationConfig activationConfig,
-            Constants constants
-    ) {
-        ParsedRawTransaction parsed = parse(argsParam, nonceSupplier, defaultChainId);
-        validateActivation(parsed, bestBlock, activationConfig, constants);
-        return parsed;
-    }
-
-    /**
-     * Parses structured transaction input and validates fork activation rules for the transaction type.
-     */
-    public static ParsedRawTransaction parse(
-            TransactionInput input,
-            byte defaultChainId,
-            long bestBlock,
-            ActivationConfig activationConfig,
-            Constants constants
-    ) {
-        ParsedRawTransaction parsed = parse(input, defaultChainId);
-        validateActivation(parsed, bestBlock, activationConfig, constants);
-        return parsed;
-    }
-
-    private static void validateActivation(
-            ParsedRawTransaction parsed,
-            long bestBlock,
-            ActivationConfig activationConfig,
-            Constants constants
-    ) {
-        resolveParser(parsed.typePrefix()).validate(bestBlock, activationConfig, constants);
     }
 
     private static RawTransactionTypeParser<? extends ParsedRawTransaction> resolveParser(TransactionTypePrefix typePrefix) {
@@ -122,9 +68,15 @@ public final class RawTransactionEnvelopeParser {
         return switch (type) {
             case LEGACY -> type0Parser;
             case TYPE_1 -> type1Parser;
-            case TYPE_2 -> typePrefix.isRskNamespace() ? type0Parser : type2Parser;
+            case TYPE_2 -> type2Parser;
             case TYPE_3 -> throw new IllegalArgumentException("Unsupported transaction type: " + typePrefix);
             case TYPE_4 -> type4Parser;
         };
+    }
+
+    private static void rejectUnsupportedNamespace(TransactionTypePrefix typePrefix) {
+        if (typePrefix.isRskNamespace()) {
+            throw new IllegalArgumentException(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
+        }
     }
 }
