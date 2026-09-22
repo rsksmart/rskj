@@ -248,26 +248,20 @@ class VarIntUtilsTest {
     }
 
     @Test
-    void decode_withNonCanonicalVarInt_shouldAdvanceByTheCanonicalSizeOfTheValue() {
+    void decode_withNonCanonicalThreeByteVarInt_shouldThrowVarIntException() {
         // arrange
         // FD announces a three byte VarInt holding 5 (FD 05 00), but 5 fits in a single
-        // byte, so this is a non-canonical encoding (0x0005) of it. The walk advances by the
-        // canonical size of the decoded value, one byte, landing back inside the encoding it
-        // has just read and decoding its remaining bytes as values of their own.
+        // byte, so this is a non-canonical encoding (0x0005) of it. When decoding, it'd result in
+        // [5L, 5L, 0L, 0L].
 
         // These bytes cannot be produced by encoding: the FD form is only used for values
         // from 253 to 65535, so encoding 5 always yields the single byte 05. They can only
         // reach the decoder from another implementation, a crafted input or corrupted
         // storage, which is why they are written here as a literal.
+        byte[] encodedValues = Hex.decode("FD0500");
 
-        byte[] encodedValues = Hex.decode("FD050000");
-
-        // act
-        List<Long> values = VarIntUtils.decode(encodedValues);
-
-        // assert
-        List<Long> expectedValues = List.of(5L, 5L, 0L, 0L);
-        assertEquals(expectedValues, values);
+        // act & assert
+        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
     }
 
     @Test

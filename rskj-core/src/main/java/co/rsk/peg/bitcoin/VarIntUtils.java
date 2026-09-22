@@ -22,8 +22,8 @@ public final class VarIntUtils {
      * @return {@code List<Long>} an unmodifiable list of the values decoded, preserving the
      * order of the entries. Empty when {@code encodedValues} is {@code null} or an
      * {@code empty byte[]}.
-     * @throws VarIntException when a VarInt cannot be read, or a value does not fit in a
-     * signed long. A VarInt encodes an unsigned integer.
+     * @throws VarIntException when a VarInt cannot be read or is not canonically encoded, or
+     * a value does not fit in a signed long. A VarInt encodes an unsigned integer.
      */
     public static List<Long> decode(byte[] encodedValues) {
         if (encodedValues == null || encodedValues.length == 0) {
@@ -38,12 +38,11 @@ public final class VarIntUtils {
             try {
                 valueAsVarInt = new VarInt(encodedValues, offset);
             } catch (Exception ex) {
-                throw new VarIntException(
-                    String.format("Invalid value with invalid VarInt format: %s",
-                        Bytes.toPrintableString(encodedValues).toUpperCase()
-                    ),
-                    ex
-                );
+                throw new VarIntException(invalidVarIntFormatMessage(encodedValues), ex);
+            }
+
+            if (isNonCanonicalRepresentation(valueAsVarInt)) {
+                throw new VarIntException(invalidVarIntFormatMessage(encodedValues));
             }
 
             offset += valueAsVarInt.getSizeInBytes();
@@ -51,6 +50,10 @@ public final class VarIntUtils {
             values.add(valueAsVarInt.value);
         }
         return Collections.unmodifiableList(values);
+    }
+
+    private static boolean isNonCanonicalRepresentation(VarInt valueAsVarInt) {
+        return valueAsVarInt.getSizeInBytes() != valueAsVarInt.getOriginalSizeInBytes();
     }
 
     /**
@@ -75,6 +78,11 @@ public final class VarIntUtils {
             outputStream.writeBytes(valueAsVarInt.encode());
         }
         return outputStream.toByteArray();
+    }
+
+    private static String invalidVarIntFormatMessage(byte[] encodedValues) {
+        return String.format("Invalid value with invalid VarInt format: %s",
+            Bytes.toPrintableString(encodedValues).toUpperCase());
     }
 
     private static void validateValue(Long value) {
