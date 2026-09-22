@@ -1045,6 +1045,24 @@ class BridgeTest {
             // act & assert
             assertThrows(VMException.class, () -> bridge.execute(invalidHexData));
         }
+
+        @Test
+        void registerPegoutTransaction_withNotEnoughDataForThirdParam_shouldThrowVMException() {
+            // arrange
+            // the data ends after height, so the word saying where pmt starts is missing and is read as zero;
+            // that points back to btcTxId, which is then read as pmt's length (a zero btcTxId would give
+            // length zero and decode as an empty pmt, without throwing)
+            byte[] btcTxId = Hex.decode("1111111111111111111111111111111111111111111111111111111111111111");
+            byte[] height = new byte[32];
+            final byte[] invalidData = ByteUtil.merge(
+                registerPegoutTransactionFunction.encodeSignature(),
+                btcTxId,
+                height
+            );
+
+            // act & assert
+            assertThrows(VMException.class, () -> bridge.execute(invalidData));
+        }
     }
 
     @Test
