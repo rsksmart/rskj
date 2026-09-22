@@ -118,7 +118,7 @@ class AccountClassificationTest {
                 () -> assertTrue(repository.isActiveDelegatedEOA(addr)),
                 () -> assertFalse(repository.isClearedDelegatedEOA(addr)),
                 () -> assertFalse(repository.isRegularContract(addr)),
-                () -> assertFalse(repository.isEOA(addr), "isEOA() must exclude the active-delegation case (RSKIP-545 review point 1)")
+                () -> assertFalse(repository.isEOA(addr), "isEOA() must exclude the active-delegation case")
         );
     }
 
