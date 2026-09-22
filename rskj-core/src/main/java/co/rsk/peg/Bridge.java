@@ -89,6 +89,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // - The bitcoin block height that contains the tx
     // - A merkle tree that shows the tx is included in that block, serialized with the bitcoin wire protocol format.
     public static final CallTransaction.Function REGISTER_BTC_TRANSACTION = BridgeMethods.REGISTER_BTC_TRANSACTION.getFunction();
+    // Parameters:
+    // - The hash of a bitcoin tx
+    // - The bitcoin block height that contains the tx
+    // - A merkle tree that shows the tx is included in that block.
     public static final CallTransaction.Function REGISTER_PEGOUT_TRANSACTION = BridgeMethods.REGISTER_PEGOUT_TRANSACTION.getFunction();
     // No parameters, the current rsk tx is used as input.
     public static final CallTransaction.Function RELEASE_BTC = BridgeMethods.RELEASE_BTC.getFunction();
