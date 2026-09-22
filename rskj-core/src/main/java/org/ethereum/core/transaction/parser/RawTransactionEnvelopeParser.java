@@ -47,9 +47,10 @@ public final class RawTransactionEnvelopeParser {
         rejectUnsupportedNamespace(typePrefix);
         BytesSlice payload = TransactionTypePrefix.stripPrefix(rawData, typePrefix);
         RLPList txFields = RLP.decodeList(payload);
+        ParsedRawTransaction parsed = resolveParser(typePrefix).parse(typePrefix, txFields);
         requireCanonicalEnvelopeRlp(typePrefix, payload, txFields);
 
-        return resolveParser(typePrefix).parse(typePrefix, txFields);
+        return parsed;
     }
 
     public static ParsedRawTransaction parse(CallArguments argsParam, Supplier<String> nonceSupplier, byte defaultChainId) {
@@ -86,6 +87,8 @@ public final class RawTransactionEnvelopeParser {
      * {@link CommonParsingUtils#requireCanonicalScalar}: a non-minimal scalar is a well-formed item
      * that re-encodes to itself, so this check cannot see it. The two are complements, not
      * alternatives — neither makes the other redundant.
+     *
+     * <p>Runs after the type parser, so the tree it walks already has the shape the schema defines.
      *
      * <p>Typed transactions only.
      */

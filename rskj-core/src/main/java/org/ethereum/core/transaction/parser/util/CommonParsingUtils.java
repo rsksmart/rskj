@@ -218,10 +218,19 @@ public final class CommonParsingUtils {
             if (isListField(i, listFieldIndices)) {
                 continue;
             }
-            if (txFields.get(i) instanceof RLPList) {
-                throw new IllegalArgumentException(
-                        "Transaction field at index " + i + " must be encoded as an RLP byte string");
-            }
+            requireByteStringFramed(txFields.get(i), "Transaction field at index " + i);
+        }
+    }
+
+    /**
+     * Single-element form of {@link #requireByteStringFields}, for schema slots reached one at a
+     * time — the access-list address and storage keys. A length check alone cannot stand in for it:
+     * a list whose frame happens to be exactly 20 or 32 bytes measures the same as the byte string
+     * the schema calls for.
+     */
+    public static void requireByteStringFramed(RLPElement field, String fieldLabel) {
+        if (field instanceof RLPList) {
+            throw new IllegalArgumentException(fieldLabel + " must be encoded as an RLP byte string");
         }
     }
 

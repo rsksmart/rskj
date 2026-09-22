@@ -45,9 +45,6 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
  */
 public final class TransactionInput {
 
-    /** chainId is stored in a byte, so any ingress value must fit 0..255 regardless of type. */
-    private static final int MAX_CHAIN_ID_VALUE = 0xFF;
-
     private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
     private static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
 
@@ -252,16 +249,11 @@ public final class TransactionInput {
             return null;
         }
         try {
-            // Structured ingress normalises, so "0x0021" is a legal quantity for 33. "0x" carries
-            // no value at all and stays a parameter error, rather than failing later in the encoder.
-            if (HexUtils.strHexOrStrNumberToByteArray(hex).length == 0) {
+            byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
+            if (bytes.length != 1) {
                 throw invalidParamError(ERR_INVALID_CHAIN_ID + hex);
             }
-            BigInteger value = HexUtils.strHexOrStrNumberToBigInteger(hex);
-            if (value.signum() < 0 || value.compareTo(BigInteger.valueOf(MAX_CHAIN_ID_VALUE)) > 0) {
-                throw invalidParamError(ERR_INVALID_CHAIN_ID + hex);
-            }
-            return (byte) value.intValueExact();
+            return bytes[0];
         } catch (RskJsonRpcRequestException e) {
             throw e;
         } catch (Exception e) {

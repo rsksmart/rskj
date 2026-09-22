@@ -57,7 +57,7 @@ public final class AccessListCodec {
             validateAccessListEntries(accessList);
             // Structured ingress accepts caller-supplied bytes and the encoders emit them verbatim,
             // so non-minimal framing here would produce a transaction the raw parser rejects. On the
-            // raw path the envelope check has already proven this, and re-proving it is cheap.
+            // raw path the envelope check proves this as well, and proving it twice is cheap.
             if (!Arrays.equals(accessListBytes, CommonParsingUtils.reencodeCanonical(accessList))) {
                 throw new IllegalArgumentException("Access list is not canonically encoded");
             }
@@ -87,6 +87,8 @@ public final class AccessListCodec {
                 throw new IllegalArgumentException("Access list entry at index " + i + " must have exactly 2 elements");
             }
 
+            CommonParsingUtils.requireByteStringFramed(
+                    entry.get(0), "Access list entry address at index " + i);
             byte[] addressData = entry.get(0).getRLPData();
             if (addressData == null || addressData.length != RskAddress.LENGTH_IN_BYTES) {
                 throw new IllegalArgumentException(
@@ -101,6 +103,8 @@ public final class AccessListCodec {
             }
             RLPList storageKeys = RLP.decodeList(storageKeyListBytes);
             for (int k = 0; k < storageKeys.size(); k++) {
+                CommonParsingUtils.requireByteStringFramed(
+                        storageKeys.get(k), "Access list storage key at entry " + i + ", key " + k);
                 byte[] keyData = storageKeys.get(k).getRLPData();
                 if (keyData == null || keyData.length != Transaction.DATAWORD_LENGTH) {
                     throw new IllegalArgumentException(
