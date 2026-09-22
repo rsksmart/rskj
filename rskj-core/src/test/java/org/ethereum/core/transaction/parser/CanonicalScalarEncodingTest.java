@@ -669,6 +669,17 @@ class CanonicalScalarEncodingTest {
         }
 
         @Test
+        void encodeTypedChainIdRejectsZero() {
+            assertThrows(IllegalStateException.class, () -> TransactionEncodingUtils.encodeTypedChainId((byte) 0));
+        }
+
+        @Test
+        void encodeTypedChainIdSpellsNonZeroValuesAsBefore() {
+            assertArrayEquals(RLP.encodeByte((byte) 33), TransactionEncodingUtils.encodeTypedChainId((byte) 33));
+            assertArrayEquals(RLP.encodeByte((byte) 200), TransactionEncodingUtils.encodeTypedChainId((byte) 200));
+        }
+
+        @Test
         void legacyEncodeNonceIsUnchanged() {
             // Type-0 shares encodeNonce and must keep accepting what it always accepted.
             assertArrayEquals(RLP.encodeElement(NON_CANONICAL_128),

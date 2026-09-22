@@ -52,6 +52,18 @@ public final class TransactionEncodingUtils {
         return RLP.encodeElement(gasLimit);
     }
 
+    /**
+     * RLP-encoded chainId for a typed envelope. Zero would be spelled as the empty string, which the
+     * typed parser refuses, so it is rejected here like a non-minimal nonce. Typed ingress rejects a
+     * zero chainId on both paths, so a failure here means a construction path bypassed both.
+     */
+    public static byte[] encodeTypedChainId(byte chainId) {
+        if (chainId == 0) {
+            throw new IllegalStateException("Typed transaction chainId must not be zero");
+        }
+        return RLP.encodeByte(chainId);
+    }
+
     private static void requireMinimalTypedScalar(byte[] scalar, String fieldLabel) {
         if (scalar != null && scalar.length > 0 && scalar[0] == 0) {
             throw new IllegalStateException("Typed transaction " + fieldLabel

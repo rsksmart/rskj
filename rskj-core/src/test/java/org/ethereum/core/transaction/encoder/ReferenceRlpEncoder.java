@@ -77,17 +77,14 @@ final class ReferenceRlpEncoder {
         vectors.put("legacy-chain200", legacy(HIGH_CHAIN_ID));
         vectors.put("legacy-contract-creation", legacy(CHAIN_ID, EMPTY_TO, DATA));
         vectors.put("legacy-long-data", legacy(CHAIN_ID, TO, LONG_DATA));
-        vectors.put("type1-chain0", type1(0));
         vectors.put("type1-chain33", type1(CHAIN_ID));
         vectors.put("type1-chain200", type1(HIGH_CHAIN_ID));
         vectors.put("type1-access-list", type1(CHAIN_ID, NON_EMPTY_ACCESS_LIST));
-        vectors.put("type2-chain0", type2(0));
         vectors.put("type2-chain33", type2(CHAIN_ID));
         vectors.put("type2-chain33-yParity0", type2(CHAIN_ID, Y_PARITY_0));
         vectors.put("type2-chain200", type2(HIGH_CHAIN_ID));
         vectors.put("type2-zero-fees", type2ZeroFees(CHAIN_ID));
         // Type4 auth list uses the same chainId as the transaction body.
-        vectors.put("type4-chain0", type4(0));
         vectors.put("type4-chain33", type4(CHAIN_ID));
         vectors.put("type4-chain200", type4(HIGH_CHAIN_ID));
         return vectors;
