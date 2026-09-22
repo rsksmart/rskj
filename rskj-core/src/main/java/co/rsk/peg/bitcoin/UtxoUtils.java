@@ -51,7 +51,7 @@ public final class UtxoUtils {
      * is valid
      */
     public static byte[] encodeOutpointValues(List<Coin> outpointValues) {
-        if (outpointValues == null || outpointValues.isEmpty()) {
+        if (outpointValues == null) {
             return EMPTY_BYTE_ARRAY;
         }
 
@@ -103,10 +103,6 @@ public final class UtxoUtils {
      * @throws InvalidOutputIndexException when an output index is {@code null} or negative.
      */
     public static byte[] encodeOutputIndexes(List<Long> outputIndexes) {
-        if (outputIndexes == null || outputIndexes.isEmpty()) {
-            return EMPTY_BYTE_ARRAY;
-        }
-
         try {
             return VarIntUtils.encode(outputIndexes);
         } catch (VarIntException ex) {
