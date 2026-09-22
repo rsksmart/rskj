@@ -69,8 +69,7 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
         // data
         byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
         // access list
-        CommonParsingUtils.requireListFramed(txFields.get(ACCESS_LIST_INDEX), "Access list");
-        byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(txFields.get(ACCESS_LIST_INDEX).getRLPRawData());
+        byte[] accessListBytes = AccessListCodec.requireRawAccessListBytes(txFields.get(ACCESS_LIST_INDEX));
         // authorization list
         CommonParsingUtils.requireListFramed(txFields.get(AUTHORIZATION_LIST_INDEX), "Authorization list");
         CommonParsingUtils.requireByteStringFields(txFields, ACCESS_LIST_INDEX, AUTHORIZATION_LIST_INDEX);
