@@ -612,8 +612,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         Sha256Hash btcTxHash = Sha256Hash.wrap((byte[]) args[0]);
         int height = ((BigInteger)args[1]).intValue();
         byte[] pmtSerialized = (byte[]) args[2];
-
-        logger.debug("[registerPegoutTransaction] btcTxHash: {}, height: {}, pmtSerialized: {}", btcTxHash, height, pmtSerialized);
     }
 
     public void releaseBtc(Object[] args) throws VMException {
