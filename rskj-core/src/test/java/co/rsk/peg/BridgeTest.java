@@ -1060,7 +1060,7 @@ class BridgeTest {
         }
 
         @Test
-        void registerPegoutTransaction_withNotEnoughDataForThirdParam_shouldThrowVMException() {
+        void registerPegoutTransaction_whenBytesOffsetReadsPastTheEnd_shouldThrowVMException() {
             // arrange
             // the data ends after height, so the word saying where pmt starts is missing and is read as zero;
             // that points back to btcTxId, which is then read as pmt's length (a zero btcTxId would give
