@@ -24,17 +24,19 @@ import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.Rskip546FeeValidation;
+import org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema;
 import org.ethereum.core.transaction.parser.util.TypedTransactionCodec;
-import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.bytes;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.list;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.scalar;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class Type2RawTransactionParser implements RawTransactionTypeParser<ParsedType2Transaction>{
 
-    private static final int FIELD_COUNT = 12;
     private static final int CHAIN_ID_INDEX = 0;
     private static final int NONCE_INDEX = 1;
     private static final int MAX_PRIORITY_FEE_PER_GAS_INDEX = 2;
@@ -48,38 +50,37 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
     private static final int R_INDEX = 10;
     private static final int S_INDEX = 11;
 
+    static final TypedEnvelopeSchema SCHEMA = TypedEnvelopeSchema.of(TransactionType.TYPE_2.getTypeName(),
+            bytes("chainId"),
+            scalar("Nonce"),
+            scalar("Max priority fee per gas", "Gas Price is not valid"),
+            scalar("Max fee per gas", "Gas Price is not valid"),
+            scalar("Gas Limit"),
+            bytes("to"),
+            scalar("Value"),
+            bytes("data"),
+            list("Access list"),
+            bytes("yParity"),
+            bytes("r"),
+            bytes("s"));
+
     @Override
     public ParsedType2Transaction parse(TransactionTypePrefix typePrefix, RLPList txFields) {
-        CommonParsingUtils.requireFieldCount(txFields, FIELD_COUNT, TransactionType.TYPE_2.getTypeName());
+        SCHEMA.validate(txFields);
 
-        byte[] nonce = CommonParsingUtils.nullToEmpty(txFields.get(NONCE_INDEX).getRLPData());
-        byte[] gasLimit = CommonParsingUtils.nullToEmpty(txFields.get(GAS_LIMIT_INDEX).getRLPData());
-
-        RskAddress receiveAddress = CommonParsingUtils.defaultAddress(RLP.parseRskAddress(txFields.get(TO_INDEX).getRLPData()));
-        byte[] valueData = txFields.get(VALUE_INDEX).getRLPData();
-        Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(valueData));
-        byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
-        CommonParsingUtils.requireListFramed(txFields.get(ACCESS_LIST_INDEX), "Access list");
-        CommonParsingUtils.requireByteStringFields(txFields, ACCESS_LIST_INDEX);
-        byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(txFields.get(ACCESS_LIST_INDEX).getRLPRawData());
-        byte[] maxPriorityFeeData = txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData();
-        byte[] maxFeeData = txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData();
-        Coin maxPriorityFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(maxPriorityFeeData));
-        Coin maxFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(maxFeeData));
-
+        Coin maxPriorityFeePerGas = CommonParsingUtils.coinAt(txFields, MAX_PRIORITY_FEE_PER_GAS_INDEX);
+        Coin maxFeePerGas = CommonParsingUtils.coinAt(txFields, MAX_FEE_PER_GAS_INDEX);
         Rskip546FeeValidation.requireFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
-        CommonParsingUtils.requireTypedScalarFields(nonce, gasLimit, value, maxPriorityFeePerGas, maxFeePerGas);
-        CommonParsingUtils.requireCanonicalTypedScalarFields(nonce, gasLimit, valueData, maxPriorityFeeData, maxFeeData);
 
         return new ParsedType2Transaction(
                 typePrefix,
-                nonce,
-                gasLimit,
-                receiveAddress,
-                value,
-                data,
+                CommonParsingUtils.bytesAt(txFields, NONCE_INDEX),
+                CommonParsingUtils.bytesAt(txFields, GAS_LIMIT_INDEX),
+                CommonParsingUtils.addressAt(txFields, TO_INDEX),
+                CommonParsingUtils.coinAt(txFields, VALUE_INDEX),
+                CommonParsingUtils.bytesAt(txFields, DATA_INDEX),
                 TypedTransactionCodec.parseTypedSignatureState(txFields, CHAIN_ID_INDEX, Y_PARITY_INDEX, R_INDEX, S_INDEX),
-                accessListBytes,
+                AccessListCodec.defaultAccessListBytes(txFields.get(ACCESS_LIST_INDEX).getRLPRawData()),
                 maxPriorityFeePerGas,
                 maxFeePerGas
         );

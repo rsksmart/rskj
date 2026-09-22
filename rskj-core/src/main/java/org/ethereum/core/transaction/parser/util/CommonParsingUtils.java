@@ -218,11 +218,26 @@ public final class CommonParsingUtils {
             if (isListField(i, listFieldIndices)) {
                 continue;
             }
-            if (txFields.get(i) instanceof RLPList) {
-                throw new IllegalArgumentException(
-                        "Transaction field at index " + i + " must be encoded as an RLP byte string");
-            }
+            requireByteString(txFields.get(i), "Transaction field at index " + i);
         }
+    }
+
+    public static void requireByteString(RLPElement field, String fieldLabel) {
+        if (field instanceof RLPList) {
+            throw new IllegalArgumentException(fieldLabel + " must be encoded as an RLP byte string");
+        }
+    }
+
+    public static byte[] bytesAt(RLPList txFields, int index) {
+        return nullToEmpty(txFields.get(index).getRLPData());
+    }
+
+    public static Coin coinAt(RLPList txFields, int index) {
+        return defaultValue(RLP.parseCoinNullZero(txFields.get(index).getRLPData()));
+    }
+
+    public static RskAddress addressAt(RLPList txFields, int index) {
+        return defaultAddress(RLP.parseRskAddress(txFields.get(index).getRLPData()));
     }
 
     private static boolean isListField(int index, int... listFieldIndices) {
