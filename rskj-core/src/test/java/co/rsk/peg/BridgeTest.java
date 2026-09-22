@@ -78,6 +78,7 @@ class BridgeTest {
     private final CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
     private BridgeBuilder bridgeBuilder;
     private LockingCapSupport lockingCapSupport;
+    private Bridge bridge;
 
     @BeforeEach
     void setup() {
@@ -467,7 +468,6 @@ class BridgeTest {
         private BtcBlockStoreWithCache btcBlockStore;
         private BridgeStorageProvider bridgeStorageProvider;
         private BridgeSupport bridgeSupport;
-        private Bridge bridge;
         private int enoughConfirmationsHeight;
         private int notEnoughConfirmationsHeight;
 
@@ -977,7 +977,6 @@ class BridgeTest {
     @Nested
     class RegisterPegoutTransactionValidations {
         private final CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
-        private Bridge bridge;
 
         @BeforeEach
         void setup() {
