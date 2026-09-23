@@ -114,8 +114,7 @@ class UtxoUtilsTest {
         byte[] outpointValues = UtxoUtils.encodeOutpointValues(null);
 
         // assert
-        byte[] expectedEncodedValues = EMPTY_BYTE_ARRAY;
-        assertArrayEquals(expectedEncodedValues, outpointValues);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, outpointValues);
     }
 
     @Test
