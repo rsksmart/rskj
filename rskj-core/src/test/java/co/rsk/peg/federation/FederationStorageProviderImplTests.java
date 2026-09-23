@@ -1519,6 +1519,50 @@ class FederationStorageProviderImplTests {
             assertUtxosAreEqual(expectedOneUtxo, actualUtxosForBtcTxId);
             assertUtxosAreEqual(expectedUtxosForOtherBtcTxId, actualUtxosForOtherBtcTxId);
         }
+
+        @Test
+        void saveFederationsPendingBtcUTXOs_whenSettingOneBtcTxIdAndRemovingAnother_shouldPersistNewAndDeleteRemoved() {
+            // arrange
+            storageAccessor.saveToRepository(
+                otherFederationsPendingBtcUTXOsKey,
+                expectedUtxosForOtherBtcTxId,
+                BridgeSerializationUtils::serializeUTXOList
+            );
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            federationStorageProvider.removeFederationsPendingBtcUTXOs(otherBtcTxId);
+
+            // act
+            federationStorageProvider.save(networkParameters, activations);
+            List<UTXO> actualUtxosForBtcTxId = storageAccessor.getFromRepository(federationsPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
+            List<UTXO> actualUtxosForOtherBtcTxId = storageAccessor.getFromRepository(otherFederationsPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
+
+            // assert
+            assertUtxosAreEqual(expectedOneUtxo, actualUtxosForBtcTxId);
+            assertTrue(actualUtxosForOtherBtcTxId.isEmpty());
+        }
+
+        @Test
+        void saveFederationsPendingBtcUTXOs_whenEntryWasReadAndStorageChangedAfterwards_shouldRewriteCachedUtxosToStorage() {
+            // arrange
+            storageAccessor.saveToRepository(
+                federationsPendingBtcUTXOsKey,
+                expectedThreeUtxos,
+                BridgeSerializationUtils::serializeUTXOList
+            );
+            federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+            storageAccessor.saveToRepository(
+                federationsPendingBtcUTXOsKey,
+                expectedOneUtxo,
+                BridgeSerializationUtils::serializeUTXOList
+            );
+
+            // act
+            federationStorageProvider.save(networkParameters, activations);
+            List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationsPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
+
+            // assert
+            assertUtxosAreEqual(expectedThreeUtxos, actualUtxos);
+        }
     }
 
     private static Federation createNonStandardErpFederation() {
