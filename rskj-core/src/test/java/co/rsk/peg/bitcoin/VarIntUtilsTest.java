@@ -3,6 +3,8 @@ package co.rsk.peg.bitcoin;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
@@ -244,7 +246,8 @@ class VarIntUtilsTest {
         byte[] encodedValues = Hex.decode("FE0100");
 
         // act & assert
-        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+        VarIntException varIntException = assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+        assertNotNull(varIntException.getCause());
     }
 
     @Test
@@ -330,7 +333,10 @@ class VarIntUtilsTest {
         // ArrayIndexOutOfBoundsException that reading it raises
         byte[] encodedValues = Hex.decode("FFFFFFFFFFFFFFFFFFFE01");
 
-        // act & assert
-        assertThrows(VarIntException.class, () -> VarIntUtils.decode(encodedValues));
+        // act && assert
+        VarIntException varIntException = assertThrows(
+            VarIntException.class,
+            () -> VarIntUtils.decode(encodedValues));
+        assertNull(varIntException.getCause());
     }
 }
