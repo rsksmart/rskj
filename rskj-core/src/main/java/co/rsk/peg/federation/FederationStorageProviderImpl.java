@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.BridgeSerializationUtils;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static co.rsk.peg.federation.FederationStorageIndexKey.*;
@@ -26,6 +28,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     private static final Logger logger = LoggerFactory.getLogger(FederationStorageProviderImpl.class);
     private final StorageAccessor bridgeStorageAccessor;
     private final HashMap<DataWord, Optional<Integer>> storageVersionEntries;
+    private final Map<Sha256Hash, List<UTXO>> federationsPendingBtcUTXOs;
 
     private List<UTXO> newFederationBtcUTXOs;
     private List<UTXO> oldFederationBtcUTXOs;
@@ -49,6 +52,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     public FederationStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
         this.storageVersionEntries = new HashMap<>();
+        this.federationsPendingBtcUTXOs = new HashMap<>();
     }
 
     @Override
@@ -103,6 +107,62 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         oldFederationBtcUTXOs = bridgeStorageAccessor.getFromRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), BridgeSerializationUtils::deserializeUTXOList);
         return oldFederationBtcUTXOs;
+    }
+
+    @Override
+    public Optional<List<UTXO>> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        if (federationsPendingBtcUTXOs.containsKey(btcTxId)) {
+            return Optional.ofNullable(federationsPendingBtcUTXOs.get(btcTxId));
+        }
+
+        DataWord key = getStorageKeyForFederationsPendingBtcUTXOs(btcTxId);
+        List<UTXO> utxos = bridgeStorageAccessor.getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
+
+        if (utxos.isEmpty()) {
+            return Optional.empty();
+        }
+
+        List<UTXO> immutableUtxos = List.copyOf(utxos);
+        federationsPendingBtcUTXOs.put(btcTxId, immutableUtxos);
+        return Optional.of(immutableUtxos);
+    }
+
+    private DataWord getStorageKeyForFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        return FEDERATIONS_PENDING_BTC_UTXOS_KEY.getCompoundKey("-", btcTxId.toString());
+    }
+
+    @Override
+    public void setFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos) {
+        if (btcTxId == null || utxos == null || utxos.isEmpty()) {
+            throw new IllegalArgumentException(String.format(
+                "Invalid federations pending btc utxos entry, has btcTxId %s and utxos list %s",
+                btcTxId,
+                utxos
+            ));
+        }
+
+        if (isBtcTxIdAlreadyUsed(btcTxId)) {
+            throw new IllegalStateException(String.format("Given btcTxId %s already exists in federationsPendingBtcUTXOs. btcTxId entries are considered unique.", btcTxId));
+        }
+
+        federationsPendingBtcUTXOs.put(btcTxId, List.copyOf(utxos));
+    }
+
+    private boolean isBtcTxIdAlreadyUsed(Sha256Hash btcTxId) {
+        return federationsPendingBtcUTXOs.containsKey(btcTxId) || getFederationsPendingBtcUTXOs(btcTxId).isPresent();
+    }
+
+    @Override
+    public void removeFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        if (btcTxId == null) {
+            throw new IllegalArgumentException("Invalid federations pending btc utxos entry, btcTxId cannot be null");
+        }
+
+        if (getFederationsPendingBtcUTXOs(btcTxId).isEmpty()) {
+            return;
+        }
+
+        federationsPendingBtcUTXOs.put(btcTxId, null);
     }
 
     @Override
@@ -329,6 +389,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     public void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
         saveNewFederationBtcUTXOs(networkParameters, activations);
         saveOldFederationBtcUTXOs();
+        saveFederationsPendingBtcUTXOs();
 
         saveNewFederation(activations);
         saveOldFederation(activations);
@@ -360,6 +421,14 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         }
 
         bridgeStorageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), oldFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
+    }
+
+    private void saveFederationsPendingBtcUTXOs() {
+        federationsPendingBtcUTXOs.forEach((btcTxId, utxos) -> bridgeStorageAccessor.saveToRepository(
+            getStorageKeyForFederationsPendingBtcUTXOs(btcTxId),
+            utxos,
+            BridgeSerializationUtils::serializeUTXOList)
+        );
     }
 
     private void saveNewFederation(ActivationConfig.ForBlock activations) {

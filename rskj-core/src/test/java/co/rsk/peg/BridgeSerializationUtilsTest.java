@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSerializationUtils.*;
 import static co.rsk.peg.PegTestUtils.createHash3;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -751,7 +752,7 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedNullData = BridgeSerializationUtils.deserializeUTXOList(null);
 
             // assert
-            assertUtxosEquals(Collections.emptyList(), deserializedNullData);
+            assertUtxosAreEqual(Collections.emptyList(), deserializedNullData);
         }
 
         @Test
@@ -760,7 +761,7 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedEmptyData = BridgeSerializationUtils.deserializeUTXOList(EMPTY_BYTE_ARRAY);
 
             // assert
-            assertUtxosEquals(Collections.emptyList(), deserializedEmptyData);
+            assertUtxosAreEqual(Collections.emptyList(), deserializedEmptyData);
         }
 
         @Test
@@ -778,7 +779,7 @@ class BridgeSerializationUtilsTest {
             // (OFFSET_SHORT_LIST + 0), i.e. the actual bytes persisted for "no UTXOs".
             byte[] expectedSerializationForEmptyList = {(byte) 0xc0};
             assertArrayEquals(expectedSerializationForEmptyList, serializedUtxos);
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEqual(utxos, deserializedUtxos);
         }
 
         @Test
@@ -799,7 +800,7 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
 
             // assert
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEqual(utxos, deserializedUtxos);
         }
 
         @Test
@@ -812,7 +813,7 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
 
             // assert
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEqual(utxos, deserializedUtxos);
         }
 
         @Test
@@ -857,7 +858,7 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
 
             // assert
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEqual(utxos, deserializedUtxos);
         }
 
         @Test
@@ -905,7 +906,7 @@ class BridgeSerializationUtilsTest {
             assertNotEquals(recoveredAddressForStandardFederationUtxo, recoveredAddressForErpFederationUtxo);
             assertNotEquals(recoveredAddressForStandardFederationUtxo, recoveredAddressForP2shP2wshErpFederationUtxo);
             assertNotEquals(recoveredAddressForErpFederationUtxo, recoveredAddressForP2shP2wshErpFederationUtxo);
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEqual(utxos, deserializedUtxos);
         }
 
         @Test
@@ -928,7 +929,7 @@ class BridgeSerializationUtilsTest {
 
             // assert
             assertNull(deserializedUtxos.get(0).getAddress());
-            assertUtxosEquals(utxos, deserializedUtxos);
+            assertUtxosAreEqual(utxos, deserializedUtxos);
         }
 
         @Test
@@ -941,21 +942,6 @@ class BridgeSerializationUtilsTest {
             assertThrows(SerializationException.class, () -> BridgeSerializationUtils.deserializeUTXOList(data));
         }
 
-        private void assertUtxosEquals(List<UTXO> expected, List<UTXO> actual) {
-            assertEquals(expected.size(), actual.size());
-            for (int i = 0; i < expected.size(); i++) {
-                assertUtxoEquals(expected.get(i), actual.get(i));
-            }
-        }
-
-        private void assertUtxoEquals(UTXO expected, UTXO actual) {
-            assertEquals(expected.getHash(), actual.getHash());
-            assertEquals(expected.getIndex(), actual.getIndex());
-            assertEquals(expected.getValue(), actual.getValue());
-            assertEquals(expected.getHeight(), actual.getHeight());
-            assertEquals(expected.isCoinbase(), actual.isCoinbase());
-            assertEquals(expected.getScript(), actual.getScript());
-        }
     }
 
     @Test
