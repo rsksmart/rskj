@@ -9,7 +9,6 @@ import co.rsk.bitcoinj.core.TransactionInput;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Codecs and extraction helpers for the parts of a transaction outpoint that the bridge
@@ -115,7 +114,6 @@ public final class UtxoUtils {
             return Collections.emptyList();
         }
 
-        return generatedTransaction.getInputs().stream().map(TransactionInput::getValue).collect(
-            Collectors.toList());
+        return generatedTransaction.getInputs().stream().map(TransactionInput::getValue).toList();
     }
 }
