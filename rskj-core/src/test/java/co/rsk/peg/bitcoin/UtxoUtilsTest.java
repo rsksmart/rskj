@@ -315,6 +315,25 @@ class UtxoUtilsTest {
     }
 
     @Test
+    void encodeOutputIndexes_withNegativeOutputIndex_shouldThrowInvalidOutputIndexException() {
+        // arrange
+        List<Long> outputIndexes = List.of(-1L);
+
+        // act & assert
+        assertThrows(InvalidOutputIndexException.class, () -> UtxoUtils.encodeOutputIndexes(outputIndexes));
+    }
+
+    @Test
+    void encodeOutputIndexes_withNullOutputIndex_shouldThrowInvalidOutputIndexException() {
+        // arrange
+        List<Long> outputIndexes = Collections.singletonList(null);
+
+        // act & assert
+        assertThrows(InvalidOutputIndexException.class,
+            () -> UtxoUtils.encodeOutputIndexes(outputIndexes));
+    }
+
+    @Test
     void decodeOutputIndexes_withNull_shouldReturnEmptyList() {
         // act
         List<Long> outputIndexes = UtxoUtils.decodeOutputIndexes(null);
@@ -347,15 +366,6 @@ class UtxoUtilsTest {
     }
 
     @Test
-    void encodeOutputIndexes_withNegativeOutputIndex_shouldThrowInvalidOutputIndexException() {
-        // arrange
-        List<Long> outputIndexes = List.of(-1L);
-
-        // act & assert
-        assertThrows(InvalidOutputIndexException.class, () -> UtxoUtils.encodeOutputIndexes(outputIndexes));
-    }
-
-    @Test
     void decodeOutputIndexes_withMalformedVarInt_shouldThrowInvalidOutputIndexException() {
         // arrange
         // FE (254) announces a five byte VarInt, but only two bytes follow it
@@ -367,12 +377,13 @@ class UtxoUtilsTest {
     }
 
     @Test
-    void encodeOutputIndexes_withNullOutputIndex_shouldThrowInvalidOutputIndexException() {
+    void decodeOutputIndexes_withEncodedNegativeOutputIndex_shouldThrowInvalidOutputIndexException() {
         // arrange
-        List<Long> outputIndexes = Collections.singletonList(null);
+        // -1 encoded as a VarInt. Its eight bytes of ones read back into a signed long as -1
+        byte[] encodedOutputIndexes = Hex.decode("FFFFFFFFFFFFFFFFFF");
 
         // act & assert
         assertThrows(InvalidOutputIndexException.class,
-            () -> UtxoUtils.encodeOutputIndexes(outputIndexes));
+            () -> UtxoUtils.decodeOutputIndexes(encodedOutputIndexes));
     }
 }
