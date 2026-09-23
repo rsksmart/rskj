@@ -38,6 +38,8 @@ class UtxoUtilsTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final ErpFederation TEST_ERP_FEDERATION = FederationTestUtils.getErpFederation(btcMainnetParams);
     private static final int FIRST_OUTPUT_INDEX = 0;
+    // 00 = 0, FC = 252, FD1027 = 10_000
+    private static final String ENCODED_VALUES_OF_DIFFERENT_SIZES = "00FCFD1027";
     private static final Address testAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "test");
 
     private static Stream<Arguments> validOutpointValues() {
@@ -106,6 +108,18 @@ class UtxoUtilsTest {
         // assert
         List<Coin> expectedDecodedValues = Collections.emptyList();
         assertArrayEquals(expectedDecodedValues.toArray(), decodeOutpointValues.toArray());
+    }
+
+    @Test
+    void decodeOutpointValues_withEncodedOutpointValues_shouldReturnAnUnmodifiableList() {
+        // arrange
+        byte[] encodedOutpointValues = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES);
+
+        // act
+        List<Coin> outpointValues = UtxoUtils.decodeOutpointValues(encodedOutpointValues);
+
+        // assert
+        assertThrows(UnsupportedOperationException.class, () -> outpointValues.add(Coin.SATOSHI));
     }
 
     @Test
@@ -286,7 +300,7 @@ class UtxoUtilsTest {
         byte[] encodedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
 
         // assert
-        byte[] expectedEncodedOutputIndexes = Hex.decode("00FCFD1027");
+        byte[] expectedEncodedOutputIndexes = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES);
         assertArrayEquals(expectedEncodedOutputIndexes, encodedOutputIndexes);
     }
 
@@ -330,8 +344,7 @@ class UtxoUtilsTest {
     @Test
     void decodeOutputIndexes_withDifferentEncodedOutputIndexes_shouldReturnOutputIndexesPreservingOrder() {
         // arrange
-        // 00 = 0, FC = 252, FD1027 = 10_000
-        byte[] encodedOutputIndexes = Hex.decode("00FCFD1027");
+        byte[] encodedOutputIndexes = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES);
 
         // act
         List<Long> outputIndexes = UtxoUtils.decodeOutputIndexes(encodedOutputIndexes);
@@ -339,6 +352,18 @@ class UtxoUtilsTest {
         // assert
         List<Long> expectedOutputIndexes = List.of(0L, 252L, 10_000L);
         assertEquals(expectedOutputIndexes, outputIndexes);
+    }
+
+    @Test
+    void decodeOutputIndexes_withEncodedOutputIndexes_shouldReturnAnUnmodifiableList() {
+        // arrange
+        byte[] encodedOutputIndexes = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES);
+
+        // act
+        List<Long> outputIndexes = UtxoUtils.decodeOutputIndexes(encodedOutputIndexes);
+
+        // assert
+        assertThrows(UnsupportedOperationException.class, () -> outputIndexes.add(1L));
     }
 
     @Test
