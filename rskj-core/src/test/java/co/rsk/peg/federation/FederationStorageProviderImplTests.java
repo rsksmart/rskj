@@ -1152,13 +1152,18 @@ class FederationStorageProviderImplTests {
             .withScriptPubKey(p2shP2wshErpFederationScript)
             .withTransactionHash(otherBtcTxId)
             .buildManyFromSameTx(3);
+        // The trie stores value lengths as a Uint24 (max 16,777,215 bytes). Each serialized UTXO with
+        // p2shP2wshErpFederationScript takes 78 bytes, so 215,092 UTXOs is the largest list whose serialized value still fits.
+        private static final int maxNumberOfUtxosFittingInStorage = 215_092;
 
+        private Repository repository;
         private StorageAccessor storageAccessor;
         private FederationStorageProvider federationStorageProvider;
 
         @BeforeEach
         void setup() {
-            storageAccessor = new BridgeStorageAccessorImpl(createRepository());
+            repository = createRepository();
+            storageAccessor = new BridgeStorageAccessorImpl(repository);
             federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
         }
 
@@ -1563,6 +1568,40 @@ class FederationStorageProviderImplTests {
 
             // assert
             assertUtxosAreEqual(expectedThreeUtxos, actualUtxos);
+        }
+
+        @Test
+        void saveFederationsPendingBtcUTXOs_withMaxNumberOfUtxosFittingInStorage_shouldPersistAllUtxosToStorage() {
+            // arrange
+            List<UTXO> expectedUtxos = UTXOBuilder.builder()
+                .withScriptPubKey(p2shP2wshErpFederationScript)
+                .withTransactionHash(btcTxId)
+                .buildManyFromSameTx(maxNumberOfUtxosFittingInStorage);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedUtxos);
+
+            // act
+            federationStorageProvider.save(networkParameters, activations);
+            // the trie only validates the value length when the cached writes are committed to it
+            repository.commit();
+            List<UTXO> actualUtxos = storageAccessor.getFromRepository(federationsPendingBtcUTXOsKey, BridgeSerializationUtils::deserializeUTXOList);
+
+            // assert
+            assertUtxosAreEqual(expectedUtxos, actualUtxos);
+        }
+
+        @Test
+        void saveFederationsPendingBtcUTXOs_withOneUtxoMoreThanFitsInStorage_shouldThrowIllegalArgumentExceptionOnCommit() {
+            // arrange
+            List<UTXO> utxosExceedingStorageValueLimit = UTXOBuilder.builder()
+                .withScriptPubKey(p2shP2wshErpFederationScript)
+                .withTransactionHash(btcTxId)
+                .buildManyFromSameTx(maxNumberOfUtxosFittingInStorage + 1);
+            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, utxosExceedingStorageValueLimit);
+            federationStorageProvider.save(networkParameters, activations);
+
+            // act & assert
+            // the trie only validates the value length when the cached writes are committed to it
+            assertThrows(IllegalArgumentException.class, () -> repository.commit());
         }
     }
 
