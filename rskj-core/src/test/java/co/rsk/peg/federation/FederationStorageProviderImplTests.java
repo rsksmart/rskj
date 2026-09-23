@@ -34,7 +34,6 @@ import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import co.rsk.test.builders.UTXOBuilder;
@@ -1140,9 +1139,18 @@ class FederationStorageProviderImplTests {
                 .withTransactionHash(btcTxId)
                 .build()
         );
-        private static final List<UTXO> expectedThreeUtxos = buildUTXOsFromTheSameBtcTx(3, btcTxId);
-        private static final List<UTXO> expectedLargeNumberOfUtxos = buildUTXOsFromTheSameBtcTx(200, btcTxId);
-        private static final List<UTXO> expectedUtxosForOtherBtcTxId = buildUTXOsFromTheSameBtcTx(3, otherBtcTxId);
+        private static final List<UTXO> expectedThreeUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(p2shP2wshErpFederationScript)
+            .withTransactionHash(btcTxId)
+            .buildManyFromSameTx(3);
+        private static final List<UTXO> expectedLargeNumberOfUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(p2shP2wshErpFederationScript)
+            .withTransactionHash(btcTxId)
+            .buildManyFromSameTx(200);
+        private static final List<UTXO> expectedUtxosForOtherBtcTxId = UTXOBuilder.builder()
+            .withScriptPubKey(p2shP2wshErpFederationScript)
+            .withTransactionHash(otherBtcTxId)
+            .buildManyFromSameTx(3);
 
         private StorageAccessor storageAccessor;
         private FederationStorageProvider federationStorageProvider;
@@ -1510,16 +1518,6 @@ class FederationStorageProviderImplTests {
             // assert
             assertUtxosAreEqual(expectedOneUtxo, actualUtxosForBtcTxId);
             assertUtxosAreEqual(expectedUtxosForOtherBtcTxId, actualUtxosForOtherBtcTxId);
-        }
-
-        private static List<UTXO> buildUTXOsFromTheSameBtcTx(int numberOfUtxos, Sha256Hash transactionHash) {
-            return IntStream.range(0, numberOfUtxos)
-                .mapToObj(i -> UTXOBuilder.builder()
-                    .withScriptPubKey(p2shP2wshErpFederationScript)
-                    .withTransactionHash(transactionHash)
-                    .withOutpointIndex(i)
-                    .build())
-                .toList();
         }
     }
 
