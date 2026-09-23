@@ -168,7 +168,7 @@ public class BitcoinTestAssertions {
         }
     }
 
-    public static void assertUtxoEquals(UTXO expected, UTXO actual) {
+    private static void assertUtxoEquals(UTXO expected, UTXO actual) {
         assertEquals(expected.getHash(), actual.getHash());
         assertEquals(expected.getIndex(), actual.getIndex());
         assertEquals(expected.getValue(), actual.getValue());
