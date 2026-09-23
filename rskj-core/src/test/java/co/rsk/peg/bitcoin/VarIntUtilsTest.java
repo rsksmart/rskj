@@ -82,6 +82,61 @@ class VarIntUtilsTest {
     }
 
     @Test
+    void encodeDecode_withMinimumThreeByteValue_shouldMatchEncodedValues() {
+        // arrange
+        List<Long> values = List.of(253L);
+        byte[] encodedValues = Hex.decode("FDFD00");
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void encodeDecode_withMaximumThreeByteValue_shouldMatchEncodedValues() {
+        // arrange
+        List<Long> values = List.of(65_535L);
+        byte[] encodedValues = Hex.decode("FDFFFF");
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void encodeDecode_withMinimumFiveByteValue_shouldMatchEncodedValues() {
+        // arrange
+        List<Long> values = List.of(65_536L);
+        byte[] encodedValues = Hex.decode("FE00000100");
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void encodeDecode_withMaximumFiveByteValue_shouldMatchEncodedValues() {
+        // arrange
+        List<Long> values = List.of(4_294_967_295L);
+        byte[] encodedValues = Hex.decode("FEFFFFFFFF");
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
+    void encodeDecode_withMinimumNineByteValue_shouldMatchEncodedValues() {
+        // arrange
+        List<Long> values = List.of(4_294_967_296L);
+        byte[] encodedValues = Hex.decode("FF0000000001000000");
+
+        // act & assert
+        assertArrayEquals(encodedValues, VarIntUtils.encode(values));
+        assertEquals(values, VarIntUtils.decode(encodedValues));
+    }
+
+    @Test
     void encodeDecode_withValuesOfDifferentSizes_shouldMatchEncodedValuesPreservingOrder() {
         // arrange
         byte[] encodedValues = Hex.decode(ENCODED_VALUES_OF_DIFFERENT_SIZES);
