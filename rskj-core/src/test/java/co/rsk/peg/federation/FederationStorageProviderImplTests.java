@@ -1,5 +1,6 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_TESTNET;
 import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
@@ -1157,7 +1158,7 @@ class FederationStorageProviderImplTests {
 
         @BeforeEach
         void setup() {
-            storageAccessor = new InMemoryStorage();
+            storageAccessor = new BridgeStorageAccessorImpl(createRepository());
             federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
         }
 
