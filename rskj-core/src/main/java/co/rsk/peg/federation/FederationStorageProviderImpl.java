@@ -141,13 +141,15 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             ));
         }
 
-        // We need to check containsKey first because if the value is null (removed), get() would
-        // return Optional.empty(), hiding that the btcTxId was already used.
-        if (federationsPendingBtcUTXOs.containsKey(btcTxId) || getFederationsPendingBtcUTXOs(btcTxId).isPresent()) {
+        if (isBtcTxIdAlreadyUsed(btcTxId)) {
             throw new IllegalStateException(String.format("Given btcTxId %s already exists in federationsPendingBtcUTXOs. btcTxId entries are considered unique.", btcTxId));
         }
 
         federationsPendingBtcUTXOs.put(btcTxId, List.copyOf(utxos));
+    }
+
+    private boolean isBtcTxIdAlreadyUsed(Sha256Hash btcTxId) {
+        return federationsPendingBtcUTXOs.containsKey(btcTxId) || getFederationsPendingBtcUTXOs(btcTxId).isPresent();
     }
 
     @Override
