@@ -716,6 +716,21 @@ class BridgeEventLoggerImplTest {
             ));
             assertTrue(eventLogs.isEmpty());
         }
+
+        @Test
+        void logUtxosRegistered_whenMoreOutputIndexesThanValues_shouldThrowIllegalArgumentException() {
+            // arrange
+            List<Long> outputIndexes = List.of(0L, 1L);
+
+            // act & assert
+            assertThrows(IllegalArgumentException.class, () -> eventLogger.logUtxosRegistered(
+                btcTxHash,
+                singleValue,
+                outputIndexes,
+                federationBtcAddress
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
     }
 
     @ParameterizedTest
