@@ -182,6 +182,18 @@ class AuthorizationListCodecTest {
     }
 
     @Test
+    void parseFromCallArguments_yParityWiderThanOneByte_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setYParity("0x100");
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertTrue(ex.getMessage().contains("y_parity must fit in a single byte"), ex.getMessage());
+    }
+
+    @Test
     void parseFromCallArguments_zeroSignatureR_throws() {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
         CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
@@ -236,8 +248,10 @@ class AuthorizationListCodecTest {
         CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
         entry.setYParity(null);
 
-        assertThrows(RskJsonRpcRequestException.class,
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
                 () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertTrue(ex.getMessage().contains("missing yParity at index 0"), ex.getMessage());
     }
 
     @Test
@@ -304,8 +318,26 @@ class AuthorizationListCodecTest {
         );
         byte[] list = RLP.encodeList(badTuple);
 
-        assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> AuthorizationListCodec.decodeListUnchecked(list));
+
+        assertTrue(ex.getMessage().contains("must have 6 fields"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_oneFieldTooMany_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        RLPList fields = RLP.decodeList(AuthorizationListCodec.encodeTuple(reference));
+        byte[][] seven = new byte[7][];
+        for (int i = 0; i < 6; i++) {
+            seven[i] = RLP.encodeElement(fields.get(i).getRLPData());
+        }
+        seven[6] = RLP.encodeElement(new byte[]{1});
+        byte[] tuple = RLP.encodeList(seven);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
+
+        assertTrue(ex.getMessage().contains("must have 6 fields"), ex.getMessage());
     }
 
     @Test
@@ -399,9 +431,12 @@ class AuthorizationListCodecTest {
     @Test
     void decodeTuple_yParityMultiByte_throws() {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
-        byte[] tuple = rebuildTupleField(reference, 3, RLP.encodeElement(new byte[]{0, 1}));
+        // No leading zero, so the width check is what rejects it (a leading zero is covered separately).
+        byte[] tuple = rebuildTupleField(reference, 3, RLP.encodeElement(new byte[]{1, 0}));
 
-        assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
+
+        assertTrue(ex.getMessage().contains("y_parity must fit in a single byte"), ex.getMessage());
     }
 
     @ParameterizedTest

@@ -273,6 +273,17 @@ class AccessListCodecTest {
     }
 
     @Test
+    void requireRawAccessListBytes_truncatedNestedEntry_throwsAsInvalidRlp() {
+        // The outer frame is valid; the entry inside claims a 20-byte string but carries one byte,
+        // which only surfaces when the entry is decoded.
+        RLPElement slot = RLP.decode2(new byte[]{(byte) 0xc3, (byte) 0xc2, (byte) 0x94, 0x00}).get(0);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> AccessListCodec.requireRawAccessListBytes(slot));
+        assertTrue(e.getMessage().contains("Access list contains invalid RLP encoding"), e.getMessage());
+    }
+
+    @Test
     void requireRawAccessListBytes_malformedEntry_throws() {
         byte[] accessList = RLP.encodeList(RLP.encodeList(RLP.encodeElement(new byte[20])));
 

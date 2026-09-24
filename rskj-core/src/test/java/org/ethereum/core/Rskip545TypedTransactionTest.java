@@ -282,7 +282,7 @@ class Rskip545TypedTransactionTest {
         assertDecodeRejects(rawType4(
                 field(10, RLP.encodeByte((byte) 0)),
                 field(11, RLP.encodeElement(OVERSIZE_WORD)),
-                field(12, RLP.encodeElement(new byte[32]))
+                field(12, RLP.encodeElement(signatureWord()))
         ), "Signature R is not valid");
     }
 
