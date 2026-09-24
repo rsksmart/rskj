@@ -51,7 +51,7 @@ public class RepositoryTrackingTest {
         repository.createAccount(COW);
         tracker.clear();
 
-        repository.setupContract(COW);
+        repository.initializeStorage(COW);
 
         assertRepositoryHasSize(0, 1);
     }

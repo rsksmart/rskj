@@ -167,10 +167,6 @@ public class TransactionExecutor {
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
-        if (localCall) {
-            return true;
-        }
-
         if (tx.isTypedTransactionNotAllowed(activations)) {
             logger.warn("Transaction type {} is not supported before its activation, tx {}", tx.getTypePrefix(), tx.getHash());
             execError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
@@ -183,6 +179,8 @@ public class TransactionExecutor {
                 return false;
             }
             if (!isSenderCodeValid()) {
+                logger.warn("Transaction type {} sender has non-delegated code, tx {}", tx.getTypePrefix(), tx.getHash());
+                execError("transaction type " + tx.getTypePrefix() + " sender must be an EOA or an already-delegated account");
                 return false;
             }
 
@@ -194,6 +192,11 @@ public class TransactionExecutor {
                 return false;
             }
         }
+
+        if (localCall) {
+            return true;
+        }
+
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
         long gasLimit = (activations.isActive(RSKIP351) && activations.isActive(RSKIP144)) ? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
@@ -308,10 +311,9 @@ public class TransactionExecutor {
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
+        track.increaseNonce(tx.getSender(signatureCache));
+
         if (!localCall) {
-
-            track.increaseNonce(tx.getSender(signatureCache));
-
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
             track.addBalance(tx.getSender(signatureCache), txGasCost.negate());
@@ -411,9 +413,9 @@ public class TransactionExecutor {
                 result.setHReturn(out);
                 if (!track.isExist(targetAddress)) {
                     track.createAccount(targetAddress);
-                    track.setupContract(targetAddress);
-                } else if (!track.isContract(targetAddress)) {
-                    track.setupContract(targetAddress);
+                    track.initializeStorage(targetAddress);
+                } else if (!track.hasInitializedStorage(targetAddress)) {
+                    track.initializeStorage(targetAddress);
                 }
             } catch (VMException | RuntimeException e) {
                 if (!localCall && activations.isActive(ConsensusRule.RSKIP560)) {
@@ -449,9 +451,9 @@ public class TransactionExecutor {
         if (isEmpty(tx.getData())) {
             gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
             // If there is no data, then the account is created, but without code nor
-            // storage. It doesn't even call setupContract() to setup a storage root
+            // storage. It doesn't even call initializeStorage() to setup a storage root
         } else {
-            cacheTrack.setupContract(newContractAddress);
+            cacheTrack.initializeStorage(newContractAddress);
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
 
             this.vm = new VM(vmConfig, precompiledContracts);
@@ -761,6 +763,10 @@ public class TransactionExecutor {
 
     public ProgramResult getResult() {
         return result;
+    }
+
+    public String getExecutionError() {
+        return executionError;
     }
 
     public long getGasConsumed() {

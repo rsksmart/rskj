@@ -47,7 +47,7 @@ class RepositoryFuzzTest {
         byte[] bs = data.consumeBytes(20);
         RskAddress addr = new RskAddress(ByteUtil.leftPadBytes(bs, 20));
         repository.createAccount(addr);
-        repository.setupContract(addr);
+        repository.initializeStorage(addr);
 
         HashMap<DataWord, byte[]> map = new HashMap();
 
