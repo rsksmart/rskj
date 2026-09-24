@@ -78,6 +78,7 @@ import java.util.stream.Stream;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.coinListOf;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -836,6 +837,62 @@ class BridgeEventLoggerImplTest {
             Object[] expectedData = {
                 UtxoUtils.encodeOutpointValues(singleValue),
                 UtxoUtils.encodeOutputIndexes(singleOutputIndex),
+                federationBtcAddress.toString()
+            };
+            assertEvent(expectedEvent, expectedTopics, expectedData);
+        }
+
+        @Test
+        void logUtxosRegistered_whenMultipleUtxos_shouldEmitEvent() {
+            // arrange
+            List<Coin> values = List.of(Coin.COIN, Coin.SATOSHI, Coin.valueOf(500_000));
+            List<Long> outputIndexes = List.of(0L, 2L, 5L);
+
+            // act
+            eventLogger.logUtxosRegistered(
+                btcTxHash,
+                values,
+                outputIndexes,
+                federationBtcAddress
+            );
+
+            // assert
+            commonAssertLogs();
+            assertTopics(2);
+
+            Function expectedEvent = BridgeEvents.UTXOS_REGISTERED.getEvent();
+            Object[] expectedTopics = {btcTxHash.getBytes()};
+            Object[] expectedData = {
+                UtxoUtils.encodeOutpointValues(values),
+                UtxoUtils.encodeOutputIndexes(outputIndexes),
+                federationBtcAddress.toString()
+            };
+            assertEvent(expectedEvent, expectedTopics, expectedData);
+        }
+
+        @Test
+        void logUtxosRegistered_whenEmptyLists_shouldEmitEventWithEmptyValuesAndIndexes() {
+            // arrange
+            List<Coin> values = Collections.emptyList();
+            List<Long> outputIndexes = Collections.emptyList();
+
+            // act
+            eventLogger.logUtxosRegistered(
+                btcTxHash,
+                values,
+                outputIndexes,
+                federationBtcAddress
+            );
+
+            // assert
+            commonAssertLogs();
+            assertTopics(2);
+
+            Function expectedEvent = BridgeEvents.UTXOS_REGISTERED.getEvent();
+            Object[] expectedTopics = {btcTxHash.getBytes()};
+            Object[] expectedData = {
+                EMPTY_BYTE_ARRAY,
+                EMPTY_BYTE_ARRAY,
                 federationBtcAddress.toString()
             };
             assertEvent(expectedEvent, expectedTopics, expectedData);
