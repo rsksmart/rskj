@@ -328,8 +328,21 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
             throw new IllegalArgumentException("values and outputIndexes must have the same size");
         }
 
+        CallTransaction.Function event = BridgeEvents.UTXOS_REGISTERED.getEvent();
+
+        byte[] btcTxHashSerialized = btcTxHash.getBytes();
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(btcTxHashSerialized);
+        List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
+
         byte[] serializedValues = UtxoUtils.encodeOutpointValues(values);
         byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+        byte[] encodedData = event.encodeEventData(
+            serializedValues,
+            serializedOutputIndexes,
+            federationBtcAddress.toString()
+        );
+
+        addLog(encodedTopics, encodedData);
     }
 
     @Override

@@ -816,6 +816,30 @@ class BridgeEventLoggerImplTest {
             ));
             assertTrue(eventLogs.isEmpty());
         }
+
+        @Test
+        void logUtxosRegistered_whenSingleUtxo_shouldEmitEvent() {
+            // act
+            eventLogger.logUtxosRegistered(
+                btcTxHash,
+                singleValue,
+                singleOutputIndex,
+                federationBtcAddress
+            );
+
+            // assert
+            commonAssertLogs();
+            assertTopics(2);
+
+            Function expectedEvent = BridgeEvents.UTXOS_REGISTERED.getEvent();
+            Object[] expectedTopics = {btcTxHash.getBytes()};
+            Object[] expectedData = {
+                UtxoUtils.encodeOutpointValues(singleValue),
+                UtxoUtils.encodeOutputIndexes(singleOutputIndex),
+                federationBtcAddress.toString()
+            };
+            assertEvent(expectedEvent, expectedTopics, expectedData);
+        }
     }
 
     @ParameterizedTest
