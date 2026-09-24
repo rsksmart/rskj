@@ -1088,6 +1088,54 @@ class BridgeEventLoggerImplTest {
             );
         }
 
+        @Test
+        void logFlyoverUtxosRegistered_whenMultipleUtxos_shouldEmitEvent() {
+            // arrange
+            List<Coin> values = List.of(Coin.COIN, Coin.SATOSHI, Coin.valueOf(500_000));
+            List<Long> outputIndexes = List.of(0L, 2L, 5L);
+
+            // act
+            eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                values,
+                outputIndexes,
+                federationBtcAddress,
+                flyoverDerivationHash
+            );
+
+            // assert
+            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(values);
+            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+            assertLogFlyoverUtxoRegisteredWasEmittedCorrectly(
+                expectedSerializedValues,
+                expectedSerializedOutputIndexes
+            );
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenEmptyLists_shouldEmitEventWithEmptyValuesAndIndexes() {
+            // arrange
+            List<Coin> values = Collections.emptyList();
+            List<Long> outputIndexes = Collections.emptyList();
+
+            // act
+            eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                values,
+                outputIndexes,
+                federationBtcAddress,
+                flyoverDerivationHash
+            );
+
+            // assert
+            byte[] expectedSerializedValues = EMPTY_BYTE_ARRAY;
+            byte[] expectedSerializedOutputIndexes = EMPTY_BYTE_ARRAY;
+            assertLogFlyoverUtxoRegisteredWasEmittedCorrectly(
+                expectedSerializedValues,
+                expectedSerializedOutputIndexes
+            );
+        }
+
         private void assertLogFlyoverUtxoRegisteredWasEmittedCorrectly(
             byte[] expectedSerializedValues,
             byte[] expectedSerializedOutputIndexes
