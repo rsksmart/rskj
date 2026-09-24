@@ -323,6 +323,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         requireNonNull(btcTxHash);
         requireNonNull(federationBtcAddress);
         requireNonNull(values);
+        requireNonNull(outputIndexes);
         if (values.size() != outputIndexes.size()) {
             throw new IllegalArgumentException("values and outputIndexes must have the same size");
         }
