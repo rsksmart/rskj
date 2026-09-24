@@ -690,6 +690,23 @@ class BridgeEventLoggerImplTest {
             ));
             assertTrue(eventLogs.isEmpty());
         }
+
+        @Test
+        void logUtxosRegistered_whenNullFederationBtcAddress_shouldThrowNullPointerException() {
+            // arrange
+            Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+            List<Coin> values = List.of(Coin.COIN);
+            List<Long> outputIndexes = List.of(0L);
+
+            // act & assert
+            assertThrows(NullPointerException.class, () -> eventLogger.logUtxosRegistered(
+                btcTxHash,
+                values,
+                outputIndexes,
+                null
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
     }
 
     @ParameterizedTest
