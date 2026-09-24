@@ -934,6 +934,19 @@ class BridgeEventLoggerImplTest {
         }
 
         @Test
+        void logFlyoverUtxosRegistered_whenNullFlyoverDerivationHash_shouldThrowNullPointerException() {
+            // act & assert
+            assertThrows(NullPointerException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                singleValue,
+                singleOutputIndex,
+                federationBtcAddress,
+                null
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
         void logFlyoverUtxosRegistered_whenMoreValuesThanOutputIndexes_shouldThrowIllegalArgumentException() {
             // arrange
             List<Coin> values = List.of(Coin.COIN, Coin.SATOSHI);
