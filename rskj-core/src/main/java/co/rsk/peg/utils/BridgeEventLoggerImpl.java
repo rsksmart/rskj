@@ -344,8 +344,22 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         validateUtxosRegisteredArgs(btcTxHash, values, outputIndexes, federationBtcAddress);
         requireNonNull(flyoverDerivationHash);
 
+        CallTransaction.Function event = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
+
+        byte[] btcTxHashSerialized = btcTxHash.getBytes();
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(btcTxHashSerialized);
+        List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
+
         byte[] serializedValues = UtxoUtils.encodeOutpointValues(values);
         byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+        byte[] encodedData = event.encodeEventData(
+            serializedValues,
+            serializedOutputIndexes,
+            federationBtcAddress.toString(),
+            flyoverDerivationHash.getBytes()
+        );
+
+        addLog(encodedTopics, encodedData);
     }
 
     @Override
