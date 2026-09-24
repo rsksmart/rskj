@@ -673,19 +673,18 @@ class BridgeEventLoggerImplTest {
 
     @Nested
     class LogUtxosRegisteredTest {
+        private final Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+        private final List<Coin> singleValue = List.of(Coin.COIN);
+        private final List<Long> singleOutputIndex = List.of(0L);
         private final Address federationBtcAddress = P2shP2wshErpFederationBuilder.builder().build().getAddress();
 
         @Test
         void logUtxosRegistered_whenNullBtcTxHash_shouldThrowNullPointerException() {
-            // arrange
-            List<Coin> values = List.of(Coin.COIN);
-            List<Long> outputIndexes = List.of(0L);
-
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logUtxosRegistered(
                 null,
-                values,
-                outputIndexes,
+                singleValue,
+                singleOutputIndex,
                 federationBtcAddress
             ));
             assertTrue(eventLogs.isEmpty());
@@ -693,16 +692,11 @@ class BridgeEventLoggerImplTest {
 
         @Test
         void logUtxosRegistered_whenNullFederationBtcAddress_shouldThrowNullPointerException() {
-            // arrange
-            Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
-            List<Coin> values = List.of(Coin.COIN);
-            List<Long> outputIndexes = List.of(0L);
-
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logUtxosRegistered(
                 btcTxHash,
-                values,
-                outputIndexes,
+                singleValue,
+                singleOutputIndex,
                 null
             ));
             assertTrue(eventLogs.isEmpty());
@@ -711,15 +705,13 @@ class BridgeEventLoggerImplTest {
         @Test
         void logUtxosRegistered_whenMoreValuesThanOutputIndexes_shouldThrowIllegalArgumentException() {
             // arrange
-            Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
             List<Coin> values = List.of(Coin.COIN, Coin.SATOSHI);
-            List<Long> outputIndexes = List.of(0L);
 
             // act & assert
             assertThrows(IllegalArgumentException.class, () -> eventLogger.logUtxosRegistered(
                 btcTxHash,
                 values,
-                outputIndexes,
+                singleOutputIndex,
                 federationBtcAddress
             ));
             assertTrue(eventLogs.isEmpty());
