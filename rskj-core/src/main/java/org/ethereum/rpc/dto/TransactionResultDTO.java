@@ -21,6 +21,7 @@ import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -278,6 +279,7 @@ public class TransactionResultDTO {
             return nonce;
         }
 
+        @JsonProperty("yParity")
         public String getYParity() {
             return yParity;
         }
@@ -359,6 +361,8 @@ public class TransactionResultDTO {
         return accessList;
     }
 
+    @JsonProperty("yParity")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getYParity() {
         return yParity;
     }
