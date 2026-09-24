@@ -28,6 +28,7 @@ import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.core.exception.TransactionException;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
@@ -111,7 +112,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
             return tx.getHash().toJsonString();
         } catch (RLPException e) {
             throw invalidParamError("Invalid input: " + e.getMessage(), e);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | TransactionException e) {
             throw invalidParamError("Invalid transaction: " + e.getMessage(), e);
         } finally {
             if (LOGGER.isDebugEnabled()) {
