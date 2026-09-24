@@ -707,6 +707,23 @@ class BridgeEventLoggerImplTest {
             ));
             assertTrue(eventLogs.isEmpty());
         }
+
+        @Test
+        void logUtxosRegistered_whenMoreValuesThanOutputIndexes_shouldThrowIllegalArgumentException() {
+            // arrange
+            Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+            List<Coin> values = List.of(Coin.COIN, Coin.SATOSHI);
+            List<Long> outputIndexes = List.of(0L);
+
+            // act & assert
+            assertThrows(IllegalArgumentException.class, () -> eventLogger.logUtxosRegistered(
+                btcTxHash,
+                values,
+                outputIndexes,
+                federationBtcAddress
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
     }
 
     @ParameterizedTest

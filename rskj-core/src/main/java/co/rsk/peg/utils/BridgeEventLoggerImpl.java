@@ -322,6 +322,9 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     public void logUtxosRegistered(Sha256Hash btcTxHash, List<Coin> values, List<Long> outputIndexes, Address federationBtcAddress) {
         requireNonNull(btcTxHash);
         requireNonNull(federationBtcAddress);
+        if (values.size() != outputIndexes.size()) {
+            throw new IllegalArgumentException("values and outputIndexes must have the same size");
+        }
     }
 
     @Override
