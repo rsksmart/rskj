@@ -31,6 +31,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.InvalidOutpointValueException;
+import co.rsk.peg.bitcoin.InvalidOutputIndexException;
 import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -751,6 +752,36 @@ class BridgeEventLoggerImplTest {
                 btcTxHash,
                 singleValue,
                 null,
+                federationBtcAddress
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logUtxosRegistered_whenNullValueEntry_shouldThrowInvalidOutpointValueException() {
+            // arrange
+            List<Coin> values = Collections.singletonList(null);
+
+            // act & assert
+            assertThrows(InvalidOutpointValueException.class, () -> eventLogger.logUtxosRegistered(
+                btcTxHash,
+                values,
+                singleOutputIndex,
+                federationBtcAddress
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logUtxosRegistered_whenNullOutputIndexEntry_shouldThrowInvalidOutputIndexException() {
+            // arrange
+            List<Long> outputIndexes = Collections.singletonList(null);
+
+            // act & assert
+            assertThrows(InvalidOutputIndexException.class, () -> eventLogger.logUtxosRegistered(
+                btcTxHash,
+                singleValue,
+                outputIndexes,
                 federationBtcAddress
             ));
             assertTrue(eventLogs.isEmpty());
