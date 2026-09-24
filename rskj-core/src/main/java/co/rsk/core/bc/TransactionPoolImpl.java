@@ -57,6 +57,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static org.ethereum.util.BIUtil.toBI;
 
@@ -551,7 +552,13 @@ public class TransactionPoolImpl implements TransactionPool {
             return Optional.empty();
         }
 
-        boolean alreadyHasTransaction = !pendingTransactions.getTransactionsWithSender(sender).isEmpty() || !queuedTransactions.getTransactionsWithSender(sender).isEmpty();
+        // Stale entries (nonce already consumed in mined state, e.g. by a sponsor's
+        // authorization tuple) can never be mined, so they must not occupy the slot.
+        BigInteger stateNonce = repository.getNonce(sender);
+        boolean alreadyHasTransaction = Stream.concat(
+                        pendingTransactions.getTransactionsWithSender(sender).stream(),
+                        queuedTransactions.getTransactionsWithSender(sender).stream())
+                .anyMatch(t -> t.getNonceAsInteger().compareTo(stateNonce) >= 0);
 
         if (alreadyHasTransaction) {
             return Optional.of(TransactionPoolAddResult.withError("delegated account already has a transaction in the pool"));
