@@ -94,6 +94,13 @@ class BridgeEventLoggerImplTest {
     private static final BtcTransaction BTC_TRANSACTION = new BtcTransaction(NETWORK_PARAMETERS);
     private static final RskAddress RSK_ADDRESS = new RskAddress("0x0000000000000000000000000000000000000101");
     private static final Keccak256 RSK_TX_HASH = RskTestUtils.createHash(1);
+    private static final Sha256Hash BTC_TX_HASH = BitcoinTestUtils.createHash(1);
+    private static final List<Coin> SINGLE_VALUE = List.of(Coin.COIN);
+    private static final List<Long> SINGLE_OUTPUT_INDEX = List.of(0L);
+    private static final Address FEDERATION_BTC_ADDRESS = P2shP2wshErpFederationBuilder.builder().build().getAddress();
+    private static final List<Coin> MULTIPLE_VALUES = List.of(Coin.COIN, Coin.SATOSHI, Coin.valueOf(500_000));
+    private static final List<Long> MULTIPLE_OUTPUT_INDEXES = List.of(0L, 2L, 5L);
+    public static final int LARGE_OUTPUTS_COUNT = 50;
 
     private List<LogInfo> eventLogs;
     private BridgeEventLogger eventLogger;
@@ -675,19 +682,14 @@ class BridgeEventLoggerImplTest {
 
     @Nested
     class LogUtxosRegisteredTest {
-        private final Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
-        private final List<Coin> singleValue = List.of(Coin.COIN);
-        private final List<Long> singleOutputIndex = List.of(0L);
-        private final Address federationBtcAddress = P2shP2wshErpFederationBuilder.builder().build().getAddress();
-
         @Test
         void logUtxosRegistered_whenNullBtcTxHash_shouldThrowNullPointerException() {
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logUtxosRegistered(
                 null,
-                singleValue,
-                singleOutputIndex,
-                federationBtcAddress
+                SINGLE_VALUE,
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS
             ));
             assertTrue(eventLogs.isEmpty());
         }
@@ -696,9 +698,9 @@ class BridgeEventLoggerImplTest {
         void logUtxosRegistered_whenNullFederationBtcAddress_shouldThrowNullPointerException() {
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logUtxosRegistered(
-                btcTxHash,
-                singleValue,
-                singleOutputIndex,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
+                SINGLE_OUTPUT_INDEX,
                 null
             ));
             assertTrue(eventLogs.isEmpty());
@@ -711,10 +713,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(IllegalArgumentException.class, () -> eventLogger.logUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 values,
-                singleOutputIndex,
-                federationBtcAddress
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS
             ));
             assertTrue(eventLogs.isEmpty());
         }
@@ -726,10 +728,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(IllegalArgumentException.class, () -> eventLogger.logUtxosRegistered(
-                btcTxHash,
-                singleValue,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
                 outputIndexes,
-                federationBtcAddress
+                FEDERATION_BTC_ADDRESS
             ));
             assertTrue(eventLogs.isEmpty());
         }
@@ -738,10 +740,10 @@ class BridgeEventLoggerImplTest {
         void logUtxosRegistered_whenNullValues_shouldThrowNullPointerException() {
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 null,
-                singleOutputIndex,
-                federationBtcAddress
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS
             ));
             assertTrue(eventLogs.isEmpty());
         }
@@ -750,10 +752,10 @@ class BridgeEventLoggerImplTest {
         void logUtxosRegistered_whenNullOutputIndexes_shouldThrowNullPointerException() {
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logUtxosRegistered(
-                btcTxHash,
-                singleValue,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
                 null,
-                federationBtcAddress
+                FEDERATION_BTC_ADDRESS
             ));
             assertTrue(eventLogs.isEmpty());
         }
@@ -765,10 +767,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(InvalidOutpointValueException.class, () -> eventLogger.logUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 values,
-                singleOutputIndex,
-                federationBtcAddress
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS
             ));
             assertTrue(eventLogs.isEmpty());
         }
@@ -780,10 +782,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(InvalidOutputIndexException.class, () -> eventLogger.logUtxosRegistered(
-                btcTxHash,
-                singleValue,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
                 outputIndexes,
-                federationBtcAddress
+                FEDERATION_BTC_ADDRESS
             ));
             assertTrue(eventLogs.isEmpty());
         }
@@ -795,10 +797,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(InvalidOutpointValueException.class, () -> eventLogger.logUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 values,
-                singleOutputIndex,
-                federationBtcAddress
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS
             ));
             assertTrue(eventLogs.isEmpty());
         }
@@ -810,10 +812,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(InvalidOutputIndexException.class, () -> eventLogger.logUtxosRegistered(
-                btcTxHash,
-                singleValue,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
                 outputIndexes,
-                federationBtcAddress
+                FEDERATION_BTC_ADDRESS
             ));
             assertTrue(eventLogs.isEmpty());
         }
@@ -822,15 +824,15 @@ class BridgeEventLoggerImplTest {
         void logUtxosRegistered_whenSingleUtxo_shouldEmitEvent() {
             // act
             eventLogger.logUtxosRegistered(
-                btcTxHash,
-                singleValue,
-                singleOutputIndex,
-                federationBtcAddress
+                BTC_TX_HASH,
+                SINGLE_VALUE,
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS
             );
 
             // assert
-            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(singleValue);
-            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(singleOutputIndex);
+            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(SINGLE_VALUE);
+            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(SINGLE_OUTPUT_INDEX);
             assertLogUtxoRegisteredWasEmittedCorrectly(
                 expectedSerializedValues,
                 expectedSerializedOutputIndexes
@@ -839,21 +841,17 @@ class BridgeEventLoggerImplTest {
 
         @Test
         void logUtxosRegistered_whenMultipleUtxos_shouldEmitEvent() {
-            // arrange
-            List<Coin> values = List.of(Coin.COIN, Coin.SATOSHI, Coin.valueOf(500_000));
-            List<Long> outputIndexes = List.of(0L, 2L, 5L);
-
             // act
             eventLogger.logUtxosRegistered(
-                btcTxHash,
-                values,
-                outputIndexes,
-                federationBtcAddress
+                BTC_TX_HASH,
+                MULTIPLE_VALUES,
+                MULTIPLE_OUTPUT_INDEXES,
+                FEDERATION_BTC_ADDRESS
             );
 
             // assert
-            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(values);
-            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(MULTIPLE_VALUES);
+            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(MULTIPLE_OUTPUT_INDEXES);
             assertLogUtxoRegisteredWasEmittedCorrectly(
                 expectedSerializedValues,
                 expectedSerializedOutputIndexes
@@ -863,19 +861,15 @@ class BridgeEventLoggerImplTest {
         @Test
         void logUtxosRegistered_whenFiftyUtxos_shouldEmitEvent() {
             // arrange
-            List<Coin> values = new ArrayList<>();
-            List<Long> outputIndexes = new ArrayList<>();
-            for (int i = 0; i < 50; i++) {
-                values.add(Coin.COIN.add(Coin.valueOf(i)));
-                outputIndexes.add((long) i);
-            }
+            List<Coin> values = createValues();
+            List<Long> outputIndexes = createOutputIndexes();
 
             // act
             eventLogger.logUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 values,
                 outputIndexes,
-                federationBtcAddress
+                FEDERATION_BTC_ADDRESS
             );
 
             // assert
@@ -895,10 +889,10 @@ class BridgeEventLoggerImplTest {
 
             // act
             eventLogger.logUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 values,
                 outputIndexes,
-                federationBtcAddress
+                FEDERATION_BTC_ADDRESS
             );
 
             // assert
@@ -916,11 +910,11 @@ class BridgeEventLoggerImplTest {
             assertTopics(2);
 
             Function expectedEvent = BridgeEvents.UTXOS_REGISTERED.getEvent();
-            Object[] expectedTopics = {btcTxHash.getBytes()};
+            Object[] expectedTopics = {BTC_TX_HASH.getBytes()};
             Object[] expectedData = {
                 expectedSerializedValues,
                 expectedSerializedOutputIndexes,
-                federationBtcAddress.toString()
+                FEDERATION_BTC_ADDRESS.toString()
             };
             assertEvent(expectedEvent, expectedTopics, expectedData);
         }
@@ -928,10 +922,6 @@ class BridgeEventLoggerImplTest {
 
     @Nested
     class LogFlyoverUtxosRegisteredTest {
-        private final Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
-        private final List<Coin> singleValue = List.of(Coin.COIN);
-        private final List<Long> singleOutputIndex = List.of(0L);
-        private final Address federationBtcAddress = P2shP2wshErpFederationBuilder.builder().build().getAddress();
         private final Keccak256 flyoverDerivationHash = RskTestUtils.createHash(2);
 
         @Test
@@ -939,9 +929,9 @@ class BridgeEventLoggerImplTest {
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logFlyoverUtxosRegistered(
                 null,
-                singleValue,
-                singleOutputIndex,
-                federationBtcAddress,
+                SINGLE_VALUE,
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             ));
             assertTrue(eventLogs.isEmpty());
@@ -951,9 +941,9 @@ class BridgeEventLoggerImplTest {
         void logFlyoverUtxosRegistered_whenNullFederationBtcAddress_shouldThrowNullPointerException() {
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
-                singleValue,
-                singleOutputIndex,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
+                SINGLE_OUTPUT_INDEX,
                 null,
                 flyoverDerivationHash
             ));
@@ -964,10 +954,10 @@ class BridgeEventLoggerImplTest {
         void logFlyoverUtxosRegistered_whenNullFlyoverDerivationHash_shouldThrowNullPointerException() {
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
-                singleValue,
-                singleOutputIndex,
-                federationBtcAddress,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS,
                 null
             ));
             assertTrue(eventLogs.isEmpty());
@@ -980,10 +970,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(IllegalArgumentException.class, () -> eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 values,
-                singleOutputIndex,
-                federationBtcAddress,
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             ));
             assertTrue(eventLogs.isEmpty());
@@ -996,10 +986,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(IllegalArgumentException.class, () -> eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
-                singleValue,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
                 outputIndexes,
-                federationBtcAddress,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             ));
             assertTrue(eventLogs.isEmpty());
@@ -1009,10 +999,10 @@ class BridgeEventLoggerImplTest {
         void logFlyoverUtxosRegistered_whenNullValues_shouldThrowNullPointerException() {
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 null,
-                singleOutputIndex,
-                federationBtcAddress,
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             ));
             assertTrue(eventLogs.isEmpty());
@@ -1022,10 +1012,10 @@ class BridgeEventLoggerImplTest {
         void logFlyoverUtxosRegistered_whenNullOutputIndexes_shouldThrowNullPointerException() {
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
-                singleValue,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
                 null,
-                federationBtcAddress,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             ));
             assertTrue(eventLogs.isEmpty());
@@ -1038,10 +1028,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(InvalidOutpointValueException.class, () -> eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 values,
-                singleOutputIndex,
-                federationBtcAddress,
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             ));
             assertTrue(eventLogs.isEmpty());
@@ -1054,10 +1044,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(InvalidOutputIndexException.class, () -> eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
-                singleValue,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
                 outputIndexes,
-                federationBtcAddress,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             ));
             assertTrue(eventLogs.isEmpty());
@@ -1070,10 +1060,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(InvalidOutpointValueException.class, () -> eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 values,
-                singleOutputIndex,
-                federationBtcAddress,
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             ));
             assertTrue(eventLogs.isEmpty());
@@ -1086,10 +1076,10 @@ class BridgeEventLoggerImplTest {
 
             // act & assert
             assertThrows(InvalidOutputIndexException.class, () -> eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
-                singleValue,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
                 outputIndexes,
-                federationBtcAddress,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             ));
             assertTrue(eventLogs.isEmpty());
@@ -1099,16 +1089,16 @@ class BridgeEventLoggerImplTest {
         void logFlyoverUtxosRegistered_whenSingleUtxo_shouldEmitEvent() {
             // act
             eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
-                singleValue,
-                singleOutputIndex,
-                federationBtcAddress,
+                BTC_TX_HASH,
+                SINGLE_VALUE,
+                SINGLE_OUTPUT_INDEX,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             );
 
             // assert
-            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(singleValue);
-            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(singleOutputIndex);
+            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(SINGLE_VALUE);
+            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(SINGLE_OUTPUT_INDEX);
             assertLogFlyoverUtxoRegisteredWasEmittedCorrectly(
                 expectedSerializedValues,
                 expectedSerializedOutputIndexes
@@ -1117,22 +1107,18 @@ class BridgeEventLoggerImplTest {
 
         @Test
         void logFlyoverUtxosRegistered_whenMultipleUtxos_shouldEmitEvent() {
-            // arrange
-            List<Coin> values = List.of(Coin.COIN, Coin.SATOSHI, Coin.valueOf(500_000));
-            List<Long> outputIndexes = List.of(0L, 2L, 5L);
-
             // act
             eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
-                values,
-                outputIndexes,
-                federationBtcAddress,
+                BTC_TX_HASH,
+                MULTIPLE_VALUES,
+                MULTIPLE_OUTPUT_INDEXES,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             );
 
             // assert
-            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(values);
-            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(MULTIPLE_VALUES);
+            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(MULTIPLE_OUTPUT_INDEXES);
             assertLogFlyoverUtxoRegisteredWasEmittedCorrectly(
                 expectedSerializedValues,
                 expectedSerializedOutputIndexes
@@ -1142,19 +1128,15 @@ class BridgeEventLoggerImplTest {
         @Test
         void logFlyoverUtxosRegistered_whenFiftyUtxos_shouldEmitEvent() {
             // arrange
-            List<Coin> values = new ArrayList<>();
-            List<Long> outputIndexes = new ArrayList<>();
-            for (int i = 0; i < 50; i++) {
-                values.add(Coin.COIN.add(Coin.valueOf(i)));
-                outputIndexes.add((long) i);
-            }
+            List<Coin> values = createValues();
+            List<Long> outputIndexes = createOutputIndexes();
 
             // act
             eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 values,
                 outputIndexes,
-                federationBtcAddress,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             );
 
@@ -1175,19 +1157,17 @@ class BridgeEventLoggerImplTest {
 
             // act
             eventLogger.logFlyoverUtxosRegistered(
-                btcTxHash,
+                BTC_TX_HASH,
                 values,
                 outputIndexes,
-                federationBtcAddress,
+                FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             );
 
             // assert
-            byte[] expectedSerializedValues = EMPTY_BYTE_ARRAY;
-            byte[] expectedSerializedOutputIndexes = EMPTY_BYTE_ARRAY;
             assertLogFlyoverUtxoRegisteredWasEmittedCorrectly(
-                expectedSerializedValues,
-                expectedSerializedOutputIndexes
+                EMPTY_BYTE_ARRAY,
+                EMPTY_BYTE_ARRAY
             );
         }
 
@@ -1199,11 +1179,11 @@ class BridgeEventLoggerImplTest {
             assertTopics(2);
 
             Function expectedEvent = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
-            Object[] expectedTopics = {btcTxHash.getBytes()};
+            Object[] expectedTopics = {BTC_TX_HASH.getBytes()};
             Object[] expectedData = {
                 expectedSerializedValues,
                 expectedSerializedOutputIndexes,
-                federationBtcAddress.toString(),
+                FEDERATION_BTC_ADDRESS.toString(),
                 flyoverDerivationHash.getBytes()
             };
             assertEvent(expectedEvent, expectedTopics, expectedData);
@@ -1398,6 +1378,24 @@ class BridgeEventLoggerImplTest {
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
+    private static List<Coin> createValues() {
+        List<Coin> values = new ArrayList<>();
+        for (int i = 0; i < LARGE_OUTPUTS_COUNT; i++) {
+            values.add(Coin.COIN.add(Coin.valueOf(i)));
+        }
+
+        return values;
+    }
+
+    private static List<Long> createOutputIndexes() {
+        List<Long> outputIndexes = new ArrayList<>();
+        for (int i = 0; i < LARGE_OUTPUTS_COUNT; i++) {
+            outputIndexes.add((long) i);
+        }
+
+        return outputIndexes;
+    }
+
     private void assertEvent(CallTransaction.Function event, Object[] topics, Object[] data) {
         LogInfo log = eventLogs.get(0);
 
