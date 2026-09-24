@@ -321,6 +321,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     @Override
     public void logUtxosRegistered(Sha256Hash btcTxHash, List<Coin> values, List<Long> outputIndexes, Address federationBtcAddress) {
         requireNonNull(btcTxHash);
+        requireNonNull(federationBtcAddress);
     }
 
     @Override
