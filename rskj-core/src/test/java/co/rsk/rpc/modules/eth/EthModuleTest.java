@@ -834,6 +834,43 @@ class EthModuleTest {
     }
 
     @Test
+    void sendRawTransaction_highSLegacy_reportsInvalidSignatureNotChainId() {
+        // cow, chainId 33, s replaced by n - s (and v parity flipped)
+        assertSendRawTransactionError("0xf86380843b9aca00825208940000000000000000000000000000000000001234018066a0f53d18aab36abf06f1a949c41b22e595c238359cee7b21de5f5aca46e5348643a0eeb67fbc51d66da3ac6c08a71e966a662e01e0ac81fc67afa62ac0f1121e378f",
+                "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_highSType2_reportsInvalidSignatureNotChainId() {
+        assertSendRawTransactionError("0x02f866218001843b9aca008252089400000000000000000000000000000000000012340180c001a0b92e98d144431440978c1979b1e2e6e842a2b7d2df534ca6baca121b4e365f7ea092e0bb82c67746ec8365f618a816cabd337a87104b848488750305f0f4943919",
+                "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_type2ChainId200_reportsUnsignedChainId() {
+        assertSendRawTransactionError("0x02f86781c88001843b9aca008252089400000000000000000000000000000000000012340180c001a0a048b82d4f92d1c4a4932ae046ad260993c345f96959432901d6b179f093befda07e84f07e2eb801b997baabfd57e47c318410c409ce6398118a367d1f8b34fcab",
+                "Invalid chainId: 200");
+    }
+
+    @Test
+    void sendRawTransaction_legacyWrongChainId_stillReportsChainId() {
+        assertSendRawTransactionError("0xf86380843b9aca00825208940000000000000000000000000000000000001234018061a00245b6b834cbe95175953c8483b0685483faae336fc854c2a402a31ff82c1407a02a2661345258c3b86a913ce1c2af60b005a9be82d5848037276acf3472d21a3f",
+                "Invalid chainId: 31");
+    }
+
+    private static void assertSendRawTransactionError(String rawHex, String expectedMessage) {
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
+                Constants.regtest(), new Wallet(new HashMapDB()), mock(TransactionPool.class), transactionGateway);
+
+        RskJsonRpcRequestException e = Assertions.assertThrows(RskJsonRpcRequestException.class,
+                () -> ethModuleTransaction.sendRawTransaction(new HexDataParam(rawHex)));
+        assertEquals(-32602, e.getCode());
+        assertEquals(expectedMessage, e.getMessage());
+        verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
     void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
         // Given
         Constants constants = Constants.regtest();
