@@ -741,6 +741,15 @@ public class TransactionExecutor {
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
 
+            // a failed tx without a program (e.g. a direct precompile call) must not trace as a success
+            if (!executionError.isEmpty()) {
+                if (result.getException() != null) {
+                    trace.error(result.getException());
+                } else {
+                    trace.setError(executionError);
+                }
+            }
+
             if (this.subtraces != null) {
                 for (ProgramSubtrace subtrace : this.subtraces) {
                     trace.addSubTrace(subtrace);
