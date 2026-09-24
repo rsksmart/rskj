@@ -85,6 +85,13 @@ public enum BridgeEvents {
         new CallTransaction.Param(false, Fields.OUTPUT_INDEXES, SolidityType.getType(SolidityType.BYTES)),
         new CallTransaction.Param(false, Fields.FEDERATION_BTC_ADDRESS, SolidityType.getType(SolidityType.STRING))
     }),
+    FLYOVER_UTXOS_REGISTERED("flyover_utxos_registered", new CallTransaction.Param[] {
+        new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
+        new CallTransaction.Param(false, Fields.VALUES, SolidityType.getType(SolidityType.BYTES)),
+        new CallTransaction.Param(false, Fields.OUTPUT_INDEXES, SolidityType.getType(SolidityType.BYTES)),
+        new CallTransaction.Param(false, Fields.FEDERATION_BTC_ADDRESS, SolidityType.getType(SolidityType.STRING)),
+        new CallTransaction.Param(false, "flyoverDerivationHash", SolidityType.getType(SolidityType.BYTES32))
+    }),
     UNION_LOCKING_CAP_INCREASED("union_bridge_locking_cap_increased", new CallTransaction.Param[] {
         new CallTransaction.Param(true, Fields.CALLER, SolidityType.getType(SolidityType.ADDRESS)),
         new CallTransaction.Param(false, "previousLockingCap", SolidityType.getType(SolidityType.UINT256)),
