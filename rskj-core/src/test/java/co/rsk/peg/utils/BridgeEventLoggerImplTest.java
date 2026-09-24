@@ -861,6 +861,33 @@ class BridgeEventLoggerImplTest {
         }
 
         @Test
+        void logUtxosRegistered_whenFiftyUtxos_shouldEmitEvent() {
+            // arrange
+            List<Coin> values = new ArrayList<>();
+            List<Long> outputIndexes = new ArrayList<>();
+            for (int i = 0; i < 50; i++) {
+                values.add(Coin.COIN.add(Coin.valueOf(i)));
+                outputIndexes.add((long) i);
+            }
+
+            // act
+            eventLogger.logUtxosRegistered(
+                btcTxHash,
+                values,
+                outputIndexes,
+                federationBtcAddress
+            );
+
+            // assert
+            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(values);
+            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+            assertLogUtxoRegisteredWasEmittedCorrectly(
+                expectedSerializedValues,
+                expectedSerializedOutputIndexes
+            );
+        }
+
+        @Test
         void logUtxosRegistered_whenEmptyLists_shouldEmitEventWithEmptyValuesAndIndexes() {
             // arrange
             List<Coin> values = Collections.emptyList();
@@ -1093,6 +1120,34 @@ class BridgeEventLoggerImplTest {
             // arrange
             List<Coin> values = List.of(Coin.COIN, Coin.SATOSHI, Coin.valueOf(500_000));
             List<Long> outputIndexes = List.of(0L, 2L, 5L);
+
+            // act
+            eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                values,
+                outputIndexes,
+                federationBtcAddress,
+                flyoverDerivationHash
+            );
+
+            // assert
+            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(values);
+            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+            assertLogFlyoverUtxoRegisteredWasEmittedCorrectly(
+                expectedSerializedValues,
+                expectedSerializedOutputIndexes
+            );
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenFiftyUtxos_shouldEmitEvent() {
+            // arrange
+            List<Coin> values = new ArrayList<>();
+            List<Long> outputIndexes = new ArrayList<>();
+            for (int i = 0; i < 50; i++) {
+                values.add(Coin.COIN.add(Coin.valueOf(i)));
+                outputIndexes.add((long) i);
+            }
 
             // act
             eventLogger.logFlyoverUtxosRegistered(
