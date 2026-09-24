@@ -211,7 +211,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         synchronized (transactionPool) {
             Transaction tx = Transaction.fromCallArguments(args, getAccountNextNonce(senderAccount),  constants.getChainId());
             tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
-            tx.checkInvalidChain(constants, ""+tx.getChainId());
+            tx.checkInvalidChain(constants);
 
             TransactionPoolAddResult result = eth.submitTransaction(tx);
             if (!result.transactionsWereAdded()) {
