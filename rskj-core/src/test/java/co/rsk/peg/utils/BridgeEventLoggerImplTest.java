@@ -100,7 +100,7 @@ class BridgeEventLoggerImplTest {
     private static final Address FEDERATION_BTC_ADDRESS = P2shP2wshErpFederationBuilder.builder().build().getAddress();
     private static final List<Coin> MULTIPLE_VALUES = List.of(Coin.COIN, Coin.SATOSHI, Coin.valueOf(500_000));
     private static final List<Long> MULTIPLE_OUTPUT_INDEXES = List.of(0L, 2L, 5L);
-    public static final int LARGE_OUTPUTS_COUNT = 50;
+    private static final int FIFTY_OUTPUTS_COUNT = 50;
 
     private List<LogInfo> eventLogs;
     private BridgeEventLogger eventLogger;
@@ -1380,7 +1380,7 @@ class BridgeEventLoggerImplTest {
      *********************************/
     private static List<Coin> createValues() {
         List<Coin> values = new ArrayList<>();
-        for (int i = 0; i < LARGE_OUTPUTS_COUNT; i++) {
+        for (int i = 0; i < FIFTY_OUTPUTS_COUNT; i++) {
             values.add(Coin.COIN.add(Coin.valueOf(i)));
         }
 
@@ -1389,7 +1389,7 @@ class BridgeEventLoggerImplTest {
 
     private static List<Long> createOutputIndexes() {
         List<Long> outputIndexes = new ArrayList<>();
-        for (int i = 0; i < LARGE_OUTPUTS_COUNT; i++) {
+        for (int i = 0; i < FIFTY_OUTPUTS_COUNT; i++) {
             outputIndexes.add((long) i);
         }
 
