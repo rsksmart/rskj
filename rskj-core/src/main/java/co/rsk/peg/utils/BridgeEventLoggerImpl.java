@@ -320,13 +320,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     @Override
     public void logUtxosRegistered(Sha256Hash btcTxHash, List<Coin> values, List<Long> outputIndexes, Address federationBtcAddress) {
-        requireNonNull(btcTxHash);
-        requireNonNull(federationBtcAddress);
-        requireNonNull(values);
-        requireNonNull(outputIndexes);
-        if (values.size() != outputIndexes.size()) {
-            throw new IllegalArgumentException("values and outputIndexes must have the same size");
-        }
+        validateUtxosRegisteredArgs(btcTxHash, values, outputIndexes, federationBtcAddress);
 
         CallTransaction.Function event = BridgeEvents.UTXOS_REGISTERED.getEvent();
 
@@ -406,6 +400,21 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         byte[] encodedData = event.encodeEventData(enablePowPegToUnionBridge, enableUnionBridgeToPowPeg);
 
         addLog(encodedTopics, encodedData);
+    }
+
+    private void validateUtxosRegisteredArgs(
+        Sha256Hash btcTxHash,
+        List<Coin> values,
+        List<Long> outputIndexes,
+        Address federationBtcAddress
+    ) {
+        requireNonNull(btcTxHash);
+        requireNonNull(federationBtcAddress);
+        requireNonNull(values);
+        requireNonNull(outputIndexes);
+        if (values.size() != outputIndexes.size()) {
+            throw new IllegalArgumentException("values and outputIndexes must have the same size");
+        }
     }
 
     private byte[] flatKeys(List<BtcECKey> keys, Function<BtcECKey, byte[]> parser) {
