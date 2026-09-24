@@ -145,4 +145,23 @@ class BridgeEventLoggerTest {
             federationBtcAddress
         ));
     }
+
+    @Test
+    void logFlyoverUtxosRegistered() {
+        // arrange
+        Sha256Hash btcTxHash = btcTxMock.getHash();
+        List<Coin> values = List.of(Coin.COIN);
+        List<Long> outputIndexes = List.of(0L);
+        Address federationBtcAddress = P2shP2wshErpFederationBuilder.builder().build().getAddress();
+        Keccak256 flyoverDerivationHash = RskTestUtils.createHash(2);
+
+        // act & assert
+        assertThrows(UnsupportedOperationException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+            btcTxHash,
+            values,
+            outputIndexes,
+            federationBtcAddress,
+            flyoverDerivationHash
+        ));
+    }
 }
