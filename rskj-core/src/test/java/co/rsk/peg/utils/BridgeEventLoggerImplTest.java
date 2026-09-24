@@ -874,8 +874,8 @@ class BridgeEventLoggerImplTest {
         @Test
         void logUtxosRegistered_whenFiftyUtxos_shouldEmitEvent() {
             // arrange
-            List<Coin> values = createValues();
-            List<Long> outputIndexes = createOutputIndexes();
+            List<Coin> values = createFiftyOutputValues();
+            List<Long> outputIndexes = createFiftyOutputIndexes();
 
             // act
             eventLogger.logUtxosRegistered(
@@ -1154,8 +1154,8 @@ class BridgeEventLoggerImplTest {
         @Test
         void logFlyoverUtxosRegistered_whenFiftyUtxos_shouldEmitEvent() {
             // arrange
-            List<Coin> values = createValues();
-            List<Long> outputIndexes = createOutputIndexes();
+            List<Coin> values = createFiftyOutputValues();
+            List<Long> outputIndexes = createFiftyOutputIndexes();
 
             // act
             eventLogger.logFlyoverUtxosRegistered(
@@ -1404,7 +1404,7 @@ class BridgeEventLoggerImplTest {
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
-    private static List<Coin> createValues() {
+    private static List<Coin> createFiftyOutputValues() {
         List<Coin> values = new ArrayList<>();
         for (int i = 0; i < FIFTY_OUTPUTS_COUNT; i++) {
             values.add(Coin.COIN.add(Coin.valueOf(i)));
@@ -1413,7 +1413,7 @@ class BridgeEventLoggerImplTest {
         return values;
     }
 
-    private static List<Long> createOutputIndexes() {
+    private static List<Long> createFiftyOutputIndexes() {
         List<Long> outputIndexes = new ArrayList<>();
         for (int i = 0; i < FIFTY_OUTPUTS_COUNT; i++) {
             outputIndexes.add((long) i);
