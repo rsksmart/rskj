@@ -85,6 +85,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
             return txHash;
 
+        } catch (IllegalArgumentException e) {
+            throw invalidParamError("Invalid transaction: " + e.getMessage(), e);
         } finally {
             LOGGER.debug("eth_sendTransaction({}): {}", args, txHash);
         }
