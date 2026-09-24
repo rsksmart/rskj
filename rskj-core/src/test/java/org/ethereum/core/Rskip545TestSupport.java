@@ -198,8 +198,8 @@ public final class Rskip545TestSupport {
                 EMPTY_ACCESS_LIST,
                 authListBytes,
                 RLP.encodeByte((byte) 0),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(Rskip546TestSupport.signatureWord()),
+                RLP.encodeElement(Rskip546TestSupport.signatureWord())
         };
     }
 
