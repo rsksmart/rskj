@@ -68,7 +68,7 @@ public class Type0TransactionEncoder implements TransactionEncoder {
 
     public byte[] encodeType0Fields(Transaction transaction, byte[] v, byte[] r, byte[] s) {
         byte[] nonce = TransactionEncodingUtils.encodeNonce(transaction.getNonce());
-        byte[] gasPrice = RLP.encodeCoinNonNullZero(transaction.getGasPrice());
+        byte[] gasPrice = RLP.encodeCoinNonNullZero(transaction.getEncodableGasPrice());
         byte[] gasLimit = RLP.encodeElement(transaction.getGasLimit());
         byte[] receiveAddress = RLP.encodeRskAddress(transaction.getReceiveAddress());
         byte[] value = RLP.encodeCoinNullZero(transaction.getValue());

@@ -46,7 +46,8 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
         CommonParsingUtils.requireFieldCount(txFields, LEGACY_FIELD_COUNT, "Legacy-format");
 
         byte[] nonce = CommonParsingUtils.nullToEmpty(txFields.get(NONCE_INDEX).getRLPData());
-        Coin gasPrice = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(GAS_PRICE_INDEX).getRLPData()));
+        // Not defaulted: an empty (0x80) gasPrice stays null so that it re-encodes as 0x80, not as 0x00.
+        Coin gasPrice = RLP.parseCoinNonNullZero(txFields.get(GAS_PRICE_INDEX).getRLPData());
         byte[] gasLimit = CommonParsingUtils.nullToEmpty(txFields.get(GAS_LIMIT_INDEX).getRLPData());
         RskAddress receiveAddress = CommonParsingUtils.defaultAddress(
                 RLP.parseRskAddress(txFields.get(RECEIVE_ADDRESS_INDEX).getRLPData()));
