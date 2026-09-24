@@ -786,6 +786,21 @@ class BridgeEventLoggerImplTest {
             ));
             assertTrue(eventLogs.isEmpty());
         }
+
+        @Test
+        void logUtxosRegistered_whenNegativeValue_shouldThrowInvalidOutpointValueException() {
+            // arrange
+            List<Coin> values = List.of(Coin.valueOf(-1));
+
+            // act & assert
+            assertThrows(InvalidOutpointValueException.class, () -> eventLogger.logUtxosRegistered(
+                btcTxHash,
+                values,
+                singleOutputIndex,
+                federationBtcAddress
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
     }
 
     @ParameterizedTest
