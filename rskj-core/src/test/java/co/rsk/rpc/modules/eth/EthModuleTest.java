@@ -834,6 +834,23 @@ class EthModuleTest {
     }
 
     @Test
+    void sendRawTransaction_legacyChainIdWithTwoByteV_throwsInvalidParams() {
+        // Legacy EIP-155 tx signed for chainId 111: v = 111*2 + 35 + yParity = 257, which needs two bytes.
+        String raw = "0xf8638203e801825208947986b3df570230288501eea3d890bd66948c9b790180820101"
+                + "a0f2c1c4648c681c5d901bca52fdb1b7ec8148da9f0481bb38bce41c7a46dffa33"
+                + "a01d367a76e7eb2e115147a0dc07b47ff4ccc40365f9ac2e146500579d5ea79e76";
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
+                Constants.regtest(), new Wallet(new HashMapDB()), mock(TransactionPool.class), transactionGateway);
+        HexDataParam hexDataParam = new HexDataParam(raw);
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendRawTransaction(hexDataParam));
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Invalid transaction: Signature V is invalid", ex.getMessage());
+        verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
     void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
         // Given
         Constants constants = Constants.regtest();
