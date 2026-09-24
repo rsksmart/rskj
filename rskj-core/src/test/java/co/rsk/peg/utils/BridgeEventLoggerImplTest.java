@@ -683,6 +683,19 @@ class BridgeEventLoggerImplTest {
     @Nested
     class LogUtxosRegisteredTest {
         @Test
+        void utxosRegistered_shouldHaveExpectedSignature() {
+            // arrange
+            Function event = BridgeEvents.UTXOS_REGISTERED.getEvent();
+
+            // act
+            String signature = event.formatSignature();
+
+            // assert
+            String expectedSignature = "utxos_registered(bytes32,bytes,bytes,string)";
+            assertEquals(expectedSignature, signature);
+        }
+
+        @Test
         void logUtxosRegistered_whenNullBtcTxHash_shouldThrowNullPointerException() {
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logUtxosRegistered(
@@ -923,6 +936,19 @@ class BridgeEventLoggerImplTest {
     @Nested
     class LogFlyoverUtxosRegisteredTest {
         private final Keccak256 flyoverDerivationHash = RskTestUtils.createHash(2);
+
+        @Test
+        void flyoverUtxosRegistered_shouldHaveExpectedSignature() {
+            // arrange
+            Function event = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
+
+            // act
+            String signature = event.formatSignature();
+
+            // assert
+            String expectedSignature = "flyover_utxos_registered(bytes32,bytes,bytes,string,bytes32)";
+            assertEquals(expectedSignature, signature);
+        }
 
         @Test
         void logFlyoverUtxosRegistered_whenNullBtcTxHash_shouldThrowNullPointerException() {
