@@ -40,6 +40,7 @@ import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.federation.P2shErpFederationBuilder;
+import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
@@ -57,6 +58,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -79,6 +81,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BridgeEventLoggerImplTest {
     private static final RskAddress BRIDGE_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
@@ -666,6 +669,27 @@ class BridgeEventLoggerImplTest {
     @MethodSource("logPegoutTransactionCreatedInvalidArgProvider")
     void logPegoutTransactionCreated_invalidBtcTxHashOrOutpointValues_shouldFail(Sha256Hash btcTxHash, List<Coin> outpointValues, Class<? extends  Exception> expectedException) {
         assertThrows(expectedException, () -> eventLogger.logPegoutTransactionCreated(btcTxHash, outpointValues));
+    }
+
+    @Nested
+    class LogUtxosRegisteredTest {
+        private final Address federationBtcAddress = P2shP2wshErpFederationBuilder.builder().build().getAddress();
+
+        @Test
+        void logUtxosRegistered_whenNullBtcTxHash_shouldThrowNullPointerException() {
+            // arrange
+            List<Coin> values = List.of(Coin.COIN);
+            List<Long> outputIndexes = List.of(0L);
+
+            // act & assert
+            assertThrows(NullPointerException.class, () -> eventLogger.logUtxosRegistered(
+                null,
+                values,
+                outputIndexes,
+                federationBtcAddress
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
     }
 
     @ParameterizedTest
