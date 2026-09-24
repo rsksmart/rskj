@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -141,6 +142,48 @@ class TraceGasCharacterizationTest {
         assertEquals(2, traces.size());
         assertFrame(traces.get(0), "[]", "0x124f80", "0x552b");
         assertFrame(traces.get(1), "[0]", "0x1000", "0x6");
+    }
+
+    /** A RSKIP-560 failed direct precompile call (status 0) must trace as a failed frame. */
+    @Test
+    void failedPrecompileCall_hasErrorAndNoResult() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = world("dsl/trace_failed_precompile.txt", receiptStore);
+        assertFalse(world.getTransactionReceiptByName("tx01").isSuccessful());
+
+        JsonNode traces = traceOf(world, traceModule(world, receiptStore), "tx01");
+
+        assertEquals(1, traces.size());
+        assertTrue(traces.get(0).get("result").isNull(), "failed frame must carry a null result");
+        assertFalse(traces.get(0).get("error").asText().isEmpty());
+    }
+
+    /** A precompile call that runs out of gas (status 0) must also trace as a failed frame. */
+    @Test
+    void outOfGasPrecompileCall_hasErrorAndNoResult() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = world("dsl/trace_failed_precompile.txt", receiptStore);
+        assertFalse(world.getTransactionReceiptByName("tx03").isSuccessful());
+
+        JsonNode traces = traceOf(world, traceModule(world, receiptStore), "tx03");
+
+        assertEquals(1, traces.size());
+        assertTrue(traces.get(0).get("result").isNull(), "failed frame must carry a null result");
+        assertTrue(traces.get(0).get("error").asText().startsWith("Out of Gas calling precompiled contract"));
+    }
+
+    /** A successful plain transfer (no program, no precompile) keeps its result and no error. */
+    @Test
+    void plainTransfer_hasResultAndNoError() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = world("dsl/trace_failed_precompile.txt", receiptStore);
+        assertTrue(world.getTransactionReceiptByName("tx02").isSuccessful());
+
+        JsonNode traces = traceOf(world, traceModule(world, receiptStore), "tx02");
+
+        assertEquals(1, traces.size());
+        assertFalse(traces.get(0).get("result").isNull());
+        assertTrue(traces.get(0).get("error") == null || traces.get(0).get("error").isNull());
     }
 
     /** Genesis and out-of-range blocks stay empty / null. */
