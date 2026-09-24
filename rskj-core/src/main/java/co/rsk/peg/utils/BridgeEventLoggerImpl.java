@@ -319,6 +319,11 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
+    public void logUtxosRegistered(Sha256Hash btcTxHash, List<Coin> values, List<Long> outputIndexes, Address federationBtcAddress) {
+        requireNonNull(btcTxHash);
+    }
+
+    @Override
     public void logUnionLockingCapIncreased(RskAddress caller, co.rsk.core.Coin previousLockingCap, co.rsk.core.Coin newLockingCap) {
         requireNonNull(caller);
         requireNonNull(previousLockingCap);
