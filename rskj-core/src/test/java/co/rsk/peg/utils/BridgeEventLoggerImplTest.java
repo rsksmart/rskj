@@ -899,6 +899,163 @@ class BridgeEventLoggerImplTest {
         }
     }
 
+    @Nested
+    class LogFlyoverUtxosRegisteredTest {
+        private final Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+        private final List<Coin> singleValue = List.of(Coin.COIN);
+        private final List<Long> singleOutputIndex = List.of(0L);
+        private final Address federationBtcAddress = P2shP2wshErpFederationBuilder.builder().build().getAddress();
+        private final Keccak256 flyoverDerivationHash = RskTestUtils.createHash(2);
+
+        @Test
+        void logFlyoverUtxosRegistered_whenNullBtcTxHash_shouldThrowNullPointerException() {
+            // act & assert
+            assertThrows(NullPointerException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                null,
+                singleValue,
+                singleOutputIndex,
+                federationBtcAddress,
+                flyoverDerivationHash
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenNullFederationBtcAddress_shouldThrowNullPointerException() {
+            // act & assert
+            assertThrows(NullPointerException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                singleValue,
+                singleOutputIndex,
+                null,
+                flyoverDerivationHash
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenMoreValuesThanOutputIndexes_shouldThrowIllegalArgumentException() {
+            // arrange
+            List<Coin> values = List.of(Coin.COIN, Coin.SATOSHI);
+
+            // act & assert
+            assertThrows(IllegalArgumentException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                values,
+                singleOutputIndex,
+                federationBtcAddress,
+                flyoverDerivationHash
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenMoreOutputIndexesThanValues_shouldThrowIllegalArgumentException() {
+            // arrange
+            List<Long> outputIndexes = List.of(0L, 1L);
+
+            // act & assert
+            assertThrows(IllegalArgumentException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                singleValue,
+                outputIndexes,
+                federationBtcAddress,
+                flyoverDerivationHash
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenNullValues_shouldThrowNullPointerException() {
+            // act & assert
+            assertThrows(NullPointerException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                null,
+                singleOutputIndex,
+                federationBtcAddress,
+                flyoverDerivationHash
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenNullOutputIndexes_shouldThrowNullPointerException() {
+            // act & assert
+            assertThrows(NullPointerException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                singleValue,
+                null,
+                federationBtcAddress,
+                flyoverDerivationHash
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenNullValueEntry_shouldThrowInvalidOutpointValueException() {
+            // arrange
+            List<Coin> values = Collections.singletonList(null);
+
+            // act & assert
+            assertThrows(InvalidOutpointValueException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                values,
+                singleOutputIndex,
+                federationBtcAddress,
+                flyoverDerivationHash
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenNullOutputIndexEntry_shouldThrowInvalidOutputIndexException() {
+            // arrange
+            List<Long> outputIndexes = Collections.singletonList(null);
+
+            // act & assert
+            assertThrows(InvalidOutputIndexException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                singleValue,
+                outputIndexes,
+                federationBtcAddress,
+                flyoverDerivationHash
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenNegativeValue_shouldThrowInvalidOutpointValueException() {
+            // arrange
+            List<Coin> values = List.of(Coin.valueOf(-1));
+
+            // act & assert
+            assertThrows(InvalidOutpointValueException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                values,
+                singleOutputIndex,
+                federationBtcAddress,
+                flyoverDerivationHash
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenNegativeOutputIndex_shouldThrowInvalidOutputIndexException() {
+            // arrange
+            List<Long> outputIndexes = List.of(-1L);
+
+            // act & assert
+            assertThrows(InvalidOutputIndexException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                singleValue,
+                outputIndexes,
+                federationBtcAddress,
+                flyoverDerivationHash
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("logUnionRbtcRequestedArgProvider")
     void logUnionRbtcRequested_whenOk_shouldEmitEvent(RskAddress requester, co.rsk.core.Coin amount) {
