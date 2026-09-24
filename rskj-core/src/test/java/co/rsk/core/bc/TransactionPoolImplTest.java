@@ -1136,6 +1136,44 @@ class TransactionPoolImplTest {
     }
 
     @Test
+    void delegatedAccount_staleTransactionWithConsumedNonceDoesNotBlockNextNonce() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        Account sender = createAccount(1);
+
+        Transaction staleTx = createSampleTransaction(1, 2, 1000, 0);
+        Assertions.assertTrue(transactionPool.addTransaction(staleTx).pendingTransactionsWereAdded());
+
+        // a sponsor's authorization tuple consumes nonce 0 and delegates the account;
+        // the account's own nonce-0 tx is never mined and stays in the pool
+        repository.increaseNonce(sender.getAddress());
+        makeAccountDelegated(1, 2);
+
+        Transaction nextTx = createSampleTransaction(1, 2, 1000, 1);
+        TransactionPoolAddResult result = transactionPool.addTransaction(nextTx);
+
+        Assertions.assertTrue(result.pendingTransactionsWereAdded(), result.getErrorMessage());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(nextTx));
+    }
+
+    @Test
+    void delegatedAccount_staleQueuedTransactionWithConsumedNonceDoesNotBlockNextNonce() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        Account sender = createAccount(1);
+
+        Transaction staleQueuedTx = createSampleTransaction(1, 2, 1000, 1);
+        Assertions.assertTrue(transactionPool.addTransaction(staleQueuedTx).queuedTransactionsWereAdded());
+
+        repository.increaseNonce(sender.getAddress());
+        repository.increaseNonce(sender.getAddress());
+        makeAccountDelegated(1, 2);
+
+        Transaction nextTx = createSampleTransaction(1, 2, 1000, 2);
+        TransactionPoolAddResult result = transactionPool.addTransaction(nextTx);
+
+        Assertions.assertTrue(result.pendingTransactionsWereAdded(), result.getErrorMessage());
+    }
+
+    @Test
     void addTransaction_withNonCanonicalNonce_isRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
