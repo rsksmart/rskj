@@ -79,6 +79,19 @@ public enum BridgeEvents {
         new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
         new CallTransaction.Param(false, Fields.UTXO_OUTPOINT_VALUES, SolidityType.getType(SolidityType.BYTES))
     }),
+    UTXOS_REGISTERED("utxos_registered", new CallTransaction.Param[] {
+        new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
+        new CallTransaction.Param(false, Fields.VALUES, SolidityType.getType(SolidityType.BYTES)),
+        new CallTransaction.Param(false, Fields.OUTPUT_INDEXES, SolidityType.getType(SolidityType.BYTES)),
+        new CallTransaction.Param(false, Fields.FEDERATION_BTC_ADDRESS, SolidityType.getType(SolidityType.STRING))
+    }),
+    FLYOVER_UTXOS_REGISTERED("flyover_utxos_registered", new CallTransaction.Param[] {
+        new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
+        new CallTransaction.Param(false, Fields.VALUES, SolidityType.getType(SolidityType.BYTES)),
+        new CallTransaction.Param(false, Fields.OUTPUT_INDEXES, SolidityType.getType(SolidityType.BYTES)),
+        new CallTransaction.Param(false, Fields.FEDERATION_BTC_ADDRESS, SolidityType.getType(SolidityType.STRING)),
+        new CallTransaction.Param(false, "flyoverDerivationHash", SolidityType.getType(SolidityType.BYTES32))
+    }),
     UNION_LOCKING_CAP_INCREASED("union_bridge_locking_cap_increased", new CallTransaction.Param[] {
         new CallTransaction.Param(true, Fields.CALLER, SolidityType.getType(SolidityType.ADDRESS)),
         new CallTransaction.Param(false, "previousLockingCap", SolidityType.getType(SolidityType.UINT256)),
@@ -121,6 +134,9 @@ public enum BridgeEvents {
         private static final String RELEASE_RSK_TX_HASHES = "releaseRskTxHashes";
         private static final String SENDER = "sender";
         private static final String UTXO_OUTPOINT_VALUES = "utxoOutpointValues";
+        private static final String VALUES = "values";
+        private static final String OUTPUT_INDEXES = "outputIndexes";
+        private static final String FEDERATION_BTC_ADDRESS = "federationBtcAddress";
         private static final String REQUESTER = "requester";
         private static final String CALLER = "caller";
     }

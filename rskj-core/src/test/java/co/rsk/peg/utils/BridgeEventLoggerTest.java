@@ -8,6 +8,7 @@ import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -125,6 +126,42 @@ class BridgeEventLoggerTest {
         assertThrows(UnsupportedOperationException.class, () -> eventLogger.logPegoutTransactionCreated(
             btcTxHash,
             outpointValues
+        ));
+    }
+
+    @Test
+    void logUtxosRegistered() {
+        // arrange
+        Sha256Hash btcTxHash = btcTxMock.getHash();
+        List<Coin> values = List.of(Coin.COIN);
+        List<Long> outputIndexes = List.of(0L);
+        Address federationBtcAddress = P2shP2wshErpFederationBuilder.builder().build().getAddress();
+
+        // act & assert
+        assertThrows(UnsupportedOperationException.class, () -> eventLogger.logUtxosRegistered(
+            btcTxHash,
+            values,
+            outputIndexes,
+            federationBtcAddress
+        ));
+    }
+
+    @Test
+    void logFlyoverUtxosRegistered() {
+        // arrange
+        Sha256Hash btcTxHash = btcTxMock.getHash();
+        List<Coin> values = List.of(Coin.COIN);
+        List<Long> outputIndexes = List.of(0L);
+        Address federationBtcAddress = P2shP2wshErpFederationBuilder.builder().build().getAddress();
+        Keccak256 flyoverDerivationHash = RskTestUtils.createHash(2);
+
+        // act & assert
+        assertThrows(UnsupportedOperationException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+            btcTxHash,
+            values,
+            outputIndexes,
+            federationBtcAddress,
+            flyoverDerivationHash
         ));
     }
 }

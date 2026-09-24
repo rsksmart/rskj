@@ -84,6 +84,14 @@ public interface BridgeEventLogger {
         throw new UnsupportedOperationException();
     }
 
+    default void logUtxosRegistered(Sha256Hash btcTxHash, List<Coin> values, List<Long> outputIndexes, Address federationBtcAddress) {
+        throw new UnsupportedOperationException();
+    }
+
+    default void logFlyoverUtxosRegistered(Sha256Hash btcTxHash, List<Coin> values, List<Long> outputIndexes, Address federationBtcAddress, Keccak256 flyoverDerivationHash) {
+        throw new UnsupportedOperationException();
+    }
+
     default void logUnionLockingCapIncreased(RskAddress caller, co.rsk.core.Coin previousLockingCap, co.rsk.core.Coin newLockingCap) {
         throw new UnsupportedOperationException();
     }

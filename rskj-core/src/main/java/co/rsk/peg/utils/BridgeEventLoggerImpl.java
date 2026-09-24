@@ -319,6 +319,50 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
+    public void logUtxosRegistered(Sha256Hash btcTxHash, List<Coin> values, List<Long> outputIndexes, Address federationBtcAddress) {
+        validateUtxosRegisteredArgs(btcTxHash, values, outputIndexes, federationBtcAddress);
+
+        CallTransaction.Function event = BridgeEvents.UTXOS_REGISTERED.getEvent();
+
+        byte[] btcTxHashSerialized = btcTxHash.getBytes();
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(btcTxHashSerialized);
+        List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
+
+        byte[] serializedValues = UtxoUtils.encodeOutpointValues(values);
+        byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+        byte[] encodedData = event.encodeEventData(
+            serializedValues,
+            serializedOutputIndexes,
+            federationBtcAddress.toString()
+        );
+
+        addLog(encodedTopics, encodedData);
+    }
+
+    @Override
+    public void logFlyoverUtxosRegistered(Sha256Hash btcTxHash, List<Coin> values, List<Long> outputIndexes, Address federationBtcAddress, Keccak256 flyoverDerivationHash) {
+        validateUtxosRegisteredArgs(btcTxHash, values, outputIndexes, federationBtcAddress);
+        requireNonNull(flyoverDerivationHash);
+
+        CallTransaction.Function event = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
+
+        byte[] btcTxHashSerialized = btcTxHash.getBytes();
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(btcTxHashSerialized);
+        List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
+
+        byte[] serializedValues = UtxoUtils.encodeOutpointValues(values);
+        byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+        byte[] encodedData = event.encodeEventData(
+            serializedValues,
+            serializedOutputIndexes,
+            federationBtcAddress.toString(),
+            flyoverDerivationHash.getBytes()
+        );
+
+        addLog(encodedTopics, encodedData);
+    }
+
+    @Override
     public void logUnionLockingCapIncreased(RskAddress caller, co.rsk.core.Coin previousLockingCap, co.rsk.core.Coin newLockingCap) {
         requireNonNull(caller);
         requireNonNull(previousLockingCap);
@@ -379,6 +423,21 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         byte[] encodedData = event.encodeEventData(enablePowPegToUnionBridge, enableUnionBridgeToPowPeg);
 
         addLog(encodedTopics, encodedData);
+    }
+
+    private void validateUtxosRegisteredArgs(
+        Sha256Hash btcTxHash,
+        List<Coin> values,
+        List<Long> outputIndexes,
+        Address federationBtcAddress
+    ) {
+        requireNonNull(btcTxHash);
+        requireNonNull(federationBtcAddress);
+        requireNonNull(values);
+        requireNonNull(outputIndexes);
+        if (values.size() != outputIndexes.size()) {
+            throw new IllegalArgumentException("values and outputIndexes must have the same size");
+        }
     }
 
     private byte[] flatKeys(List<BtcECKey> keys, Function<BtcECKey, byte[]> parser) {
