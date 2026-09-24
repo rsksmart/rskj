@@ -801,6 +801,21 @@ class BridgeEventLoggerImplTest {
             ));
             assertTrue(eventLogs.isEmpty());
         }
+
+        @Test
+        void logUtxosRegistered_whenNegativeOutputIndex_shouldThrowInvalidOutputIndexException() {
+            // arrange
+            List<Long> outputIndexes = List.of(-1L);
+
+            // act & assert
+            assertThrows(InvalidOutputIndexException.class, () -> eventLogger.logUtxosRegistered(
+                btcTxHash,
+                singleValue,
+                outputIndexes,
+                federationBtcAddress
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
     }
 
     @ParameterizedTest
