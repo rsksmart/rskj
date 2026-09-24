@@ -1067,6 +1067,44 @@ class BridgeEventLoggerImplTest {
             ));
             assertTrue(eventLogs.isEmpty());
         }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenSingleUtxo_shouldEmitEvent() {
+            // act
+            eventLogger.logFlyoverUtxosRegistered(
+                btcTxHash,
+                singleValue,
+                singleOutputIndex,
+                federationBtcAddress,
+                flyoverDerivationHash
+            );
+
+            // assert
+            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(singleValue);
+            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(singleOutputIndex);
+            assertLogFlyoverUtxoRegisteredWasEmittedCorrectly(
+                expectedSerializedValues,
+                expectedSerializedOutputIndexes
+            );
+        }
+
+        private void assertLogFlyoverUtxoRegisteredWasEmittedCorrectly(
+            byte[] expectedSerializedValues,
+            byte[] expectedSerializedOutputIndexes
+        ) {
+            commonAssertLogs();
+            assertTopics(2);
+
+            Function expectedEvent = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
+            Object[] expectedTopics = {btcTxHash.getBytes()};
+            Object[] expectedData = {
+                expectedSerializedValues,
+                expectedSerializedOutputIndexes,
+                federationBtcAddress.toString(),
+                flyoverDerivationHash.getBytes()
+            };
+            assertEvent(expectedEvent, expectedTopics, expectedData);
+        }
     }
 
     @ParameterizedTest
