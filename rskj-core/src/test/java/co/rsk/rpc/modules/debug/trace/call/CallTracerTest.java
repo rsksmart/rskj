@@ -103,6 +103,31 @@ class CallTracerTest {
         assertOOGError(traceResult.getCalls().get(0).getCalls().get(0));
     }
 
+    /** A RSKIP-560 failed direct precompile call (status 0) must carry an error in the callTracer. */
+    @Test
+    void failedPrecompileCallTrace() throws Exception {
+        DslParser parser = DslParser.fromResource("dsl/trace_failed_precompile.txt");
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+        ExecutionBlockRetriever executionBlockRetriever = Mockito.mock(ExecutionBlockRetriever.class);
+        Web3InformationRetriever web3InformationRetriever = new Web3InformationRetriever(world.getTransactionPool(), world.getBlockChain(), world.getRepositoryLocator(), executionBlockRetriever);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        TransactionReceipt receipt = world.getTransactionReceiptByName("tx01");
+        assertFalse(receipt.isSuccessful());
+
+        CallTracer callTracer = new CallTracer(world.getBlockStore(), world.getBlockExecutor(), web3InformationRetriever, receiptStore, world.getBlockChain());
+
+        JsonNode result = callTracer.traceTransaction(receipt.getTransaction().getHash().toJsonString(), new TraceOptions());
+        TxTraceResult traceResult = objectMapper.treeToValue(result, TxTraceResult.class);
+
+        assertNotNull(traceResult);
+        assertNotNull(traceResult.getError());
+        assertFalse(traceResult.getError().isEmpty());
+    }
+
     /**
      * Verifies that callTracer succeeds on transactions with internal calls.
      * The contract calls itself recursively via this.recurse(depth - 1).
