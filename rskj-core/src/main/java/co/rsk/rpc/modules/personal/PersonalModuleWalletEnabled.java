@@ -209,7 +209,12 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         String txHash;
 
         synchronized (transactionPool) {
-            Transaction tx = Transaction.fromCallArguments(args, getAccountNextNonce(senderAccount),  constants.getChainId());
+            Transaction tx;
+            try {
+                tx = Transaction.fromCallArguments(args, getAccountNextNonce(senderAccount),  constants.getChainId());
+            } catch (IllegalArgumentException e) {
+                throw RskJsonRpcRequestException.invalidParamError("Invalid transaction: " + e.getMessage(), e);
+            }
             tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
             tx.checkInvalidChain(constants, ""+tx.getChainId());
 
