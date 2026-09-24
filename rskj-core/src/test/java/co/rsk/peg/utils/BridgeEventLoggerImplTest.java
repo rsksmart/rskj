@@ -731,6 +731,18 @@ class BridgeEventLoggerImplTest {
             ));
             assertTrue(eventLogs.isEmpty());
         }
+
+        @Test
+        void logUtxosRegistered_whenNullValues_shouldThrowNullPointerException() {
+            // act & assert
+            assertThrows(NullPointerException.class, () -> eventLogger.logUtxosRegistered(
+                btcTxHash,
+                null,
+                singleOutputIndex,
+                federationBtcAddress
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
     }
 
     @ParameterizedTest
