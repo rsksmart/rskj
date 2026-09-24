@@ -829,17 +829,12 @@ class BridgeEventLoggerImplTest {
             );
 
             // assert
-            commonAssertLogs();
-            assertTopics(2);
-
-            Function expectedEvent = BridgeEvents.UTXOS_REGISTERED.getEvent();
-            Object[] expectedTopics = {btcTxHash.getBytes()};
-            Object[] expectedData = {
-                UtxoUtils.encodeOutpointValues(singleValue),
-                UtxoUtils.encodeOutputIndexes(singleOutputIndex),
-                federationBtcAddress.toString()
-            };
-            assertEvent(expectedEvent, expectedTopics, expectedData);
+            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(singleValue);
+            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(singleOutputIndex);
+            assertLogUtxoRegisteredWasEmittedCorrectly(
+                expectedSerializedValues,
+                expectedSerializedOutputIndexes
+            );
         }
 
         @Test
@@ -857,17 +852,12 @@ class BridgeEventLoggerImplTest {
             );
 
             // assert
-            commonAssertLogs();
-            assertTopics(2);
-
-            Function expectedEvent = BridgeEvents.UTXOS_REGISTERED.getEvent();
-            Object[] expectedTopics = {btcTxHash.getBytes()};
-            Object[] expectedData = {
-                UtxoUtils.encodeOutpointValues(values),
-                UtxoUtils.encodeOutputIndexes(outputIndexes),
-                federationBtcAddress.toString()
-            };
-            assertEvent(expectedEvent, expectedTopics, expectedData);
+            byte[] expectedSerializedValues = UtxoUtils.encodeOutpointValues(values);
+            byte[] expectedSerializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+            assertLogUtxoRegisteredWasEmittedCorrectly(
+                expectedSerializedValues,
+                expectedSerializedOutputIndexes
+            );
         }
 
         @Test
@@ -885,14 +875,24 @@ class BridgeEventLoggerImplTest {
             );
 
             // assert
+            assertLogUtxoRegisteredWasEmittedCorrectly(
+                EMPTY_BYTE_ARRAY,
+                EMPTY_BYTE_ARRAY
+            );
+        }
+
+        private void assertLogUtxoRegisteredWasEmittedCorrectly(
+            byte[] expectedSerializedValues,
+            byte[] expectedSerializedOutputIndexes
+        ) {
             commonAssertLogs();
             assertTopics(2);
 
             Function expectedEvent = BridgeEvents.UTXOS_REGISTERED.getEvent();
             Object[] expectedTopics = {btcTxHash.getBytes()};
             Object[] expectedData = {
-                EMPTY_BYTE_ARRAY,
-                EMPTY_BYTE_ARRAY,
+                expectedSerializedValues,
+                expectedSerializedOutputIndexes,
                 federationBtcAddress.toString()
             };
             assertEvent(expectedEvent, expectedTopics, expectedData);
