@@ -47,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.ethereum.core.Rskip546TestSupport.signatureWord;
 
 /**
  * Integration tests for typed transactions (RSKIP-543/546) covering transport encoding,
@@ -217,8 +218,8 @@ class TypedTransactionIntegrationTest {
                 RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
                 Rskip546TestSupport.EMPTY_ACCESS_LIST,
                 RLP.encodeByte((byte) 0),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(signatureWord()),
+                RLP.encodeElement(signatureWord())
         };
         byte[] raw = ByteUtil.merge(
                 new byte[] { TransactionType.TYPE_2.getByteCode() },

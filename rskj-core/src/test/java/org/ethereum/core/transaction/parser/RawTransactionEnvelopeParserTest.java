@@ -221,6 +221,103 @@ class RawTransactionEnvelopeParserTest {
     }
 
     // -------------------------------------------------------------------------
+    // parse(CallArguments) — typed field bounds on the structured path
+    // -------------------------------------------------------------------------
+
+    /** 2^256: one more than the largest value a 32-byte field can hold. */
+    private static final String OVER_DATA_WORD = "0x1" + "0".repeat(64);
+
+    @Test
+    void parse_type1_valueWiderThanDataWord_throws() {
+        CallArguments args = typedArgs("0x1");
+        args.setValue(OVER_DATA_WORD);
+
+        assertRpcRejects(args, IllegalArgumentException.class, "Value is not valid");
+    }
+
+    @Test
+    void parse_type1_gasPriceWiderThanDataWord_throws() {
+        CallArguments args = typedArgs("0x1");
+        args.setGasPrice(OVER_DATA_WORD);
+
+        assertRpcRejects(args, IllegalArgumentException.class, "Gas Price is not valid");
+    }
+
+    @Test
+    void parse_type2_valueWiderThanDataWord_throws() {
+        CallArguments args = typedArgs("0x2");
+        args.setValue(OVER_DATA_WORD);
+
+        assertRpcRejects(args, IllegalArgumentException.class, "Value is not valid");
+    }
+
+    @Test
+    void parse_type2_maxFeeWiderThanDataWord_throws() {
+        CallArguments args = typedArgs("0x2");
+        args.setMaxFeePerGas(OVER_DATA_WORD);
+
+        assertRpcRejects(args, IllegalArgumentException.class, "Gas Price is not valid");
+    }
+
+    @Test
+    void parse_type2_maxPriorityFeeAboveMaxFee_throws() {
+        CallArguments args = typedArgs("0x2");
+        args.setMaxPriorityFeePerGas("0x3");
+        args.setMaxFeePerGas("0x2");
+
+        assertRpcRejects(args, IllegalArgumentException.class, "must not exceed maxFeePerGas");
+    }
+
+    @Test
+    void parse_type4_valueWiderThanDataWord_throws() {
+        CallArguments args = Rskip545TestSupport.defaultType4CallArguments(null);
+        args.setValue(OVER_DATA_WORD);
+
+        assertRpcRejects(args, IllegalArgumentException.class, "Value is not valid");
+    }
+
+    @Test
+    void parse_type4_missingMaxFee_throws() {
+        CallArguments args = Rskip545TestSupport.defaultType4CallArguments(null);
+        args.setMaxFeePerGas(null);
+
+        assertRpcRejects(args, RskJsonRpcRequestException.class, "Type 4 transaction requires maxFeePerGas");
+    }
+
+    @Test
+    void parse_typedWithoutChainId_throws() {
+        CallArguments args = typedArgs("0x2");
+        args.setChainId(null);
+
+        assertRpcRejects(args, RskJsonRpcRequestException.class, "Typed transaction requires chainId");
+    }
+
+    private static CallArguments typedArgs(String type) {
+        CallArguments args = new CallArguments();
+        args.setType(type);
+        args.setTo(Rskip545TestSupport.DEFAULT_RECEIVER.toHexString());
+        args.setGas("0x5208");
+        args.setValue("0x0");
+        args.setNonce("0x1");
+        args.setChainId("0x21");
+        if ("0x1".equals(type)) {
+            args.setGasPrice("0x1");
+        } else {
+            args.setMaxPriorityFeePerGas("0x1");
+            args.setMaxFeePerGas("0x2");
+        }
+        return args;
+    }
+
+    private static void assertRpcRejects(CallArguments args, Class<? extends RuntimeException> expected,
+                                         String expectedMessageFragment) {
+        RuntimeException ex = assertThrows(expected,
+                () -> Transaction.fromCallArguments(args, () -> "0x1", REGTEST_CHAIN_ID));
+        assertTrue(ex.getMessage().contains(expectedMessageFragment),
+                "Expected message containing '" + expectedMessageFragment + "', got: " + ex.getMessage());
+    }
+
+    // -------------------------------------------------------------------------
     // parse(byte[]) — RLP path
     // -------------------------------------------------------------------------
 

@@ -1143,15 +1143,31 @@ class TransactionPoolImplTest {
         Account sender = createAccount(1);
         Account receiver = createAccount(2);
 
-        Transaction tx = Transaction.builder()
-                .nonce(new byte[9])
-                .gasPrice(BigInteger.ONE)
-                .gasLimit(BigInteger.valueOf(21000))
-                .receiveAddress(receiver.getAddress())
-                .value(BigInteger.valueOf(1000))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .build();
-        tx.sign(sender.getEcKey().getPrivKeyBytes());
+        // Structured ingress minimises the nonce (TransactionInput.resolveNonceBytes), so the
+        // builder can no longer express a non-canonical one. The validator under test guards raw
+        // ingress, where such a nonce still arrives on the legacy path, so the fixture is signed
+        // with the raw field and then round-tripped through Transaction.fromRaw — the same entry
+        // point eth_sendRawTransaction and the P2P handler use.
+        Transaction signed = new Transaction(
+                new byte[9],
+                Coin.valueOf(1),
+                BigInteger.valueOf(21000).toByteArray(),
+                receiver.getAddress(),
+                Coin.valueOf(1000),
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                false,
+                TransactionTypePrefix.legacy(),
+                null,
+                null,
+                null,
+                null);
+        signed.sign(sender.getEcKey().getPrivKeyBytes());
+
+        Transaction tx = Transaction.fromRaw(signed.getEncoded());
+
+        // Legacy raw ingress accepts the non-minimal nonce; rejecting it is the pool's job.
+        Assertions.assertArrayEquals(new byte[9], tx.getNonce());
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 

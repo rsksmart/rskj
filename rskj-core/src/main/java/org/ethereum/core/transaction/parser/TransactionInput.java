@@ -268,25 +268,41 @@ public final class TransactionInput {
         return chainId == 0 ? defaultChainId : chainId;
     }
 
+    /**
+     * Zero is rejected rather than defaulted: the typed encoders spell it as an empty chainId field,
+     * which the raw parser then refuses, so the transaction could not be reparsed from its own
+     * encoding. Legacy keeps its separate zero-to-default behaviour. The bound itself lives in
+     * {@link CommonParsingUtils#isValidTypedChainId}, shared with the raw path.
+     */
     static byte resolveTypedChainId(@Nullable Byte chainId) {
         if (chainId == null) {
             throw invalidParamError("Typed transaction requires chainId");
         }
+        if (!CommonParsingUtils.isValidTypedChainId(BigInteger.valueOf(Byte.toUnsignedInt(chainId)))) {
+            throw invalidParamError("Typed transaction chainId must be between 1 and "
+                    + CommonParsingUtils.MAX_TYPED_CHAIN_ID);
+        }
         return chainId;
     }
 
-    static BigInteger resolveGasLimit(@Nullable byte[] gasLimitBytes) {
-        if (gasLimitBytes == null) {
-            return DEFAULT_GAS_LIMIT;
-        }
+    /**
+     * Callers pass {@code gasLimit()}, which clones through {@link ByteUtil#cloneBytes} and yields
+     * an empty array rather than null, so an omitted gas limit resolves to zero;
+     * {@link #DEFAULT_GAS_LIMIT} applies only on the {@code CallArguments} path.
+     */
+    static BigInteger resolveGasLimit(byte[] gasLimitBytes) {
         CommonParsingUtils.requireDataWordBytes(gasLimitBytes, "Gas Limit is not valid");
         return new BigInteger(1, gasLimitBytes);
     }
 
-    // nonceBytes is always TransactionInput.nonce(), which never surfaces a true null
-    // (ByteUtil.cloneBytes(null) -> empty array), so no null-defaulting is needed here.
+    /**
+     * Structured ingress accepts caller-supplied bytes, so the nonce is minimised here: leading
+     * zeros are dropped and zero becomes the empty string, giving one encoding per transaction.
+     * The width bound applies to the minimised value, not to the spelling received.
+     */
     static byte[] resolveNonceBytes(byte[] nonceBytes) {
-        CommonParsingUtils.requireDataWordBytes(nonceBytes, "Nonce is not valid");
-        return nonceBytes;
+        byte[] minimal = CommonParsingUtils.unsignedBytes(new BigInteger(1, nonceBytes));
+        CommonParsingUtils.requireDataWordBytes(minimal, "Nonce is not valid");
+        return minimal;
     }
 }

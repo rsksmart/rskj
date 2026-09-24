@@ -22,6 +22,7 @@ import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Rskip545TestSupport;
+import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.SetCodeAuthorization;
@@ -236,8 +237,7 @@ class Type4RawTransactionParserTest {
         base[10] = RLP.encodeByte(yParity);
         RLPList fields = RLP.decodeList(RLP.encodeList(base));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
+        assertRlpRejects(fields, "yParity must be 0 or 1, got: " + yParity);
     }
 
     @Test
@@ -246,8 +246,7 @@ class Type4RawTransactionParserTest {
         base[12] = RLP.encodeElement(null);
         RLPList fields = RLP.decodeList(RLP.encodeList(base));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
+        assertRlpRejects(fields, "Typed transaction signature is incomplete");
     }
 
     @Test
@@ -256,8 +255,7 @@ class Type4RawTransactionParserTest {
         base[0] = RLP.encodeElement(new byte[0]);
         RLPList fields = RLP.decodeList(RLP.encodeList(base));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
+        assertRlpRejects(fields, "Typed transaction chainId must not be zero or absent");
     }
 
     @ParameterizedTest(name = "parse_rlp rejects oversize chainId={0}")
@@ -267,8 +265,7 @@ class Type4RawTransactionParserTest {
         base[0] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(chainIdValue)));
         RLPList fields = RLP.decodeList(RLP.encodeList(base));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
+        assertRlpRejects(fields, "Typed transaction chainId must be between 1 and 255, got: " + chainIdValue);
     }
 
     @Test
@@ -278,8 +275,7 @@ class Type4RawTransactionParserTest {
         base[3] = RLP.encodeCoinNonNullZero(Coin.valueOf(100));
         RLPList fields = RLP.decodeList(RLP.encodeList(base));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
+        assertRlpRejects(fields, "must not exceed maxFeePerGas");
     }
 
     @Test
@@ -537,8 +533,8 @@ class Type4RawTransactionParserTest {
                 RLP.encodeList(),
                 authListBytes,
                 RLP.encodeByte((byte) 0),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(Rskip546TestSupport.signatureWord()),
+                RLP.encodeElement(Rskip546TestSupport.signatureWord())
         };
         return RLP.decodeList(RLP.encodeList(fields));
     }
@@ -571,5 +567,12 @@ class Type4RawTransactionParserTest {
         entry.setS("0x01");
         args.setAuthorizationList(List.of(entry));
         return args;
+    }
+
+    private void assertRlpRejects(RLPList fields, String expectedMessageFragment) {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
+        assertTrue(ex.getMessage().contains(expectedMessageFragment),
+                "Expected message containing '" + expectedMessageFragment + "', got: " + ex.getMessage());
     }
 }

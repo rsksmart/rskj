@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.ethereum.core.Rskip546TestSupport.signatureWord;
 
 /**
  * Unit tests for {@link TypedTransactionCodec}.
@@ -89,8 +90,8 @@ class TypedTransactionCodecTest {
     void parseTypedSignatureState_rPresentSAbsent_throws() {
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(new byte[]{33}),
-                RLP.encodeElement(new byte[]{0}),
-                RLP.encodeElement(new byte[32]),    // r present
+                RLP.encodeByte((byte) 0),
+                RLP.encodeElement(signatureWord()),  // r present
                 RLP.encodeElement(null)              // s absent
         );
         RLPList list = (RLPList) RLP.decode2(encoded).get(0);
@@ -103,9 +104,9 @@ class TypedTransactionCodecTest {
     void parseTypedSignatureState_rAbsentSPresent_throws() {
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(new byte[]{33}),
-                RLP.encodeElement(new byte[]{0}),
+                RLP.encodeByte((byte) 0),
                 RLP.encodeElement(null),             // r absent
-                RLP.encodeElement(new byte[32])      // s present
+                RLP.encodeElement(signatureWord())   // s present
         );
         RLPList list = (RLPList) RLP.decode2(encoded).get(0);
 
@@ -116,7 +117,7 @@ class TypedTransactionCodecTest {
     @ParameterizedTest
     @ValueSource(bytes = {0, 1})
     void parseTypedSignatureState_validYParity_returnsSignedSignature(byte yParity) {
-        byte[] dummyRS = new byte[32];
+        byte[] dummyRS = signatureWord();
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(new byte[]{33}),       // chainId = 33
                 RLP.encodeByte(yParity),                 // yParity, as the encoder spells it
@@ -137,7 +138,7 @@ class TypedTransactionCodecTest {
      */
     @Test
     void parseTypedSignatureState_emptyYParity_decodesAsZero() {
-        byte[] dummyRS = new byte[32];
+        byte[] dummyRS = signatureWord();
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(new byte[]{33}),  // chainId = 33
                 RLP.encodeByte((byte) 0),           // yParity = 0, canonically encoded as empty
@@ -155,7 +156,7 @@ class TypedTransactionCodecTest {
 
     @Test
     void parseTypedSignatureState_yParityOutOfRange_throws() {
-        byte[] dummyRS = new byte[32];
+        byte[] dummyRS = signatureWord();
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(new byte[]{33}),
                 RLP.encodeElement(new byte[]{2}),   // invalid yParity
@@ -171,7 +172,7 @@ class TypedTransactionCodecTest {
     /** The shared parse rejects 0x00 on the envelope, as it already did on the authorization tuple. */
     @Test
     void parseTypedSignatureState_yParityLeadingZero_throws() {
-        byte[] dummyRS = new byte[32];
+        byte[] dummyRS = signatureWord();
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(new byte[]{33}),
                 RLP.encodeElement(new byte[]{0}),
@@ -201,7 +202,7 @@ class TypedTransactionCodecTest {
 
     @Test
     void parseTypedSignatureState_yParityMultiByte_throws() {
-        byte[] dummyRS = new byte[32];
+        byte[] dummyRS = signatureWord();
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(new byte[]{33}),
                 RLP.encodeElement(new byte[]{0, 1}),

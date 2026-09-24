@@ -20,10 +20,12 @@ package org.ethereum.core.transaction.parser;
 import co.rsk.core.types.bytes.BytesSlice;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -45,8 +47,10 @@ public final class RawTransactionEnvelopeParser {
         rejectUnsupportedNamespace(typePrefix);
         BytesSlice payload = TransactionTypePrefix.stripPrefix(rawData, typePrefix);
         RLPList txFields = RLP.decodeList(payload);
+        ParsedRawTransaction parsed = resolveParser(typePrefix).parse(typePrefix, txFields);
+        requireCanonicalEnvelopeRlp(typePrefix, payload, txFields);
 
-        return resolveParser(typePrefix).parse(typePrefix, txFields);
+        return parsed;
     }
 
     public static ParsedRawTransaction parse(CallArguments argsParam, Supplier<String> nonceSupplier, byte defaultChainId) {
@@ -72,6 +76,30 @@ public final class RawTransactionEnvelopeParser {
             case TYPE_3 -> throw new IllegalArgumentException("Unsupported transaction type: " + typePrefix);
             case TYPE_4 -> type4Parser;
         };
+    }
+
+    /**
+     * Requires re-encoding the decoded tree to reproduce the payload received, so each item is
+     * framed the way the sender wrote it. The scalar checks inspect a decoded payload and cannot see
+     * its frame — {@code 0x81 0x05} and {@code 0x05} decode alike.
+     *
+     * <p>Framing only. Scalar minimality is a separate rule, enforced per field by
+     * {@link CommonParsingUtils#requireCanonicalScalar}: a non-minimal scalar is a well-formed item
+     * that re-encodes to itself, so this check cannot see it. The two are complements, not
+     * alternatives — neither makes the other redundant.
+     *
+     * <p>Runs after the type parser, so the tree it walks already has the shape the schema defines.
+     *
+     * <p>Typed transactions only.
+     */
+    private static void requireCanonicalEnvelopeRlp(TransactionTypePrefix typePrefix, BytesSlice payload, RLPList txFields) {
+        if (typePrefix.type() == TransactionType.LEGACY) {
+            return;
+        }
+        if (!Arrays.equals(payload.copyArray(), CommonParsingUtils.reencodeCanonical(txFields))) {
+            throw new IllegalArgumentException(
+                    "Typed transaction envelope is not canonically encoded");
+        }
     }
 
     private static void rejectUnsupportedNamespace(TransactionTypePrefix typePrefix) {
