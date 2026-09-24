@@ -327,6 +327,9 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         if (values.size() != outputIndexes.size()) {
             throw new IllegalArgumentException("values and outputIndexes must have the same size");
         }
+
+        byte[] serializedValues = UtxoUtils.encodeOutpointValues(values);
+        byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
     }
 
     @Override
