@@ -100,6 +100,49 @@ class PrecompiledContractExceptionActivationTest {
         }
     }
 
+    /**
+     * A transaction without an authorization list sends 0xdeadbeef to the Bridge with gas
+     * limit 40_000. It covers the intrinsic cost of 21_000 + 4 * 16 = 21_064, but not 21_064 + 23_000 = 44_064,
+     * so the Bridge does not execute. Before and after activation: status 0, gasUsed = fee = 40_000, no state
+     * change and no log.
+     */
+    // RSKIP-692 test case 8
+    @ParameterizedTest(name = "rskip692Active={0}")
+    @ValueSource(booleans = {true, false})
+    void directCallWithInsufficientGasChargesGasLimitRegardlessOfActivation(boolean rskip692Active) {
+        TestSystemProperties config = configWith(withRskip692(new TestSystemProperties().getActivationConfig(), rskip692Active));
+        TransactionExecutorFactory transactionExecutorFactory = newTransactionExecutorFactory(config);
+
+        Repository track = createRepository().startTracking();
+        Account sender = createAccount("acctest1", track, Coin.valueOf(6_000_000L));
+        track.commit();
+
+        Transaction tx = Transaction.builder()
+                .nonce(track.getNonce(sender.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(40_000L))
+                .receiveAddress(PrecompiledContracts.BRIDGE_ADDR)
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(Coin.ZERO)
+                .data(Hex.decode("deadbeef"))
+                .build();
+        tx.sign(sender.getEcKey().getPrivKeyBytes());
+
+        Block block = childOfGenesis(config, track, tx);
+        TransactionExecutor executor = transactionExecutorFactory.newInstance(tx, 0, block.getCoinbase(), track, block, 0L);
+
+        Assertions.assertTrue(executor.executeTransaction());
+
+        TransactionReceipt receipt = executor.getReceipt();
+        Assertions.assertFalse(receipt.isSuccessful());
+        Assertions.assertEquals(BigInteger.valueOf(40_000L), new BigInteger(1, receipt.getGasUsed()));
+        Assertions.assertEquals(Coin.valueOf(40_000L), executor.getPaidFees());
+        Assertions.assertEquals(Coin.valueOf(6_000_000L - 40_000L), track.getBalance(sender.getAddress()));
+        Assertions.assertEquals(BigInteger.ONE, track.getNonce(sender.getAddress()));
+        Assertions.assertTrue(receipt.getLogInfoList().isEmpty());
+        Assertions.assertFalse(track.isExist(PrecompiledContracts.BRIDGE_ADDR));
+    }
+
     // RSKIP-692 test case 3
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
