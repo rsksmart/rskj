@@ -113,6 +113,7 @@ public class TransactionExecutor {
     private final boolean postponeFeePayment;
 
     private long authorizationRefund = 0;
+    private boolean precompileExecutionFailed = false;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -418,6 +419,7 @@ public class TransactionExecutor {
                     track.initializeStorage(targetAddress);
                 }
             } catch (VMException | RuntimeException e) {
+                precompileExecutionFailed = true;
                 if (!localCall && activations.isActive(ConsensusRule.RSKIP692)) {
                     gasLeftover = 0;
                     gasUsed = txGasLimit;
@@ -696,8 +698,18 @@ public class TransactionExecutor {
         logger.trace("tx finalization for gas estimation done");
     }
 
+    /**
+     * Before RSKIP692 a failing direct call to a precompiled contract is charged the full gas limit even though
+     * gasLeftover is not zero. Every other outcome is charged by gasLeftover. After an EVM exceptional halt
+     * gasLeftover holds only the capped authorization refund, because the halt clears the future refund and the
+     * deleted accounts, so a transaction without an authorization list is still charged the full gas limit.
+     */
+    private boolean chargesFullGasLimit() {
+        return precompileExecutionFailed && !activations.isActive(ConsensusRule.RSKIP692);
+    }
+
     private Coin calculateFee() {
-        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP692)) {
+        if (chargesFullGasLimit()) {
             return tx.getGasPrice().multiply(toBI(tx.getGasLimit()));
         }
         BigInteger chargedGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(gasLeftover));
@@ -705,7 +717,7 @@ public class TransactionExecutor {
     }
 
     private Coin calculateRefund() {
-        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP692)) {
+        if (chargesFullGasLimit()) {
             return Coin.ZERO;
         }
         return tx.getGasPrice().multiply(BigInteger.valueOf(gasLeftover));
