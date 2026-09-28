@@ -38,6 +38,7 @@ import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
+import java.util.HashMap;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.util.RLP;
@@ -693,9 +694,9 @@ public class BridgeSerializationUtils {
     }
 
     /**
-     * These encodings store a bare 20-byte hash, so they can only carry a legacy destination.
-     * Every destination is legacy today. Fail by name rather than reading the hash through the
-     * interface, which would compile and write a witness program where a hash160 belongs.
+     * The legacy encodings store a bare 20-byte hash, so they can only carry a legacy destination.
+     * Only entries created before RSKIP690 reach them, and before that activation the bridge had no
+     * way to queue anything else, so this is an invariant check rather than an expected case.
      */
     private static byte[] legacyDestinationHash(ReleaseRequestQueue.Entry entry) {
         Address destination = entry.getDestination();
@@ -750,7 +751,7 @@ public class BridgeSerializationUtils {
         int n = rlpList.size() / 2;
         for (int k = 0; k < n; k++) {
             byte[] addressBytes = rlpList.get(k * 2).getRLPData();
-            LegacyAddress address = new LegacyAddress(networkParameters, addressBytes);
+            Address address = new LegacyAddress(networkParameters, addressBytes);
             long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
             entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount), null));
@@ -766,7 +767,7 @@ public class BridgeSerializationUtils {
         int n = rlpList.size() / 3;
         for (int k = 0; k < n; k++) {
             byte[] addressBytes = rlpList.get(k * 3).getRLPData();
-            LegacyAddress address = new LegacyAddress(networkParameters, addressBytes);
+            Address address = new LegacyAddress(networkParameters, addressBytes);
             long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 3 + 1).getRLPData()).longValue();
 
             Keccak256 txHash = deserializeRskTxHash(rlpList.get(k * 3 + 2).getRLPData());
@@ -776,6 +777,81 @@ public class BridgeSerializationUtils {
 
         return entries;
     }
+
+    // The post-activation peg-out request queue is serialized as follows:
+    // [addressString_1, amount_1, rskTxHash_1, ..., addressString_n, amount_n, rskTxHash_n]
+    //
+    // The destination is stored as its address string rather than as a bare hash. An address is
+    // exactly the serialization of network, type and program, so the type comes back with it and
+    // no parallel structure is needed. The pre-activation format (a bare 20-byte hash160, with the
+    // type implied to be P2PKH) is still read from its own storage cell during the grace period;
+    // see BridgeStorageProvider.
+    public static byte[] serializePegoutRequestQueue(ReleaseRequestQueue queue) {
+        List<ReleaseRequestQueue.Entry> entries = queue.getEntriesWithHash();
+
+        byte[][] bytes = new byte[entries.size() * 3][];
+        int n = 0;
+
+        for (ReleaseRequestQueue.Entry entry : entries) {
+            bytes[n++] = RLP.encodeElement(entry.getDestination().toString().getBytes(StandardCharsets.UTF_8));
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getAmount().getValue()));
+            bytes[n++] = RLP.encodeElement(entry.getRskTxHash().getBytes());
+        }
+
+        return RLP.encodeList(bytes);
+    }
+
+
+//    public static byte[] serializeReleaseRequestQueueWithTxHash(ReleaseRequestQueue queue) {
+//        List<ReleaseRequestQueue.Entry> entries = queue.getEntriesWithHash();
+//
+//        byte[][] bytes = new byte[entries.size() * 3][];
+//        int n = 0;
+//
+//        for (ReleaseRequestQueue.Entry entry : entries) {
+//            bytes[n++] = RLP.encodeElement(entry.getDestination().getHash160());
+//            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getAmount().getValue()));
+//            bytes[n++] = RLP.encodeElement(entry.getRskTxHash().getBytes());
+//        }
+//
+//        return RLP.encodeList(bytes);
+//    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializePegoutRequestQueue
+    public static List<ReleaseRequestQueue.Entry> deserializePegoutRequestQueue(
+        byte[] data, NetworkParameters networkParameters) {
+
+        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+        if (data == null || data.length == 0) {
+            return entries;
+        }
+
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
+        if (rlpList.size() % 3 != 0) {
+            throw new RuntimeException(String.format(
+                "Invalid serialized peg-out request queue. Expected a multiple of 3 elements, but got %d",
+                rlpList.size()));
+        }
+
+        int n = rlpList.size() / 3;
+        for (int k = 0; k < n; k++) {
+            String address = new String(rlpList.get(k * 3).getRLPData(), StandardCharsets.UTF_8);
+            Address destination = AddressParser.getDefault(networkParameters).parseAddress(address);
+            long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 3 + 1).getRLPData()).longValue();
+            Keccak256 txHash = deserializeRskTxHash(rlpList.get(k * 3 + 2).getRLPData());
+
+            entries.add(new ReleaseRequestQueue.Entry(destination, Coin.valueOf(amount), txHash));
+        }
+
+        return entries;
+    }
+
+    // [rskTxHash_1, typeCode_1, ..., rskTxHash_n, typeCode_n]
+    // Only entries whose destination type is not the default (P2PKH) are recorded, so this
+    // entry stays absent entirely until a non-legacy peg-out is requested, and the queue's own
+    // format is left untouched. Rebuilding it from the live queue on every save means entries
+    // that have left the queue drop out on their own, with no separate cleanup.
+
 
     // A PegoutsWaitingForConfirmations is serialized as follows:
     // [btctx_1, height_1, ..., btctx_n, height_n]

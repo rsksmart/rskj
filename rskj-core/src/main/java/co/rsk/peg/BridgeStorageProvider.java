@@ -183,11 +183,23 @@ public class BridgeStorageProvider {
             return releaseRequestQueue;
         }
 
+        // Pre-activation entries. These are all P2PKH, since that was the only destination the
+        // bridge could produce, and their stored form is a bare 20-byte hash with no type.
+        // They keep being read until the cell drains, which happens on the first save after
+        // activation: everything is rewritten into the new cell and this one is emptied.
         entries.addAll(getFromRepository(
                 RELEASE_REQUEST_QUEUE_WITH_TXHASH,
                 data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters, true)
                 )
         );
+
+        if (activations.isActive(RSKIP690)) {
+            entries.addAll(getFromRepository(
+                    PEGOUT_REQUEST_QUEUE,
+                    data -> BridgeSerializationUtils.deserializePegoutRequestQueue(data, networkParameters)
+                    )
+            );
+        }
 
         releaseRequestQueue = new ReleaseRequestQueue(entries);
 
@@ -201,9 +213,22 @@ public class BridgeStorageProvider {
 
         safeSaveToRepository(RELEASE_REQUEST_QUEUE, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueue);
 
-        if(activations.isActive(RSKIP146)) {
-            safeSaveToRepository(RELEASE_REQUEST_QUEUE_WITH_TXHASH, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueueWithTxHash);
+        if (!activations.isActive(RSKIP146)) {
+            return;
         }
+
+        if (!activations.isActive(RSKIP690)) {
+            safeSaveToRepository(RELEASE_REQUEST_QUEUE_WITH_TXHASH, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueueWithTxHash);
+            return;
+        }
+
+        // After activation every request with a tx hash lives in the new cell, whatever its
+        // destination type. The pre-activation cell is emptied on this first save rather than
+        // kept alive behind a grace period: the entries were merged into the queue on read, so
+        // writing them back in the new format moves them across in one step. That also means
+        // there is no window where the same request exists in both cells.
+        safeSaveToRepository(PEGOUT_REQUEST_QUEUE, releaseRequestQueue, BridgeSerializationUtils::serializePegoutRequestQueue);
+        safeSaveToRepository(RELEASE_REQUEST_QUEUE_WITH_TXHASH, new ReleaseRequestQueue(new ArrayList<>()), BridgeSerializationUtils::serializeReleaseRequestQueueWithTxHash);
     }
 
     public PegoutsWaitingForConfirmations getPegoutsWaitingForConfirmations() throws IOException {
