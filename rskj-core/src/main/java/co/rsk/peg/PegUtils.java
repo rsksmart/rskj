@@ -100,7 +100,7 @@ public class PegUtils {
             // Use legacy logic
             Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
             FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-            Address oldFederationAddress = Address.fromBase58(
+            LegacyAddress oldFederationAddress = LegacyAddress.fromBase58(
                 bridgeConstants.getBtcParams(),
                 federationConstants.getOldFederationAddress()
             );
@@ -276,8 +276,8 @@ public class PegUtils {
 
     public static Keccak256 getFlyoverDerivationHash(
         Keccak256 derivationArgumentsHash,
-        Address userRefundAddress,
-        Address lpBtcAddress,
+        LegacyAddress userRefundAddress,
+        LegacyAddress lpBtcAddress,
         RskAddress lbcAddress,
         ActivationConfig.ForBlock activations
     ) {
@@ -332,9 +332,9 @@ public class PegUtils {
         return new Keccak256(HashUtil.keccak256(result));
     }
 
-    public static Address getFlyoverFederationAddress(NetworkParameters networkParameters, Keccak256 flyoverDerivationHash, Federation federation) {
+    public static LegacyAddress getFlyoverFederationAddress(NetworkParameters networkParameters, Keccak256 flyoverDerivationHash, Federation federation) {
         Script flyoverScriptPubKey = getFlyoverFederationScriptPubKey(flyoverDerivationHash, federation);
-        return Address.fromP2SHScript(networkParameters, flyoverScriptPubKey);
+        return LegacyAddress.fromP2SHScript(networkParameters, flyoverScriptPubKey);
     }
 
     public static Script getFlyoverFederationScriptPubKey(Keccak256 flyoverDerivationHash, Federation federation) {

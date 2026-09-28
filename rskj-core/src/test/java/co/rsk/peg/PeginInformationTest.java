@@ -3,7 +3,7 @@ package co.rsk.peg;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -52,7 +52,7 @@ class PeginInformationTest {
         // Arrange
         BtcECKey key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress());
-        Address btcRefundAddressFromBtcLockSender = key.toAddress(networkParameters);
+        LegacyAddress btcRefundAddressFromBtcLockSender = key.toAddress(networkParameters);
         TxSenderAddressType senderBtcAddressType = TxSenderAddressType.P2PKH;
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
 
@@ -91,7 +91,7 @@ class PeginInformationTest {
         // Arrange
         BtcECKey address1Key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(address1Key.getPubKey()).getAddress());
-        Address btcRefundAddressFromBtcLockSender = address1Key.toAddress(networkParameters);
+        LegacyAddress btcRefundAddressFromBtcLockSender = address1Key.toAddress(networkParameters);
         TxSenderAddressType senderBtcAddressType = TxSenderAddressType.P2PKH;
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
 
@@ -106,7 +106,7 @@ class PeginInformationTest {
 
         BtcECKey address2Key = new BtcECKey();
         RskAddress rskDestinationAddressFromPeginInstructions = new RskAddress(ECKey.fromPublicOnly(address2Key.getPubKey()).getAddress());
-        Address btcRefundAddressFromPeginInstructions = address2Key.toAddress(networkParameters);
+        LegacyAddress btcRefundAddressFromPeginInstructions = address2Key.toAddress(networkParameters);
 
         PeginInstructionsVersion1 peginInstructionsMock = mock(PeginInstructionsVersion1.class);
         when(peginInstructionsMock.getProtocolVersion()).thenReturn(1);
@@ -149,7 +149,7 @@ class PeginInformationTest {
 
         BtcECKey address2Key = new BtcECKey();
         RskAddress rskDestinationAddressFromPeginInstructions = new RskAddress(ECKey.fromPublicOnly(address2Key.getPubKey()).getAddress());
-        Address btcRefundAddressFromPeginInstructions = address2Key.toAddress(networkParameters);
+        LegacyAddress btcRefundAddressFromPeginInstructions = address2Key.toAddress(networkParameters);
 
         PeginInstructionsVersion1 peginInstructionsMock = mock(PeginInstructionsVersion1.class);
         when(peginInstructionsMock.getProtocolVersion()).thenReturn(1);
@@ -186,7 +186,7 @@ class PeginInformationTest {
         // Arrange
         BtcECKey address1Key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(address1Key.getPubKey()).getAddress());
-        Address btcRefundAddressFromBtcLockSender = address1Key.toAddress(networkParameters);
+        LegacyAddress btcRefundAddressFromBtcLockSender = address1Key.toAddress(networkParameters);
         TxSenderAddressType senderBtcAddressType = TxSenderAddressType.P2PKH;
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
 
@@ -279,7 +279,7 @@ class PeginInformationTest {
         // Arrange
         BtcECKey address1Key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(address1Key.getPubKey()).getAddress());
-        Address btcRefundAddressFromBtcLockSender = address1Key.toAddress(networkParameters);
+        LegacyAddress btcRefundAddressFromBtcLockSender = address1Key.toAddress(networkParameters);
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
 
         BtcLockSender btcLockSenderMock = mock(P2pkhBtcLockSender.class);
@@ -347,7 +347,7 @@ class PeginInformationTest {
         // Arrange
         BtcECKey address1Key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(address1Key.getPubKey()).getAddress());
-        Address btcRefundAddressFromBtcLockSender = address1Key.toAddress(networkParameters);
+        LegacyAddress btcRefundAddressFromBtcLockSender = address1Key.toAddress(networkParameters);
         TxSenderAddressType senderBtcAddressType = TxSenderAddressType.P2PKH;
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
 
@@ -362,7 +362,7 @@ class PeginInformationTest {
 
         BtcECKey address2Key = new BtcECKey();
         RskAddress rskDestinationAddressFromPeginInstructions = new RskAddress(ECKey.fromPublicOnly(address2Key.getPubKey()).getAddress());
-        Address btcRefundAddressFromPeginInstructions = address2Key.toAddress(networkParameters);
+        LegacyAddress btcRefundAddressFromPeginInstructions = address2Key.toAddress(networkParameters);
 
         PeginInstructionsVersion1 peginInstructionsMock = mock(PeginInstructionsVersion1.class);
         when(peginInstructionsMock.getProtocolVersion()).thenReturn(1);
@@ -405,7 +405,7 @@ class PeginInformationTest {
 
         BtcECKey address2Key = new BtcECKey();
         RskAddress rskDestinationAddressFromPeginInstructions = new RskAddress(ECKey.fromPublicOnly(address2Key.getPubKey()).getAddress());
-        Address btcRefundAddressFromPeginInstructions = address2Key.toAddress(networkParameters);
+        LegacyAddress btcRefundAddressFromPeginInstructions = address2Key.toAddress(networkParameters);
 
         PeginInstructionsVersion1 peginInstructionsMock = mock(PeginInstructionsVersion1.class);
         when(peginInstructionsMock.getProtocolVersion()).thenReturn(1);

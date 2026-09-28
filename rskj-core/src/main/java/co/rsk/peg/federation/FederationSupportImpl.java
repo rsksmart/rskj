@@ -137,7 +137,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public Address getActiveFederationAddress() {
+    public LegacyAddress getActiveFederationAddress() {
         return getActiveFederation().getAddress();
     }
 
@@ -234,7 +234,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public Optional<Address> getRetiringFederationAddress() {
+    public Optional<LegacyAddress> getRetiringFederationAddress() {
         Optional<Federation> retiringFederation = getRetiringFederation();
         return retiringFederation.map(Federation::getAddress);
     }
@@ -389,7 +389,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public Optional<Address> getProposedFederationAddress() {
+    public Optional<LegacyAddress> getProposedFederationAddress() {
         return getProposedFederation()
             .map(Federation::getAddress);
     }

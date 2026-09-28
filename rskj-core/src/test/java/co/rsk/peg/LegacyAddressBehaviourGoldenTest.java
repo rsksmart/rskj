@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
@@ -16,10 +16,10 @@ import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Test;
 
 /**
- * Pins the byte-level behaviour of every legacy path that goes through {@link Address}.
+ * Pins the byte-level behaviour of every legacy path that goes through {@link LegacyAddress}.
  *
- * <p>This exists because replacing {@code Address} with the upstream
- * {@code Address}/{@code LegacyAddress}/{@code SegwitAddress} hierarchy is <b>not</b> gated by any
+ * <p>This exists because replacing {@code LegacyAddress} with the upstream
+ * {@code LegacyAddress}/{@code LegacyAddress}/{@code SegwitAddress} hierarchy is <b>not</b> gated by any
  * consensus rule: it takes effect the moment the jar ships, for every block, including replaying
  * history from genesis. So the refactor has to be byte-for-byte behaviour preserving, and these
  * assertions are what says so.</p>
@@ -42,19 +42,19 @@ class LegacyAddressBehaviourGoldenTest {
 
     @Test
     void p2pkhAddress_rendersTheSameBase58() {
-        assertEquals("1PbwjuQP3y9F3ZnbbWUvue4zpgkQuSbgD5", new Address(MAINNET, PUB_KEY_HASH).toBase58());
+        assertEquals("1PbwjuQP3y9F3ZnbbWUvue4zpgkQuSbgD5", new LegacyAddress(MAINNET, PUB_KEY_HASH).toBase58());
     }
 
     @Test
     void p2shAddress_rendersTheSameBase58() {
         assertEquals("3K3S2AmwUVYHSKaMmtzsxmfmMts1s9RsXe",
-            Address.fromP2SHHash(MAINNET, SCRIPT_HASH).toBase58());
+            LegacyAddress.fromP2SHHash(MAINNET, SCRIPT_HASH).toBase58());
     }
 
     @Test
     void toStringMatchesToBase58() {
         // The peg-out event and the whitelist both rely on this
-        Address address = new Address(MAINNET, PUB_KEY_HASH);
+        LegacyAddress address = new LegacyAddress(MAINNET, PUB_KEY_HASH);
         assertEquals(address.toBase58(), address.toString());
     }
 
@@ -62,14 +62,14 @@ class LegacyAddressBehaviourGoldenTest {
 
     @Test
     void p2pkhOutputScript_isUnchanged() {
-        Script script = ScriptBuilder.createOutputScript(new Address(MAINNET, PUB_KEY_HASH));
+        Script script = ScriptBuilder.createOutputScript(new LegacyAddress(MAINNET, PUB_KEY_HASH));
         assertEquals("76a914f7ee9ab7297134a0ccc76f3d50e94def17488f2c88ac",
             Hex.toHexString(script.getProgram()));
     }
 
     @Test
     void p2shOutputScript_isUnchanged() {
-        Script script = ScriptBuilder.createOutputScript(Address.fromP2SHHash(MAINNET, SCRIPT_HASH));
+        Script script = ScriptBuilder.createOutputScript(LegacyAddress.fromP2SHHash(MAINNET, SCRIPT_HASH));
         assertEquals("a914be56929d90f9eec61155469953f2e2e7ef400c6e87",
             Hex.toHexString(script.getProgram()));
     }
@@ -77,7 +77,7 @@ class LegacyAddressBehaviourGoldenTest {
     // --- peg-out queue serialization ---------------------------------------
 
     private static ReleaseRequestQueue queueWith(Keccak256 rskTxHash) {
-        Address destination = new Address(MAINNET, PUB_KEY_HASH);
+        LegacyAddress destination = new LegacyAddress(MAINNET, PUB_KEY_HASH);
         List<ReleaseRequestQueue.Entry> entries =
             Collections.singletonList(new ReleaseRequestQueue.Entry(destination, HALF_BTC, rskTxHash));
 
@@ -124,13 +124,13 @@ class LegacyAddressBehaviourGoldenTest {
     void addressEquality_isByVersionAndBytes() {
         // The federation recognises its own UTXOs by address equality. If the refactor changes
         // these semantics the federation stops seeing its funds, which no peg-out test would catch.
-        Address one = new Address(MAINNET, PUB_KEY_HASH);
-        Address other = new Address(MAINNET, PUB_KEY_HASH);
+        LegacyAddress one = new LegacyAddress(MAINNET, PUB_KEY_HASH);
+        LegacyAddress other = new LegacyAddress(MAINNET, PUB_KEY_HASH);
 
         assertEquals(one, other);
         assertEquals(one.hashCode(), other.hashCode());
-        assertTrue(Address.fromP2SHHash(MAINNET, PUB_KEY_HASH).isP2SHAddress());
+        assertTrue(LegacyAddress.fromP2SHHash(MAINNET, PUB_KEY_HASH).isP2SHAddress());
         // same 20 bytes, different version byte, must not be equal
-        assertNotEquals(one, Address.fromP2SHHash(MAINNET, PUB_KEY_HASH));
+        assertNotEquals(one, LegacyAddress.fromP2SHHash(MAINNET, PUB_KEY_HASH));
     }
 }

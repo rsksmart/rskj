@@ -57,7 +57,7 @@ class BridgeSupportRejectedPeginTest {
     private BridgeStorageProvider provider;
     private FederationStorageProvider federationStorageProvider;
 
-    private Address userAddress;
+    private LegacyAddress userAddress;
 
     private Federation activeFederation;
     private Federation retiringFederation;
@@ -490,9 +490,9 @@ class BridgeSupportRejectedPeginTest {
         ActivationConfig.ForBlock activations)
         throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams,
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams,
             "userRefundBtcAddress");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams,
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams,
             "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
@@ -525,7 +525,7 @@ class BridgeSupportRejectedPeginTest {
             activations
         );
 
-        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())

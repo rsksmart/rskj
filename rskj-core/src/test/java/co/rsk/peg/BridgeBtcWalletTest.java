@@ -37,9 +37,9 @@ class BridgeBtcWalletTest {
     }
 
     void setUpWalletAndNetworkParams(NetworkParameters params) {
-        Address multiSigAddress = Address.fromP2SHScript(params, ScriptBuilder.createP2SHOutputScript(multiSigRedeemScript));
+        LegacyAddress multiSigAddress = LegacyAddress.fromP2SHScript(params, ScriptBuilder.createP2SHOutputScript(multiSigRedeemScript));
         String p2PkhAddressSeed = "seed";
-        Address p2PkhAddress = BitcoinTestUtils.createP2PKHAddress(params, p2PkhAddressSeed);
+        LegacyAddress p2PkhAddress = BitcoinTestUtils.createP2PKHAddress(params, p2PkhAddressSeed);
 
         Context context = new Context(params);
         Context.propagate(context);

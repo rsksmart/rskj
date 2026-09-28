@@ -18,7 +18,7 @@
 
 package co.rsk.peg.whitelist;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.Coin;
 import com.google.common.primitives.UnsignedBytes;
 
@@ -35,35 +35,35 @@ import java.util.stream.Collectors;
  */
 public class LockWhitelist {
 
-    private static final Comparator<Address> LEXICOGRAPHICAL_COMPARATOR
-        = Comparator.comparing(Address::getHash160, UnsignedBytes.lexicographicalComparator());
+    private static final Comparator<LegacyAddress> LEXICOGRAPHICAL_COMPARATOR
+        = Comparator.comparing(LegacyAddress::getHash160, UnsignedBytes.lexicographicalComparator());
 
-    private SortedMap<Address, LockWhitelistEntry> whitelistedAddresses;
+    private SortedMap<LegacyAddress, LockWhitelistEntry> whitelistedAddresses;
     private int disableBlockHeight;
 
-    public LockWhitelist(Map<Address, LockWhitelistEntry> whitelistedAddresses) {
+    public LockWhitelist(Map<LegacyAddress, LockWhitelistEntry> whitelistedAddresses) {
         this(whitelistedAddresses, Integer.MAX_VALUE);
     }
 
-    public LockWhitelist(Map<Address, LockWhitelistEntry> whitelistedAddresses, int disableBlockHeight) {
+    public LockWhitelist(Map<LegacyAddress, LockWhitelistEntry> whitelistedAddresses, int disableBlockHeight) {
         // Save a copy so that this can't be modified from the outside
-        SortedMap<Address, LockWhitelistEntry> sortedWhitelistedAddresses = new TreeMap<>(LEXICOGRAPHICAL_COMPARATOR);
+        SortedMap<LegacyAddress, LockWhitelistEntry> sortedWhitelistedAddresses = new TreeMap<>(LEXICOGRAPHICAL_COMPARATOR);
         sortedWhitelistedAddresses.putAll(whitelistedAddresses);
         this.whitelistedAddresses = sortedWhitelistedAddresses;
         this.disableBlockHeight = disableBlockHeight;
     }
 
-    public boolean isWhitelisted(Address address) {
+    public boolean isWhitelisted(LegacyAddress address) {
         return whitelistedAddresses.containsKey(address);
     }
 
     public boolean isWhitelisted(byte[] address) {
         return whitelistedAddresses.keySet().stream()
-                .map(Address::getHash160)
+                .map(LegacyAddress::getHash160)
                 .anyMatch(hash -> Arrays.equals(hash, address));
     }
 
-    public boolean isWhitelistedFor(Address address, Coin amount, int height) {
+    public boolean isWhitelistedFor(LegacyAddress address, Coin amount, int height) {
         if (height > disableBlockHeight) {
             // Whitelist disabled
             return true;
@@ -77,7 +77,7 @@ public class LockWhitelist {
         return whitelistedAddresses.size();
     }
 
-    public List<Address> getAddresses() {
+    public List<LegacyAddress> getAddresses() {
         // Return a copy so that this can't be modified from the outside
         return new ArrayList<>(whitelistedAddresses.keySet());
     }
@@ -94,11 +94,11 @@ public class LockWhitelist {
         return new ArrayList<>(whitelistedAddresses.values());
     }
 
-    public LockWhitelistEntry get(Address address) {
+    public LockWhitelistEntry get(LegacyAddress address) {
         return this.whitelistedAddresses.get(address);
     }
 
-    public boolean put(Address address, LockWhitelistEntry entry) {
+    public boolean put(LegacyAddress address, LockWhitelistEntry entry) {
         if (whitelistedAddresses.containsKey(address)) {
             return false;
         }
@@ -107,7 +107,7 @@ public class LockWhitelist {
         return true;
     }
 
-    public boolean remove(Address address) {
+    public boolean remove(LegacyAddress address) {
         return whitelistedAddresses.remove(address) != null;
     }
 
@@ -115,7 +115,7 @@ public class LockWhitelist {
      * Marks the whitelisted address as consumed. This will reduce the number of usages, and if it gets down to zero remaining usages it will remove the address
      * @param address
      */
-    public void consume(Address address) {
+    public void consume(LegacyAddress address) {
         LockWhitelistEntry entry = whitelistedAddresses.get(address);
         if (entry == null) {
             return;

@@ -75,7 +75,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import co.rsk.RskTestUtils;
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.AddressFormatException;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcECKey;
@@ -511,7 +511,7 @@ class BridgeSupportTest {
 
         @Test
         void getActiveFederationAddress() {
-            Address address = federation.getAddress();
+            LegacyAddress address = federation.getAddress();
 
             when(federationSupport.getActiveFederationAddress()).thenReturn(address);
             assertThat(bridgeSupport.getActiveFederationAddress(), is(address));
@@ -593,9 +593,9 @@ class BridgeSupportTest {
 
         @Test
         void getRetiringFederationAddress() {
-            Address address = federation.getAddress();
+            LegacyAddress address = federation.getAddress();
 
-            Optional<Address> retiringFederationAddressOptional = Optional.of(address);
+            Optional<LegacyAddress> retiringFederationAddressOptional = Optional.of(address);
             when(federationSupport.getRetiringFederationAddress()).thenReturn(retiringFederationAddressOptional);
             assertThat(bridgeSupport.getRetiringFederationAddress(), is(retiringFederationAddressOptional));
         }
@@ -1639,7 +1639,7 @@ class BridgeSupportTest {
         verify(mockedEventLogger, never()).logLockBtc(
             any(RskAddress.class),
             any(BtcTransaction.class),
-            any(Address.class),
+            any(LegacyAddress.class),
             any(Coin.class)
         );
     }
@@ -1655,7 +1655,7 @@ class BridgeSupportTest {
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
-        when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
+        when(lockWhitelist.isWhitelistedFor(any(LegacyAddress.class), any(Coin.class), any(int.class))).thenReturn(true);
 
         FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
         when(federationStorageProviderMock.getNewFederation(any(), any())).thenReturn(genesisFederation);
@@ -1679,7 +1679,7 @@ class BridgeSupportTest {
 
         // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, bridgeMainNetConstants.getBtcParams());
-        Address address = senderBtcKey.toAddress(bridgeMainNetConstants.getBtcParams());
+        LegacyAddress address = senderBtcKey.toAddress(bridgeMainNetConstants.getBtcParams());
         whitelist.put(address, new OneOffWhiteListEntry(address, lockValue));
 
         // Create header and PMT
@@ -1742,7 +1742,7 @@ class BridgeSupportTest {
         verify(mockedEventLogger, atLeastOnce()).logLockBtc(
             any(RskAddress.class),
             any(BtcTransaction.class),
-            any(Address.class),
+            any(LegacyAddress.class),
             any(Coin.class)
         );
     }
@@ -1760,7 +1760,7 @@ class BridgeSupportTest {
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
-        when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
+        when(lockWhitelist.isWhitelistedFor(any(LegacyAddress.class), any(Coin.class), any(int.class))).thenReturn(true);
         WhitelistStorageProvider whitelistProvider = mock(WhitelistStorageProvider.class);
         when(whitelistProvider.getLockWhitelist(activations, btcMainnetParams)).thenReturn(lockWhitelist);
 
@@ -1852,7 +1852,7 @@ class BridgeSupportTest {
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
-        when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
+        when(lockWhitelist.isWhitelistedFor(any(LegacyAddress.class), any(Coin.class), any(int.class))).thenReturn(true);
         WhitelistStorageProvider whitelistProvider = mock(WhitelistStorageProvider.class);
         when(whitelistProvider.getLockWhitelist(activations, btcMainnetParams)).thenReturn(lockWhitelist);
 
@@ -1949,7 +1949,7 @@ class BridgeSupportTest {
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
-        when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
+        when(lockWhitelist.isWhitelistedFor(any(LegacyAddress.class), any(Coin.class), any(int.class))).thenReturn(true);
 
         FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
         when(federationStorageProviderMock.getNewFederation(any(), any())).thenReturn(genesisFederation);
@@ -1973,7 +1973,7 @@ class BridgeSupportTest {
 
         // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, btcMainnetParams);
-        Address address = senderBtcKey.toAddress(btcMainnetParams);
+        LegacyAddress address = senderBtcKey.toAddress(btcMainnetParams);
         whitelist.put(address, new OneOffWhiteListEntry(address, lockValue));
 
         // Create header and PMT
@@ -2031,7 +2031,7 @@ class BridgeSupportTest {
 
         bridgeSupport.registerBtcTransaction(rskTx, peginTx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
-        verify(mockedEventLogger, atLeastOnce()).logLockBtc(any(RskAddress.class), any(BtcTransaction.class), any(Address.class), any(Coin.class));
+        verify(mockedEventLogger, atLeastOnce()).logLockBtc(any(RskAddress.class), any(BtcTransaction.class), any(LegacyAddress.class), any(Coin.class));
         verify(mockedEventLogger, never()).logPeginBtc(any(RskAddress.class), any(BtcTransaction.class), any(Coin.class), anyInt());
     }
 
@@ -2046,7 +2046,7 @@ class BridgeSupportTest {
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
-        when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
+        when(lockWhitelist.isWhitelistedFor(any(LegacyAddress.class), any(Coin.class), any(int.class))).thenReturn(true);
 
         FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
         when(federationStorageProviderMock.getNewFederation(any(), any())).thenReturn(genesisFederation);
@@ -2070,7 +2070,7 @@ class BridgeSupportTest {
 
         // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, btcMainnetParams);
-        Address address = senderBtcKey.toAddress(btcMainnetParams);
+        LegacyAddress address = senderBtcKey.toAddress(btcMainnetParams);
         whitelist.put(address, new OneOffWhiteListEntry(address, lockValue));
 
         // Create header and PMT
@@ -2117,7 +2117,7 @@ class BridgeSupportTest {
 
         bridgeSupport.registerBtcTransaction(rskTx, peginTx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
-        verify(mockedEventLogger, never()).logLockBtc(any(RskAddress.class), any(BtcTransaction.class), any(Address.class), any(Coin.class));
+        verify(mockedEventLogger, never()).logLockBtc(any(RskAddress.class), any(BtcTransaction.class), any(LegacyAddress.class), any(Coin.class));
         verify(mockedEventLogger, atLeastOnce()).logPeginBtc(any(RskAddress.class), any(BtcTransaction.class), any(Coin.class), anyInt());
     }
 
@@ -3845,7 +3845,7 @@ class BridgeSupportTest {
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
         Coin amountToLock = Coin.COIN.multiply(5);
 
@@ -3945,7 +3945,7 @@ class BridgeSupportTest {
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
         Coin amountToLock = Coin.COIN.multiply(5);
 
@@ -4053,7 +4053,7 @@ class BridgeSupportTest {
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
 
         //First transaction goes only to the first federation
@@ -4149,7 +4149,7 @@ class BridgeSupportTest {
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
 
         // First transaction goes only to the first federation
@@ -4238,7 +4238,7 @@ class BridgeSupportTest {
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
         Coin amountToLock = Coin.COIN.multiply(5);
 
@@ -4340,7 +4340,7 @@ class BridgeSupportTest {
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
         Coin amountToLock = Coin.COIN.multiply(5);
 
@@ -4453,7 +4453,7 @@ class BridgeSupportTest {
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
 
         // First transaction goes only to the first federation
@@ -4540,7 +4540,7 @@ class BridgeSupportTest {
         when(executionBlock.getNumber()).thenReturn(10L);
 
         BtcECKey srcKey1 = new BtcECKey();
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         Coin amountToLock = Coin.COIN.multiply(5);
 
         // First transaction goes only to the first federation
@@ -4644,7 +4644,7 @@ class BridgeSupportTest {
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
         Coin amountToLock = Coin.COIN.multiply(5);
 
@@ -4731,7 +4731,7 @@ class BridgeSupportTest {
         when(executionBlock.getNumber()).thenReturn(10L);
 
         BtcECKey srcKey1 = new BtcECKey();
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         Coin amountToLock = Coin.COIN.multiply(5);
 
         // First transaction goes only to the first federation
@@ -4841,7 +4841,7 @@ class BridgeSupportTest {
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
         tx1.setWitness(0, txWit);
-        tx1.addOutput(Coin.COIN, Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(Coin.COIN, LegacyAddress.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
 
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -4909,7 +4909,7 @@ class BridgeSupportTest {
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
 
         Coin amountToLock = Coin.COIN.multiply(10);
@@ -5026,12 +5026,12 @@ class BridgeSupportTest {
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
 
         Coin amountToLock = Coin.COIN.multiply(10);
 
-        tx1.addOutput(amountToLock, Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(amountToLock, LegacyAddress.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -5114,12 +5114,12 @@ class BridgeSupportTest {
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
 
         Coin amountToLock = Coin.COIN.multiply(10);
 
-        tx1.addOutput(amountToLock, Address.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(amountToLock, LegacyAddress.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -5209,12 +5209,12 @@ class BridgeSupportTest {
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
 
         Coin amountToLock = Coin.COIN.multiply(10);
 
-        tx1.addOutput(amountToLock, Address.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(amountToLock, LegacyAddress.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
 
         byte[] bits = new byte[1];
@@ -5300,7 +5300,7 @@ class BridgeSupportTest {
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
 
         Coin amountToLock = Coin.COIN.multiply(10);
@@ -5405,7 +5405,7 @@ class BridgeSupportTest {
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddressFromBtcLockSender = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddressFromBtcLockSender = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskDerivedAddress = new RskAddress(key.getAddress());
         RskAddress rskDestinationAddress = new RskAddress(new byte[20]);
 
@@ -5518,7 +5518,7 @@ class BridgeSupportTest {
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddressFromBtcLockSender = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddressFromBtcLockSender = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskDerivedAddress = new RskAddress(key.getAddress());
         RskAddress rskDestinationAddress = new RskAddress(new byte[20]);
 
@@ -5641,7 +5641,7 @@ class BridgeSupportTest {
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddressFromBtcLockSender = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddressFromBtcLockSender = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
         RskAddress rskDestinationAddress = new RskAddress(new byte[20]);
 
@@ -5907,7 +5907,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
-        tx1.addOutput(Coin.COIN.multiply(10), Address.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(Coin.COIN.multiply(10), LegacyAddress.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -5970,7 +5970,7 @@ class BridgeSupportTest {
         repository = createRepository();
 
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
-        tx1.addOutput(Coin.COIN.multiply(10), Address.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(Coin.COIN.multiply(10), LegacyAddress.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -6051,7 +6051,7 @@ class BridgeSupportTest {
         repository = createRepository();
 
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
-        tx1.addOutput(Coin.COIN.multiply(10), Address.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(Coin.COIN.multiply(10), LegacyAddress.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -6129,7 +6129,7 @@ class BridgeSupportTest {
         repository = createRepository();
 
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
-        tx1.addOutput(Coin.COIN.multiply(10), Address.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(Coin.COIN.multiply(10), LegacyAddress.fromBase58(btcRegTestParams, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -7293,7 +7293,7 @@ class BridgeSupportTest {
         throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
 
         BtcECKey key = new BtcECKey();
-        Address btcRefundAddress = key.toAddress(btcRegTestParams);
+        LegacyAddress btcRefundAddress = key.toAddress(btcRegTestParams);
 
         assertRefundInRegisterPegInVersion1(
             TxSenderAddressType.UNKNOWN,
@@ -7343,7 +7343,7 @@ class BridgeSupportTest {
 
         repository = createRepository();
         Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsRegtest);
-        Address federationAddress = genesisFederation.getAddress();
+        LegacyAddress federationAddress = genesisFederation.getAddress();
 
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
         btcTx.addOutput(Coin.COIN.multiply(10), federationAddress);
@@ -7390,9 +7390,9 @@ class BridgeSupportTest {
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
         RskAddress rskAddress = new RskAddress(key.getAddress());
-        Address btcSenderAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcSenderAddress = srcKey1.toAddress(btcRegTestParams);
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        Address federationAddress = genesisFederation.getAddress();
+        LegacyAddress federationAddress = genesisFederation.getAddress();
 
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
         btcTx.addOutput(Coin.COIN.multiply(10), federationAddress);
@@ -8059,10 +8059,10 @@ class BridgeSupportTest {
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcRegTestParams);
+        LegacyAddress btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        Address federationAddress = genesisFederation.getAddress();
+        LegacyAddress federationAddress = genesisFederation.getAddress();
 
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
         btcTx.addOutput(Coin.COIN.multiply(10), federationAddress);
@@ -8202,11 +8202,11 @@ class BridgeSupportTest {
             bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
             // save releases in queue
-            Address destinationAddress1 = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "firstAddress");
+            LegacyAddress destinationAddress1 = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "firstAddress");
             Keccak256 rskTxHash1 = RskTestUtils.createHash(1);
             ReleaseRequestQueue.Entry releaseEntry1 = new ReleaseRequestQueue.Entry(destinationAddress1, requestedValue1, rskTxHash1);
 
-            Address destinationAddress2 = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "secondAddress");
+            LegacyAddress destinationAddress2 = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "secondAddress");
             Keccak256 rskTxHash2 = RskTestUtils.createHash(2);
             ReleaseRequestQueue.Entry releaseEntry2 = new ReleaseRequestQueue.Entry(destinationAddress2, requestedValue2, rskTxHash2);
 
@@ -8523,7 +8523,7 @@ class BridgeSupportTest {
 
         private void setUp(Federation retiringFederation, Federation activeFederation) {
             federationStorageProvider.setOldFederation(retiringFederation);
-            Address proposedFederationAddress = retiringFederation.getAddress();
+            LegacyAddress proposedFederationAddress = retiringFederation.getAddress();
             Script outputScript = ScriptBuilder.createOutputScript(proposedFederationAddress);
             int numberOfUtxos = 3;
             retiringFederationUTXOs = new ArrayList<>();
@@ -8684,12 +8684,12 @@ class BridgeSupportTest {
 
     private void assertRefundInRegisterPegInVersion1(
         TxSenderAddressType lockSenderAddressType,
-        Optional<Address> btcRefundAddress,
+        Optional<LegacyAddress> btcRefundAddress,
         List<ConsensusRule> consensusRules)
         throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
 
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        Address federationAddress = genesisFederation.getAddress();
+        LegacyAddress federationAddress = genesisFederation.getAddress();
 
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -8702,7 +8702,7 @@ class BridgeSupportTest {
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
         RskAddress rskAddress = new RskAddress(key.getAddress());
-        Address btcSenderAddress = null;
+        LegacyAddress btcSenderAddress = null;
         if (lockSenderAddressType != TxSenderAddressType.UNKNOWN) {
             btcSenderAddress = srcKey1.toAddress(btcRegTestParams);
         }
@@ -8914,7 +8914,7 @@ class BridgeSupportTest {
 
         // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, btcRegTestParams);
-        Address address = senderBtcKey.toAddress(bridgeConstants.getBtcParams());
+        LegacyAddress address = senderBtcKey.toAddress(bridgeConstants.getBtcParams());
         whitelist.put(address, new OneOffWhiteListEntry(address, lockValue));
         // The address is whitelisted
         assertThat(whitelist.isWhitelisted(address), is(true));
@@ -9082,7 +9082,7 @@ class BridgeSupportTest {
             .build();
     }
 
-    private BtcLockSenderProvider getBtcLockSenderProvider(BtcLockSender.TxSenderAddressType txSenderAddressType, Address btcAddress, RskAddress rskAddress) {
+    private BtcLockSenderProvider getBtcLockSenderProvider(BtcLockSender.TxSenderAddressType txSenderAddressType, LegacyAddress btcAddress, RskAddress rskAddress) {
         BtcLockSender btcLockSender = mock(BtcLockSender.class);
         when(btcLockSender.getTxSenderAddressType()).thenReturn(txSenderAddressType);
         when(btcLockSender.getBTCAddress()).thenReturn(btcAddress);
@@ -9094,7 +9094,7 @@ class BridgeSupportTest {
         return btcLockSenderProvider;
     }
 
-    private PeginInstructionsProvider getPeginInstructionsProviderForVersion1(RskAddress rskDestinationAddress, Optional<Address> btcRefundAddress)
+    private PeginInstructionsProvider getPeginInstructionsProviderForVersion1(RskAddress rskDestinationAddress, Optional<LegacyAddress> btcRefundAddress)
         throws PeginInstructionsException {
         PeginInstructionsVersion1 peginInstructions = mock(PeginInstructionsVersion1.class);
         when(peginInstructions.getProtocolVersion()).thenReturn(1);

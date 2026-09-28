@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.BridgeSerializationUtils;
@@ -34,8 +34,8 @@ class WhitelistStorageProviderImplTest {
     private WhitelistStorageProvider whitelistStorageProvider;
     private ActivationConfig.ForBlock activationConfig;
     private StorageAccessor inMemoryStorage;
-    private Address firstBtcAddress;
-    private Address secondBtcAddress;
+    private LegacyAddress firstBtcAddress;
+    private LegacyAddress secondBtcAddress;
 
     @BeforeEach
     void setUp() {
@@ -56,11 +56,11 @@ class WhitelistStorageProviderImplTest {
         assertEquals(0, actualLockWhitelist.getAll().size());
 
         // There should be no value saved in the one-off entry
-        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
+        Map<LegacyAddress, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
         assertEquals(0, oneOffWhiteListEntryMap.size());
 
         // There should be no value saved in the unlimited entry
-        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedStorageEntry();
+        Map<LegacyAddress, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedStorageEntry();
         assertEquals(0, unlimitedWhiteListEntryMap.size());
     }
 
@@ -82,11 +82,11 @@ class WhitelistStorageProviderImplTest {
         assertEquals(1, actualLockWhitelist.getAll().size());
 
         // Making sure the saved value is correct and related to OneOffWhiteListEntry
-        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
+        Map<LegacyAddress, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
         assertTrue(oneOffWhiteListEntryMap.containsKey(firstBtcAddress));
 
         // Making sure there is no value saved in storage related to UnlimitedWhiteListEntry
-        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedStorageEntry();
+        Map<LegacyAddress, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedStorageEntry();
         assertEquals(0, unlimitedWhiteListEntryMap.size());
     }
 
@@ -110,10 +110,10 @@ class WhitelistStorageProviderImplTest {
         assertEquals(2, actualLockWhitelist.getAll().size());
 
         // Making sure the saved value is correct
-        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
+        Map<LegacyAddress, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
         assertTrue(oneOffWhiteListEntryMap.containsKey(firstBtcAddress));
 
-        Map<Address, UnlimitedWhiteListEntry> lockWhitelistEntryMap = getAddressFromUnlimitedStorageEntry();
+        Map<LegacyAddress, UnlimitedWhiteListEntry> lockWhitelistEntryMap = getAddressFromUnlimitedStorageEntry();
         assertTrue(lockWhitelistEntryMap.containsKey(secondBtcAddress));
     }
 
@@ -165,7 +165,7 @@ class WhitelistStorageProviderImplTest {
         assertTrue(actualLockWhitelist.isWhitelisted(secondBtcAddress));
     }
 
-    private void saveInMemoryStorageOneOffWhiteListEntry(Address btcAddress) {
+    private void saveInMemoryStorageOneOffWhiteListEntry(LegacyAddress btcAddress) {
         OneOffWhiteListEntry oneOffWhiteListEntry = createOneOffWhiteListEntry(btcAddress);
         List<OneOffWhiteListEntry> oneOffWhiteListEntries = Collections.singletonList(oneOffWhiteListEntry);
         Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffWhiteListEntries, 100);
@@ -177,7 +177,7 @@ class WhitelistStorageProviderImplTest {
         );
     }
 
-    private void saveInMemoryStorageUnlimitedWhiteListEntry(Address btcAddress) {
+    private void saveInMemoryStorageUnlimitedWhiteListEntry(LegacyAddress btcAddress) {
         UnlimitedWhiteListEntry unlimitedWhiteListEntry = createUnlimitedWhiteListEntry(btcAddress);
         List<UnlimitedWhiteListEntry> unlimitedWhiteListEntries = Collections.singletonList(unlimitedWhiteListEntry);
 
@@ -188,24 +188,24 @@ class WhitelistStorageProviderImplTest {
         );
     }
 
-    private OneOffWhiteListEntry createOneOffWhiteListEntry(Address btcAddress) {
+    private OneOffWhiteListEntry createOneOffWhiteListEntry(LegacyAddress btcAddress) {
         Coin maxTransferValue = Coin.COIN;
         return new OneOffWhiteListEntry(btcAddress, maxTransferValue);
     }
 
-    private UnlimitedWhiteListEntry createUnlimitedWhiteListEntry(Address btcAddress) {
+    private UnlimitedWhiteListEntry createUnlimitedWhiteListEntry(LegacyAddress btcAddress) {
         return new UnlimitedWhiteListEntry(btcAddress);
     }
 
-    private Map<Address, OneOffWhiteListEntry> getAddressFromOneOffStorageEntry() {
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData = inMemoryStorage.getFromRepository(
+    private Map<LegacyAddress, OneOffWhiteListEntry> getAddressFromOneOffStorageEntry() {
+        Pair<HashMap<LegacyAddress, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData = inMemoryStorage.getFromRepository(
             LOCK_ONE_OFF.getKey(),
             data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters)
         );
         return Objects.isNull(oneOffWhitelistAndDisableBlockHeightData) ? new HashMap<>() : oneOffWhitelistAndDisableBlockHeightData.getLeft();
     }
 
-    private Map<Address, UnlimitedWhiteListEntry> getAddressFromUnlimitedStorageEntry() {
+    private Map<LegacyAddress, UnlimitedWhiteListEntry> getAddressFromUnlimitedStorageEntry() {
         return inMemoryStorage.getFromRepository(
             LOCK_UNLIMITED.getKey(),
             data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(

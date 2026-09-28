@@ -34,7 +34,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final FederationConstants federationMainNetConstants = bridgeMainnetConstants.getFederationConstants();
 
-    private static final Address oldFederationAddress = Address.fromBase58(
+    private static final LegacyAddress oldFederationAddress = LegacyAddress.fromBase58(
         btcMainnetParams,
         federationMainNetConstants.getOldFederationAddress()
     );
@@ -413,7 +413,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         );
 
         // Create a pegoutBtcTx from active fed to a user btc address
-        Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user");
+        LegacyAddress userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user");
 
         BtcTransaction pegoutBtcTx = new BtcTransaction(btcMainnetParams);
         pegoutBtcTx.addInput(BitcoinTestUtils.createHash(1), 0, activeFederation.getRedeemScript());
@@ -586,7 +586,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
-        Address unknownAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unknown");
+        LegacyAddress unknownAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unknown");
 
         BtcTransaction unknownPegTx = new BtcTransaction(btcMainnetParams);
         unknownPegTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));

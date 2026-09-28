@@ -595,14 +595,14 @@ class NonStandardErpFederationsTest {
             "0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09",
         }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         String expectedProgram = "a91412d5d2996618c8abcb1e6fc17be3cd8e2790c25f87";
-        Address expectedAddress = Address.fromBase58(networkParameters, "2MtxpJPt2xCa3AyFYUjTT7Aop9Z6gGf4rqA");
+        LegacyAddress expectedAddress = LegacyAddress.fromBase58(networkParameters, "2MtxpJPt2xCa3AyFYUjTT7Aop9Z6gGf4rqA");
 
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         // this should create the real fed
         ErpFederation realNonStandardErpFederation = createDefaultNonStandardErpFederation();
         Script p2shScript = realNonStandardErpFederation.getP2SHScript();
-        Address address = realNonStandardErpFederation.getAddress();
+        LegacyAddress address = realNonStandardErpFederation.getAddress();
 
         assertEquals(expectedProgram, Hex.toHexString(p2shScript.getProgram()));
         assertEquals(3, p2shScript.getChunks().size());
@@ -1019,7 +1019,7 @@ class NonStandardErpFederationsTest {
         BtcTransaction fundTx = new BtcTransaction(networkParameters);
         fundTx.addOutput(value, nonStandardErpFederation.getAddress());
 
-        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(
+        LegacyAddress destinationAddress = BitcoinTestUtils.createP2PKHAddress(
             networkParameters,
             "destination"
         );

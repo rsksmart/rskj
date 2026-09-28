@@ -425,12 +425,12 @@ class P2shErpFederationTest {
             "03fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce8581",
         }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         String expectedProgram = "a914007c29a1d854639220aefca2587cdde07f381f4787";
-        Address expectedAddress = Address.fromBase58(networkParameters, "2MsHnjFiAt5srgHJtwnwZTtZQPrKN8yiDqh");
+        LegacyAddress expectedAddress = LegacyAddress.fromBase58(networkParameters, "2MsHnjFiAt5srgHJtwnwZTtZQPrKN8yiDqh");
 
         // this should create the real fed
         ErpFederation realP2shErpFederation = createDefaultP2shErpFederation();
         Script realP2shScript = realP2shErpFederation.getP2SHScript();
-        Address realAddress = realP2shErpFederation.getAddress();
+        LegacyAddress realAddress = realP2shErpFederation.getAddress();
 
         assertEquals(expectedProgram, Hex.toHexString(realP2shScript.getProgram()));
         assertEquals(3, realP2shScript.getChunks().size());
@@ -459,7 +459,7 @@ class P2shErpFederationTest {
             "03b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b35888771906"
         }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         String expectedProgram = "a9142c1bab6ea51fdaf85c8366bd2b1502eaa69b6ae687";
-        Address expectedAddress = Address.fromBase58(
+        LegacyAddress expectedAddress = LegacyAddress.fromBase58(
             networkParameters,
             "35iEoWHfDfEXRQ5ZWM5F6eMsY2Uxrc64YK"
         );
@@ -467,7 +467,7 @@ class P2shErpFederationTest {
         // this should create the real fed
         ErpFederation realP2shErpFederation = createDefaultP2shErpFederation();
         Script p2shScript = realP2shErpFederation.getP2SHScript();
-        Address address = realP2shErpFederation.getAddress();
+        LegacyAddress address = realP2shErpFederation.getAddress();
 
         assertEquals(expectedProgram, Hex.toHexString(p2shScript.getProgram()));
         assertEquals(3, p2shScript.getChunks().size());
@@ -561,7 +561,7 @@ class P2shErpFederationTest {
         BtcTransaction fundTx = new BtcTransaction(networkParameters);
         fundTx.addOutput(value, p2shErpFed.getAddress());
 
-        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(
+        LegacyAddress destinationAddress = BitcoinTestUtils.createP2PKHAddress(
             networkParameters,
             "destination"
         );

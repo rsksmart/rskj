@@ -81,12 +81,12 @@ class FederationChangeIT {
     private static final Transaction REGISTRATION_TX = mock(Transaction.class);
     private static final RskAddress LBC_ADDRESS = new RskAddress(new byte[20]);
     private static final Keccak256 DERIVATION_ARGUMENTS_HASH = PegTestUtils.createHash3(0);
-    private static final Address LIQUIDITY_PROVIDER_BTC_ADDRESS = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMS, "liqProvider");
+    private static final LegacyAddress LIQUIDITY_PROVIDER_BTC_ADDRESS = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMS, "liqProvider");
     private static final Transaction FLYOVER_REGISTRATION_TX = new InternalTransaction(
         Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
         LBC_ADDRESS.getBytes(), null, null, null, null, null
     );
-    private Address userRefundBtcAddress;
+    private LegacyAddress userRefundBtcAddress;
 
     private Repository repository;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -280,7 +280,7 @@ class FederationChangeIT {
         // Set new UTXOs
         int numberOfUtxos = 50;
         List<UTXO> originalUTXOs = new ArrayList<>();
-        Address originalFederationAddress = originalFederation.getAddress();
+        LegacyAddress originalFederationAddress = originalFederation.getAddress();
         Script outputScript = ScriptBuilder.createOutputScript(originalFederationAddress);
         for (int i = 0; i < numberOfUtxos; i++) {
             Sha256Hash transactionHash = createHash(i + 1);
@@ -537,17 +537,17 @@ class FederationChangeIT {
         assertFlyoverPeginWorks(federation, federationUtxosReference, senderSeed);
     }
 
-    private void assertLegacyP2pkhPeginWorks(Address federationAddress, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
+    private void assertLegacyP2pkhPeginWorks(LegacyAddress federationAddress, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
         var legacyP2pkhPeginToFed = createLegacyP2pkhPegin(federationAddress, senderSeed);
         assertPeginWorks(legacyP2pkhPeginToFed, federationUtxosReference);
     }
 
-    private void assertLegacyP2shP2wpkhPeginWorks(Address federationAddress, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
+    private void assertLegacyP2shP2wpkhPeginWorks(LegacyAddress federationAddress, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
         var legacyP2shP2wpkhPeginToFed = createLegacyP2shP2wpkhPegin(federationAddress, senderSeed);
         assertPeginWorks(legacyP2shP2wpkhPeginToFed, federationUtxosReference);
     }
 
-    private void assertPeginV1Works(Address federationAddress, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
+    private void assertPeginV1Works(LegacyAddress federationAddress, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
         var peginV1ToFed = createPeginV1(federationAddress, senderSeed);
         assertPeginWorks(peginV1ToFed, federationUtxosReference);
     }
@@ -603,17 +603,17 @@ class FederationChangeIT {
         assertFlyoverPeginDoesNotWork(federation, senderSeed);
     }
 
-    private void assertLegacyP2pkhPeginDoesNotWork(Address federationAddress, String senderSeed) throws Exception {
+    private void assertLegacyP2pkhPeginDoesNotWork(LegacyAddress federationAddress, String senderSeed) throws Exception {
         var legacyP2pkhPeginToFed = createLegacyP2pkhPegin(federationAddress, senderSeed);
         assertPeginDoesNotWork(legacyP2pkhPeginToFed);
     }
 
-    private void assertLegacyP2shP2wpkhPeginDoesNotWork(Address federationAddress, String senderSeed) throws Exception {
+    private void assertLegacyP2shP2wpkhPeginDoesNotWork(LegacyAddress federationAddress, String senderSeed) throws Exception {
         var legacyP2shP2wpkhPeginToFed = createLegacyP2shP2wpkhPegin(federationAddress, senderSeed);
         assertPeginDoesNotWork(legacyP2shP2wpkhPeginToFed);
     }
 
-    private void assertPeginV1DoesNotWork(Address federationAddress, String senderSeed) throws Exception {
+    private void assertPeginV1DoesNotWork(LegacyAddress federationAddress, String senderSeed) throws Exception {
         var peginV1ToFed = createPeginV1(federationAddress, senderSeed);
         assertPeginDoesNotWork(peginV1ToFed);
     }
@@ -662,7 +662,7 @@ class FederationChangeIT {
         assertEquals(retiringFederationUtxosSizeBeforeRegisteringPegout, federationSupport.getRetiringFederationBtcUTXOs().size());
     }
 
-    private BtcTransaction createLegacyP2pkhPegin(Address federationAddress, String senderSeed) {
+    private BtcTransaction createLegacyP2pkhPegin(LegacyAddress federationAddress, String senderSeed) {
         var peginBtcTx = new BtcTransaction(NETWORK_PARAMS);
         var senderPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed(senderSeed);
 
@@ -672,7 +672,7 @@ class FederationChangeIT {
         return peginBtcTx;
     }
 
-    private BtcTransaction createLegacyP2shP2wpkhPegin(Address federationAddress, String senderSeed) {
+    private BtcTransaction createLegacyP2shP2wpkhPegin(LegacyAddress federationAddress, String senderSeed) {
         var peginBtcTx = new BtcTransaction(NETWORK_PARAMS);
         var senderPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed(senderSeed);
         var redeemScript = ByteUtil.merge(new byte[]{ 0x00, 0x14}, senderPublicKey.getPubKeyHash());
@@ -691,7 +691,7 @@ class FederationChangeIT {
         return peginBtcTx;
     }
 
-    private BtcTransaction createPeginV1(Address federationAddress, String senderSeed) {
+    private BtcTransaction createPeginV1(LegacyAddress federationAddress, String senderSeed) {
         var peginBtcTx = new BtcTransaction(NETWORK_PARAMS);
         var senderPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed(senderSeed);
 
@@ -878,9 +878,9 @@ class FederationChangeIT {
         assertEquals(expectedOldFederation, federationStorageProvider.getOldFederation(federationConstants, ACTIVATIONS));
     }
 
-    private void assertActiveAndRetiringFederationsHaveExpectedAddress(Address expectedNewFederationAddress, Address expectedOldFederationAddress) {
+    private void assertActiveAndRetiringFederationsHaveExpectedAddress(LegacyAddress expectedNewFederationAddress, LegacyAddress expectedOldFederationAddress) {
         assertEquals(expectedNewFederationAddress, bridgeSupport.getActiveFederationAddress());
-        Optional<Address> retiringFederationAddress = bridgeSupport.getRetiringFederationAddress();
+        Optional<LegacyAddress> retiringFederationAddress = bridgeSupport.getRetiringFederationAddress();
         assertTrue(retiringFederationAddress.isPresent());
         assertEquals(expectedOldFederationAddress, retiringFederationAddress.get());
     }
@@ -910,7 +910,7 @@ class FederationChangeIT {
     private void assertOnlyActiveFedIsLive(Federation newFederation) {
         // New active federation still there, retiring federation no longer there
         assertEquals(newFederation, bridgeSupport.getActiveFederation());
-        Optional<Address> retiringFederationAddress = bridgeSupport.getRetiringFederationAddress();
+        Optional<LegacyAddress> retiringFederationAddress = bridgeSupport.getRetiringFederationAddress();
         assertTrue(retiringFederationAddress.isEmpty());
     }
     

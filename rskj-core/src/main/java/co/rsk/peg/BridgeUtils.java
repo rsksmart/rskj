@@ -388,7 +388,7 @@ public final class BridgeUtils {
         return 2;
     }
 
-    public static Address recoverBtcAddressFromEthTransaction(Transaction tx, NetworkParameters networkParameters) {
+    public static LegacyAddress recoverBtcAddressFromEthTransaction(Transaction tx, NetworkParameters networkParameters) {
         ECKey key = tx.getKey();
         byte[] pubKey = key.getPubKey(true);
         return BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);
@@ -580,7 +580,7 @@ public final class BridgeUtils {
         return federatorPublicKey.verify(sigHash, decodedSignature);
     }
 
-    public static byte[] serializeBtcAddressWithVersion(ActivationConfig.ForBlock activations, Address btcAddress) {
+    public static byte[] serializeBtcAddressWithVersion(ActivationConfig.ForBlock activations, LegacyAddress btcAddress) {
         byte[] hash160 = btcAddress.getHash160();
         byte[] version = BigInteger.valueOf(btcAddress.getVersion()).toByteArray();
         if (activations.isActive(RSKIP284)) {
@@ -599,7 +599,7 @@ public final class BridgeUtils {
         return btcAddressBytes;
     }
 
-    public static Address deserializeBtcAddressWithVersion(
+    public static LegacyAddress deserializeBtcAddressWithVersion(
         NetworkParameters networkParameters,
         ActivationConfig.ForBlock activations,
         byte[] addressBytes) throws BridgeIllegalArgumentException {
@@ -618,7 +618,7 @@ public final class BridgeUtils {
         byte[] hashBytes = new byte[20];
         System.arraycopy(addressBytes, 1, hashBytes, 0, 20);
 
-        return new Address(networkParameters, version, hashBytes);
+        return new LegacyAddress(networkParameters, version, hashBytes);
     }
 
     public static int getRegularPegoutTxSize(ActivationConfig.ForBlock activations, @Nonnull Federation federation) {

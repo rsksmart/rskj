@@ -1,6 +1,6 @@
 package co.rsk.peg.pegininstructions;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
@@ -102,7 +102,7 @@ class PeginInstructionsProviderTest {
         int protocolVersion = 1;
         BtcECKey key = new BtcECKey();
         RskAddress rskDestinationAddress = new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress());
-        Address btcRefundAddress = key.toAddress(params);
+        LegacyAddress btcRefundAddress = key.toAddress(params);
 
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(protocolVersion, rskDestinationAddress, Optional.of(btcRefundAddress));
         BtcTransaction btcTransaction = new BtcTransaction(params);

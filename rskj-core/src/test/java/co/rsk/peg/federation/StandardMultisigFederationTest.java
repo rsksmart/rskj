@@ -217,10 +217,10 @@ class StandardMultisigFederationTest {
     @Test
     void getP2SHScriptAndAddress() {
         Script p2shScript = federation.getP2SHScript();
-        Address address = federation.getAddress();
+        LegacyAddress address = federation.getAddress();
 
         String expectedProgram = "a91451f103320b435b5fe417b3f3e0f18972ccc710a087";
-        Address expectedAddress = Address.fromBase58(
+        LegacyAddress expectedAddress = LegacyAddress.fromBase58(
             networkParameters,
             "39AHNvUmzaYgewA8yCtBtNsfRz7QD7ZJYi"
         );

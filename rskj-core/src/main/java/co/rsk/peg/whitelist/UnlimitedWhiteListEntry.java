@@ -17,17 +17,17 @@
  */
 package co.rsk.peg.whitelist;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.Coin;
 
 public class UnlimitedWhiteListEntry implements LockWhitelistEntry {
-    private final Address address;
+    private final LegacyAddress address;
 
-    public UnlimitedWhiteListEntry(Address address) {
+    public UnlimitedWhiteListEntry(LegacyAddress address) {
         this.address = address;
     }
 
-    public Address address() {
+    public LegacyAddress address() {
         return this.address;
     }
 

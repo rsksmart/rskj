@@ -1,6 +1,6 @@
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
@@ -29,7 +29,7 @@ public interface FederationSupport {
      * Returns the active federation bitcoin address.
      * @return the active federation bitcoin address.
      */
-    Address getActiveFederationAddress();
+    LegacyAddress getActiveFederationAddress();
 
     /**
      * Returns the active federation's size
@@ -90,7 +90,7 @@ public interface FederationSupport {
      * bitcoin address, or an empty {@link Optional} if no retiring
      * federation exists.
      */
-    Optional<Address> getRetiringFederationAddress();
+    Optional<LegacyAddress> getRetiringFederationAddress();
 
     /**
      * Returns the currently retiring federation size, if it exists.
@@ -196,7 +196,7 @@ public interface FederationSupport {
      * @return an {@link Optional} containing the Bitcoin {@link Address} of the proposed federation,
      *         or an empty {@link Optional} if no proposed federation is available.
      */
-    Optional<Address> getProposedFederationAddress();
+    Optional<LegacyAddress> getProposedFederationAddress();
 
     /**
      * Retrieves the size of the proposed federation, if it exists.

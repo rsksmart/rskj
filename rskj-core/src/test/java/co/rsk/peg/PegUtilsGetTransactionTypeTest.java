@@ -44,7 +44,7 @@ class PegUtilsGetTransactionTypeTest {
     private FederationContext federationContext;
 
     private BridgeStorageProvider provider;
-    private Address userAddress;
+    private LegacyAddress userAddress;
 
     private List<BtcECKey> retiredFedSigners;
     private ErpFederation retiredFed;
@@ -255,7 +255,7 @@ class PegUtilsGetTransactionTypeTest {
         int protocolVersion = 1;
         BtcECKey key = new BtcECKey();
         RskAddress rskDestinationAddress = new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress());
-        Address btcRefundAddress = key.toAddress(btcMainnetParams);
+        LegacyAddress btcRefundAddress = key.toAddress(btcMainnetParams);
 
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(protocolVersion, rskDestinationAddress, Optional.of(btcRefundAddress));
 
@@ -1692,8 +1692,8 @@ class PegUtilsGetTransactionTypeTest {
             retiringFederation.getP2SHScript() :
             retiredFed.getP2SHScript();
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
@@ -1705,7 +1705,7 @@ class PegUtilsGetTransactionTypeTest {
             activations
         );
 
-        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -1754,8 +1754,8 @@ class PegUtilsGetTransactionTypeTest {
             retiringFederation.getP2SHScript() :
             retiredFed.getP2SHScript();
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
@@ -1767,7 +1767,7 @@ class PegUtilsGetTransactionTypeTest {
             activations
         );
 
-        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -1830,8 +1830,8 @@ class PegUtilsGetTransactionTypeTest {
         boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
@@ -1843,7 +1843,7 @@ class PegUtilsGetTransactionTypeTest {
             activations
         );
 
-        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
             retiringFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -1903,8 +1903,8 @@ class PegUtilsGetTransactionTypeTest {
         boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
@@ -1916,7 +1916,7 @@ class PegUtilsGetTransactionTypeTest {
             activations
         );
 
-        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
             retiringFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -1981,8 +1981,8 @@ class PegUtilsGetTransactionTypeTest {
         boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
@@ -1994,7 +1994,7 @@ class PegUtilsGetTransactionTypeTest {
             activations
         );
 
-        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
             retiringFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())

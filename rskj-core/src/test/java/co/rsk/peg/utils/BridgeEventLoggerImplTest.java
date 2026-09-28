@@ -18,7 +18,7 @@
 package co.rsk.peg.utils;
 
 import co.rsk.RskTestUtils;
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
@@ -103,7 +103,7 @@ class BridgeEventLoggerImplTest {
 
     @Test
     void logLockBtc() {
-        Address senderAddress = Address.fromBase58(NETWORK_PARAMETERS, "1MvSMVpP6PY6XZtxenGXoFcH575JUWkzoP");
+        LegacyAddress senderAddress = LegacyAddress.fromBase58(NETWORK_PARAMETERS, "1MvSMVpP6PY6XZtxenGXoFcH575JUWkzoP");
         Coin amount = Coin.SATOSHI;
 
         // Act
@@ -120,7 +120,7 @@ class BridgeEventLoggerImplTest {
 
     @Test
     void logLockBtc_with_segwit_address() {
-        Address senderAddress = new Address(
+        LegacyAddress senderAddress = new LegacyAddress(
             NETWORK_PARAMETERS,
             NETWORK_PARAMETERS.getP2SHHeader(),
             Hex.decode("c99a8f22127007255b4a9d8d57b0892ae2103f2d")
@@ -462,7 +462,7 @@ class BridgeEventLoggerImplTest {
             eventLogs
         );
 
-        Address btcRecipientAddress = new Address(
+        LegacyAddress btcRecipientAddress = new LegacyAddress(
             NETWORK_PARAMETERS,
             NETWORK_PARAMETERS.getP2SHHeader(),
             Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83")
@@ -489,7 +489,7 @@ class BridgeEventLoggerImplTest {
             eventLogs
         );
 
-        Address btcRecipientAddress = new Address(
+        LegacyAddress btcRecipientAddress = new LegacyAddress(
             NETWORK_PARAMETERS,
             NETWORK_PARAMETERS.getP2SHHeader(),
             Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83")
@@ -509,7 +509,7 @@ class BridgeEventLoggerImplTest {
 
     @Test
     void logReleaseBtcRequestReceived_postRSKIP427_amountAsWeis() {
-        Address btcRecipientAddress = new Address(
+        LegacyAddress btcRecipientAddress = new LegacyAddress(
             NETWORK_PARAMETERS,
             NETWORK_PARAMETERS.getP2SHHeader(),
             Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83")

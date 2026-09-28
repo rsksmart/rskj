@@ -4,7 +4,7 @@ import static co.rsk.peg.whitelist.WhitelistStorageIndexKey.LOCK_ONE_OFF;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.net.utils.TransactionUtils;
@@ -35,8 +35,8 @@ class WhitelistSupportImplTest {
     private WhitelistSupport whitelistSupport;
     private SignatureCache signatureCache;
     private StorageAccessor inMemoryStorage;
-    private Address btcAddress;
-    private Address secondBtcAddress;
+    private LegacyAddress btcAddress;
+    private LegacyAddress secondBtcAddress;
 
     @BeforeEach
     void setUp() {
@@ -333,7 +333,7 @@ class WhitelistSupportImplTest {
         Optional<LockWhitelistEntry> lockWhitelistEntry = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString());
         assertTrue(lockWhitelistEntry.isPresent());
 
-        Address actualBtcAddress = lockWhitelistEntry.get().address();
+        LegacyAddress actualBtcAddress = lockWhitelistEntry.get().address();
         assertEquals(1, actualSize);
         assertEquals(btcAddress, actualBtcAddress);
     }
@@ -349,7 +349,7 @@ class WhitelistSupportImplTest {
         Optional<LockWhitelistEntry> lockWhitelistEntry = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString());
         assertTrue(lockWhitelistEntry.isPresent());
 
-        Address actualBtcAddress = lockWhitelistEntry.get().address();
+        LegacyAddress actualBtcAddress = lockWhitelistEntry.get().address();
         assertEquals(1, actualSize);
         assertEquals(btcAddress, actualBtcAddress);
     }
@@ -365,11 +365,11 @@ class WhitelistSupportImplTest {
         int actualSize = whitelistSupport.getLockWhitelistSize();
         Optional<LockWhitelistEntry> lockWhitelistEntryBtcAddress = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString());
         assertTrue(lockWhitelistEntryBtcAddress.isPresent());
-        Address actualBtcAddress = lockWhitelistEntryBtcAddress.get().address();
+        LegacyAddress actualBtcAddress = lockWhitelistEntryBtcAddress.get().address();
 
         Optional<LockWhitelistEntry> lockWhitelistEntrySecondBtcAddress = whitelistSupport.getLockWhitelistEntryByAddress(secondBtcAddress.toString());
         assertTrue(lockWhitelistEntrySecondBtcAddress.isPresent());
-        Address actualSecondBtcAddress = lockWhitelistEntrySecondBtcAddress.get().address();
+        LegacyAddress actualSecondBtcAddress = lockWhitelistEntrySecondBtcAddress.get().address();
         assertEquals(2, actualSize);
         assertEquals(btcAddress, actualBtcAddress);
         assertEquals(secondBtcAddress, actualSecondBtcAddress);
