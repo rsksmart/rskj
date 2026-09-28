@@ -2906,7 +2906,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withNoChangeOutput_withRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withNoChangeOutput_forReed_withRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
                 BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
@@ -2931,6 +2931,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+                assertUtxosRegisteredWasNotEmitted();
             }
 
             @Test
@@ -2958,6 +2959,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
 
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+                assertUtxosRegisteredWasNotEmitted();
             }
 
             @Test
@@ -3041,7 +3043,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_forReed_withRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
@@ -3052,6 +3054,22 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
+                assertUtxosRegisteredWasNotEmitted();
+            }
+
+            @Test
+            void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupSegwitActiveAndSegwitRetiringFeds();
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
+                registerPegoutTxSigHash(btcTransaction);
+
+                // act
+                registerReleaseTransaction(btcTransaction);
+
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
+                assertLogUtxosRegisteredForPegoutChange(btcTransaction);
             }
 
             @Test
@@ -3066,6 +3084,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
+                assertLogUtxosRegisteredForPegoutChange(btcTransaction);
             }
 
             @Test
@@ -3149,7 +3168,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_forReed_withRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
@@ -3160,6 +3179,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
+                assertUtxosRegisteredWasNotEmitted();
             }
 
             @Test
@@ -3174,6 +3194,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
+                assertLogUtxosRegisteredForPegoutChange(btcTransaction);
             }
 
             @Test
@@ -3257,7 +3278,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withOneOutputAndManyInputs_withRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withOneOutputAndManyInputs_forReed_withRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
                 BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
@@ -3282,12 +3303,25 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+                assertUtxosRegisteredWasNotEmitted();
             }
 
             private void assertPegoutWithChangeWasProcessed(BtcTransaction pegout) throws IOException {
                 assertReleaseTxWasProcessed(pegout);
                 assertUtxosAddedInActiveFed(1);
                 assertNoUtxoWasAddedInRetiringFed();
+            }
+
+            private void assertLogUtxosRegisteredForPegoutChange(BtcTransaction pegout) {
+                // the pegout change output is added last, after all the user outputs
+                long outputIndexForPegoutChange = pegout.getOutputs().size() - 1L;
+                assertLogUtxosRegistered(
+                    logs,
+                    pegout.getHash(),
+                    List.of(changeValue),
+                    List.of(outputIndexForPegoutChange),
+                    activeFederation.getAddress()
+                );
             }
 
             private BtcTransaction getPegoutTxWithOneInputAndOutputWithChange() {
