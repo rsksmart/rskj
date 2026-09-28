@@ -849,8 +849,44 @@ public class BridgeSupport {
      */
     private void registerNewUtxos(BtcTransaction btcTx, int btcTxHeight) throws IOException {
         int heightForNewUtxos = getHeightForNewUtxos(activations, btcTxHeight);
+        registerNewUtxosToTheActiveFederation(btcTx, heightForNewUtxos);
+        registerNewUtxosToTheRetiringFederation(btcTx, heightForNewUtxos);
 
-        // Outputs to the active federation
+        markTxAsProcessed(btcTx);
+        logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
+    }
+
+    private void registerNewUtxosToTheRetiringFederation(BtcTransaction btcTx, int btcTxHeight) {
+        Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
+        if (retiringFederationWallet.isEmpty()) {
+            return;
+        }
+
+        List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet.get());
+        List<UTXO> utxosToTheRetiringFederation = new ArrayList<>();
+        for (TransactionOutput output : outputsToTheRetiringFederation) {
+            UTXO utxo = new UTXO(
+                btcTx.getHash(),
+                output.getIndex(),
+                output.getValue(),
+                btcTxHeight,
+                btcTx.isCoinBase(),
+                output.getScriptPubKey()
+            );
+            federationSupport.getRetiringFederationBtcUTXOs().add(utxo);
+            utxosToTheRetiringFederation.add(utxo);
+        }
+        logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
+        federationSupport.getRetiringFederationAddress().ifPresent(retiringFederationAddress ->
+            logUtxosRegistered(
+                btcTx.getHash(),
+                utxosToTheRetiringFederation,
+                retiringFederationAddress
+            )
+        );
+    }
+
+    private void registerNewUtxosToTheActiveFederation(BtcTransaction btcTx, int btcTxHeight) {
         Wallet activeFederationWallet = getActiveFederationWallet(false);
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
             activeFederationWallet
@@ -861,7 +897,7 @@ public class BridgeSupport {
                 btcTx.getHash(),
                 output.getIndex(),
                 output.getValue(),
-                heightForNewUtxos,
+                btcTxHeight,
                 btcTx.isCoinBase(),
                 output.getScriptPubKey()
             );
@@ -874,36 +910,6 @@ public class BridgeSupport {
             utxosToTheActiveFederation,
             federationSupport.getActiveFederationAddress()
         );
-
-        // Outputs to the retiring federation (if any)
-        Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
-        if (retiringFederationWallet.isPresent()) {
-            List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet.get());
-            List<UTXO> utxosToTheRetiringFederation = new ArrayList<>();
-            for (TransactionOutput output : outputsToTheRetiringFederation) {
-                UTXO utxo = new UTXO(
-                    btcTx.getHash(),
-                    output.getIndex(),
-                    output.getValue(),
-                    heightForNewUtxos,
-                    btcTx.isCoinBase(),
-                    output.getScriptPubKey()
-                );
-                federationSupport.getRetiringFederationBtcUTXOs().add(utxo);
-                utxosToTheRetiringFederation.add(utxo);
-            }
-            logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
-            federationSupport.getRetiringFederationAddress().ifPresent(retiringFederationAddress ->
-                logUtxosRegistered(
-                    btcTx.getHash(),
-                    utxosToTheRetiringFederation,
-                    retiringFederationAddress
-                )
-            );
-        }
-
-        markTxAsProcessed(btcTx);
-        logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
     }
 
     private void logUtxosRegistered(Sha256Hash btcTxHash, List<UTXO> registeredUtxos, Address federationAddress) {
