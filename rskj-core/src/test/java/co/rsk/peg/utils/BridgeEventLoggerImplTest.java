@@ -18,6 +18,7 @@
 package co.rsk.peg.utils;
 
 import co.rsk.RskTestUtils;
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;

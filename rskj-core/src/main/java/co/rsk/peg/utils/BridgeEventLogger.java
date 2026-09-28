@@ -68,6 +68,14 @@ public interface BridgeEventLogger {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Logs a peg-out request whose destination cannot be expressed as a legacy {@link Address},
+     * such as a bech32 encoded native segwit address.
+     */
+    default void logReleaseBtcRequestReceivedToAddress(RskAddress sender, String btcDestinationAddress, co.rsk.core.Coin amountInWeis) {
+        throw new UnsupportedOperationException();
+    }
+
     default void logReleaseBtcRequestRejected(RskAddress sender, co.rsk.core.Coin amountInWeis, RejectedPegoutReason reason) {
         throw new UnsupportedOperationException();
     }

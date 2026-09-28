@@ -232,7 +232,8 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
             logReleaseBtcRequestReceived(sender.toHexString(), btcDestinationAddress.toString(), amountInWeis);
         } else {
             // Before RSKIP326 the event carried the bare 20-byte hash, which only a legacy
-            // destination has. Every destination is legacy today.
+            // destination has. A non-legacy one cannot reach this branch: releaseBtcTo is only
+            // callable once RSKIP326 is active.
             logReleaseBtcRequestReceived(sender.toHexString(), ((LegacyAddress) btcDestinationAddress).getHash160(), amountInWeis.toBitcoin());
         }
     }
@@ -246,6 +247,11 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         byte[] encodedData = event.encodeEventData(btcDestinationAddress, amountInSatoshis.getValue());
 
         addLog(encodedTopics, encodedData);
+    }
+
+    @Override
+    public void logReleaseBtcRequestReceivedToAddress(RskAddress sender, String btcDestinationAddress, co.rsk.core.Coin amountInWeis) {
+        logReleaseBtcRequestReceived(sender.toHexString(), btcDestinationAddress, amountInWeis);
     }
 
     private void logReleaseBtcRequestReceived(String sender, String btcDestinationAddress, co.rsk.core.Coin amountInWeis) {
