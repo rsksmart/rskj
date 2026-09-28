@@ -16,10 +16,17 @@ configurations {
     fuzzTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
+// -Dwidening.* / -Djazzer.* on the Gradle command line reach the fuzz test JVM, which is how the
+// differential is pointed at a baseline stream and how a fuzz run is time-bounded.
+ext.wideningProperties = {
+    System.properties.findAll { it.key.toString().startsWith('widening.') || it.key.toString().startsWith('jazzer.') }
+}
+
 task fuzzTest(type: Test) {
     useJUnitPlatform()
     testClassesDirs = sourceSets.fuzzTest.output.classesDirs
     classpath = sourceSets.fuzzTest.runtimeClasspath
+    systemProperties wideningProperties()
 
     beforeTest { descriptor ->
         logger.lifecycle("Running fuzz test: ${descriptor}")
@@ -264,6 +271,16 @@ task BlockDecodingFuzzBlockDecoding(type: Test) {
     }
     testClassesDirs = sourceSets.fuzzTest.output.classesDirs
     classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task TransactionWideningFuzzDecode(type: Test) {
+    useJUnitPlatform {
+        includeTags 'TransactionWideningFuzzDecode'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    systemProperties wideningProperties()
     jvmArgs '-Xss32m', '-Xmx3G'
 }
 
@@ -515,7 +532,7 @@ task RepositoryFuzzStorageRoot(type: Test) {
  * Misc:
  *          ByteUtilFuzzBUFuzz,
  * Core:
- *          BlockDecodingFuzzBlockDecoding, CallContractFuzzContractReturningOne,
+ *          BlockDecodingFuzzBlockDecoding, CallContractFuzzContractReturningOne, TransactionWideningFuzzDecode,
  * RLP:
  *          RLPFuzzDecodeInt, RLPFuzzDecodeEncode, RLPFuzzDecodeBigInteger, RLPFuzzGetNextElementIndex, RLPFuzzFullTraverse, RLPFuzzDecode2,
  *          RLPFuzzFirstElement, RLPFuzzDecodeList, RLPFuzzDecode2OneItem, RLPFuzzEncodeLength, RLPFuzzEncodeByte, RLPFuzzEncodeShort, RLPFuzzEncodeInt,
@@ -535,7 +552,8 @@ task runAllFuzzTests {
             AltBN128FuzzAdd, AltBN128FuzzMul, AltBN128FuzzPairing,
             DiscoveryPacketDecoderFuzzDecode, DiscoveryPacketDecoderFuzzDecode2, DiscoveryPacketDecoderFuzzInput,
             MessageCodecFuzzMessageCodec, ByteUtilFuzzBUFuzz, BlockDecodingFuzzBlockDecoding,
-            CallContractFuzzContractReturningOne, RLPFuzzDecodeInt, RLPFuzzDecodeEncode,
+            CallContractFuzzContractReturningOne, TransactionWideningFuzzDecode,
+            RLPFuzzDecodeInt, RLPFuzzDecodeEncode,
             RLPFuzzDecodeBigInteger, RLPFuzzGetNextElementIndex, RLPFuzzFullTraverse, RLPFuzzDecode2,
             RLPFuzzFirstElement, RLPFuzzDecodeList, RLPFuzzDecode2OneItem, RLPFuzzEncodeLength,
             RLPFuzzEncodeByte, RLPFuzzEncodeShort, RLPFuzzEncodeInt, RLPFuzzEncodeString,
