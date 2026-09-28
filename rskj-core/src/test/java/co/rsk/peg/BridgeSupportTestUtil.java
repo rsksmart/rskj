@@ -454,6 +454,30 @@ public final class BridgeSupportTestUtil {
         assertEventWasEmittedWithExpectedData(logs, encodedData);
     }
 
+    public static void assertLogUtxosRegistered(
+        List<LogInfo> logs,
+        Sha256Hash btcTxHash,
+        List<Coin> expectedValuesInSatoshis,
+        List<Long> expectedOutputIndexes,
+        Address expectedFederationAddress
+    ) {
+        CallTransaction.Function utxosRegisteredEvent = BridgeEvents.UTXOS_REGISTERED.getEvent();
+        byte[] btcTxHashSerialized = btcTxHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(utxosRegisteredEvent, btcTxHashSerialized);
+
+        byte[] serializedValuesInSatoshis = UtxoUtils.encodeOutpointValues(expectedValuesInSatoshis);
+        byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(expectedOutputIndexes);
+        byte[] encodedData = getEncodedData(
+            utxosRegisteredEvent,
+            serializedValuesInSatoshis,
+            serializedOutputIndexes,
+            expectedFederationAddress.toString()
+        );
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
     private static void assertReleaseOutpointsValuesWereSaved(Repository repository, BridgeStorageProvider bridgeStorageProvider, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
         RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
