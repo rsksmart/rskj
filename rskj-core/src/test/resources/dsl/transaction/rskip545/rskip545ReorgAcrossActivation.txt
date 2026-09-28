@@ -1,0 +1,143 @@
+comment
+
+// RSKIP-545 reorg across the activation boundary.
+// Java driver activates RSKIP-543/545/546 at block 5 (H).
+//
+// Main branch  : b01..b04 (pre-H), b05 = H carries a Type 4 tx that installs a delegation
+//                designator on acc1, b06/b07 = H+1/H+2.
+// Rebuilt branch: forks at b03 (H-2) and is longer, so the chain reorgs back below H.
+//                c04 sits at height 4 (< H) and carries a Type 4 attempt: it must be dropped,
+//                because activation is keyed on the executing block, not on the chain tip.
+
+end
+
+account_new acc1 100000000000000000
+account_new acc2 1000000
+
+block_build b01
+    parent g00
+    transactions
+    build
+
+block_connect b01
+assert_best b01
+
+block_build b02
+    parent b01
+    transactions
+    build
+
+block_connect b02
+assert_best b02
+
+block_build b03
+    parent b02
+    transactions
+    build
+
+block_connect b03
+assert_best b03
+
+block_build b04
+    parent b03
+    transactions
+    build
+
+block_connect b04
+assert_best b04
+
+# Block 5 (H): Type 4 installs a delegation designator on acc1
+transaction_build txMainType4
+    sender acc1
+    nonce 0
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 0000000000000000000000000000000000000003 1
+    build
+
+block_build b05
+    parent b04
+    transactions txMainType4
+    build
+
+block_connect b05
+assert_best b05
+assert_tx_success txMainType4
+
+block_build b06
+    parent b05
+    transactions
+    build
+
+block_connect b06
+assert_best b06
+
+block_build b07
+    parent b06
+    transactions
+    build
+
+block_connect b07
+assert_best b07
+
+# Competing branch from b03: c04 is at height 4, below activation
+transaction_build txReorgType4Attempt
+    sender acc1
+    nonce 0
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 0000000000000000000000000000000000000004 1
+    build
+
+block_build c04
+    parent b03
+    transactions txReorgType4Attempt
+    build
+
+block_connect c04
+
+transaction_build txRebuiltLegacy
+    sender acc2
+    nonce 0
+    receiver acc1
+    value 7000
+    gas 21000
+    build
+
+block_build c05
+    parent c04
+    transactions txRebuiltLegacy
+    build
+
+block_connect c05
+
+block_build c06
+    parent c05
+    transactions
+    build
+
+block_connect c06
+
+block_build c07
+    parent c06
+    transactions
+    build
+
+block_connect c07
+
+block_build c08
+    parent c07
+    transactions
+    build
+
+block_connect c08
+assert_best c08
+assert_tx_success txRebuiltLegacy

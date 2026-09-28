@@ -1,0 +1,14 @@
+comment
+
+// Extension: tries to mine the Type 4 transaction into block 4, below activation.
+// The executor must drop it, leaving the block empty.
+
+end
+
+block_build bPreWithType4
+    parent b03
+    transactions txMempoolType4
+    build
+
+block_connect bPreWithType4
+assert_best bPreWithType4

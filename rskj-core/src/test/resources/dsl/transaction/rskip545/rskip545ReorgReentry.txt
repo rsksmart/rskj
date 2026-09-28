@@ -1,0 +1,73 @@
+comment
+
+// RSKIP-545 mempool re-entry after a reorg, base stage.
+// Java driver activates RSKIP-543/545/546 at block 5 (H).
+// Block 5 = H carries a Type 4 transaction and a legacy control transaction.
+
+end
+
+account_new acc1 100000000000000000
+account_new acc2 100000000000000000
+
+block_build b01
+    parent g00
+    transactions
+    build
+
+block_connect b01
+assert_best b01
+
+block_build b02
+    parent b01
+    transactions
+    build
+
+block_connect b02
+assert_best b02
+
+block_build b03
+    parent b02
+    transactions
+    build
+
+block_connect b03
+assert_best b03
+
+block_build b04
+    parent b03
+    transactions
+    build
+
+block_connect b04
+assert_best b04
+
+transaction_build txReentryType4
+    sender acc1
+    nonce 0
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 0000000000000000000000000000000000000003 1
+    build
+
+# Control: a legacy transaction retracted by the same reorg, valid at the new target height
+transaction_build txReentryLegacy
+    sender acc2
+    nonce 0
+    receiver acc1
+    value 100
+    gas 21000
+    build
+
+block_build b05
+    parent b04
+    transactions txReentryType4 txReentryLegacy
+    build
+
+block_connect b05
+assert_best b05
+assert_tx_success txReentryType4
+assert_tx_success txReentryLegacy

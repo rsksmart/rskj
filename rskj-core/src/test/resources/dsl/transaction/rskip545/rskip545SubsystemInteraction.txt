@@ -1,0 +1,237 @@
+comment
+
+// RSKIP-545 interaction matrix cells that need a real chain:
+//   - Bridge / PowPeg: pegout from a delegated account vs from a contract vs from a plain EOA
+//   - Bridge / PowPeg: a Bridge refund crediting a delegated account must not run the delegate code
+//   - Bridge / PowPeg: delegation *to* the Bridge address resolves to empty code
+//   - REMASC: fee accounting for a block carrying a Type 4 transaction
+//   - Nonce semantics: self-sponsored tuple carrying the pre-increment sender nonce is skipped
+// The Java driver activates RSKIP-543/545/546 at block 0.
+// 0x...01000006 is PrecompiledContracts.BRIDGE_ADDR.
+
+end
+
+account_new acc1 5000000000000000000
+account_new acc2 5000000000000000000
+account_new acc3 5000000000000000000
+account_new acc4 5000000000000000000
+account_new acc5 5000000000000000000
+account_new acc6 5000000000000000000
+account_new acc7 5000000000000000000
+account_new acc8 5000000000000000000
+account_new acc9 5000000000000000000
+
+# Delegate implementation that writes a marker into slot 0 of whatever account it runs in
+account_new markerImpl 0 6001600055
+
+# Runtime code that CALLs the Bridge with empty data and zero value (peg-out request from a contract)
+account_new bridgeCaller 0 5f600060006000600073000000000000000000000000000000000100000663005b8d80f1
+
+# ============================================================================
+# b01: peg-out requested by a Type 4 transaction whose sender delegates itself
+# ============================================================================
+
+transaction_build txPegoutFromDelegatedSender
+    sender acc1
+    nonce 0
+    receiverAddress 0000000000000000000000000000000001000006
+    value 1000000000000000000
+    gas 500000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 markerImpl 1
+    build
+
+block_build b01
+    parent g00
+    gasLimit 6800000
+    transactions txPegoutFromDelegatedSender
+    build
+
+block_connect b01
+assert_best b01
+assert_tx_success txPegoutFromDelegatedSender
+
+# ============================================================================
+# b02: same peg-out from a plain EOA — the control for the delegated sender
+# ============================================================================
+
+transaction_build txPegoutFromPlainSender
+    sender acc2
+    nonce 0
+    receiverAddress 0000000000000000000000000000000001000006
+    value 1000000000000000000
+    gas 500000
+    gasPrice 1
+    build
+
+block_build b02
+    parent b01
+    gasLimit 6800000
+    transactions txPegoutFromPlainSender
+    build
+
+block_connect b02
+assert_best b02
+assert_tx_success txPegoutFromPlainSender
+
+# ============================================================================
+# b03: same peg-out from a contract — must be rejected as CALLER_CONTRACT
+# ============================================================================
+
+transaction_build txPegoutFromContract
+    sender acc3
+    nonce 0
+    receiver bridgeCaller
+    value 0
+    gas 600000
+    gasPrice 1
+    build
+
+block_build b03
+    parent b02
+    gasLimit 6800000
+    transactions txPegoutFromContract
+    build
+
+block_connect b03
+assert_best b03
+
+# ============================================================================
+# b04: below-minimum peg-out from a delegated sender — the Bridge refunds it
+# ============================================================================
+
+transaction_build txPegoutBelowMinimumFromDelegated
+    sender acc4
+    nonce 0
+    receiverAddress 0000000000000000000000000000000001000006
+    value 1000
+    gas 500000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc4 markerImpl 1
+    build
+
+block_build b04
+    parent b03
+    gasLimit 6800000
+    transactions txPegoutBelowMinimumFromDelegated
+    build
+
+block_connect b04
+assert_best b04
+assert_tx_success txPegoutBelowMinimumFromDelegated
+
+# ============================================================================
+# b05: authority delegating *to* the Bridge address
+# ============================================================================
+
+transaction_build txDelegateToBridge
+    sender acc5
+    nonce 0
+    receiver acc9
+    value 0
+    gas 200000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc5 0000000000000000000000000000000001000006 1
+    build
+
+block_build b05
+    parent b04
+    gasLimit 6800000
+    transactions txDelegateToBridge
+    build
+
+block_connect b05
+assert_best b05
+assert_tx_success txDelegateToBridge
+
+# ============================================================================
+# b06: calling the account delegated to the Bridge must not dispatch the Bridge
+# ============================================================================
+
+transaction_build txCallAccountDelegatedToBridge
+    sender acc6
+    nonce 0
+    receiver acc5
+    value 7
+    gas 500000
+    gasPrice 1
+    build
+
+block_build b06
+    parent b05
+    gasLimit 6800000
+    transactions txCallAccountDelegatedToBridge
+    build
+
+block_connect b06
+assert_best b06
+assert_tx_success txCallAccountDelegatedToBridge
+
+# ============================================================================
+# b07: REMASC fee accounting for a block that carries a Type 4 transaction
+# ============================================================================
+
+transaction_build txRemascType4
+    sender acc7
+    nonce 0
+    receiver acc9
+    value 0
+    gas 200000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc7 markerImpl 1
+    build
+
+transaction_build txRemascLegacy
+    sender acc8
+    nonce 0
+    receiver acc9
+    value 100
+    gas 21000
+    gasPrice 3
+    build
+
+block_build b07
+    parent b06
+    gasLimit 6800000
+    transactions txRemascType4 txRemascLegacy
+    build
+
+block_connect b07
+assert_best b07
+assert_tx_success txRemascType4
+assert_tx_success txRemascLegacy
+
+# ============================================================================
+# b08: self-sponsored tuple carrying the pre-increment sender nonce is skipped
+# The sender nonce is bumped before the authorization list runs, so nonce 0 is stale.
+# ============================================================================
+
+transaction_build txSelfSponsoredStaleAuthNonce
+    sender acc9
+    nonce 0
+    receiver acc8
+    value 0
+    gas 200000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc9 markerImpl 0
+    build
+
+block_build b08
+    parent b07
+    gasLimit 6800000
+    transactions txSelfSponsoredStaleAuthNonce
+    build
+
+block_connect b08
+assert_best b08
+assert_tx_success txSelfSponsoredStaleAuthNonce

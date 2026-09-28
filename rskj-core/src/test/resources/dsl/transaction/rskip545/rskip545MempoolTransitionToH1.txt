@@ -1,0 +1,13 @@
+comment
+
+// Extension: moves the tip to H-1 (height 4), still below activation.
+
+end
+
+block_build b04
+    parent b03
+    transactions
+    build
+
+block_connect b04
+assert_best b04

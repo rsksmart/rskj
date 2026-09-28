@@ -1,0 +1,56 @@
+comment
+
+// RSKIP-545 mempool transition, base stage.
+// Java driver activates RSKIP-543/545/546 at block 5 (H). This fixture leaves the tip at
+// height 3, i.e. the next block to mine is 4 and still below H. The extension fixtures
+// rskip545MempoolTransitionToH1/ToH move the tip to H-1 and to H.
+
+end
+
+account_new acc1 100000000000000000
+account_new acc2 100000000000000000
+
+block_build b01
+    parent g00
+    transactions
+    build
+
+block_connect b01
+assert_best b01
+
+block_build b02
+    parent b01
+    transactions
+    build
+
+block_connect b02
+assert_best b02
+
+block_build b03
+    parent b02
+    transactions
+    build
+
+block_connect b03
+assert_best b03
+
+transaction_build txMempoolType4
+    sender acc1
+    nonce 0
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 0000000000000000000000000000000000000003 1
+    build
+
+# Control: a legacy transaction from a different sender, valid at every height
+transaction_build txMempoolLegacy
+    sender acc2
+    nonce 0
+    receiver acc1
+    value 100
+    gas 21000
+    build

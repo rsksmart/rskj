@@ -1,0 +1,13 @@
+comment
+
+// Extension: moves the tip to H (height 5), the first activated height.
+
+end
+
+block_build b05
+    parent b04
+    transactions
+    build
+
+block_connect b05
+assert_best b05

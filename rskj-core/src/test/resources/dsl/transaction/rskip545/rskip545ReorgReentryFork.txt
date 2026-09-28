@@ -1,0 +1,18 @@
+comment
+
+// Extension: a heavier block at height 4 forking from b03, so the tip moves back below H.
+// The two high-difficulty uncles are what makes the shorter branch win.
+
+end
+
+block_chain b02 u03a:2000000000
+block_chain b02 u03b:2000000000
+
+block_build c04
+    parent b03
+    uncles u03a u03b
+    transactions
+    build
+
+block_connect c04
+assert_best c04
