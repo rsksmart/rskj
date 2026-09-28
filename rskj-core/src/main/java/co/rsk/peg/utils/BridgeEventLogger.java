@@ -84,11 +84,11 @@ public interface BridgeEventLogger {
         throw new UnsupportedOperationException();
     }
 
-    default void logUtxosRegistered(Sha256Hash btcTxHash, List<Coin> values, List<Long> outputIndexes, Address federationBtcAddress) {
+    default void logUtxosRegistered(Sha256Hash btcTxHash, List<Coin> valuesInSatoshis, List<Long> outputIndexes, Address federationBtcAddress) {
         throw new UnsupportedOperationException();
     }
 
-    default void logFlyoverUtxosRegistered(Sha256Hash btcTxHash, List<Coin> values, List<Long> outputIndexes, Address federationBtcAddress, Keccak256 flyoverDerivationHash) {
+    default void logFlyoverUtxosRegistered(Sha256Hash btcTxHash, List<Coin> valuesInSatoshis, List<Long> outputIndexes, Address federationBtcAddress, Keccak256 flyoverDerivationHash) {
         throw new UnsupportedOperationException();
     }
 
