@@ -373,7 +373,7 @@ public class TransactionExecutor {
                     track.setupContract(targetAddress);
                 }
             } catch (VMException | RuntimeException e) {
-                if (!localCall && activations.isActive(ConsensusRule.RSKIP560)) {
+                if (!localCall && activations.isActive(ConsensusRule.RSKIP692)) {
                     gasLeftover = 0;
                     gasUsed = txGasLimit;
                     execError(e);
@@ -656,7 +656,7 @@ public class TransactionExecutor {
     }
 
     private Coin calculateFee() {
-        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP560)) {
+        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP692)) {
             return tx.getGasPrice().multiply(toBI(tx.getGasLimit()));
         }
         BigInteger chargedGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(gasLeftover));
@@ -664,7 +664,7 @@ public class TransactionExecutor {
     }
 
     private Coin calculateRefund() {
-        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP560)) {
+        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP692)) {
             return Coin.ZERO;
         }
         return tx.getGasPrice().multiply(BigInteger.valueOf(gasLeftover));
