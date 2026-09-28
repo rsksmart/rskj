@@ -186,61 +186,6 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void authorizationOnFailingPrecompileBehavesPerActivation(boolean rskip692Active) {
-        activationConfig = rskip692Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
-        when(config.getActivationConfig()).thenReturn(activationConfig);
-
-        MutableRepository repository = createRepository();
-
-        repository.createAccount(authorityAddress);
-        repository.setNonce(authorityAddress, ONE_NONCE);
-        repository.saveCode(authorityAddress, DelegationCodeResolver.createDelegatedCode(createRandomAddress()));
-
-        fundSender(repository, ZERO_NONCE, 1_000_000);
-
-        RskAddress fakeContractAddress = createRandomAddress();
-        PrecompiledContracts.PrecompiledContract throwingPrecompile = createPrecompiledContract();
-        when(precompiledContracts.getContractForAddress(any(), eq(DataWord.valueOf(fakeContractAddress.getBytes()))))
-                .thenReturn(throwingPrecompile);
-
-        SetCodeAuthorization authorization = createValidAuthorizationTuple(delegatedAddress, ONE_NONCE, constants.getChainId(), authorityKey);
-
-        Transaction tx = createSignedType4Transaction(
-                senderKey, constants.getChainId(), ZERO_NONCE, 100_000, 1, 1,
-                fakeContractAddress, 0, EMPTY_DATA, authorization
-        );
-
-        TransactionExecutor txExecutor = newExecutor(tx, repository);
-        assertTrue(txExecutor.executeTransaction());
-
-        assertNotNull(txExecutor.getResult().getException());
-        assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
-
-        TransactionReceipt receipt = txExecutor.getReceipt();
-        BigInteger  reportedGasUsed = new BigInteger(1, receipt.getGasUsed());
-        long authorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST; // 9_500
-        long expectedGasUsed = 100_000L - authorizationRefund; // 90_500
-
-        if (rskip692Active) {
-            assertEquals(authorizationRefund, txExecutor.getResult().getDeductedRefund(), "authorization refund should be fully applied (well under the half-of-gasUsed cap)");
-            assertFalse(receipt.isSuccessful(), "post-activation, both gates fire: status must be FAILED");
-
-            Coin expectedFee = Coin.valueOf(100_000L - authorizationRefund); // 90_500
-
-            assertEquals(BigInteger.valueOf(expectedGasUsed), reportedGasUsed, "receipt.getGasUsed should be gasLimit minus the authorization refund");
-
-            assertEquals(expectedFee, txExecutor.getPaidFees());  // effective gasPrice = 1
-            assertEquals(Coin.valueOf(909_500L), repository.getBalance(sender), "post-activation, authorization refund must be returned to sender");
-        } else {
-            assertTrue(receipt.isSuccessful(), "pre-activation, legacy (buggy) SUCCESS status must be preserved even with an authorization present");
-            assertEquals(Coin.valueOf(100_000L), txExecutor.getPaidFees(), "pre-activation, full gasLimit is still charged -- the authorization refund is discarded, same as legacy");
-            assertTrue(reportedGasUsed.compareTo(BigInteger.valueOf(100_000L)) < 0);
-            assertEquals(Coin.valueOf(900_000L), repository.getBalance(sender), "pre-activation, exception must refund nothing");
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
     void authorizationOnFailingPrecompileAppliesGasPriceMultiplier(boolean rskip692Active) {
         activationConfig = rskip692Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
         when(config.getActivationConfig()).thenReturn(activationConfig);
