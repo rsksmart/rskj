@@ -30,6 +30,7 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.ByteUtil;
@@ -269,10 +270,10 @@ class EthModuleGasEstimationDSLTest {
     }
 
     /**
-     * Test if a user can estimate a transaction that exceeds the block limit
+     * A call that runs out of gas even at the gas estimation cap gets an error, not the cap as an estimate
      */
     @Test
-    void estimateGas_gasCap() throws FileNotFoundException, DslProcessorException {
+    void estimateGas_outOfGasAtCap_returnsExecutionError() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/gasCap.txt");
 
         TransactionReceipt deployTransactionReceipt = world.getTransactionReceiptByName("tx01");
@@ -293,10 +294,14 @@ class EthModuleGasEstimationDSLTest {
         callArguments.setGas(HexUtils.toQuantityJsonHex(gasEstimationCap + 1_000_000_000)); // exceeding the gas cap
         callArguments.setData("0x31fe52e8"); // call outOfGas()
 
-        String estimatedGas = eth.estimateGas(TransactionFactoryHelper.toCallArgumentsParam(callArguments), new BlockIdentifierParam(BlockTag.LATEST.getTag()));
-        assertEquals("0x67c280", estimatedGas);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(callArguments);
+        BlockIdentifierParam latest = new BlockIdentifierParam(BlockTag.LATEST.getTag());
 
-        assertEquals(gasEstimationCap, Long.decode(estimatedGas).longValue());
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class,
+                () -> eth.estimateGas(callArgumentsParam, latest));
+        assertEquals(-32015, exception.getCode());
+        assertEquals("VM Exception while processing transaction: execution failed", exception.getMessage());
+        assertNull(eth.getEstimationResult());
     }
 
     /**
@@ -1077,6 +1082,24 @@ class EthModuleGasEstimationDSLTest {
                 "no caller-provided gas hint should make estimateGas return a value that OOGs on replay");
         assertTrue(firstEstimate >= trueMinimum,
                 "swept estimate must be at least the true minimum (" + trueMinimum + ")");
+    }
+
+    // RSKIP-692 test case 11
+    @Test
+    void estimateGas_directCallToBridgeWithUnknownMethod_returnsExecutionError()
+            throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(EthModuleDSLTest.failingBridgeCallArguments());
+        BlockIdentifierParam latest = new BlockIdentifierParam(BlockTag.LATEST.getTag());
+
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class,
+                () -> eth.estimateGas(callArgumentsParam, latest));
+        assertEquals(-32015, exception.getCode());
+        assertEquals("VM Exception while processing transaction: execution failed", exception.getMessage());
+        // No estimate is produced at all, so neither the gas estimation cap nor any other figure is returned
+        assertNull(eth.getEstimationResult());
     }
 
     @Test
