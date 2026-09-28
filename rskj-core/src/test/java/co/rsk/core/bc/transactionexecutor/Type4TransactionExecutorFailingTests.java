@@ -66,10 +66,10 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void authorizationRefundOnPlainVmExceptionBehavesPerActivation(boolean rskip560Active) {
-        activationConfig = rskip560Active
+    void authorizationRefundOnPlainVmExceptionBehavesPerActivation(boolean rskip692Active) {
+        activationConfig = rskip692Active
                 ? ActivationConfigsForTest.all()
-                : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
+                : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
         when(config.getActivationConfig()).thenReturn(activationConfig);
         mockExecutionBlockForRealVm();
 
@@ -122,7 +122,7 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
         Coin fullFee = Coin.valueOf(200_000L);
         long authorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST; // 9_500
 
-        if (rskip560Active) {
+        if (rskip692Active) {
             Coin expectedFee = Coin.valueOf(200_000L - authorizationRefund);
             assertEquals(expectedFee, txExecutor.getPaidFees(), "post-activation, the authorization refund reduces the charged fee");
             assertEquals(BigInteger.valueOf(200_000L - authorizationRefund), reportedGasUsed, "post-activation, receipt.gasUsed matches what was actually charged");
@@ -135,32 +135,32 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
 
     @Test
     void revertBehavesIdenticallyRegardlessOfActivation() {
-        TxResult withRskip560 = runRevertScenario(true, false);
-        TxResult withoutRskip560 = runRevertScenario(false, false);
+        TxResult withRskip692 = runRevertScenario(true, false);
+        TxResult withoutRskip692 = runRevertScenario(false, false);
 
-        assertFalse(withRskip560.receiptSuccessful);
-        assertFalse(withoutRskip560.receiptSuccessful);
-        assertEquals(withoutRskip560.paidFees, withRskip560.paidFees, "REVERT fee accounting must be unaffected by RSKIP560");
-        assertEquals(withoutRskip560.reportedGasUsed, withRskip560.reportedGasUsed, "REVERT receipt.gasUsed must be unaffected by RSKIP560");
-        assertTrue(withRskip560.reportedGasUsed.compareTo(BigInteger.valueOf(200_000L)) < 0);
+        assertFalse(withRskip692.receiptSuccessful);
+        assertFalse(withoutRskip692.receiptSuccessful);
+        assertEquals(withoutRskip692.paidFees, withRskip692.paidFees, "REVERT fee accounting must be unaffected by RSKIP692");
+        assertEquals(withoutRskip692.reportedGasUsed, withRskip692.reportedGasUsed, "REVERT receipt.gasUsed must be unaffected by RSKIP692");
+        assertTrue(withRskip692.reportedGasUsed.compareTo(BigInteger.valueOf(200_000L)) < 0);
     }
 
     @Test
     void revertWithAuthorizationRefundBehavesIdenticallyRegardlessOfActivation() {
-        TxResult withRskip560 = runRevertScenario(true, true);
-        TxResult withoutRskip560 = runRevertScenario(false, true);
+        TxResult withRskip692 = runRevertScenario(true, true);
+        TxResult withoutRskip692 = runRevertScenario(false, true);
 
-        assertFalse(withRskip560.receiptSuccessful);
-        assertFalse(withoutRskip560.receiptSuccessful);
-        assertEquals(withoutRskip560.paidFees, withRskip560.paidFees, "REVERT + authorization refund fee accounting must be unaffected by RSKIP560");
-        assertEquals(withoutRskip560.reportedGasUsed, withRskip560.reportedGasUsed, "REVERT + authorization refund receipt.gasUsed must be unaffected by RSKIP560");
-        assertTrue(withRskip560.reportedGasUsed.compareTo(BigInteger.valueOf(200_000L)) < 0);
+        assertFalse(withRskip692.receiptSuccessful);
+        assertFalse(withoutRskip692.receiptSuccessful);
+        assertEquals(withoutRskip692.paidFees, withRskip692.paidFees, "REVERT + authorization refund fee accounting must be unaffected by RSKIP692");
+        assertEquals(withoutRskip692.reportedGasUsed, withRskip692.reportedGasUsed, "REVERT + authorization refund receipt.gasUsed must be unaffected by RSKIP692");
+        assertTrue(withRskip692.reportedGasUsed.compareTo(BigInteger.valueOf(200_000L)) < 0);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void authorizationOnFailingPrecompileBehavesPerActivation(boolean rskip560Active) {
-        activationConfig = rskip560Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
+    void authorizationOnFailingPrecompileBehavesPerActivation(boolean rskip692Active) {
+        activationConfig = rskip692Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
         when(config.getActivationConfig()).thenReturn(activationConfig);
 
         MutableRepository repository = createRepository();
@@ -194,7 +194,7 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
         long authorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST; // 9_500
         long expectedGasUsed = 100_000L - authorizationRefund; // 90_500
 
-        if (rskip560Active) {
+        if (rskip692Active) {
             assertEquals(authorizationRefund, txExecutor.getResult().getDeductedRefund(), "authorization refund should be fully applied (well under the half-of-gasUsed cap)");
             assertFalse(receipt.isSuccessful(), "post-activation, both gates fire: status must be FAILED");
 
@@ -214,8 +214,8 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void authorizationOnFailingPrecompileAppliesGasPriceMultiplier(boolean rskip560Active) {
-        activationConfig = rskip560Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
+    void authorizationOnFailingPrecompileAppliesGasPriceMultiplier(boolean rskip692Active) {
+        activationConfig = rskip692Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
         when(config.getActivationConfig()).thenReturn(activationConfig);
 
         long gasPrice = 3L;
@@ -248,7 +248,7 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
 
         long authorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST; // 9_500
 
-        if (rskip560Active) {
+        if (rskip692Active) {
             long expectedChargedGas = 100_000L - authorizationRefund; // 90_500
             Coin expectedFee = Coin.valueOf(expectedChargedGas * gasPrice); // 271_500
             Coin expectedSenderBalance = Coin.valueOf(1_000_000L - expectedChargedGas * gasPrice); // 728_500
@@ -266,8 +266,8 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void localCallOnFailingPrecompileDoesNotInflateGasEstimateToLimit(boolean rskip560Active) {
-        activationConfig = rskip560Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
+    void localCallOnFailingPrecompileDoesNotInflateGasEstimateToLimit(boolean rskip692Active) {
+        activationConfig = rskip692Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
         when(config.getActivationConfig()).thenReturn(activationConfig);
 
         MutableRepository repository = createRepository();
@@ -297,13 +297,13 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
 
         long maxGasUsed = txExecutor.getResult().getMaxGasUsed();
         assertTrue(maxGasUsed < gasEstimationCapStandIn / 2, "a local call against a throwing precompile must not report gasUsed inflated toward the full gas limit; got " + maxGasUsed);
-        assertNotEquals(gasEstimationCapStandIn, maxGasUsed, "gasUsed must reflect the precompile's declared cost, not txGasLimit, regardless of RSKIP560 activation");
+        assertNotEquals(gasEstimationCapStandIn, maxGasUsed, "gasUsed must reflect the precompile's declared cost, not txGasLimit, regardless of RSKIP692 activation");
     }
 
-    private TxResult runRevertScenario(boolean rskip560Active, boolean withAuthorization) {
-        activationConfig = rskip560Active
+    private TxResult runRevertScenario(boolean rskip692Active, boolean withAuthorization) {
+        activationConfig = rskip692Active
                 ? ActivationConfigsForTest.all()
-                : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
+                : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
         when(config.getActivationConfig()).thenReturn(activationConfig);
         mockExecutionBlockForRealVm();
 

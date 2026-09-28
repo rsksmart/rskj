@@ -103,7 +103,7 @@ class CallTracerTest {
         assertOOGError(traceResult.getCalls().get(0).getCalls().get(0));
     }
 
-    /** A RSKIP-560 failed direct precompile call (status 0) must carry an error in the callTracer. */
+    /** A RSKIP-692 failed direct precompile call (status 0) must carry an error in the callTracer. */
     @Test
     void failedPrecompileCallTrace() throws Exception {
         TxTraceResult traceResult = failedPrecompileTraceResult("tx01");

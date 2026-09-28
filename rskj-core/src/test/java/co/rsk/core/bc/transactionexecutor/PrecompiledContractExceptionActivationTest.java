@@ -55,9 +55,9 @@ class PrecompiledContractExceptionActivationTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void bridgeCallThatThrowsBehavesPerActivation(boolean rskip560Active) {
+    void bridgeCallThatThrowsBehavesPerActivation(boolean rskip692Active) {
         TestSystemProperties baseConfig = new TestSystemProperties();
-        ActivationConfig activationConfig = withRskip560(baseConfig.getActivationConfig(), rskip560Active);
+        ActivationConfig activationConfig = withRskip692(baseConfig.getActivationConfig(), rskip692Active);
 
         TestSystemProperties config = spy(baseConfig);
         doReturn(activationConfig).when(config).getActivationConfig();
@@ -109,7 +109,7 @@ class PrecompiledContractExceptionActivationTest {
         TransactionReceipt receipt = executor.getReceipt();
         BigInteger reportedGasUsed = new BigInteger(1, receipt.getGasUsed());
 
-        if (rskip560Active) {
+        if (rskip692Active) {
             Coin expectedFullFee = Coin.valueOf(gasLimit.longValueExact() * gasPrice);
 
             Coin expectedReportedFee = Coin.valueOf(reportedGasUsed.longValueExact() * gasPrice);
@@ -131,11 +131,11 @@ class PrecompiledContractExceptionActivationTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void invalidOpcodeChargesFullGasLimitRegardlessOfActivation(boolean rskip560Active) {
+    void invalidOpcodeChargesFullGasLimitRegardlessOfActivation(boolean rskip692Active) {
         final byte[] INVALID_OPCODE_CODE = Hex.decode("fe");
 
         TestSystemProperties baseConfig = new TestSystemProperties();
-        ActivationConfig activationConfig = withRskip560(baseConfig.getActivationConfig(), rskip560Active);
+        ActivationConfig activationConfig = withRskip692(baseConfig.getActivationConfig(), rskip692Active);
 
         TestSystemProperties config = spy(baseConfig);
         doReturn(activationConfig).when(config).getActivationConfig();
@@ -196,14 +196,14 @@ class PrecompiledContractExceptionActivationTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void outOfGasLoopChargesFullGasLimitRegardlessOfActivation(boolean rskip560Active) {
+    void outOfGasLoopChargesFullGasLimitRegardlessOfActivation(boolean rskip692Active) {
         // JUMPDEST; PUSH1 0x00; JUMP -- an infinite loop back to itself.
         // Consumes gas every iteration until the tx's budget runs out, producing
         // a genuine OutOfGasException rather than an invalid-opcode exception.
         final byte[] INFINITE_LOOP_CODE = Hex.decode("5b600056");
 
         TestSystemProperties baseConfig = new TestSystemProperties();
-        ActivationConfig activationConfig = withRskip560(baseConfig.getActivationConfig(), rskip560Active);
+        ActivationConfig activationConfig = withRskip692(baseConfig.getActivationConfig(), rskip692Active);
 
         TestSystemProperties config = spy(baseConfig);
         doReturn(activationConfig).when(config).getActivationConfig();
@@ -262,18 +262,18 @@ class PrecompiledContractExceptionActivationTest {
         BigInteger reportedGasUsed = new BigInteger(1, receipt.getGasUsed());
         Coin expectedFullFee = Coin.valueOf(gasLimit.longValueExact() * gasPrice);
 
-        // Identical regardless of RSKIP560 -- go()'s normal VM exception path was
+        // Identical regardless of RSKIP692 -- go()'s normal VM exception path was
         // never part of the bug (unlike the precompile-direct-call catch).
         Assertions.assertFalse(receipt.isSuccessful());
         Assertions.assertEquals(gasLimit, reportedGasUsed);
         Assertions.assertEquals(expectedFullFee, executor.getPaidFees());
     }
-    private static ActivationConfig withRskip560(ActivationConfig defaults, boolean active) {
+    private static ActivationConfig withRskip692(ActivationConfig defaults, boolean active) {
         Map<ConsensusRule, Long> heights = new EnumMap<>(ConsensusRule.class);
         for (ConsensusRule rule : ConsensusRule.values()) {
             heights.put(rule, defaults.isActive(rule, 0L) ? 0L : -1L);
         }
-        heights.put(ConsensusRule.RSKIP560, active ? 0L : -1L);
+        heights.put(ConsensusRule.RSKIP692, active ? 0L : -1L);
         return new ActivationConfig(heights, new HashMap<>());
     }
 }
