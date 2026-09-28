@@ -3420,6 +3420,26 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
+            void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupSegwitActiveAndSegwitRetiringFeds(allActivations);
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
+                registerPegoutTxSigHash(btcTransaction);
+
+                // act
+                registerReleaseTransaction(btcTransaction);
+
+                // assert
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
+                    btcTransaction,
+                    activeFederation,
+                    HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX
+                );
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
+                assertLogUtxosRegisteredForPegoutChange(btcTransaction);
+            }
+
+            @Test
             void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveFed();
@@ -3531,6 +3551,21 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withOneOutputAndManyInputs_withRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupSegwitActiveAndSegwitRetiringFeds(allActivations);
+                BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
+
+                // act
+                registerPegoutTxSigHash(btcTransaction);
+                registerReleaseTransaction(btcTransaction);
+
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+                assertUtxosRegisteredWasNotEmitted();
             }
 
             @Test
@@ -3711,14 +3746,14 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withOneInputAndOutput_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withOneInputAndOutput_forReed_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
 
                 // act
                 registerPegoutTxSigHash(migrationTx);
-                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, UTXO_HEIGHT_BEFORE_CARDAMOM, bridgeMainnetConstants);
 
                 // assert
                 List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
@@ -3731,6 +3766,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
+                assertUtxosRegisteredWasNotEmitted();
             }
 
             @Test
@@ -3777,6 +3813,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
+                assertLogUtxosRegisteredForMigration(migrationTx);
             }
 
             @Test
@@ -3804,7 +3841,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_notInPegoutTxIndex_withSegwitActiveFed_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_notInPegoutTxIndex_forReed_withSegwitActiveFed_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
@@ -3826,6 +3863,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     Coin.COIN
                 );
                 assertReleaseTxWasProcessedWithNoNewUtxo(migrationTx);
+                assertUtxosRegisteredWasNotEmitted();
             }
 
             @Test
@@ -3896,7 +3934,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withManyOutputsAndInputs_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withManyOutputsAndInputs_forReed_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
                 BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndInputs();
@@ -3916,6 +3954,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
+                assertUtxosRegisteredWasNotEmitted();
             }
 
             @Test
@@ -3962,6 +4001,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
+                assertLogUtxosRegisteredForMigration(migrationTx);
             }
 
             @Test
@@ -4032,7 +4072,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withManyOutputsAndOneInput_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withManyOutputsAndOneInput_forReed_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
                 BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndOneInput();
@@ -4052,6 +4092,31 @@ class BridgeSupportRegisterBtcTransactionTest {
                     MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
+                assertUtxosRegisteredWasNotEmitted();
+            }
+
+            @Test
+            void registerBtcTransaction_withManyOutputsAndOneInput_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupSegwitActiveAndSegwitRetiringFeds(allActivations);
+                BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndOneInput();
+
+                // act
+                registerPegoutTxSigHash(migrationTx);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
+
+                // assert
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
+                    migrationTx,
+                    activeFederation,
+                    HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX
+                );
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
+                assertLogUtxosRegisteredForMigration(migrationTx);
             }
 
             @Test
@@ -4122,7 +4187,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withOneOutputAndManyInputs_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withOneOutputAndManyInputs_forReed_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
                 BtcTransaction migrationTx = getMigrationTxWithOneOutputAndManyInputs();
@@ -4142,6 +4207,31 @@ class BridgeSupportRegisterBtcTransactionTest {
                     ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
+                assertUtxosRegisteredWasNotEmitted();
+            }
+
+            @Test
+            void registerBtcTransaction_withOneOutputAndManyInputs_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupSegwitActiveAndSegwitRetiringFeds(allActivations);
+                BtcTransaction migrationTx = getMigrationTxWithOneOutputAndManyInputs();
+
+                // act
+                registerPegoutTxSigHash(migrationTx);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
+
+                // assert
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
+                    migrationTx,
+                    activeFederation,
+                    HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX
+                );
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
+                assertLogUtxosRegisteredForMigration(migrationTx);
             }
 
             @Test
@@ -4212,7 +4302,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_forReed_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
                 BtcTransaction migrationTx = getMigrationTxWithFlyoverUtxo(allActivations);
@@ -4232,6 +4322,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
+                assertUtxosRegisteredWasNotEmitted();
             }
 
             @Test
@@ -4255,6 +4346,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
+                assertUtxosRegisteredWasNotEmitted();
             }
 
             @Test
@@ -4278,6 +4370,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
+                assertLogUtxosRegisteredForMigration(migrationTx);
             }
 
             @Test
@@ -4348,7 +4441,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_forReed_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
                 BtcTransaction migrationTx = getMigrationTxWithManyInputsAndOutputsWithFlyoverUtxo(allActivations);
@@ -4368,6 +4461,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
+                assertUtxosRegisteredWasNotEmitted();
             }
 
             @Test
@@ -4508,6 +4602,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
+                assertLogUtxosRegisteredForMigration(migrationTx);
             }
 
             @Test
@@ -4732,6 +4827,20 @@ class BridgeSupportRegisterBtcTransactionTest {
                 assertEquals(expectedUtxosCount, activeFederationUtxos.size());
                 assertUtxosAreEqual(expectedUtxosRegistered, activeFederationUtxos);
                 assertNoUtxoWasAddedInRetiringFed();
+            }
+
+            private void assertLogUtxosRegisteredForMigration(BtcTransaction migrationTx) {
+                // every migration output is sent to the active federation
+                List<TransactionOutput> migrationOutputs = migrationTx.getOutputs();
+                List<Coin> valuesInSatoshis = migrationOutputs.stream().map(TransactionOutput::getValue).toList();
+                List<Long> outputsIndexes = migrationOutputs.stream().map(output -> (long) output.getIndex()).toList();
+                assertLogUtxosRegistered(
+                    logs,
+                    migrationTx.getHash(),
+                    valuesInSatoshis,
+                    outputsIndexes,
+                    activeFederation.getAddress()
+                );
             }
 
             private BtcTransaction getMigrationTxWithFlyoverUtxo(ActivationConfig.ForBlock activations) {
