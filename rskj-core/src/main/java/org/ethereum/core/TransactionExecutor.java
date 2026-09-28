@@ -399,6 +399,10 @@ public class TransactionExecutor {
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, gasLeftover));
                 gasLeftover = 0;
+                if (activations.isActive(ConsensusRule.RSKIP692)) {
+                    // An exceptional halt consumes the gas limit, so the refunds that survive a halt apply to it
+                    result.spendGas(txGasLimit);
+                }
                 profiler.stop(metric);
                 return;
             }

@@ -103,6 +103,49 @@ class PrecompiledContractExceptionActivationTest {
         }
     }
 
+    /**
+     * A transaction without an authorization list sends 0xdeadbeef to the Bridge with gas
+     * limit 40_000. It covers the intrinsic cost of 21_000 + 4 * 16 = 21_064, but not 21_064 + 23_000 = 44_064,
+     * so the Bridge does not execute. Before and after activation: status 0, gasUsed = fee = 40_000, no state
+     * change and no log.
+     */
+    // RSKIP-692 test case 8
+    @ParameterizedTest(name = "rskip692Active={0}")
+    @ValueSource(booleans = {true, false})
+    void directCallWithInsufficientGasChargesGasLimitRegardlessOfActivation(boolean rskip692Active) {
+        TestSystemProperties config = configWith(withRskip692(new TestSystemProperties().getActivationConfig(), rskip692Active));
+        TransactionExecutorFactory transactionExecutorFactory = newTransactionExecutorFactory(config);
+
+        Repository track = createRepository().startTracking();
+        Account sender = createAccount("acctest1", track, Coin.valueOf(6_000_000L));
+        track.commit();
+
+        Transaction tx = Transaction.builder()
+                .nonce(track.getNonce(sender.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(40_000L))
+                .receiveAddress(PrecompiledContracts.BRIDGE_ADDR)
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(Coin.ZERO)
+                .data(Hex.decode("deadbeef"))
+                .build();
+        tx.sign(sender.getEcKey().getPrivKeyBytes());
+
+        Block block = childOfGenesis(config, track, tx);
+        TransactionExecutor executor = transactionExecutorFactory.newInstance(tx, 0, block.getCoinbase(), track, block, 0L);
+
+        Assertions.assertTrue(executor.executeTransaction());
+
+        TransactionReceipt receipt = executor.getReceipt();
+        Assertions.assertFalse(receipt.isSuccessful());
+        Assertions.assertEquals(BigInteger.valueOf(40_000L), new BigInteger(1, receipt.getGasUsed()));
+        Assertions.assertEquals(Coin.valueOf(40_000L), executor.getPaidFees());
+        Assertions.assertEquals(Coin.valueOf(6_000_000L - 40_000L), track.getBalance(sender.getAddress()));
+        Assertions.assertEquals(BigInteger.ONE, track.getNonce(sender.getAddress()));
+        Assertions.assertTrue(receipt.getLogInfoList().isEmpty());
+        Assertions.assertFalse(track.isExist(PrecompiledContracts.BRIDGE_ADDR));
+    }
+
     // RSKIP-692 test case 3
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
@@ -303,13 +346,7 @@ class PrecompiledContractExceptionActivationTest {
         @ParameterizedTest(name = "rskip692Active={0}")
         @ValueSource(booleans = {true, false})
         void authorizationRefundOnFailingDirectCallBehavesPerActivation(boolean rskip692Active) {
-            ActivationConfig realActivations = withRskip692(new TestSystemProperties().getActivationConfig(), rskip692Active);
-            Map<ConsensusRule, Long> heights = new EnumMap<>(ConsensusRule.class);
-            for (ConsensusRule rule : ConsensusRule.values()) {
-                heights.put(rule, realActivations.isActive(rule, 0L) ? 0L : -1L);
-            }
-            heights.put(ConsensusRule.RSKIP545, 0L);
-            TestSystemProperties realConfig = configWith(new ActivationConfig(heights, new HashMap<>()));
+            TestSystemProperties realConfig = configWith(withRskip545(withRskip692(new TestSystemProperties().getActivationConfig(), rskip692Active)));
             TransactionExecutorFactory transactionExecutorFactory = newTransactionExecutorFactory(realConfig);
             byte chainId = realConfig.getNetworkConstants().getChainId();
 
@@ -348,6 +385,63 @@ class PrecompiledContractExceptionActivationTest {
                 Assertions.assertEquals(Coin.valueOf(100_000L), executor.getPaidFees());
                 Assertions.assertEquals(Coin.valueOf(900_000L), track.getBalance(sender));
             }
+        }
+
+        /**
+         * With RSKIP545 active, the same set-code transaction as case 9 (authorization refund 9_500, data 0xdeadbeef
+         * to the Bridge), but with gas limit 60_000. The limit covers the intrinsic cost of
+         * 21_000 + 4 * 16 + 25_000 = 46_064, but not 46_064 + 23_000 = 69_064, so the Bridge does not execute.
+         * Before activation: status 0, gasUsed = fee = 60_000 (no refund).
+         * After activation: status 0; the gas limit is consumed and the refund (under the 60_000 / 2 = 30_000 cap)
+         * applies, so gasUsed = fee = 60_000 - 9_500 = 50_500.
+         * The delegation is written in both cases and no log is recorded.
+         */
+        // RSKIP-692 test case 10
+        @ParameterizedTest(name = "rskip692Active={0}")
+        @ValueSource(booleans = {true, false})
+        void authorizationRefundOnDirectCallWithInsufficientGasBehavesPerActivation(boolean rskip692Active) {
+            TestSystemProperties realConfig = configWith(withRskip545(withRskip692(new TestSystemProperties().getActivationConfig(), rskip692Active)));
+            TransactionExecutorFactory transactionExecutorFactory = newTransactionExecutorFactory(realConfig);
+            byte chainId = realConfig.getNetworkConstants().getChainId();
+
+            Repository track = createRepository().startTracking();
+            track.createAccount(sender);
+            track.addBalance(sender, Coin.valueOf(1_000_000L));
+            track.createAccount(authorityAddress);
+            track.saveCode(authorityAddress, DelegationCodeResolver.createDelegatedCode(createRandomAddress()));
+            track.commit();
+
+            SetCodeAuthorization authorization = createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, chainId, authorityKey);
+            Transaction tx = createSignedType4Transaction(
+                    senderKey, chainId, ZERO_NONCE, 60_000, 1, 1,
+                    PrecompiledContracts.BRIDGE_ADDR, 0, Hex.decode("deadbeef"), authorization
+            );
+
+            Block block = childOfGenesis(realConfig, track, tx);
+            TransactionExecutor executor = transactionExecutorFactory.newInstance(tx, 0, block.getCoinbase(), track, block, 0L);
+
+            Assertions.assertTrue(executor.executeTransaction());
+            Assertions.assertArrayEquals(DelegationCodeResolver.createDelegatedCode(delegatedAddress), track.getCode(authorityAddress),
+                    "the authorization must be processed in both cases");
+
+            TransactionReceipt receipt = executor.getReceipt();
+            long expectedGasUsed = rskip692Active ? 50_500L : 60_000L;
+
+            Assertions.assertFalse(receipt.isSuccessful());
+            Assertions.assertEquals(BigInteger.valueOf(expectedGasUsed), new BigInteger(1, receipt.getGasUsed()));
+            Assertions.assertEquals(Coin.valueOf(expectedGasUsed), executor.getPaidFees());
+            Assertions.assertEquals(Coin.valueOf(1_000_000L - expectedGasUsed), track.getBalance(sender));
+            Assertions.assertTrue(receipt.getLogInfoList().isEmpty());
+            Assertions.assertFalse(track.isExist(PrecompiledContracts.BRIDGE_ADDR));
+        }
+
+        private ActivationConfig withRskip545(ActivationConfig activations) {
+            Map<ConsensusRule, Long> heights = new EnumMap<>(ConsensusRule.class);
+            for (ConsensusRule rule : ConsensusRule.values()) {
+                heights.put(rule, activations.isActive(rule, 0L) ? 0L : -1L);
+            }
+            heights.put(ConsensusRule.RSKIP545, 0L);
+            return new ActivationConfig(heights, new HashMap<>());
         }
     }
 
