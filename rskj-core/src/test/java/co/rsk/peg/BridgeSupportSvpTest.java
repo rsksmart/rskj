@@ -75,6 +75,16 @@ class BridgeSupportSvpTest {
         Coin.valueOf(300_000)
     );
     private static final Coin svpFundTxOutputsValue = bridgeMainNetConstants.getSvpFundTxOutputsValue();
+    private static final Coin changeValue = Coin.COIN.multiply(10);
+    private static final Coin svpSpendTxOutputValue = Coin.valueOf(1762);
+    // svp fund tx change output comes after the proposed and flyover proposed federation outputs
+    private static final long outputIndexForSvpFundTxChange = 2;
+    // pegout change output comes after the user output
+    private static final long outputIndexForPegoutChange = 1;
+    // pegin output to the active federation is the first one
+    private static final long outputIndexForPeginOutputToFed = 0;
+    // svp spend tx output to the active federation is the only one
+    private static final long outputIndexForSpendTxOutputToFed = 0;
     private static final Coin totalValueSentToProposedFederation = svpFundTxOutputsValue.multiply(2);
     private static final Coin feePerKb = Coin.valueOf(1000L);
     private static final Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
@@ -641,8 +651,11 @@ class BridgeSupportSvpTest {
                 activeFederation,
                 btcBlockWithPmtHeight
             );
+
             assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
-            assertTransactionWasProcessed(svpFundTransaction.getHash());
+            Sha256Hash svpFundTransactionHash = svpFundTransaction.getHash();
+            assertLogUtxosRegisteredForSvpFundTransaction(svpFundTransactionHash);
+            assertTransactionWasProcessed(svpFundTransactionHash);
             assertSvpFundTransactionValuesWereNotUpdated();
         }
 
@@ -672,7 +685,9 @@ class BridgeSupportSvpTest {
                 btcBlockWithPmtHeight
             );
             assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
-            assertTransactionWasProcessed(svpFundTransaction.getHash());
+            Sha256Hash svpFundTransactionHash = svpFundTransaction.getHash();
+            assertLogUtxosRegisteredForSvpFundTransaction(svpFundTransactionHash);
+            assertTransactionWasProcessed(svpFundTransactionHash);
             assertSvpFundTransactionValuesWereNotUpdated();
         }
 
@@ -684,7 +699,7 @@ class BridgeSupportSvpTest {
             BtcTransaction pegout = PegoutTransactionBuilder.builder()
                 .withActiveFederation(activeFederation)
                 .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
-                .withChangeAmount(Coin.COIN.multiply(10))
+                .withChangeAmount(changeValue)
                 .withSignatures(activeFederationKeys)
                 .build();
 
@@ -708,6 +723,7 @@ class BridgeSupportSvpTest {
                 btcBlockWithPmtHeight
             );
             assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
+            assertLogUtxosRegisteredForPegoutChange(pegout);
             assertTransactionWasProcessed(pegout.getHash());
             assertSvpFundTransactionValuesWereNotUpdated();
         }
@@ -733,6 +749,7 @@ class BridgeSupportSvpTest {
 
             // Assert
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertUtxosRegisteredWasNotEmitted();
             assertTransactionWasProcessed(svpFundTransaction.getHash());
             assertSvpFundTransactionValuesWereUpdated();
         }
@@ -792,8 +809,20 @@ class BridgeSupportSvpTest {
                 btcBlockWithPmtHeight
             );
             assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
-            assertTransactionWasProcessed(svpFundTransaction.getHash());
+            Sha256Hash svpFundTransactionHash = svpFundTransaction.getHash();
+            assertLogUtxosRegisteredForSvpFundTransaction(svpFundTransactionHash);
+            assertTransactionWasProcessed(svpFundTransactionHash);
             assertSvpFundTransactionValuesWereUpdated();
+        }
+
+        private void assertLogUtxosRegisteredForSvpFundTransaction(Sha256Hash svpFundTransactionHash) {
+            assertLogUtxosRegistered(
+                logs,
+                svpFundTransactionHash,
+                List.of(changeValue),
+                List.of(outputIndexForSvpFundTxChange),
+                activeFederation.getAddress()
+            );
         }
 
         private void assertSvpFundTransactionValuesWereUpdated() {
@@ -1099,7 +1128,7 @@ class BridgeSupportSvpTest {
             BtcTransaction pegout = PegoutTransactionBuilder.builder()
                 .withActiveFederation(activeFederation)
                 .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
-                .withChangeAmount(Coin.COIN.multiply(10))
+                .withChangeAmount(changeValue)
                 .withSignatures(activeFederationKeys)
                 .build();
 
@@ -1125,6 +1154,7 @@ class BridgeSupportSvpTest {
                 btcBlockWithPmtHeight
             );
             assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
+            assertLogUtxosRegisteredForPegoutChange(pegout);
             assertTransactionWasProcessed(pegout.getHash());
 
             // spend tx was not registered nor processed
@@ -1181,6 +1211,7 @@ class BridgeSupportSvpTest {
             assertEquals(P2pkhBtcLockSender.class, btcLockSender.get().getClass());
             // pegin was registered and processed
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertLogUtxosRegisteredForPegin(pegin, amountToSend);
             assertTransactionWasProcessed(pegin.getHash());
 
             // spend tx was not registered nor processed
@@ -1247,6 +1278,7 @@ class BridgeSupportSvpTest {
             assertEquals(P2shP2wpkhBtcLockSender.class, btcLockSender.get().getClass());
             // pegin was registered and processed
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertLogUtxosRegisteredForPegin(pegin, amountToSend);
             assertTransactionWasProcessed(pegin.getHash());
 
             // spend tx was not registered nor processed
@@ -1308,6 +1340,7 @@ class BridgeSupportSvpTest {
             assertEquals(P2shMultisigBtcLockSender.class, btcLockSender.get().getClass());
             // pegin was not registered
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertUtxosRegisteredWasNotEmitted();
             // but was marked as processed
             assertTransactionWasProcessed(pegin.getHash());
 
@@ -1379,6 +1412,7 @@ class BridgeSupportSvpTest {
             assertEquals(P2shP2wshBtcLockSender.class, btcLockSender.get().getClass());
             // pegin was not registered
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertUtxosRegisteredWasNotEmitted();
             // but was marked as processed
             assertTransactionWasProcessed(pegin.getHash());
 
@@ -1439,6 +1473,7 @@ class BridgeSupportSvpTest {
             assertEquals(1, peginInstructions.get().getProtocolVersion());
             // pegin was registered and processed
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertLogUtxosRegisteredForPegin(pegin, amountToSend);
             assertTransactionWasProcessed(pegin.getHash());
 
             // spend tx was not registered nor processed
@@ -1475,6 +1510,7 @@ class BridgeSupportSvpTest {
             // assert
             // spend tx was not registered
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertUtxosRegisteredWasNotEmitted();
 
             assertTxIsRejectedPeginAndMarkedAsProcessed(svpSpendTransaction);
 
@@ -1530,6 +1566,7 @@ class BridgeSupportSvpTest {
 
             // assert
             assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, UTXO_HEIGHT_BEFORE_CARDAMOM);
+            assertUtxosRegisteredWasNotEmitted();
         }
 
         @Test
@@ -1553,6 +1590,7 @@ class BridgeSupportSvpTest {
 
             // assert
             assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, btcBlockWithPmtHeight);
+            assertLogUtxosRegisteredForSvpSpendTransaction(svpSpendTxOutputValue);
         }
 
         @Test
@@ -1579,6 +1617,7 @@ class BridgeSupportSvpTest {
 
             // assert
             assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, btcBlockWithPmtHeight);
+            assertLogUtxosRegisteredForSvpSpendTransaction(amountToSend);
         }
 
         @Test
@@ -1608,6 +1647,28 @@ class BridgeSupportSvpTest {
 
             // assert utxo was registered just once
             assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, btcBlockWithPmtHeight);
+            assertLogUtxosRegisteredForSvpSpendTransaction(svpSpendTxOutputValue);
+            assertEquals(1, getLogsBySignature(logs, BridgeEvents.UTXOS_REGISTERED.getEvent()).size());
+        }
+
+        private void assertLogUtxosRegisteredForSvpSpendTransaction(Coin expectedValueSent) {
+            assertLogUtxosRegistered(
+                logs,
+                svpSpendTransaction.getHash(),
+                List.of(expectedValueSent),
+                List.of(outputIndexForSpendTxOutputToFed),
+                activeFederation.getAddress()
+            );
+        }
+
+        private void assertLogUtxosRegisteredForPegin(BtcTransaction pegin, Coin expectedValueSent) {
+            assertLogUtxosRegistered(
+                logs,
+                pegin.getHash(),
+                List.of(expectedValueSent),
+                List.of(outputIndexForPeginOutputToFed),
+                activeFederation.getAddress()
+            );
         }
 
         private void assertSvpSuccess(List<UTXO> activeFederationUtxosBeforeRegisteringTx, int expectedBtcTxHeight) throws IOException {
@@ -1756,7 +1817,7 @@ class BridgeSupportSvpTest {
     private void addOutputChange(BtcTransaction transaction) {
         // add output to the active fed
         Script activeFederationP2SHScript = activeFederation.getP2SHScript();
-        transaction.addOutput(Coin.COIN.multiply(10), activeFederationP2SHScript);
+        transaction.addOutput(changeValue, activeFederationP2SHScript);
     }
 
     private void signInputs(BtcTransaction transaction) {
@@ -1777,8 +1838,7 @@ class BridgeSupportSvpTest {
         createSpendTransaction();
         addSpendTransactionInputs();
 
-        Coin amountToSend = Coin.valueOf(1762);
-        addSpendTransactionOutput(amountToSend);
+        addSpendTransactionOutput(svpSpendTxOutputValue);
     }
 
     private void createSpendTransaction() {
@@ -1862,6 +1922,20 @@ class BridgeSupportSvpTest {
         List<UTXO> expectedActiveFederationUtxos = new ArrayList<>(activeFederationUtxosBeforeRegisteringTx);
         expectedActiveFederationUtxos.addAll(expectedUtxosRegistered);
         assertUtxosAreEqual(expectedActiveFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
+    }
+
+    private void assertLogUtxosRegisteredForPegoutChange(BtcTransaction pegout) {
+        assertLogUtxosRegistered(
+            logs,
+            pegout.getHash(),
+            List.of(changeValue),
+            List.of(outputIndexForPegoutChange),
+            activeFederation.getAddress()
+        );
+    }
+
+    private void assertUtxosRegisteredWasNotEmitted() {
+        assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
     }
 
     private void assertTransactionWasProcessed(Sha256Hash transactionHash) throws IOException {
