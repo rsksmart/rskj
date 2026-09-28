@@ -34,6 +34,7 @@ import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -89,6 +90,36 @@ class EthModuleDSLTest {
         args.setData("0xd96a094a0000000000000000000000000000000000000000000000000000000000000001"); // call to contract with param value = 1
         final String call = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("0x2"));
         assertEquals("0x", call);
+    }
+
+    // RSKIP-692 test case 11
+    @Test
+    void testCall_directCallToBridgeWithUnknownMethod_returnsExecutionError() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(failingBridgeCallArguments());
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class,
+                () -> eth.call(callArgumentsParam, latest));
+        assertEquals(-32015, exception.getCode());
+        assertEquals("VM Exception while processing transaction: execution failed", exception.getMessage());
+        assertNull(exception.getRevertData());
+    }
+
+    /**
+     * A call from an arbitrary account to the Bridge with data that matches no Bridge method,
+     * so the Bridge throws while executing.
+     */
+    static CallArguments failingBridgeCallArguments() {
+        CallArguments args = new CallArguments();
+        args.setFrom("0x" + "ab".repeat(20));
+        args.setTo("0x" + PrecompiledContracts.BRIDGE_ADDR.toHexString());
+        args.setValue("0x0");
+        args.setGas("0x30d40"); // 200,000
+        args.setData("0xdeadbeef");
+        return args;
     }
 
     @Test
