@@ -423,6 +423,12 @@ public class TransactionExecutor {
                 if (!localCall && activations.isActive(ConsensusRule.RSKIP692)) {
                     gasLeftover = 0;
                     gasUsed = txGasLimit;
+                    // Discard what the precompiled contract did before failing. The nonce increase, the fee
+                    // and the authorization list were applied on track, so they are not rolled back.
+                    // A precompiled contract cannot add internal transactions to the result, and its
+                    // subtraces are only read on success, so there are none to reject.
+                    result.clearFieldsOnException();
+                    cacheTrack.rollback();
                     execError(e);
                 }
                 result.setException(e);
