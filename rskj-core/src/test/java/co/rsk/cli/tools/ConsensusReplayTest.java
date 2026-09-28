@@ -49,6 +49,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -695,6 +696,14 @@ class ConsensusReplayTest {
         return world;
     }
 
+    private static Block tamperedReceiptsRoot(Block real) {
+        BlockHeader header = spy(real.getHeader());
+        doReturn(new byte[32]).when(header).getReceiptsRoot();
+        Block tampered = spy(real);
+        doReturn(header).when(tampered).getHeader();
+        return tampered;
+    }
+
     private BlockStore blockStoreReturning(World world, Block block) {
         long number = block.getNumber();
         BlockStore blockStore = spy(world.getBlockStore());
@@ -703,7 +712,121 @@ class ConsensusReplayTest {
         return blockStore;
     }
 
+    // =========================================================================
+    // Failure counts by record kind
+    // =========================================================================
+
+    /** An invariant violation is not a consensus divergence, and the counts must not let it read as one. */
+    @Test
+    void invariantViolationIsCountedApartFromDivergence() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        ConsensusReplay tool = new ConsensusReplay();
+
+        NodeStopper stopper = run(tool, world, world.getBlockStore(),
+                executorReturning(world, 1, result -> doReturn(Coin.valueOf(12345L)).when(result).getPaidFees()),
+                tempDir.resolve("kinds-invariant.jsonl"), "DIGEST");
+
+        verify(stopper).stop(1);
+        Map<ConsensusReplay.Failure, Long> counts = tool.failureCounts();
+        Assertions.assertEquals(0L, counts.get(ConsensusReplay.Failure.DIVERGED), counts::toString);
+        Assertions.assertEquals(1L, counts.get(ConsensusReplay.Failure.INVARIANT), counts::toString);
+        Assertions.assertEquals("0 diverged, 1 invariant violations, 0 not executed, 0 not loaded", tool.failureSummary());
+    }
+
+    @Test
+    void fidelityDivergenceIsCountedAsDiverged() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        ConsensusReplay tool = new ConsensusReplay();
+        Block tampered = tamperedReceiptsRoot(world.getBlockStore().getChainBlockByNumber(1));
+
+        run(tool, world, blockStoreReturning(world, tampered), world.getBlockExecutor(),
+                tempDir.resolve("kinds-diverged.jsonl"), "FIDELITY");
+
+        Map<ConsensusReplay.Failure, Long> counts = tool.failureCounts();
+        Assertions.assertEquals(1L, counts.get(ConsensusReplay.Failure.DIVERGED), counts::toString);
+        Assertions.assertEquals(0L, counts.get(ConsensusReplay.Failure.INVARIANT), counts::toString);
+    }
+
+    @Test
+    void executorFailureIsCountedAsNotExecuted() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        ConsensusReplay tool = new ConsensusReplay();
+        BlockExecutor failing = mock(BlockExecutor.class);
+        doThrow(new IllegalStateException("boom"))
+                .when(failing).execute(any(), anyInt(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
+
+        run(tool, world, world.getBlockStore(), failing, tempDir.resolve("kinds-unexecuted.jsonl"), "FIDELITY");
+
+        Map<ConsensusReplay.Failure, Long> counts = tool.failureCounts();
+        Assertions.assertEquals(2L, counts.get(ConsensusReplay.Failure.NOT_EXECUTED), counts::toString);
+        Assertions.assertEquals(0L, counts.get(ConsensusReplay.Failure.DIVERGED), counts::toString);
+    }
+
+    /** A resumed REPEAT run must still fail on a determinism divergence recorded before the interruption. */
+    @Test
+    void resumeCarriesOverARepeatDivergence() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        Path report = tempDir.resolve("resume-repeat.jsonl");
+
+        BlockResult first = executeOnce(world, world.getBlockStore().getChainBlockByNumber(1));
+        BlockResult second = executeOnce(world, world.getBlockStore().getChainBlockByNumber(2));
+        BlockExecutor flaky = mock(BlockExecutor.class);
+        when(flaky.execute(any(), anyInt(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean()))
+                .thenReturn(first, second, second, second);
+        run(world, world.getBlockStore(), flaky, report, "REPEAT");
+
+        // Keep only block 1's record, as if the run had been killed after writing it.
+        String block1 = Files.readAllLines(report, StandardCharsets.UTF_8).get(0);
+        Assertions.assertTrue(block1.contains("\"repeatOk\":false"), block1);
+        Files.writeString(report, block1 + System.lineSeparator(), StandardCharsets.UTF_8);
+
+        ConsensusReplay resumed = new ConsensusReplay();
+        NodeStopper stopper = run(resumed, world, world.getBlockStore(), world.getBlockExecutor(), report, "REPEAT", "--resume");
+
+        verify(stopper).stop(1);
+        Assertions.assertEquals(1L, resumed.failureCounts().get(ConsensusReplay.Failure.DIVERGED),
+                resumed.failureCounts()::toString);
+    }
+
+    /**
+     * Resume re-derives the counts from the stream, so for every kind it must agree with the counts
+     * the live run kept. Resuming over a complete report replays nothing and leaves only the carry-over.
+     */
+    @Test
+    void resumeRederivesTheSameCountsTheLiveRunKept() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        Block tampered = tamperedReceiptsRoot(world.getBlockStore().getChainBlockByNumber(1));
+        BlockExecutor throwing = mock(BlockExecutor.class);
+        doThrow(new IllegalStateException("boom"))
+                .when(throwing).execute(any(), anyInt(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
+
+        Object[][] runs = {
+                {"diverged", blockStoreReturning(world, tampered), world.getBlockExecutor(), "FIDELITY"},
+                {"invariant", world.getBlockStore(),
+                        executorReturning(world, 1, result -> doReturn(Coin.valueOf(12345L)).when(result).getPaidFees()), "DIGEST"},
+                {"unexecuted", world.getBlockStore(), throwing, "FIDELITY"},
+        };
+
+        for (Object[] r : runs) {
+            Path report = tempDir.resolve("rederive-" + r[0] + ".jsonl");
+            ConsensusReplay first = new ConsensusReplay();
+            run(first, world, (BlockStore) r[1], (BlockExecutor) r[2], report, (String) r[3]);
+
+            ConsensusReplay resumed = new ConsensusReplay();
+            run(resumed, world, (BlockStore) r[1], (BlockExecutor) r[2], report, (String) r[3], "--resume");
+
+            Assertions.assertEquals(first.failureCounts(), resumed.failureCounts(), (String) r[0]);
+            Assertions.assertTrue(first.failureCounts().values().stream().anyMatch(c -> c > 0),
+                    r[0] + " must actually produce a failure, or the comparison is vacuous");
+        }
+    }
+
     private NodeStopper run(World world, BlockStore blockStore, BlockExecutor blockExecutor,
+                            Path report, String scenario, String... extra) {
+        return run(new ConsensusReplay(), world, blockStore, blockExecutor, report, scenario, extra);
+    }
+
+    private NodeStopper run(ConsensusReplay tool, World world, BlockStore blockStore, BlockExecutor blockExecutor,
                             Path report, String scenario, String... extra) {
         List<String> argList = new ArrayList<>(List.of(
                 "--fromBlock", "1",
@@ -727,7 +850,7 @@ class ConsensusReplayTest {
 
         NodeStopper stopper = mock(NodeStopper.class);
 
-        new ConsensusReplay().execute(args, () -> rskContext, stopper);
+        tool.execute(args, () -> rskContext, stopper);
 
         return stopper;
     }

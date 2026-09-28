@@ -57,6 +57,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -141,11 +142,24 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
 
     private ConsensusRule forcedRule;
 
+    /** What a failing record reports. Each needs different follow-up, so they are never summed. */
+    enum Failure {
+        DIVERGED("diverged"),
+        INVARIANT("invariant violations"),
+        NOT_EXECUTED("not executed"),
+        NOT_LOADED("not loaded");
+
+        private final String label;
+
+        Failure(String label) {
+            this.label = label;
+        }
+    }
+
     private long blocksVisited;
-    private long mismatches;
+    private final Map<Failure, Long> failures = new EnumMap<>(Failure.class);
     private long divergentBlocks;
     private long p1Violations;
-    private long invariantViolations;
 
     // Last nonce seen per sender across the whole range; a nonce that fails to advance is a bug.
     private final Map<RskAddress, BigInteger> lastNonce = new HashMap<>();
@@ -194,8 +208,7 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
             blockStore.flush();
         }
 
-        printInfo("consensus-replay ({}) visited {} blocks, {} mismatches", scenario, blocksVisited, mismatches);
-        printInfo("invariant violations: {}", invariantViolations);
+        printInfo("consensus-replay ({}) visited {} blocks: {}", scenario, blocksVisited, failureSummary());
         if (scenario == Scenario.BACKTEST) {
             printInfo("backtest blast radius: {} diverging blocks, {} of them P1 violations (legacy-only)",
                     divergentBlocks, p1Violations);
@@ -203,7 +216,25 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
         printInfo("phase totals: fetch {} s, execute {} s, digest+write {} s",
                 fetchNanos / 1_000_000_000L, executeNanos / 1_000_000_000L, digestNanos / 1_000_000_000L);
 
-        return mismatches == 0 ? 0 : 1;
+        return failures.isEmpty() ? 0 : 1;
+    }
+
+    private void count(Failure failure) {
+        failures.merge(failure, 1L, Long::sum);
+    }
+
+    Map<Failure, Long> failureCounts() {
+        Map<Failure, Long> counts = new EnumMap<>(Failure.class);
+        for (Failure failure : Failure.values()) {
+            counts.put(failure, failures.getOrDefault(failure, 0L));
+        }
+        return counts;
+    }
+
+    String failureSummary() {
+        return failureCounts().entrySet().stream()
+                .map(e -> e.getValue() + " " + e.getKey().label)
+                .collect(Collectors.joining(", "));
     }
 
     /** Why this invocation must not run, or null: refusing beats thousands of false divergences. */
@@ -260,8 +291,8 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
 
     /**
      * Finds where an interrupted run stopped and truncates its partial trailing record, so the
-     * stream stays parseable and no block is replayed twice. Mismatches already recorded are
-     * counted back in, so the exit code still describes the whole range.
+     * stream stays parseable and no block is replayed twice. Failures already recorded are
+     * counted back in by kind, so the summary and exit code still describe the whole range.
      */
     private long resumeFrom() throws IOException {
         if (reportPath == null) {
@@ -276,7 +307,6 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
 
         long completeBytes = 0;
         long lastNumber = -1;
-        long recovered = 0;
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -288,8 +318,9 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
 
                 completeBytes += line.getBytes(StandardCharsets.UTF_8).length + 1;
                 lastNumber = number;
-                if (isMismatch(line)) {
-                    recovered++;
+                Failure failure = classify(line);
+                if (failure != null) {
+                    count(failure);
                 }
             }
         }
@@ -301,10 +332,9 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
             printInfo("--resume: dropped a partial trailing record");
         }
 
-        mismatches += recovered;
         long next = lastNumber < 0 ? fromBlockNumber : lastNumber + 1;
-        printInfo("--resume: {} complete records, {} mismatches carried over, continuing at block {}",
-                lastNumber < 0 ? 0 : lastNumber, recovered, next);
+        printInfo("--resume: last complete block {}, carried over {}, continuing at block {}",
+                lastNumber < 0 ? "none" : lastNumber, failureSummary(), next);
 
         return next;
     }
@@ -329,23 +359,36 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
         return end == start ? -1 : Long.parseLong(line.substring(start, end));
     }
 
-    private static boolean isMismatch(String line) {
+    /** The failure a recorded line reports, or null; must agree with the live counting. */
+    static Failure classify(String line) {
         if (line.contains("\"kind\":\"invariant\"")) {
-            return true;
+            return Failure.INVARIANT;
+        }
+
+        if (containsAny(line, "\"missing\":true", "\"parentMissing\":true", "\"blockLoadFailed\":true")) {
+            return Failure.NOT_LOADED;
         }
 
         // A BACKTEST record is only a failure when a legacy-only block diverged: everything else
         // there is the measured blast radius, which must not move the exit code.
         if (line.contains("\"scenario\":\"BACKTEST\"")) {
-            return line.contains("\"p1Violation\":true");
+            return line.contains("\"p1Violation\":true") ? Failure.DIVERGED : null;
         }
 
-        return line.contains("\"fidelityOk\":false")
-                || line.contains("\"executionFailed\":true")
-                || line.contains("\"executionInterrupted\":true")
-                || line.contains("\"blockLoadFailed\":true")
-                || line.contains("\"missing\":true")
-                || line.contains("\"parentMissing\":true");
+        if (containsAny(line, "\"executionFailed\":true", "\"executionInterrupted\":true",
+                "\"secondRunFailed\":true", "\"secondRunInterrupted\":true")) {
+            return Failure.NOT_EXECUTED;
+        }
+
+        if (containsAny(line, "\"fidelityOk\":false", "\"repeatOk\":false")) {
+            return Failure.DIVERGED;
+        }
+
+        return null;
+    }
+
+    private static boolean containsAny(String line, String... markers) {
+        return Arrays.stream(markers).anyMatch(line::contains);
     }
 
     private void replayRange(BlockExecutor blockExecutor, BlockStore blockStore,
@@ -361,18 +404,18 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
                 block = blockStore.getChainBlockByNumber(n);
                 if (block == null) {
                     writer.write(String.format("{\"kind\":\"block\",\"number\":%d,\"missing\":true}%n", n));
-                    mismatches++;
+                    count(Failure.NOT_LOADED);
                     continue;
                 }
 
                 parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
                 if (parent == null) {
                     writer.write(String.format("{\"kind\":\"block\",\"number\":%d,\"parentMissing\":true}%n", n));
-                    mismatches++;
+                    count(Failure.NOT_LOADED);
                     continue;
                 }
             } catch (RuntimeException e) {
-                mismatches++;
+                count(Failure.NOT_LOADED);
                 writer.write(String.format("{\"kind\":\"block\",\"number\":%d,\"blockLoadFailed\":true,%s}%n",
                         n, DigestJson.errorFields(e)));
                 blocksVisited++;
@@ -385,8 +428,8 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
 
             blocksVisited++;
             if (progressEvery > 0 && blocksVisited % progressEvery == 0) {
-                printInfo("consensus-replay at block {} ({} mismatches) | fetch {}s execute {}s digest+write {}s",
-                        n, mismatches,
+                printInfo("consensus-replay at block {} ({}) | fetch {}s execute {}s digest+write {}s",
+                        n, failureSummary(),
                         fetchNanos / 1_000_000_000L, executeNanos / 1_000_000_000L, digestNanos / 1_000_000_000L);
             }
         }
@@ -439,7 +482,7 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
         if (scenario == Scenario.BACKTEST) {
             sb.append(backtestClassification(block, true, "[\"noResult\"]"));
         } else {
-            mismatches++;
+            count(Failure.NOT_EXECUTED);
         }
 
         sb.append(String.format(",\"micros\":%d}%n", micros));
@@ -465,7 +508,7 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
         if (scenario == Scenario.FIDELITY) {
             Comparison comparison = compareToHeader(stateRootHandler, block, result, stateRoot, receiptsRoot, logsBloom, "fidelityOk");
             if (!comparison.ok) {
-                mismatches++;
+                count(Failure.DIVERGED);
             }
             sb.append(comparison.json);
         } else if (scenario == Scenario.BACKTEST) {
@@ -491,7 +534,7 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
 
         if (p1Violation) {
             p1Violations++;
-            mismatches++;
+            count(Failure.DIVERGED);
         }
 
         return String.format(",\"forcedRule\":\"%s\",\"forcedAt\":%d,\"ruleActiveHere\":%b"
@@ -526,14 +569,14 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
         try {
             second = blockExecutor.execute(null, 0, block, parent.getHeader(), false, false, saveState);
         } catch (RuntimeException e) {
-            mismatches++;
+            count(Failure.NOT_EXECUTED);
             executeNanos += System.nanoTime() - startedAt;
             return String.format(",\"repeatOk\":false,\"secondRunFailed\":true,%s", DigestJson.errorFields(e));
         }
         executeNanos += System.nanoTime() - startedAt;
 
         if (second.getFinalState() == null) {
-            mismatches++;
+            count(Failure.NOT_EXECUTED);
             return ",\"repeatOk\":false,\"secondRunInterrupted\":true";
         }
 
@@ -542,7 +585,7 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
             return ",\"repeatOk\":true";
         }
 
-        mismatches++;
+        count(Failure.DIVERGED);
 
         return String.format(",\"repeatOk\":false,\"secondRun\":\"%s\"",
                 secondFields.replace("\"", "\\\""));
@@ -761,8 +804,7 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
     }
 
     private String violation(long number, String invariant, String observed, String expected) {
-        invariantViolations++;
-        mismatches++;
+        count(Failure.INVARIANT);
 
         return String.format("{\"kind\":\"invariant\",\"number\":%d,\"scenario\":\"%s\",\"invariant\":\"%s\",\"observed\":%s,\"expected\":%s}%n",
                 number, scenario, invariant, DigestJson.quoteOrNull(observed), DigestJson.quoteOrNull(expected));
