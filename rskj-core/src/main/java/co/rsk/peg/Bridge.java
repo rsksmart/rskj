@@ -91,6 +91,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function REGISTER_BTC_TRANSACTION = BridgeMethods.REGISTER_BTC_TRANSACTION.getFunction();
     // No parameters, the current rsk tx is used as input.
     public static final CallTransaction.Function RELEASE_BTC = BridgeMethods.RELEASE_BTC.getFunction();
+    // No parameters, the current rsk tx is used as input. Same as RELEASE_BTC, but the destination
+    // is the requester's native segwit (P2WPKH) address.
+    public static final CallTransaction.Function RELEASE_BTC_TO = BridgeMethods.RELEASE_BTC_TO.getFunction();
     // Parameters:
     // Federator public key.
     // Transaction signature array, one for each btc tx input.
@@ -611,6 +614,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         } catch (Exception e) {
             logger.warn("Exception in releaseBtc", e);
             throw new VMException("Exception in releaseBtc", e);
+        }
+    }
+
+    public void releaseBtcTo(Object[] args) throws VMException {
+        logger.trace("releaseBtcTo");
+
+        try {
+            bridgeSupport.releaseBtcTo(rskTx, (String) args[0]);
+        } catch (Program.OutOfGasException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.warn("Exception in releaseBtcTo", e);
+            throw new VMException("Exception in releaseBtcTo", e);
         }
     }
 

@@ -881,6 +881,38 @@ public class BridgeSupport {
      * @throws IOException If there's an error while processing the release request.
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
+        releaseBtc(rskTx, PegoutAddressType.P2PKH);
+    }
+
+    /**
+     * Same as {@link #releaseBtc(Transaction)}, except the requester picks which address type the
+     * funds are sent to, instead of always getting the legacy P2PKH one. Every supported type is
+     * derived from the same key that signed the rsk tx, so the requester controls all of them.
+     *
+     * @param rskTx The rsk tx being executed.
+     * @param addressTypeName One of the names in {@link PegoutAddressType}, matched
+     *                            exactly. An unsupported value refunds the value and emits
+     *                            {@code release_request_rejected}.
+     * @throws IOException If there's an error while processing the release request.
+     */
+    public void releaseBtcTo(Transaction rskTx, String addressTypeName) throws IOException {
+        PegoutAddressType addressType;
+        try {
+            addressType = PegoutAddressType.fromApiName(addressTypeName);
+        } catch (IllegalArgumentException e) {
+            logger.warn("[releaseBtcTo] Unsupported address type '{}' in tx {}", addressTypeName, rskTx.getHash());
+            refundAndEmitRejectEvent(
+                rskTx.getValue(),
+                rskTx.getSender(signatureCache),
+                RejectedPegoutReason.UNSUPPORTED_ADDRESS_TYPE
+            );
+            return;
+        }
+
+        releaseBtc(rskTx, addressType);
+    }
+
+    private void releaseBtc(Transaction rskTx, PegoutAddressType addressType) throws IOException {
         final co.rsk.core.Coin pegoutValueInWeis = rskTx.getValue();
         final RskAddress senderAddress = rskTx.getSender(signatureCache);
         logger.debug(
@@ -907,10 +939,15 @@ public class BridgeSupport {
         }
 
         Context.propagate(btcContext);
-        Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, networkParameters);
-        logger.debug("[releaseBtc] BTC destination address: {}", btcDestinationAddress);
+        // Every supported destination is derived from the requester's compressed public key,
+        // recovered from the signature on this transaction. What differs between types is only
+        // what we do with that key, so one recovery serves all four.
+        BtcECKey requesterKey = BridgeUtils.recoverBtcKeyFromEthTransaction(rskTx);
+        Address destination = addressType.deriveAddress(requesterKey, networkParameters);
 
-        requestRelease(btcDestinationAddress, pegoutValueInWeis, rskTx);
+        logger.debug("[releaseBtc] BTC destination: {} ({})", destination, addressType);
+
+        requestRelease(destination, pegoutValueInWeis, rskTx);
     }
 
     private void refundAndEmitRejectEvent(
@@ -952,7 +989,12 @@ public class BridgeSupport {
      * @param releaseRequestedValueInWeis the amount of RBTC requested to be released, represented in weis
      * @throws IOException if there is an error getting the release request queue from storage
      */
-    private void requestRelease(Address destinationAddress, co.rsk.core.Coin releaseRequestedValueInWeis, Transaction rskTx) throws IOException {
+    private void requestRelease(
+        Address destination,
+        co.rsk.core.Coin releaseRequestedValueInWeis,
+        Transaction rskTx) throws IOException {
+
+        String destinationLabel = destination.toString();
         Coin valueToReleaseInSatoshis = releaseRequestedValueInWeis.toBitcoin();
         Optional<RejectedPegoutReason> optionalRejectedPegoutReason = Optional.empty();
         if (activations.isActive(RSKIP219)) {
@@ -992,7 +1034,7 @@ public class BridgeSupport {
         if (optionalRejectedPegoutReason.isPresent()) {
             logger.warn(
                 "[requestRelease] releaseBtc ignored. To {}. Tx {}. Value {} weis. Reason: {}",
-                destinationAddress,
+                destinationLabel,
                 rskTx,
                 releaseRequestedValueInWeis,
                 optionalRejectedPegoutReason.get()
@@ -1006,22 +1048,29 @@ public class BridgeSupport {
             }
         } else {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                provider.getReleaseRequestQueue().add(destinationAddress, valueToReleaseInSatoshis, rskTx.getHash());
+                provider.getReleaseRequestQueue().add(destination, valueToReleaseInSatoshis, rskTx.getHash());
             } else {
-                provider.getReleaseRequestQueue().add(destinationAddress, valueToReleaseInSatoshis);
+                provider.getReleaseRequestQueue().add(destination, valueToReleaseInSatoshis);
             }
 
             RskAddress sender = rskTx.getSender(signatureCache);
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                eventLogger.logReleaseBtcRequestReceived(
-                    sender,
-                    destinationAddress,
-                    releaseRequestedValueInWeis
-                );
+                if (activations.isActive(ConsensusRule.RSKIP690)) {
+                    // Same event, same field types. Only the value differs: once the destination
+                    // can be something other than P2PKH it has to go out already rendered, since
+                    // the event carries a string and only the bridge knows which type was asked
+                    // for.
+                    eventLogger.logReleaseBtcRequestReceivedToAddress(sender, destinationLabel, releaseRequestedValueInWeis);
+                } else {
+                    // Before activation the destination is always P2PKH, and the event flavour is
+                    // picked by RSKIP326 inside the logger. Replaying old blocks has to go through
+                    // that same path.
+                    eventLogger.logReleaseBtcRequestReceived(sender, destination, releaseRequestedValueInWeis);
+                }
             }
             logger.info(
                 "[requestRelease] releaseBtc successful to {}. Tx {}. Value {} weis.",
-                destinationAddress,
+                destinationLabel,
                 rskTx,
                 releaseRequestedValueInWeis
             );
@@ -2694,7 +2743,7 @@ public class BridgeSupport {
         ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
         List<ReleaseRequestQueue.Entry> releaseRequestListCopy = new ArrayList<>(
             releaseRequestQueue.getEntries().stream()
-                .map(rr -> new ReleaseRequestQueue.Entry(rr.getDestination(), rr.getAmount())).toList());
+                .map(rr -> new ReleaseRequestQueue.Entry(rr.getDestination(), rr.getAmount(), null)).toList());
 
         // This public key was generated just to derive a deterministic recipient address for the hypothetical pegout simulation.
         Address recipient = BtcECKey
@@ -3149,7 +3198,7 @@ public class BridgeSupport {
 
     private void generateRejectionReleaseWithWalletProvider(
         BtcTransaction btcTx,
-        Address btcRefundAddress,
+        LegacyAddress btcRefundAddress,
         Keccak256 rskTxHash,
         Coin totalAmount,
         WalletProvider walletProvider
@@ -3204,7 +3253,7 @@ public class BridgeSupport {
 
     private void generateFlyoverRejectionReleaseWithWalletProvider(
         BtcTransaction btcTx,
-        Address btcRefundAddress,
+        LegacyAddress btcRefundAddress,
         Keccak256 flyoverDerivationHash,
         List<Address> spendingAddresses,
         Keccak256 rskTxHash,
@@ -3250,7 +3299,7 @@ public class BridgeSupport {
 
     private void generateRejectionReleaseFromFederation(
         BtcTransaction btcTx,
-        Address btcRefundAddress,
+        LegacyAddress btcRefundAddress,
         Federation federation,
         Keccak256 rskTxHash,
         Coin totalAmount,
