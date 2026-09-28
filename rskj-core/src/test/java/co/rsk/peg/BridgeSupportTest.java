@@ -27,6 +27,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.assertFederatorSigning;
 import static co.rsk.peg.BridgeSupportTestUtil.assertLogPegoutTransactionCreated;
 import static co.rsk.peg.BridgeSupportTestUtil.assertLogReleaseBtc;
 import static co.rsk.peg.BridgeSupportTestUtil.assertLogReleaseRequested;
+import static co.rsk.peg.BridgeSupportTestUtil.assertLogUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutTxSigHashWasSaved;
 import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutWasAddedToPegoutsWaitingForConfirmations;
 import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseRejectionWasSettled;
@@ -8401,7 +8402,24 @@ class BridgeSupportTest {
             expectedActiveFedUtxos.addAll(expectedChangeUtxoRegistered);
             assertUtxosAreEqual(expectedActiveFedUtxos, activeFederationBtcUTXOsAfterRegisteringChange);
 
+            // the pegout change is the only output sent back to the active federation
+            TransactionOutput changeOutput = getChangeOutput(pegoutWFS);
+            assertLogUtxosRegistered(
+                logs,
+                pegoutWFS.getHash(),
+                List.of(changeOutput.getValue()),
+                List.of((long) changeOutput.getIndex()),
+                activeFederation.getAddress()
+            );
+
             assertTransactionWasProcessed(bridgeStorageProvider, pegoutWFS.getHash(), releaseTxBlockNumber);
+        }
+
+        private TransactionOutput getChangeOutput(BtcTransaction pegoutWFS) {
+            return pegoutWFS.getOutputs().stream()
+                .filter(output -> output.getScriptPubKey().equals(activeFederation.getP2SHScript()))
+                .findFirst()
+                .orElseThrow();
         }
 
         private void updateBridgeSupport() {
