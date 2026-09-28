@@ -323,10 +323,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         validateUtxosRegisteredArgs(btcTxHash, valuesInSatoshis, outputIndexes, federationBtcAddress);
 
         CallTransaction.Function event = BridgeEvents.UTXOS_REGISTERED.getEvent();
-
-        byte[] btcTxHashSerialized = btcTxHash.getBytes();
-        byte[][] encodedTopicsSerialized = event.encodeEventTopics(btcTxHashSerialized);
-        List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
+        List<DataWord> encodedTopics = getEncodedBtcTxHashTopics(event, btcTxHash);
 
         byte[] serializedValuesInSatoshis = UtxoUtils.encodeOutpointValues(valuesInSatoshis);
         byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
@@ -345,10 +342,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         requireNonNull(flyoverDerivationHash);
 
         CallTransaction.Function event = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
-
-        byte[] btcTxHashSerialized = btcTxHash.getBytes();
-        byte[][] encodedTopicsSerialized = event.encodeEventTopics(btcTxHashSerialized);
-        List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
+        List<DataWord> encodedTopics = getEncodedBtcTxHashTopics(event, btcTxHash);
 
         byte[] serializedValuesInSatoshis = UtxoUtils.encodeOutpointValues(valuesInSatoshis);
         byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
@@ -474,6 +468,12 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         }
 
         return serializedRskTxHashes;
+    }
+
+    private List<DataWord> getEncodedBtcTxHashTopics(CallTransaction.Function event, Sha256Hash btcTxHash) {
+        byte[] btcTxHashSerialized = btcTxHash.getBytes();
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(btcTxHashSerialized);
+        return getEncodedTopics(encodedTopicsSerialized);
     }
 
     private List<DataWord> getEncodedTopics(byte[][] encodedTopicsSerialized) {
