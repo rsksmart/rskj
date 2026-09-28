@@ -74,10 +74,10 @@ class PrecompiledContractBlockGasTrackingTest {
 
     @ParameterizedTest(name = "RSKIP-560 active={0}, expected executed transactions={1}")
     @CsvSource({"false, 2", "true,  1"})
-    void failedPrecompileGasAffectsWhetherNextTransactionFitsInBlock(boolean rskip560Active, int expectedExecutedTransactions) {
+    void failedPrecompileGasAffectsWhetherNextTransactionFitsInBlock(boolean rskip692Active, int expectedExecutedTransactions) {
         TestSystemProperties baseConfig = new TestSystemProperties();
 
-        ActivationConfig activationConfig = buildActivationConfig(baseConfig.getActivationConfig(), rskip560Active);
+        ActivationConfig activationConfig = buildActivationConfig(baseConfig.getActivationConfig(), rskip692Active);
 
         TestSystemProperties config = spy(baseConfig);
         doReturn(activationConfig).when(config).getActivationConfig();
@@ -134,7 +134,7 @@ class PrecompiledContractBlockGasTrackingTest {
 
         assertEquals(expectedExecutedTransactions, result.getExecutedTransactions().size());
 
-        if (rskip560Active) {
+        if (rskip692Active) {
             assertEquals(firstTransactionGasLimit, result.getGasUsed());
         } else {
             assertTrue(result.getGasUsed() < blockGasLimit, "pre-activation gas underreporting should make tx2 appear to fit"
@@ -144,7 +144,7 @@ class PrecompiledContractBlockGasTrackingTest {
 
     private static ActivationConfig buildActivationConfig(
             ActivationConfig defaults,
-            boolean rskip560Active
+            boolean rskip692Active
     ) {
         Map<ConsensusRule, Long> heights =
                 new EnumMap<>(ConsensusRule.class);
@@ -161,8 +161,8 @@ class PrecompiledContractBlockGasTrackingTest {
 
         // Explicitly select the behavior under test.
         heights.put(
-                ConsensusRule.RSKIP560,
-                rskip560Active ? 0L : -1L
+                ConsensusRule.RSKIP692,
+                rskip692Active ? 0L : -1L
         );
 
         return new ActivationConfig(heights, new HashMap<>());
