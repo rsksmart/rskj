@@ -147,7 +147,7 @@ public class BridgeStorageProvider {
             return btcTxHashesAlreadyProcessed;
         }
 
-        btcTxHashesAlreadyProcessed = getFromRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, BridgeSerializationUtils::deserializeMapOfHashesToLong);
+        btcTxHashesAlreadyProcessed = getFromRepository(BTC_TX_HASHES_ALREADY_PROCESSED, BridgeSerializationUtils::deserializeMapOfHashesToLong);
         return btcTxHashesAlreadyProcessed;
     }
 
@@ -156,7 +156,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, btcTxHashesAlreadyProcessed, BridgeSerializationUtils::serializeMapOfHashesToLong);
+        safeSaveToRepository(BTC_TX_HASHES_ALREADY_PROCESSED, btcTxHashesAlreadyProcessed, BridgeSerializationUtils::serializeMapOfHashesToLong);
     }
 
     public ReleaseRequestQueue getReleaseRequestQueue() throws IOException {
@@ -215,7 +215,7 @@ public class BridgeStorageProvider {
         }
 
         entries.addAll(getFromRepository(
-            PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY,
+            PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH,
             data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries(activations)));
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
@@ -231,7 +231,7 @@ public class BridgeStorageProvider {
         safeSaveToRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializePegoutsWaitingForConfirmations);
 
         if (activations.isActive(RSKIP146)) {
-            safeSaveToRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializePegoutsWaitingForConfirmationsWithTxHash);
+            safeSaveToRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializePegoutsWaitingForConfirmationsWithTxHash);
         }
     }
 
@@ -521,7 +521,7 @@ public class BridgeStorageProvider {
         }
 
         if (nextPegoutHeight == null) {
-            nextPegoutHeight = safeGetFromRepository(NEXT_PEGOUT_HEIGHT_KEY, BridgeSerializationUtils::deserializeOptionalLong).orElse(0L);
+            nextPegoutHeight = safeGetFromRepository(NEXT_PEGOUT_HEIGHT, BridgeSerializationUtils::deserializeOptionalLong).orElse(0L);
         }
 
         return Optional.of(nextPegoutHeight);
@@ -536,7 +536,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(NEXT_PEGOUT_HEIGHT_KEY, nextPegoutHeight, BridgeSerializationUtils::serializeLong);
+        safeSaveToRepository(NEXT_PEGOUT_HEIGHT, nextPegoutHeight, BridgeSerializationUtils::serializeLong);
     }
 
     protected int getReleaseRequestQueueSize() throws IOException {

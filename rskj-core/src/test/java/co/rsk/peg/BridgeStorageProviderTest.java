@@ -1763,7 +1763,8 @@ class BridgeStorageProviderTest {
 
         PegoutsWaitingForConfirmations result = storageProvider.getPegoutsWaitingForConfirmations();
 
-        verify(repositoryMock, never()).getStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY.getKey()));
+        verify(repositoryMock, never()).getStorageBytes(any(RskAddress.class), eq(
+            PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH.getKey()));
 
         Assertions.assertEquals(1, result.getEntries(activationsAllForks).size());
         Assertions.assertTrue(result.getEntries(activationsAllForks).containsAll(oldEntriesSet));
@@ -1827,7 +1828,8 @@ class BridgeStorageProviderTest {
         storageProvider.savePegoutsWaitingForConfirmations();
 
         verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
-        verify(repositoryMock, never()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY.getKey()), any(byte[].class));
+        verify(repositoryMock, never()).addStorageBytes(any(RskAddress.class), eq(
+            PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH.getKey()), any(byte[].class));
     }
 
     @Test
@@ -1873,12 +1875,14 @@ class BridgeStorageProviderTest {
             var entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams, true).getEntries(activations);
             Assertions.assertEquals(newEntriesSet, new HashSet<>(entries));
             return true;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY.getKey()), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(
+            PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH.getKey()), any(byte[].class));
 
         storageProvider.savePegoutsWaitingForConfirmations();
 
         verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
-        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY.getKey()), any(byte[].class));
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(
+            PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH.getKey()), any(byte[].class));
         Assertions.assertEquals(2, storageProvider.getPegoutsWaitingForConfirmations().getEntries(activations).size());
     }
 
@@ -1929,7 +1933,7 @@ class BridgeStorageProviderTest {
         hashes.put(hash, 1L);
         when(repository.getStorageBytes(
             bridgeAddress,
-            BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey()
+            BTC_TX_HASHES_ALREADY_PROCESSED.getKey()
         )).thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
@@ -1942,7 +1946,7 @@ class BridgeStorageProviderTest {
         assertTrue(result.isPresent());
         assertEquals(Long.valueOf(1), result.get());
 
-        verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
+        verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED.getKey());
         verify(repository, never()).getStorageBytes(bridgeAddress, BTC_TX_HASH_AP.getCompoundKey("-", hash.toString()));
     }
 
@@ -1958,7 +1962,7 @@ class BridgeStorageProviderTest {
         hashes.put(hash1, 1L);
         when(repository.getStorageBytes(
             bridgeAddress,
-            BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey()
+            BTC_TX_HASHES_ALREADY_PROCESSED.getKey()
         )).thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
 
         when(repository.getStorageBytes(
@@ -1978,7 +1982,7 @@ class BridgeStorageProviderTest {
         assertEquals(Long.valueOf(1), result.get());
 
         // old storage was accessed and new storage not
-        verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
+        verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED.getKey());
         verify(repository, never()).getStorageBytes(bridgeAddress, BTC_TX_HASH_AP.getCompoundKey("-", hash2.toString()));
 
         // Get hash2 which is stored in new storage
@@ -1987,7 +1991,7 @@ class BridgeStorageProviderTest {
         assertEquals(Long.valueOf(2), result.get());
 
         // old storage wasn't accessed anymore (because it is cached) and new storage was accessed
-        verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
+        verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED.getKey());
         verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASH_AP.getCompoundKey("-", hash2.toString()));
 
         // Get hash2 again
@@ -1996,7 +2000,7 @@ class BridgeStorageProviderTest {
         assertEquals(Long.valueOf(2), result.get());
 
         // No more accesses to repository, as both values are in cache
-        verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
+        verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED.getKey());
         verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASH_AP.getCompoundKey("-", hash2.toString()));
     }
 
@@ -2015,7 +2019,7 @@ class BridgeStorageProviderTest {
         provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
 
         // The repository is accessed once to set the value
-        verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
+        verify(repository, times(1)).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED.getKey());
 
         Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
         assertTrue(result.isPresent());
@@ -2037,7 +2041,7 @@ class BridgeStorageProviderTest {
         provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
 
         // The repository is never accessed as the new storage keeps the values in cache until save
-        verify(repository, never()).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
+        verify(repository, never()).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED.getKey());
 
         Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
         assertTrue(result.isPresent());
@@ -2061,7 +2065,7 @@ class BridgeStorageProviderTest {
         provider0.saveHeightBtcTxHashAlreadyProcessed();
 
         // The repository is never accessed as the new storage keeps the values in cache until save
-        verify(repository, never()).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
+        verify(repository, never()).getStorageBytes(bridgeAddress, BTC_TX_HASHES_ALREADY_PROCESSED.getKey());
 
         Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
         assertTrue(result.isPresent());
@@ -2771,7 +2775,7 @@ class BridgeStorageProviderTest {
 
     @Test
     void getReceiveHeadersLastTimestampInSeconds_not_in_repository() {
-        Repository repository = mock(Repository.class);
+        Repository repository = createRepository();
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
@@ -2832,14 +2836,14 @@ class BridgeStorageProviderTest {
 
         assertEquals(Optional.empty(), provider.getNextPegoutHeight());
 
-        verify(repository, never()).getStorageBytes(bridgeAddress, NEXT_PEGOUT_HEIGHT_KEY.getKey());
+        verify(repository, never()).getStorageBytes(bridgeAddress, NEXT_PEGOUT_HEIGHT.getKey());
     }
 
     @Test
     void getNextPegoutHeight_after_RSKIP271_activation() {
         Repository repository = mock(Repository.class);
 
-        when(repository.getStorageBytes(bridgeAddress, NEXT_PEGOUT_HEIGHT_KEY.getKey())).thenReturn(new byte[] { 1 });
+        when(repository.getStorageBytes(bridgeAddress, NEXT_PEGOUT_HEIGHT.getKey())).thenReturn(new byte[] { 1 });
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
@@ -2848,7 +2852,7 @@ class BridgeStorageProviderTest {
 
         assertEquals(Optional.of(1L), provider.getNextPegoutHeight());
 
-        verify(repository, atLeastOnce()).getStorageBytes(bridgeAddress, NEXT_PEGOUT_HEIGHT_KEY.getKey());
+        verify(repository, atLeastOnce()).getStorageBytes(bridgeAddress, NEXT_PEGOUT_HEIGHT.getKey());
     }
 
     @Test
@@ -2892,7 +2896,7 @@ class BridgeStorageProviderTest {
 
         verify(repository, never()).addStorageBytes(
             eq(bridgeAddress),
-            eq(NEXT_PEGOUT_HEIGHT_KEY.getKey()),
+            eq(NEXT_PEGOUT_HEIGHT.getKey()),
             any()
         );
     }
@@ -2912,7 +2916,7 @@ class BridgeStorageProviderTest {
 
         verify(repository, times(1)).addStorageBytes(
             bridgeAddress,
-            NEXT_PEGOUT_HEIGHT_KEY.getKey(),
+            NEXT_PEGOUT_HEIGHT.getKey(),
             BridgeSerializationUtils.serializeLong(10L)
         );
     }
