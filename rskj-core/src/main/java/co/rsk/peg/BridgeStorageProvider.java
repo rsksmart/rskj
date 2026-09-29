@@ -38,12 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
-/**
- * Provides an object oriented facade of the bridge contract memory.
- * @see co.rsk.peg.BridgeStorageProvider
- * @author ajlopez
- * @author Oscar Guindzberg
- */
 public class BridgeStorageProvider {
     private static final Logger logger = LoggerFactory.getLogger(BridgeStorageProvider.class);
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
@@ -76,7 +70,7 @@ public class BridgeStorageProvider {
     private Sha256Hash flyoverBtcTxHash;
     private FlyoverFederationInformation flyoverFederationInformation;
     private FlyoverFederationInformation flyoverRetiringFederationInformation;
-    private long receiveHeadersLastTimestamp = 0;
+    private long receiveHeadersLastTimestampInSeconds = 0;
 
     private Long nextPegoutHeight;
 
@@ -500,22 +494,22 @@ public class BridgeStorageProvider {
         );
     }
 
-    public Optional<Long> getReceiveHeadersLastTimestamp() {
+    public Optional<Long> getReceiveHeadersLastTimestampInSeconds() {
         return safeGetFromRepository(
             RECEIVE_HEADERS_TIMESTAMP,
             BridgeSerializationUtils::deserializeOptionalLong
         );
     }
 
-    public void setReceiveHeadersLastTimestamp(Long timeInMillis) {
-        receiveHeadersLastTimestamp = timeInMillis;
+    public void setReceiveHeadersLastTimestampInSeconds(long timestampInSeconds) {
+        receiveHeadersLastTimestampInSeconds = timestampInSeconds;
     }
 
-    private void saveReceiveHeadersLastTimestamp() {
-        if (this.receiveHeadersLastTimestamp > 0) {
+    private void saveReceiveHeadersLastTimestampInSeconds() {
+        if (this.receiveHeadersLastTimestampInSeconds > 0) {
             safeSaveToRepository(
                 RECEIVE_HEADERS_TIMESTAMP,
-                this.receiveHeadersLastTimestamp,
+                this.receiveHeadersLastTimestampInSeconds,
                 BridgeSerializationUtils::serializeLong
             );
         }
@@ -792,7 +786,7 @@ public class BridgeStorageProvider {
         saveFlyoverFederationInformation();
         saveFlyoverRetiringFederationInformation();
 
-        saveReceiveHeadersLastTimestamp();
+        saveReceiveHeadersLastTimestampInSeconds();
 
         saveNextPegoutHeight();
 

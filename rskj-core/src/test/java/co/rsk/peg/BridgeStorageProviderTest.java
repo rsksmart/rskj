@@ -2749,7 +2749,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void getReceiveHeadersLastTimestamp_ok() {
+    void getReceiveHeadersLastTimestampInSeconds_ok() {
         Repository repository = mock(Repository.class);
 
         long actualTimeStamp = 1_700_000_000L;
@@ -2763,14 +2763,14 @@ class BridgeStorageProviderTest {
             activationsAllForks
         );
 
-        Optional<Long> result = provider.getReceiveHeadersLastTimestamp();
+        Optional<Long> result = provider.getReceiveHeadersLastTimestampInSeconds();
 
         assertTrue(result.isPresent());
         assertEquals(actualTimeStamp, (long) result.get());
     }
 
     @Test
-    void getReceiveHeadersLastTimestamp_not_in_repository() {
+    void getReceiveHeadersLastTimestampInSeconds_not_in_repository() {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -2779,11 +2779,11 @@ class BridgeStorageProviderTest {
             activationsAllForks
         );
 
-        assertFalse(provider.getReceiveHeadersLastTimestamp().isPresent());
+        assertFalse(provider.getReceiveHeadersLastTimestampInSeconds().isPresent());
     }
 
     @Test
-    void saveReceiveHeadersLastTimestamp_ok() {
+    void saveReceiveHeadersLastTimestampInSeconds_ok() {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -2793,7 +2793,7 @@ class BridgeStorageProviderTest {
         );
 
         long timestampInSeconds = 1_700_000_000L;
-        provider.setReceiveHeadersLastTimestamp(timestampInSeconds);
+        provider.setReceiveHeadersLastTimestampInSeconds(timestampInSeconds);
 
         provider.save();
         verify(repository, times(1)).addStorageBytes(
@@ -2804,7 +2804,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveReceiveHeadersLastTimestamp_not_set() {
+    void saveReceiveHeadersLastTimestampInSeconds_not_set() {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
