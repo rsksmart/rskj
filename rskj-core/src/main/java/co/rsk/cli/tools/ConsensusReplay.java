@@ -305,22 +305,31 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
             return fromBlockNumber;
         }
 
+        // A block ends with its block record; its invariant records come first. Anything after the
+        // last block record belongs to an unfinished block and is dropped with it.
         long completeBytes = 0;
+        long readBytes = 0;
         long lastNumber = -1;
+        List<Failure> pending = new ArrayList<>();
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 long number = blockNumberOf(line);
                 if (number < 0) {
-                    // A partial trailing record: stop here and drop it.
                     break;
                 }
 
-                completeBytes += line.getBytes(StandardCharsets.UTF_8).length + 1;
-                lastNumber = number;
+                readBytes += line.getBytes(StandardCharsets.UTF_8).length + 1;
                 Failure failure = classify(line);
                 if (failure != null) {
-                    count(failure);
+                    pending.add(failure);
+                }
+
+                if (line.startsWith("{\"kind\":\"block\"")) {
+                    completeBytes = readBytes;
+                    lastNumber = number;
+                    pending.forEach(this::count);
+                    pending.clear();
                 }
             }
         }
@@ -329,7 +338,7 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
             try (FileChannel channel = FileChannel.open(path, StandardOpenOption.WRITE)) {
                 channel.truncate(completeBytes);
             }
-            printInfo("--resume: dropped a partial trailing record");
+            printInfo("--resume: dropped the records of an unfinished block");
         }
 
         long next = lastNumber < 0 ? fromBlockNumber : lastNumber + 1;

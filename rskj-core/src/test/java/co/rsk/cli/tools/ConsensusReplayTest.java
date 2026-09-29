@@ -789,6 +789,30 @@ class ConsensusReplayTest {
     }
 
     /**
+     * A block's invariant records are written before its block record, so a run killed between the
+     * two leaves an orphan invariant line. Resume must replay that block, not skip it.
+     */
+    @Test
+    void resumeReplaysABlockWhoseInvariantRecordWasWrittenButNotItsBlockRecord() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        Path report = tempDir.resolve("resume-orphan-invariant.jsonl");
+        run(world, world.getBlockStore(), world.getBlockExecutor(), report, "FIDELITY");
+        String block1 = Files.readAllLines(report, StandardCharsets.UTF_8).get(0);
+        String orphan = "{\"kind\":\"invariant\",\"number\":2,\"scenario\":\"FIDELITY\",\"invariant\":\"fees\",\"observed\":\"1\",\"expected\":\"2\"}";
+        Files.writeString(report, block1 + System.lineSeparator() + orphan + System.lineSeparator(), StandardCharsets.UTF_8);
+
+        ConsensusReplay resumed = new ConsensusReplay();
+        NodeStopper stopper = run(resumed, world, world.getBlockStore(), world.getBlockExecutor(), report, "FIDELITY", "--resume");
+
+        verify(stopper).stop(0);
+        List<String> lines = Files.readAllLines(report, StandardCharsets.UTF_8);
+        Assertions.assertEquals(2, lines.size(), "the orphan must be dropped and block 2 replayed: " + lines);
+        Assertions.assertTrue(lines.get(1).contains("\"kind\":\"block\"") && lines.get(1).contains("\"number\":2"),
+                "block 2 must have its own record: " + lines);
+        Assertions.assertEquals(0L, resumed.failureCounts().get(ConsensusReplay.Failure.INVARIANT), resumed.failureSummary());
+    }
+
+    /**
      * Resume re-derives the counts from the stream, so for every kind it must agree with the counts
      * the live run kept. Resuming over a complete report replays nothing and leaves only the carry-over.
      */
