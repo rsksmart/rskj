@@ -839,7 +839,7 @@ class BridgeTest {
 
         byte[] result = bridge.execute(data);
         BigInteger decodedResult = (BigInteger) Bridge.RECEIVE_HEADER.decodeResult(result)[0];
-        assertEquals(BigInteger.valueOf(-20), decodedResult);
+        assertEquals(BigInteger.valueOf(ReceiveHeaderResponseCode.HEADER_SIZE_MISMATCH.getCode()), decodedResult);
     }
 
     @Test

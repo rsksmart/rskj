@@ -78,10 +78,6 @@ import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Helper class to move funds from btc to rsk and rsk to btc
- * @author Oscar Guindzberg
- */
 public class BridgeSupport {
     public static final RskAddress BURN_ADDRESS = new RskAddress("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
@@ -92,12 +88,6 @@ public class BridgeSupport {
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE = -3;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE = -4;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE = -5;
-
-    public static final Integer RECEIVE_HEADER_CALLED_TOO_SOON = -1;
-    public static final Integer RECEIVE_HEADER_BLOCK_TOO_OLD = -2;
-    public static final Integer RECEIVE_HEADER_CANT_FOUND_PREVIOUS_BLOCK = -3;
-    public static final Integer RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED = -4;
-    public static final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
 
     // Enough depth to be able to search backwards one month worth of blocks
     // (6 blocks/hour, 24 hours/day, 30 days/month)
@@ -230,7 +220,7 @@ public class BridgeSupport {
         this.ensureBtcBlockChain();
 
         if (btcBlockStore.get(header.getHash()) != null) {
-            return RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED;
+            return ReceiveHeaderResponseCode.BLOCK_PREVIOUSLY_SAVED.getCode();
         }
 
         long minSecondsBetweenCallsToReceiveHeader = bridgeConstants.getMinSecondsBetweenCallsToReceiveHeader();
@@ -239,23 +229,23 @@ public class BridgeSupport {
 
         if (optionalLastTimestamp.isPresent() && (currentTimestampInSeconds - optionalLastTimestamp.get() < minSecondsBetweenCallsToReceiveHeader)) {
             logger.warn("[receiveHeader] Receive header last timestamp less than {} seconds", minSecondsBetweenCallsToReceiveHeader);
-            return RECEIVE_HEADER_CALLED_TOO_SOON;
+            return ReceiveHeaderResponseCode.CALLED_TOO_SOON.getCode();
         }
 
         //Depth
         StoredBlock previousBlock = btcBlockStore.get(header.getPrevBlockHash());
         if (previousBlock == null) {
-            return RECEIVE_HEADER_CANT_FOUND_PREVIOUS_BLOCK;
+            return ReceiveHeaderResponseCode.CANNOT_FIND_PREVIOUS_BLOCK.getCode();
         }
 
         // height of best chain - height of current header block greater than maximum depth accepted
         if ((getBtcBlockchainBestChainHeight() - (previousBlock.getHeight() + 1)) > bridgeConstants.getMaxDepthBlockchainAccepted()) {
-            return RECEIVE_HEADER_BLOCK_TOO_OLD;
+            return ReceiveHeaderResponseCode.BLOCK_TOO_OLD.getCode();
         }
 
         if (cannotProcessNextBlock(previousBlock)) {
             logger.warn("[receiveHeader] Header {} has too much work to be processed", header.getHash());
-            return RECEIVE_HEADER_UNEXPECTED_EXCEPTION;
+            return ReceiveHeaderResponseCode.UNEXPECTED_EXCEPTION.getCode();
         }
 
         try {
@@ -264,10 +254,11 @@ public class BridgeSupport {
             // If we try to add an orphan header bitcoinj throws an exception
             // This catches that case and any other exception that may be thrown
             logger.warn("[receiveHeader] Exception adding btc header {}", header.getHash(), e);
-            return RECEIVE_HEADER_UNEXPECTED_EXCEPTION;
+            return ReceiveHeaderResponseCode.UNEXPECTED_EXCEPTION.getCode();
         }
         provider.setReceiveHeadersLastTimestampInSeconds(currentTimestampInSeconds);
-        return 0;
+
+        return ReceiveHeaderResponseCode.SUCCESSFUL.getCode();
     }
 
     private boolean cannotProcessNextBlock(StoredBlock previousBlock) {

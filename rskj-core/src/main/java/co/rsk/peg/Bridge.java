@@ -240,8 +240,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");
     public static final DataWord COMMIT_FEDERATION_TOPIC = DataWord.fromString("commit_federation_topic");
 
-    private static final Integer RECEIVE_HEADER_ERROR_SIZE_MISTMATCH = -20;
-
     private final Constants constants;
     private final BridgeConstants bridgeConstants;
     private final ActivationConfig activationConfig;
@@ -572,7 +570,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (!BtcTransactionFormatUtils.isBlockHeaderSize(headerArg.length, activations)) {
             logger.warn("Unexpected BTC header received (size mismatch). Aborting processing.");
-            return RECEIVE_HEADER_ERROR_SIZE_MISTMATCH;
+            return ReceiveHeaderResponseCode.HEADER_SIZE_MISMATCH.getCode();
         }
 
         BtcBlock header = bridgeConstants.getBtcParams().getDefaultSerializer().makeBlock(headerArg);

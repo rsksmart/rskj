@@ -7564,7 +7564,7 @@ class BridgeSupportTest {
 
         verify(btcBlockStore, never()).put(storedBlock2);
         verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
-        assertEquals(-1, result);
+        assertEquals(ReceiveHeaderResponseCode.CALLED_TOO_SOON.getCode(), result);
     }
 
     @Test
@@ -7596,7 +7596,7 @@ class BridgeSupportTest {
         verify(btcBlockStore, never()).put(storedBlock);
         verify(provider).getReceiveHeadersLastTimestampInSeconds();
         verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
-        assertEquals(-99, result);
+        assertEquals(ReceiveHeaderResponseCode.UNEXPECTED_EXCEPTION.getCode(), result);
     }
 
     @Test
@@ -7632,7 +7632,7 @@ class BridgeSupportTest {
         // Calls put when is adding the block header. (Saves his storedBlock)
         verify(btcBlockStore, never()).put(storedBlock2);
         verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
-        assertEquals(-3, result);
+        assertEquals(ReceiveHeaderResponseCode.CANNOT_FIND_PREVIOUS_BLOCK.getCode(), result);
     }
 
     @Test
@@ -7668,7 +7668,7 @@ class BridgeSupportTest {
 
         verify(btcBlockStore, never()).put(storedBlock2);
         verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
-        assertEquals(-2, result);
+        assertEquals(ReceiveHeaderResponseCode.BLOCK_TOO_OLD.getCode(), result);
     }
 
     @Test
@@ -7702,7 +7702,7 @@ class BridgeSupportTest {
         // Calls put when is adding the block header. (Saves his storedBlock)
         verify(btcBlockStore, never()).put(any(StoredBlock.class));
         verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
-        assertEquals(-4, result);
+        assertEquals(ReceiveHeaderResponseCode.BLOCK_PREVIOUSLY_SAVED.getCode(), result);
     }
 
     @Nested
@@ -7887,8 +7887,7 @@ class BridgeSupportTest {
             assertEquals(btcBlockStoreWithCachePreRSKIP434.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
 
             // assert receive header returns an exception and does not save the block
-            final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
-            assertThat(bridgeSupportPreRSKIP434.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_UNEXPECTED_EXCEPTION));
+            assertThat(bridgeSupportPreRSKIP434.receiveHeader(blockWithTooMuchWork), is(ReceiveHeaderResponseCode.UNEXPECTED_EXCEPTION.getCode()));
             assertNull(btcBlockStoreWithCachePreRSKIP434.get(blockWithTooMuchWork.getHash()));
         }
 
@@ -7930,8 +7929,7 @@ class BridgeSupportTest {
             assertEquals(btcBlockStoreWithCachePostRSKIP434.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
 
             // assert receive header returns successful response and saves the block
-            final Integer RECEIVE_HEADER_SUCCESSFUL = 0;
-            assertThat(bridgeSupportPostRSKIP434.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_SUCCESSFUL));
+            assertThat(bridgeSupportPostRSKIP434.receiveHeader(blockWithTooMuchWork), is(ReceiveHeaderResponseCode.SUCCESSFUL.getCode()));
             assertNotNull(btcBlockStoreWithCachePostRSKIP434.get(blockWithTooMuchWork.getHash()));
         }
 
@@ -7987,8 +7985,7 @@ class BridgeSupportTest {
             assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
 
             // assert receive header returns successful response and saves the block
-            final Integer RECEIVE_HEADER_SUCCESSFUL = 0;
-            assertThat(bridgeSupport.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_SUCCESSFUL));
+            assertThat(bridgeSupport.receiveHeader(blockWithTooMuchWork), is(ReceiveHeaderResponseCode.SUCCESSFUL.getCode()));
             assertNotNull(btcBlockStoreWithCache.get(blockWithTooMuchWork.getHash()));
         }
 
