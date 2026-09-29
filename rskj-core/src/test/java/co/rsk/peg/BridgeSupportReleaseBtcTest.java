@@ -162,7 +162,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestReceivedToAddress(any(), any(), any());
         verify(eventLogger, never()).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
@@ -339,7 +339,7 @@ class BridgeSupportReleaseBtcTest {
             any(BtcTransaction.class),
             any(Coin.class)
         );
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceivedToAddress(any(), any(), any());
         verify(bridgeEventLogger, times(1)).logUpdateCollections(any());
         verify(bridgeEventLogger, times(1)).logBatchPegoutCreated(any(), any());
         verify(bridgeEventLogger, times(1)).logPegoutTransactionCreated(any(), any());
@@ -409,7 +409,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(2, logInfo.size());
-        verify(bridgeEventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, never()).logReleaseBtcRequestReceivedToAddress(any(), any(), any());
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
         verify(bridgeEventLogger, times(1)).logUpdateCollections(any());
     }
@@ -447,7 +447,7 @@ class BridgeSupportReleaseBtcTest {
 
         assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
-        verify(bridgeEventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, never()).logReleaseBtcRequestReceivedToAddress(any(), any(), any());
         assertEquals(2, logInfo.size());
 
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
@@ -479,7 +479,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceivedToAddress(any(), any(), any());
 
         LogInfo firstLog = logInfo.get(0);
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
@@ -600,7 +600,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceivedToAddress(any(), any(), any());
 
         LogInfo firstLog = logInfo.get(0);
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
@@ -1242,7 +1242,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestReceivedToAddress(any(), any(), any());
         verify(eventLogger, never()).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
@@ -1278,7 +1278,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, logInfo.size());
 
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceivedToAddress(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
             senderAddress,
             pegoutRequestValue,
@@ -1326,7 +1326,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, logInfo.size());
 
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceivedToAddress(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
             senderAddress,
             pegoutRequestValue,
@@ -1415,7 +1415,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceivedToAddress(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
             senderAddress,
             pegoutRequestValue,
@@ -1508,7 +1508,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceivedToAddress(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
             senderAddress,
             pegoutRequestValue,

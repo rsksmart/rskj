@@ -389,9 +389,19 @@ public final class BridgeUtils {
     }
 
     public static LegacyAddress recoverBtcAddressFromEthTransaction(Transaction tx, NetworkParameters networkParameters) {
+        return recoverBtcKeyFromEthTransaction(tx).toAddress(networkParameters);
+    }
+
+    /**
+     * The requester's compressed public key, recovered from the signature on their RSK
+     * transaction. Every supported peg-out destination is derived from this key, so recovering it
+     * once serves all of them.
+     */
+    public static BtcECKey recoverBtcKeyFromEthTransaction(Transaction tx) {
         ECKey key = tx.getKey();
         byte[] pubKey = key.getPubKey(true);
-        return BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);
+
+        return BtcECKey.fromPublicOnly(pubKey);
     }
 
     public static boolean isFreeBridgeTx(Transaction rskTx, Constants constants, ActivationConfig.ForBlock activations, SignatureCache signatureCache) {

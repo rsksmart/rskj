@@ -657,6 +657,18 @@ public enum BridgeMethods {
         (BridgeMethodExecutorVoid) Bridge::releaseBtc,
         fixedPermission(false)
     ),
+    RELEASE_BTC_TO(
+        CallTransaction.Function.fromSignature(
+            "releaseBtcTo",
+            new String[]{STRING},
+            new String[]{}
+        ),
+        fixedCost(23000L),
+        (BridgeMethodExecutorVoid) Bridge::releaseBtcTo,
+        activations -> activations.isActive(RSKIP690),
+        fixedPermission(false),
+        CallTypeHelper.RESTRICTED_TO_CALL
+    ),
     REMOVE_LOCK_WHITELIST_ADDRESS(
         CallTransaction.Function.fromSignature(
             "removeLockWhitelistAddress",
