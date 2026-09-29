@@ -25,6 +25,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.NetworkUpgrade;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -46,7 +47,6 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 
 import static co.rsk.RskTestUtils.createRepository;
@@ -301,6 +301,6 @@ class FailingPrecompileDirectCallTest {
             heights.put(rule, defaults.isActive(rule, 0L) ? 0L : -1L);
         }
         heights.put(ConsensusRule.RSKIP692, active ? 0L : -1L);
-        return new ActivationConfig(heights, new HashMap<>());
+        return new ActivationConfig(heights, new EnumMap<>(NetworkUpgrade.class));
     }
 }
