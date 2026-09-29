@@ -1,0 +1,20 @@
+{
+  "BlockInformation": {
+    "title": "blockInformation",
+    "type": "object",
+    "description": "A block at a given height, with enough information to tell canonical from orphaned",
+    "properties": {
+      "hash": {
+        "$ref": "#/components/schemas/BlockHash"
+      },
+      "totalDifficulty": {
+        "$ref": "#/components/schemas/IntegerHex"
+      },
+      "inMainChain": {
+        "title": "inMainChain",
+        "type": "boolean",
+        "description": "Whether this block is the canonical one at its height"
+      }
+    }
+  }
+}

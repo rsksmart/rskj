@@ -1,6 +1,7 @@
 {
   "BlockRefOrNumberOrTag": {
     "name": "blockRefOrNumberOrTag",
+    "description": "The block to read, given as its height in hex, as a tag, or as a block reference object",
     "required": true,
     "schema": {
       "title": "blockRefOrNumberOrTag",
@@ -9,10 +10,7 @@
           "$ref": "#/components/schemas/BlockRef"
         },
         {
-          "$ref": "#/components/schemas/BlockNumberHex"
-        },
-        {
-          "$ref": "#/components/schemas/BlockNumberTag"
+          "$ref": "#/components/schemas/BlockNumberOrTag"
         }
       ]
     }

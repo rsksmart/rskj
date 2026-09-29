@@ -39,7 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -152,14 +151,40 @@ public class GenerateOpenRpcDoc implements Callable<Integer> {
         try (Stream<Path> stream = Files.walk(Paths.get(parentPath), 1)) {
             return stream
                     .filter(file -> !Files.isDirectory(file))
+                    .filter(GenerateOpenRpcDoc::isFragment)
+                    // Files.walk yields directory order, which no filesystem promises to keep stable. The
+                    // assembled document is synced to the docs site, so an unordered read would surface
+                    // there as a diff nobody made.
+                    .sorted()
                     .map(Path::getFileName)
                     .map(Path::toString)
                     .map(fileName -> this.loadFileAsJson(parentPath, fileName, toType))
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (IOException e) {
             logger.error("Error loading files under {} as json", parentPath);
             throw new GenerateOpenRpcException(e);
         }
+    }
+
+    /**
+     * Whether a file under the reference tree is a fragment this tool assembles into the published
+     * document. Every fragment is parsed as JSON, so a README, a {@code .orig} from a conflicted merge
+     * or an editor swapfile would otherwise abort the whole generation.
+     *
+     * <p>This is the one definition of what counts as a fragment: what the generator accepts is what
+     * actually ships, so anything checking the reference -- the drift guard in the test sources, for one
+     * -- asks here rather than keeping a parallel copy that can quietly disagree.
+     *
+     * <p>The extension is matched case-insensitively: a fragment added as {@code .JSON} is a fragment,
+     * and on a case-insensitive filesystem it is the same file besides. Other JSON dialects are
+     * deliberately not accepted -- {@code .json5} parses under different rules than the mapper here
+     * applies, so treating one as a fragment would fail at load rather than at this filter.
+     */
+    public static boolean isFragment(Path file) {
+        String fileName = file.getFileName().toString();
+        int extension = fileName.lastIndexOf('.');
+
+        return extension >= 0 && ".json".equalsIgnoreCase(fileName.substring(extension));
     }
 
     private static String buildFullPath(String basePath, String fileName) {

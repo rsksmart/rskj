@@ -1,0 +1,39 @@
+{
+  "name": "txpool_status",
+  "summary": "Returns how many transactions the pool is holding.",
+  "description": "Returns the number of transactions eligible for the next block (`pending`) and the number held back because their nonce leaves a gap (`queued`). Both are plain integers, not hex quantities.",
+  "params": [],
+  "result": {
+    "name": "status",
+    "description": "The pending and queued transaction counts",
+    "schema": {
+      "title": "txPoolStatus",
+      "type": "object",
+      "properties": {
+        "pending": {
+          "title": "pending",
+          "type": "integer",
+          "description": "Transactions eligible for the next block"
+        },
+        "queued": {
+          "title": "queued",
+          "type": "integer",
+          "description": "Transactions whose nonce leaves a gap and cannot be executed yet"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "statusExample",
+      "params": [],
+      "result": {
+        "name": "statusResult",
+        "value": {
+          "pending": 3,
+          "queued": 1
+        }
+      }
+    }
+  ]
+}
