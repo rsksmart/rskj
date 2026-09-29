@@ -118,6 +118,7 @@ public enum ConsensusRule {
     RSKIP551("rskip551"), // Disable RSKIP459
     RSKIP552("rskip552"), // Blake2F improvements in data handling
     RSKIP559("rskip559"), // Pegouts deterministic sorting
+    RSKIP690("rskip690"), // Peg-out to a legacy, p2sh-segwit, bech32 or bech32m destination derived from the requester public key
     ;
 
     private final String configKey;

@@ -10,6 +10,7 @@ public enum BridgeStorageIndexKey {
     RELEASES_OUTPOINTS_VALUES("releasesOutpointsValues"),
     PEGOUTS_WAITING_FOR_SIGNATURES("rskTxsWaitingFS"),
     RELEASE_REQUEST_QUEUE_WITH_TXHASH("releaseRequestQueueWithTxHash"),
+    PEGOUT_REQUEST_QUEUE("pegoutRequestQueue"),
     PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY("releaseTransactionSetWithTxHash"),
     RECEIVE_HEADERS_TIMESTAMP("receiveHeadersLastTimestamp"),
     // Version keys and versions

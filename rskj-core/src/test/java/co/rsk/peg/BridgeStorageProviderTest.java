@@ -75,6 +75,8 @@ class BridgeStorageProviderTest {
 
     private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
     private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
+    private final ActivationConfig.ForBlock activationsBeforeRskip690 =
+        ActivationConfigsForTest.papyrus200().forBlock(0L);
 
     private int transactionOffset;
 
@@ -1611,6 +1613,102 @@ class BridgeStorageProviderTest {
             assertTrue(savedReleaseOutpointsValues2.isPresent());
             assertEquals(outpointsValues2, savedReleaseOutpointsValues2.get());
         }
+    }
+
+    /**
+     * The whole point of the new cell: a destination that is not a legacy address survives a save
+     * and a read.
+     *
+     * <p>This also covers the unconditional write to RELEASE_REQUEST_QUEUE at the top of
+     * saveReleaseRequestQueue. That cell's serializer stores a bare 20-byte hash and rejects
+     * anything else, and it is safe only because it serializes getEntriesWithoutHash, which is
+     * empty once RSKIP146 is active. Nothing said so before this test.</p>
+     */
+    @Test
+    void saveReleaseRequestQueue_afterRskip690_roundTripsEverySupportedDestination() throws IOException {
+        Repository repository = createRepository();
+        BridgeStorageProvider storageProvider =
+            new BridgeStorageProvider(repository, testnetBtcParams, activationsAllForks);
+
+        byte[] pubKeyHash = Hex.decode("f7ee9ab7297134a0ccc76f3d50e94def17488f2c");
+        byte[] taprootProgram =
+            Hex.decode("4c679657ca8d4aa7e29deaaaba90463a2af9e182012791112634c4d585b324a7");
+        List<Address> destinations = Arrays.asList(
+            new LegacyAddress(testnetBtcParams, pubKeyHash),
+            LegacyAddress.fromP2SHHash(testnetBtcParams, pubKeyHash),
+            SegwitAddress.fromHash(testnetBtcParams, pubKeyHash),
+            SegwitAddress.fromProgram(testnetBtcParams, 1, taprootProgram));
+
+        ReleaseRequestQueue queue = storageProvider.getReleaseRequestQueue();
+        for (int i = 0; i < destinations.size(); i++) {
+            queue.add(destinations.get(i), Coin.COIN, PegTestUtils.createHash3(i));
+        }
+
+        storageProvider.saveReleaseRequestQueue();
+
+        BridgeStorageProvider reader =
+            new BridgeStorageProvider(repository, testnetBtcParams, activationsAllForks);
+        List<ReleaseRequestQueue.Entry> read = reader.getReleaseRequestQueue().getEntries();
+
+        Assertions.assertEquals(destinations.size(), read.size());
+        for (int i = 0; i < destinations.size(); i++) {
+            Assertions.assertEquals(destinations.get(i), read.get(i).getDestination());
+        }
+    }
+
+    /**
+     * The migration, which is the part with no code of its own: entries already queued before
+     * RSKIP690 are read by the existing load path and written back into the new cell by the first
+     * save that touches the queue. Nothing runs at activation.
+     *
+     * <p>Order matters, because the queue is FIFO and a request that jumps the line is a request
+     * paid out of turn.</p>
+     */
+    @Test
+    void saveReleaseRequestQueue_afterRskip690_movesPreActivationEntriesKeepingTheirOrder()
+        throws IOException {
+
+        Repository repository = createRepository();
+        byte[] pubKeyHash = Hex.decode("f7ee9ab7297134a0ccc76f3d50e94def17488f2c");
+
+        // queued before the activation, so they land in the legacy cell
+        BridgeStorageProvider before =
+            new BridgeStorageProvider(repository, testnetBtcParams, activationsBeforeRskip690);
+        ReleaseRequestQueue queuedEarlier = before.getReleaseRequestQueue();
+        for (int i = 0; i < 3; i++) {
+            queuedEarlier.add(new LegacyAddress(testnetBtcParams, pubKeyHash),
+                Coin.valueOf(100_000 + i), PegTestUtils.createHash3(i));
+        }
+        before.saveReleaseRequestQueue();
+
+        Assertions.assertNotNull(repository.getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR, RELEASE_REQUEST_QUEUE_WITH_TXHASH.getKey()));
+
+        // first save after the activation, with one new non-legacy request appended
+        BridgeStorageProvider after =
+            new BridgeStorageProvider(repository, testnetBtcParams, activationsAllForks);
+        ReleaseRequestQueue merged = after.getReleaseRequestQueue();
+        Assertions.assertEquals(3, merged.getEntries().size());
+        merged.add(SegwitAddress.fromHash(testnetBtcParams, pubKeyHash),
+            Coin.valueOf(100_003), PegTestUtils.createHash3(3));
+        after.saveReleaseRequestQueue();
+
+        List<ReleaseRequestQueue.Entry> read =
+            new BridgeStorageProvider(repository, testnetBtcParams, activationsAllForks)
+                .getReleaseRequestQueue().getEntries();
+
+        Assertions.assertEquals(4, read.size());
+        for (int i = 0; i < 4; i++) {
+            Assertions.assertEquals(Coin.valueOf(100_000 + i), read.get(i).getAmount());
+        }
+        Assertions.assertTrue(read.get(3).getDestination() instanceof SegwitAddress);
+
+        // the old cell is drained, so no request exists in both. It holds an empty RLP list
+        // rather than nothing, which is one byte, so read it back instead of measuring it.
+        byte[] legacyCell = repository.getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR, RELEASE_REQUEST_QUEUE_WITH_TXHASH.getKey());
+        Assertions.assertTrue(BridgeSerializationUtils
+            .deserializeReleaseRequestQueue(legacyCell, testnetBtcParams, true).isEmpty());
     }
 
     @Test
