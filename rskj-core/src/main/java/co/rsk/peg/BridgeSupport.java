@@ -1268,7 +1268,8 @@ public class BridgeSupport {
                     logger.error(
                         "[processFundsMigration] Unable to complete retiring federation migration. Balance left: {} in {}",
                         retiringFederationWallet.getBalance().toFriendlyString(),
-                        retiringFederationWallet.getWatchedAddresses()
+                        retiringFederationWallet.getWatchedAddresses(),
+                        e
                     );
                 }
             }
