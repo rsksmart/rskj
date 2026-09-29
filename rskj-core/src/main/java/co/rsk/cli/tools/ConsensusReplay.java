@@ -56,6 +56,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.concurrent.Future;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
+import java.util.Deque;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -127,6 +133,10 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
 
     @CommandLine.Option(names = {"--progress-every"}, description = "Log progress every N blocks (default: 10000)")
     private long progressEvery = 10_000L;
+
+    @CommandLine.Option(names = {"--threads"},
+            description = "Blocks executed concurrently (default 1). Execution is anchored, so blocks are independent; records are still written in block order.")
+    private int threads = 1;
 
     @CommandLine.Option(names = {"--resume"},
             description = "Continue an interrupted run: drop any partial trailing record from --report and restart after its last complete block")
@@ -403,83 +413,143 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
     private void replayRange(BlockExecutor blockExecutor, BlockStore blockStore,
                              StateRootHandler stateRootHandler, ActivationConfig activationConfig,
                              TrieStore trieStore, Writer writer) throws IOException {
-        for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
-            Block block;
-            Block parent;
-            long fetchStart = System.nanoTime();
-            try {
-                // Constructing a Block validates its transactions trie root, so a block whose
-                // transactions no longer re-encode faithfully throws here, before execution.
-                block = blockStore.getChainBlockByNumber(n);
-                if (block == null) {
-                    writer.write(String.format("{\"kind\":\"block\",\"number\":%d,\"missing\":true}%n", n));
-                    count(Failure.NOT_LOADED);
-                    continue;
-                }
-
-                parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
-                if (parent == null) {
-                    writer.write(String.format("{\"kind\":\"block\",\"number\":%d,\"parentMissing\":true}%n", n));
-                    count(Failure.NOT_LOADED);
-                    continue;
-                }
-            } catch (RuntimeException e) {
-                count(Failure.NOT_LOADED);
-                writer.write(String.format("{\"kind\":\"block\",\"number\":%d,\"blockLoadFailed\":true,%s}%n",
-                        n, DigestJson.errorFields(e)));
-                blocksVisited++;
-                continue;
-            } finally {
-                fetchNanos += System.nanoTime() - fetchStart;
+        if (threads <= 1) {
+            for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
+                emit(execute(blockExecutor, blockStore, n), stateRootHandler, activationConfig, trieStore, writer);
             }
+            return;
+        }
 
-            replayBlock(blockExecutor, stateRootHandler, activationConfig, trieStore, block, parent, writer);
-
-            blocksVisited++;
-            if (progressEvery > 0 && blocksVisited % progressEvery == 0) {
-                printInfo("consensus-replay at block {} ({}) | fetch {}s execute {}s digest+write {}s",
-                        n, failureSummary(),
-                        fetchNanos / 1_000_000_000L, executeNanos / 1_000_000_000L, digestNanos / 1_000_000_000L);
+        // Workers only fetch and execute; everything order-dependent (the nonce invariant, the
+        // counts, the stream that --resume reads as a prefix) stays on this thread, in block order.
+        ExecutorService pool = Executors.newFixedThreadPool(threads);
+        try {
+            Deque<Future<Executed>> window = new ArrayDeque<>();
+            long next = fromBlockNumber;
+            while (next <= toBlockNumber || !window.isEmpty()) {
+                while (next <= toBlockNumber && window.size() < threads * 4) {
+                    long number = next++;
+                    window.add(pool.submit(() -> execute(blockExecutor, blockStore, number)));
+                }
+                emit(await(window.poll()), stateRootHandler, activationConfig, trieStore, writer);
             }
+        } finally {
+            pool.shutdownNow();
         }
     }
 
-    private void replayBlock(BlockExecutor blockExecutor, StateRootHandler stateRootHandler,
-                             ActivationConfig activationConfig, TrieStore trieStore, Block block, Block parent,
-                             Writer writer) throws IOException {
-        long startedAt = System.nanoTime();
-
-        BlockResult result;
+    private static Executed await(Future<Executed> future) throws IOException {
         try {
-            result = blockExecutor.execute(null, 0, block, parent.getHeader(), false, false, saveState);
-        } catch (RuntimeException e) {
-            executeNanos += System.nanoTime() - startedAt;
-            writer.write(noResult(block, String.format("\"executionFailed\":true,%s", DigestJson.errorFields(e)),
-                    micros(startedAt)));
+            return future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("replay interrupted", e);
+        } catch (ExecutionException e) {
+            throw new IllegalStateException("block execution failed outside the executor", e.getCause());
+        }
+    }
+
+    /** What a worker produces for one block. It touches no shared state; {@link #emit} does. */
+    private static final class Executed {
+        final long number;
+        Block block;
+        Block parent;
+        String notLoaded;
+        boolean loadFailed;
+        BlockResult result;
+        RuntimeException failure;
+        BlockResult second;
+        RuntimeException secondFailure;
+        long fetchNanos;
+        long executeNanos;
+
+        Executed(long number) {
+            this.number = number;
+        }
+    }
+
+    private Executed execute(BlockExecutor blockExecutor, BlockStore blockStore, long n) {
+        Executed e = new Executed(n);
+        long fetchStart = System.nanoTime();
+        try {
+            // Constructing a Block validates its transactions trie root, so a block whose
+            // transactions no longer re-encode faithfully throws here, before execution.
+            e.block = blockStore.getChainBlockByNumber(n);
+            if (e.block == null) {
+                e.notLoaded = "\"missing\":true";
+                return e;
+            }
+
+            e.parent = blockStore.getBlockByHash(e.block.getParentHash().getBytes());
+            if (e.parent == null) {
+                e.notLoaded = "\"parentMissing\":true";
+                return e;
+            }
+        } catch (RuntimeException ex) {
+            e.notLoaded = "\"blockLoadFailed\":true," + DigestJson.errorFields(ex);
+            e.loadFailed = true;
+            return e;
+        } finally {
+            e.fetchNanos = System.nanoTime() - fetchStart;
+        }
+
+        long startedAt = System.nanoTime();
+        try {
+            e.result = blockExecutor.execute(null, 0, e.block, e.parent.getHeader(), false, false, saveState);
+        } catch (RuntimeException ex) {
+            e.failure = ex;
+        }
+
+        if (scenario == Scenario.REPEAT && e.result != null && e.result.getFinalState() != null) {
+            try {
+                e.second = blockExecutor.execute(null, 0, e.block, e.parent.getHeader(), false, false, saveState);
+            } catch (RuntimeException ex) {
+                e.secondFailure = ex;
+            }
+        }
+        e.executeNanos = System.nanoTime() - startedAt;
+
+        return e;
+    }
+
+    private void emit(Executed e, StateRootHandler stateRootHandler, ActivationConfig activationConfig,
+                      TrieStore trieStore, Writer writer) throws IOException {
+        fetchNanos += e.fetchNanos;
+        executeNanos += e.executeNanos;
+        long micros = e.executeNanos / 1_000L;
+
+        if (e.notLoaded != null) {
+            writer.write(String.format("{\"kind\":\"block\",\"number\":%d,%s}%n", e.number, e.notLoaded));
+            count(Failure.NOT_LOADED);
+            if (e.loadFailed) {
+                blocksVisited++;
+            }
             return;
         }
 
-        executeNanos += System.nanoTime() - startedAt;
-
-        if (result.getFinalState() == null) {
+        if (e.failure != null) {
+            writer.write(noResult(e.block, String.format("\"executionFailed\":true,%s", DigestJson.errorFields(e.failure)), micros));
+        } else if (e.result.getFinalState() == null) {
             // BlockExecutor reports an interrupted or collided execution by returning a result
             // with no final state. Under BACKTEST that is a likely outcome, not a reason to abort.
-            writer.write(noResult(block, "\"executionInterrupted\":true", micros(startedAt)));
-            return;
+            writer.write(noResult(e.block, "\"executionInterrupted\":true", micros));
+        } else {
+            String extra = scenario == Scenario.REPEAT
+                    ? repeatVerdict(activationConfig, e.block, e.result, e.second, e.secondFailure)
+                    : "";
+
+            long digestFrom = System.nanoTime();
+            writer.write(invariants(activationConfig, trieStore, e.block, e.result));
+            writer.write(digest(stateRootHandler, activationConfig, e.block, e.result, micros, extra));
+            digestNanos += System.nanoTime() - digestFrom;
         }
 
-        String extra = scenario == Scenario.REPEAT
-                ? repeat(blockExecutor, activationConfig, block, parent, result)
-                : "";
-
-        // Measure the digest from after the repeat pass: repeat() books its own execution time
-        // to executeNanos, and spanning it here would count that work in both phases.
-        long digestFrom = System.nanoTime();
-
-        writer.write(invariants(activationConfig, trieStore, block, result));
-        writer.write(digest(stateRootHandler, activationConfig, block, result, micros(startedAt), extra));
-
-        digestNanos += System.nanoTime() - digestFrom;
+        blocksVisited++;
+        if (progressEvery > 0 && blocksVisited % progressEvery == 0) {
+            printInfo("consensus-replay at block {} ({}) | fetch {}s execute {}s digest+write {}s",
+                    e.number, failureSummary(),
+                    fetchNanos / 1_000_000_000L, executeNanos / 1_000_000_000L, digestNanos / 1_000_000_000L);
+        }
     }
 
     /** Record for a block with no usable result; under BACKTEST that is a divergence like any other. */
@@ -568,27 +638,20 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
      * A disagreement here outranks whatever change prompted the run: if replay is not repeatable,
      * no divergence found by any other scenario can be attributed to anything.
      */
-    private String repeat(BlockExecutor blockExecutor, ActivationConfig activationConfig,
-                          Block block, Block parent, BlockResult first) {
-        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, block.getNumber());
-        String firstFields = consensusFields(block.getHeader(), first, isRskip126Enabled);
-
-        long startedAt = System.nanoTime();
-        BlockResult second;
-        try {
-            second = blockExecutor.execute(null, 0, block, parent.getHeader(), false, false, saveState);
-        } catch (RuntimeException e) {
+    private String repeatVerdict(ActivationConfig activationConfig, Block block, BlockResult first,
+                                 BlockResult second, RuntimeException secondFailure) {
+        if (secondFailure != null) {
             count(Failure.NOT_EXECUTED);
-            executeNanos += System.nanoTime() - startedAt;
-            return String.format(",\"repeatOk\":false,\"secondRunFailed\":true,%s", DigestJson.errorFields(e));
+            return String.format(",\"repeatOk\":false,\"secondRunFailed\":true,%s", DigestJson.errorFields(secondFailure));
         }
-        executeNanos += System.nanoTime() - startedAt;
 
         if (second.getFinalState() == null) {
             count(Failure.NOT_EXECUTED);
             return ",\"repeatOk\":false,\"secondRunInterrupted\":true";
         }
 
+        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, block.getNumber());
+        String firstFields = consensusFields(block.getHeader(), first, isRskip126Enabled);
         String secondFields = consensusFields(block.getHeader(), second, isRskip126Enabled);
         if (firstFields.equals(secondFields)) {
             return ",\"repeatOk\":true";
@@ -828,10 +891,6 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
 
     private static BigInteger unsigned(byte[] value) {
         return value == null || value.length == 0 ? BigInteger.ZERO : new BigInteger(1, value);
-    }
-
-    private static long micros(long startedAt) {
-        return (System.nanoTime() - startedAt) / 1000L;
     }
 
     private static String edges(short[] txEdges) {

@@ -59,6 +59,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -735,6 +736,88 @@ class ConsensusReplayTest {
         doReturn(block).when(blockStore).getChainBlockByNumber(number);
 
         return blockStore;
+    }
+
+    // =========================================================================
+    // Concurrent execution (--threads)
+    // =========================================================================
+
+    /** A threaded run must write exactly the records a sequential run writes; only timing may differ. */
+    @Test
+    void threadedRunWritesTheSameRecordsAsASequentialRun() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        Path sequential = tempDir.resolve("threads-1.jsonl");
+        Path threaded = tempDir.resolve("threads-4.jsonl");
+
+        verify(run(world, world.getBlockStore(), world.getBlockExecutor(), sequential, "FIDELITY")).stop(0);
+        verify(run(world, world.getBlockStore(), world.getBlockExecutor(), threaded, "FIDELITY", "--threads", "4")).stop(0);
+
+        Assertions.assertEquals(withoutTiming(sequential), withoutTiming(threaded));
+    }
+
+    /** Records are written in block order even when a later block finishes first. */
+    @Test
+    void threadedRunWritesRecordsInBlockOrderWhenAnEarlierBlockFinishesLast() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        Path report = tempDir.resolve("threads-order.jsonl");
+        BlockExecutor slowFirst = spy(world.getBlockExecutor());
+        java.util.Map<Long, long[]> spans = new java.util.concurrent.ConcurrentHashMap<>();
+        doAnswer(invocation -> {
+            Block block = invocation.getArgument(2);
+            long start = System.nanoTime();
+            if (block.getNumber() == 1) {
+                Thread.sleep(500);
+            }
+            Object result = invocation.callRealMethod();
+            spans.put(block.getNumber(), new long[]{start, System.nanoTime()});
+            return result;
+        }).when(slowFirst).execute(any(), anyInt(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
+
+        verify(run(world, world.getBlockStore(), slowFirst, report, "FIDELITY", "--threads", "2")).stop(0);
+
+        Assertions.assertTrue(spans.get(2L)[0] < spans.get(1L)[1],
+                "block 2 must start before block 1 finishes, or nothing ran concurrently");
+        List<String> lines = Files.readAllLines(report, StandardCharsets.UTF_8);
+        Assertions.assertTrue(lines.get(0).contains("\"number\":1,") && lines.get(1).contains("\"number\":2,"),
+                "records must follow block order, not completion order: " + lines);
+    }
+
+    @Test
+    void threadedRepeatStillDetectsAnExecutorThatDisagreesWithItself() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        Path report = tempDir.resolve("threads-repeat.jsonl");
+        BlockResult first = executeOnce(world, world.getBlockStore().getChainBlockByNumber(1));
+        BlockResult second = executeOnce(world, world.getBlockStore().getChainBlockByNumber(2));
+        BlockExecutor flaky = mock(BlockExecutor.class);
+        doAnswer(invocation -> ((Block) invocation.getArgument(2)).getNumber() == 1 ? first : second)
+                .doAnswer(invocation -> second)
+                .when(flaky).execute(any(), anyInt(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
+
+        verify(run(world, world.getBlockStore(), flaky, report, "REPEAT", "--threads", "1")).stop(1);
+        List<String> sequential = withoutTiming(report);
+
+        Path threaded = tempDir.resolve("threads-repeat-4.jsonl");
+        BlockExecutor flaky4 = mock(BlockExecutor.class);
+        java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.Map<Long, java.util.concurrent.atomic.AtomicInteger> perBlock = new java.util.concurrent.ConcurrentHashMap<>();
+        doAnswer(invocation -> {
+            long number = ((Block) invocation.getArgument(2)).getNumber();
+            int nth = perBlock.computeIfAbsent(number, k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
+            calls.incrementAndGet();
+            return number == 1 && nth == 1 ? first : second;
+        }).when(flaky4).execute(any(), anyInt(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
+
+        verify(run(world, world.getBlockStore(), flaky4, threaded, "REPEAT", "--threads", "4")).stop(1);
+        Assertions.assertEquals(4, calls.get(), "each block must be executed exactly twice");
+        Assertions.assertTrue(withoutTiming(threaded).get(0).contains("\"repeatOk\":false"), threaded.toString());
+    }
+
+    private static List<String> withoutTiming(Path report) throws IOException {
+        List<String> out = new ArrayList<>();
+        for (String line : Files.readAllLines(report, StandardCharsets.UTF_8)) {
+            out.add(line.replaceAll(",\"micros\":\\d+", ""));
+        }
+        return out;
     }
 
     // =========================================================================
