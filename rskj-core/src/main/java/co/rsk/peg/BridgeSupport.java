@@ -896,6 +896,13 @@ public class BridgeSupport {
      * @throws IOException If there's an error while processing the release request.
      */
     public void releaseBtcTo(Transaction rskTx, String addressTypeName) throws IOException {
+        // Before anything else. A contract is rejected without a refund, every other rejection
+        // refunds, so asking second would let a contract get its value back by passing a name
+        // nobody recognises.
+        if (rejectedAsContractCaller(rskTx)) {
+            return;
+        }
+
         PegoutAddressType addressType;
         try {
             addressType = PegoutAddressType.fromApiName(addressTypeName);
@@ -922,20 +929,8 @@ public class BridgeSupport {
             rskTx.getHash()
         );
 
-        // Peg-out from a smart contract not allowed since it's not possible to derive a BTC address from it
-        if (BridgeUtils.isContractTx(rskTx)) {
-            logger.trace(
-                "[releaseBtc] Contract {} tried to release funds. Release is just allowed from EOA",
-                senderAddress
-            );
-            if (activations.isActive(ConsensusRule.RSKIP185)) {
-                emitRejectEvent(pegoutValueInWeis, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
-                return;
-            } else {
-                String message = "Contract calling releaseBTC";
-                logger.debug("[releaseBtc] {}", message);
-                throw new Program.OutOfGasException(message);
-            }
+        if (rejectedAsContractCaller(rskTx)) {
+            return;
         }
 
         Context.propagate(btcContext);
@@ -948,6 +943,35 @@ public class BridgeSupport {
         logger.debug("[releaseBtc] BTC destination: {} ({})", destination, addressType);
 
         requestRelease(destination, pegoutValueInWeis, rskTx);
+    }
+
+    /**
+     * Peg-out from a smart contract is not allowed, since there is no key to derive a BTC address
+     * from. Since RSKIP185 the value is not refunded, which is why this has to be decided before
+     * any rejection that does refund.
+     *
+     * @return true if the caller was rejected and the caller should stop
+     */
+    private boolean rejectedAsContractCaller(Transaction rskTx) {
+        if (!BridgeUtils.isContractTx(rskTx)) {
+            return false;
+        }
+
+        RskAddress senderAddress = rskTx.getSender(signatureCache);
+        logger.trace(
+            "[releaseBtc] Contract {} tried to release funds. Release is just allowed from EOA",
+            senderAddress
+        );
+
+        if (!activations.isActive(ConsensusRule.RSKIP185)) {
+            String message = "Contract calling releaseBTC";
+            logger.debug("[releaseBtc] {}", message);
+            throw new Program.OutOfGasException(message);
+        }
+
+        emitRejectEvent(rskTx.getValue(), senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
+
+        return true;
     }
 
     private void refundAndEmitRejectEvent(

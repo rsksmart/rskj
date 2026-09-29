@@ -43,7 +43,9 @@ import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.core.Repository;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -64,6 +66,8 @@ class BridgeSupportReleaseBtcToTest {
     private static final BigInteger GAS_PRICE = BigInteger.valueOf(100);
     private static final BigInteger GAS_LIMIT = BigInteger.valueOf(1000);
     private static final ECKey SENDER = RskTestUtils.getEcKeyFromSeed("sender");
+
+    private SignatureCache signatureCache;
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
@@ -75,7 +79,7 @@ class BridgeSupportReleaseBtcToTest {
 
     @BeforeEach
     void setUp() {
-        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         Repository repository = RskTestUtils.createRepository();
         eventLogger = mock(BridgeEventLogger.class);
         provider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, ALL_ACTIVATIONS);
@@ -172,6 +176,50 @@ class BridgeSupportReleaseBtcToTest {
         // Pinned because tooling and scripts hardcode it. keccak256("releaseBtcTo(string)")[0..4]
         assertEquals("ba75bbd5",
             org.bouncycastle.util.encoders.Hex.toHexString(Bridge.RELEASE_BTC_TO.encodeSignature()));
+    }
+
+    /**
+     * RSKIP185 rejects a contract caller without refunding. That has to be decided before the
+     * address type is looked at, or a contract recovers its value by passing a name nobody
+     * recognises, which is the one thing the rejection order exists to prevent.
+     */
+    @Test
+    void releaseBtcTo_fromAContract_withAnUnsupportedType_rejectsWithoutRefunding() throws IOException {
+        bridgeSupport.releaseBtcTo(buildReleaseTxFromContract(), "not-a-type");
+
+        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
+            any(RskAddress.class), any(co.rsk.core.Coin.class),
+            eq(RejectedPegoutReason.CALLER_CONTRACT));
+        verify(eventLogger, never()).logReleaseBtcRequestRejected(
+            any(RskAddress.class), any(co.rsk.core.Coin.class),
+            eq(RejectedPegoutReason.UNSUPPORTED_ADDRESS_TYPE));
+    }
+
+    @Test
+    void releaseBtcTo_fromAContract_withASupportedType_rejectsWithoutRefunding() throws IOException {
+        bridgeSupport.releaseBtcTo(buildReleaseTxFromContract(), "bech32m");
+
+        assertTrue(provider.getReleaseRequestQueue().getEntries().isEmpty());
+        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
+            any(RskAddress.class), any(co.rsk.core.Coin.class),
+            eq(RejectedPegoutReason.CALLER_CONTRACT));
+    }
+
+    private Transaction buildReleaseTxFromContract() {
+        return new InternalTransaction(
+            RskTestUtils.createHash(4).getBytes(),
+            400,
+            0,
+            NONCE.toByteArray(),
+            DataWord.valueOf(GAS_PRICE.longValue()),
+            DataWord.valueOf(GAS_LIMIT.longValue()),
+            SENDER.getAddress(),
+            PrecompiledContracts.BRIDGE_ADDR.getBytes(),
+            co.rsk.core.Coin.fromBitcoin(Coin.COIN).getBytes(),
+            new byte[]{},
+            "",
+            signatureCache
+        );
     }
 
     private Transaction buildReleaseTx() {
