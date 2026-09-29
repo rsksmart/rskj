@@ -860,7 +860,6 @@ public class BridgeSupport {
             federationSupport.getRetiringFederationBtcUTXOs().add(utxo);
             utxosToTheRetiringFederation.add(utxo);
         }
-        logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
         federationSupport.getRetiringFederationAddress().ifPresent(retiringFederationAddress ->
             logUtxosRegistered(
                 btcTx.getHash(),
@@ -868,6 +867,7 @@ public class BridgeSupport {
                 retiringFederationAddress
             )
         );
+        logger.debug("[registerNewUtxosToTheRetiringFederation] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
     }
 
     private void registerNewUtxosToTheActiveFederation(BtcTransaction btcTx) {
@@ -888,12 +888,12 @@ public class BridgeSupport {
             federationSupport.getActiveFederationBtcUTXOs().add(utxo);
             utxosToTheActiveFederation.add(utxo);
         }
-        logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
         logUtxosRegistered(
             btcTx.getHash(),
             utxosToTheActiveFederation,
             federationSupport.getActiveFederationAddress()
         );
+        logger.debug("[registerNewUtxosToTheActiveFederation] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
     }
 
     private void logUtxosRegistered(Sha256Hash btcTxHash, List<UTXO> registeredUtxos, Address federationAddress) {
