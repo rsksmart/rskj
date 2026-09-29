@@ -3730,6 +3730,10 @@ class BridgeSupportFlyoverTest {
                 .build();
         }
 
+        private void assertFlyoverUtxosRegisteredWasNotEmitted() {
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
         private void assertFlyoverActiveFederationDataWasSaved(List<UTXO> expectedUtxos) {
             assertTrue(bridgeStorageProvider.isFlyoverDerivationHashUsed(FLYOVER_BTC_TX_HASH, FLYOVER_DERIVATION_HASH));
             assertFlyoverFederationInformationWasSaved(activeFlyoverFederationInformation);
@@ -3824,7 +3828,7 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.save();
 
             // assert
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
             assertFlyoverActiveFederationDataWasSaved(List.of());
         }
 
@@ -3844,7 +3848,7 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.save();
 
             // assert
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
             assertFlyoverActiveFederationDataWasSaved(List.of(firstUtxo));
         }
 
@@ -3918,7 +3922,7 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.save();
 
             // assert
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
             assertFlyoverRetiringFederationDataWasSaved(List.of());
         }
 
@@ -3938,7 +3942,7 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.save();
 
             // assert
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
             assertFlyoverRetiringFederationDataWasSaved(List.of(firstUtxo));
         }
 
@@ -4033,7 +4037,7 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEquals(getExpectedRegisteredAmount(1), result);
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
         }
 
         @Test
@@ -4063,7 +4067,7 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEquals(getExpectedRegisteredAmount(1), result);
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
         }
 
         @Test
@@ -4094,7 +4098,7 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEquals(getExpectedRegisteredAmount(2), result);
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
         }
 
         @Test
@@ -4128,7 +4132,7 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEquals(getExpectedRegisteredAmount(2), result);
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
         }
 
         @Test
@@ -4182,7 +4186,7 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR.value(), result.longValue());
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
         }
 
         @Test
@@ -4197,7 +4201,7 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
         }
 
         @Test
@@ -4213,7 +4217,7 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
         }
 
         @Test
@@ -4229,7 +4233,7 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
         }
 
         @Test
@@ -4245,7 +4249,7 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value(), result.longValue());
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverUtxosRegisteredWasNotEmitted();
         }
 
         private void setUpWithActivations(ActivationConfig.ForBlock activations) {
@@ -4358,6 +4362,10 @@ class BridgeSupportFlyoverTest {
             assertEquals(2, getLogsBySignature(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent()).size());
             assertLogFlyoverUtxosRegisteredForOutputsSentTo(flyoverPegin, activeFlyoverFederationAddress, activeFederation.getAddress());
             assertLogFlyoverUtxosRegisteredForOutputsSentTo(flyoverPegin, retiringFlyoverFederationAddress, retiringFederation.getAddress());
+        }
+
+        private void assertFlyoverUtxosRegisteredWasNotEmitted() {
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
         }
 
         private void assertLogFlyoverUtxosRegisteredForOutputsSentTo(
