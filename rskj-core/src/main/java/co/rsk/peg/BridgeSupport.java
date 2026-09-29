@@ -36,7 +36,6 @@ import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
@@ -94,7 +93,6 @@ public class BridgeSupport {
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
 
     private static final Logger logger = LoggerFactory.getLogger(BridgeSupport.class);
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final BridgeConstants bridgeConstants;
     private final NetworkParameters networkParameters;
@@ -1272,7 +1270,6 @@ public class BridgeSupport {
                         retiringFederationWallet.getBalance().toFriendlyString(),
                         retiringFederationWallet.getWatchedAddresses()
                     );
-                    panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
                 }
             }
 
@@ -2071,8 +2068,7 @@ public class BridgeSupport {
                     i++;
                 }
             } catch (Exception e) {
-                logger.error("Failed to walk the block chain whilst constructing a locator");
-                panicProcessor.panic("btcblockchain", "Failed to walk the block chain whilst constructing a locator");
+                logger.error("[getBtcBlockchainBlockLocator] Failed to walk the block chain whilst constructing a locator");
                 throw new RuntimeException(e);
             }
             if (!stop) {
@@ -3267,7 +3263,6 @@ public class BridgeSupport {
                 rskTxHash,
                 totalAmount
             );
-            panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s. Reason %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount, buildReturnResult.responseCode()));
             return;
         }
 
