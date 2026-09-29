@@ -119,7 +119,7 @@ public class BridgeStorageProvider {
         }
 
         Optional<Long> height = getFromRepository(getStorageKeyForBtcTxHashAlreadyProcessed(btcTxHash), BridgeSerializationUtils::deserializeOptionalLong);
-        if (!height.isPresent()) {
+        if (height.isEmpty()) {
             return height;
         }
 
@@ -501,25 +501,23 @@ public class BridgeStorageProvider {
     }
 
     public Optional<Long> getReceiveHeadersLastTimestamp() {
-        if (activations.isActive(RSKIP200)) {
-            return safeGetFromRepository(
-                RECEIVE_HEADERS_TIMESTAMP,
-                BridgeSerializationUtils::deserializeOptionalLong
-            );
-        }
-
-        return Optional.empty();
+        return safeGetFromRepository(
+            RECEIVE_HEADERS_TIMESTAMP,
+            BridgeSerializationUtils::deserializeOptionalLong
+        );
     }
 
     public void setReceiveHeadersLastTimestamp(Long timeInMillis) {
-        if (activations.isActive(RSKIP200)) {
-            receiveHeadersLastTimestamp = timeInMillis;
-        }
+        receiveHeadersLastTimestamp = timeInMillis;
     }
 
-    public void saveReceiveHeadersLastTimestamp() {
-        if (activations.isActive(RSKIP200) && this.receiveHeadersLastTimestamp > 0) {
-            safeSaveToRepository(RECEIVE_HEADERS_TIMESTAMP, this.receiveHeadersLastTimestamp, BridgeSerializationUtils::serializeLong);
+    private void saveReceiveHeadersLastTimestamp() {
+        if (this.receiveHeadersLastTimestamp > 0) {
+            safeSaveToRepository(
+                RECEIVE_HEADERS_TIMESTAMP,
+                this.receiveHeadersLastTimestamp,
+                BridgeSerializationUtils::serializeLong
+            );
         }
     }
 
@@ -860,6 +858,7 @@ public class BridgeStorageProvider {
     private <T> void safeSaveToRepository(BridgeStorageIndexKey addressKey, T object, RepositorySerializer<T> serializer) {
         safeSaveToRepository(addressKey.getKey(), object, serializer);
     }
+
     private <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
         try {
             saveToRepository(addressKey, object, serializer);

@@ -59,9 +59,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-/**
- * Created by ajlopez on 6/7/2016.
- */
 @ExtendWith(MockitoExtension.class)
 // to avoid Junit5 unnecessary stub error due to some setup generalizations
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -135,9 +132,9 @@ class BridgeStorageProviderTest {
         BtcTransaction tx1 = createTransaction();
         BtcTransaction tx2 = createTransaction();
         BtcTransaction tx3 = createTransaction();
-        Keccak256 hash1 = PegTestUtils.createHash3(1);
-        Keccak256 hash2 = PegTestUtils.createHash3(2);
-        Keccak256 hash3 = PegTestUtils.createHash3(3);
+        Keccak256 hash1 = RskTestUtils.createHash(1);
+        Keccak256 hash2 = RskTestUtils.createHash(2);
+        Keccak256 hash3 = RskTestUtils.createHash(3);
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -2752,29 +2749,18 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void getReceiveHeadersLastTimestamp_before_RSKIP200() {
+    void getReceiveHeadersLastTimestamp_ok() {
         Repository repository = mock(Repository.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository,
-            testnetBtcParams, activationsBeforeFork
-        );
-
-        assertFalse(provider.getReceiveHeadersLastTimestamp().isPresent());
-    }
-
-    @Test
-    void getReceiveHeadersLastTimestamp_after_RSKIP200() {
-        Repository repository = mock(Repository.class);
-
-        long actualTimeStamp = System.currentTimeMillis();
+        long actualTimeStamp = 1_700_000_000L;
         byte[] encodedTimeStamp = RLP.encodeBigInteger(BigInteger.valueOf(actualTimeStamp));
         when(repository.getStorageBytes(bridgeAddress, RECEIVE_HEADERS_TIMESTAMP.getKey()))
             .thenReturn(encodedTimeStamp);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            testnetBtcParams, activationsAllForks
+            mainnetBtcParams,
+            activationsAllForks
         );
 
         Optional<Long> result = provider.getReceiveHeadersLastTimestamp();
@@ -2789,48 +2775,31 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            testnetBtcParams, activationsAllForks
+            mainnetBtcParams,
+            activationsAllForks
         );
 
         assertFalse(provider.getReceiveHeadersLastTimestamp().isPresent());
     }
 
     @Test
-    void saveReceiveHeadersLastTimestamp_before_RSKIP200() {
+    void saveReceiveHeadersLastTimestamp_ok() {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            testnetBtcParams, activationsBeforeFork
+            mainnetBtcParams,
+            activationsAllForks
         );
 
-        provider.setReceiveHeadersLastTimestamp(System.currentTimeMillis());
-
-        provider.save();
-        verify(repository, never()).addStorageBytes(
-            eq(bridgeAddress),
-            eq(RECEIVE_HEADERS_TIMESTAMP.getKey()),
-            any(byte[].class)
-        );
-    }
-
-    @Test
-    void saveReceiveHeadersLastTimestamp_after_RSKIP200() {
-        Repository repository = mock(Repository.class);
-
-        BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository,
-            testnetBtcParams, activationsAllForks
-        );
-
-        long timeInMillis = System.currentTimeMillis();
-        provider.setReceiveHeadersLastTimestamp(timeInMillis);
+        long timestampInSeconds = 1_700_000_000L;
+        provider.setReceiveHeadersLastTimestamp(timestampInSeconds);
 
         provider.save();
         verify(repository, times(1)).addStorageBytes(
             bridgeAddress,
             RECEIVE_HEADERS_TIMESTAMP.getKey(),
-            BridgeSerializationUtils.serializeLong(timeInMillis)
+            BridgeSerializationUtils.serializeLong(timestampInSeconds)
         );
     }
 
@@ -2840,7 +2809,8 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            testnetBtcParams, activationsAllForks
+            mainnetBtcParams,
+            activationsAllForks
         );
 
         provider.save();
@@ -2888,7 +2858,8 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider1 = new BridgeStorageProvider(
             track,
-            testnetBtcParams, activationsAllForks
+            mainnetBtcParams,
+            activationsAllForks
         );
 
         provider1.setNextPegoutHeight(1L);
@@ -2899,7 +2870,8 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(
             track,
-            testnetBtcParams, activationsAllForks
+            mainnetBtcParams,
+            activationsAllForks
         );
 
         MatcherAssert.assertThat(provider2.getNextPegoutHeight(), is(Optional.of(1L)));
@@ -2911,7 +2883,8 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            testnetBtcParams, activationsBeforeFork
+            mainnetBtcParams,
+            activationsBeforeFork
         );
 
         provider.setNextPegoutHeight(10L);
@@ -2930,7 +2903,8 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            testnetBtcParams, activationsAllForks
+            mainnetBtcParams,
+            activationsAllForks
         );
 
         provider.setNextPegoutHeight(10L);
@@ -2949,7 +2923,8 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
             repository,
-            testnetBtcParams, activationsAllForks
+            mainnetBtcParams,
+            activationsAllForks
         );
 
         Assertions.assertEquals(0, storageProvider.getReleaseRequestQueueSize());
@@ -2961,24 +2936,27 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
             repository,
-            testnetBtcParams, activationsAllForks
+            mainnetBtcParams,
+            activationsAllForks
         );
 
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
 
         releaseRequestQueue.add(Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
             Coin.COIN,
-            PegTestUtils.createHash3(0));
+            RskTestUtils.createHash(0)
+        );
 
         releaseRequestQueue.add(Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
             Coin.COIN,
-            PegTestUtils.createHash3(1));
+            RskTestUtils.createHash(1)
+        );
 
-        Assertions.assertEquals(2, storageProvider.getReleaseRequestQueueSize());
+        assertEquals(2, storageProvider.getReleaseRequestQueueSize());
     }
 
     private BtcTransaction createTransaction() {
-        BtcTransaction tx = new BtcTransaction(testnetBtcParams);
+        BtcTransaction tx = new BtcTransaction(mainnetBtcParams);
         tx.addInput(
             BitcoinTestUtils.createHash(1),
             transactionOffset++,
