@@ -513,7 +513,7 @@ class BlockValidatorTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.TEN)
-                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .receiveAddress(Hex.decode("0000000000000000000000000000000000000006"))
                 .chainId(chainId)
                 .value(BigInteger.ZERO)
                 .build();
@@ -572,7 +572,7 @@ class BlockValidatorTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.valueOf(12L))
                 .gasLimit(BigInteger.TEN)
-                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .receiveAddress(Hex.decode("0000000000000000000000000000000000000006"))
                 .chainId(chainId)
                 .value(BigInteger.ZERO)
                 .build();
@@ -605,7 +605,7 @@ class BlockValidatorTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.valueOf(12L))
                 .gasLimit(BigInteger.TEN)
-                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .receiveAddress(Hex.decode("0000000000000000000000000000000000000006"))
                 .chainId(chainId)
                 .value(BigInteger.ZERO)
                 .build();
@@ -638,7 +638,7 @@ class BlockValidatorTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.valueOf(12L))
                 .gasLimit(BigInteger.TEN)
-                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .receiveAddress(Hex.decode("0000000000000000000000000000000000000006"))
                 .chainId(chainId)
                 .value(BigInteger.ZERO)
                 .build();
@@ -668,7 +668,7 @@ class BlockValidatorTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.valueOf(12L))
                 .gasLimit(BigInteger.TEN)
-                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .receiveAddress(Hex.decode("0000000000000000000000000000000000000006"))
                 .chainId(chainId)
                 .value(BigInteger.ZERO)
                 .build();

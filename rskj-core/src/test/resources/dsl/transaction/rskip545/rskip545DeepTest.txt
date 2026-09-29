@@ -1,0 +1,358 @@
+comment
+
+// RSKIP-545 deep DSL scenarios — spec sections not covered by rskip545Test.txt:
+//   - Multiple tuples for same authority: last valid occurrence wins (Behavior)
+//   - Invalid tuple skipped, next tuple processed (Behavior step 1-8)
+//   - Dual authority in one transaction (sponsored batch pattern)
+//   - Delegate to precompile address (No Precompiles section)
+//   - Value transfer credited after authorization phase
+//   - Calldata intrinsic gas on Type 4 payload
+//   - Invalid tuple still incurs PER_EMPTY_ACCOUNT_COST upfront (Gas Costs)
+//   - Delegation persists when delegated execution reverts (Behavior: not rolled back)
+//   - Triple authorization tuple upfront gas (Gas Costs)
+//   - Universal chain ID (0) accepted on authorization tuple
+//   - Duplicate authorization tuples — first applied, gas for both
+//   - Invalid-first ordering — second valid tuple still applied
+
+end
+
+account_new sponsor 10000000000000000000
+account_new acc2 0
+account_new acc3 10000000000000000000
+account_new revertImpl 0 60006000fd
+
+# Delegate targets used across scenarios
+#   0x...0003 — regtest stub (same as main suite)
+#   0x...0004 — alternate delegate for last-wins test
+#   0x...0001 — precompile address (must not execute as delegate code)
+
+# ============================================================================
+# b01: Same authority, two valid tuples — last delegate address wins
+# sponsor tx nonce 0; auth nonces 1 then 2 (post sender-increment rule)
+# ============================================================================
+
+transaction_build txMultiAuthLastWins
+    sender sponsor
+    receiver acc2
+    value 0
+    gas 200000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization sponsor 0000000000000000000000000000000000000003 1
+    authorization sponsor 0000000000000000000000000000000000000004 2
+    build
+
+block_build b01
+    parent g00
+    transactions txMultiAuthLastWins
+    build
+
+block_connect b01
+
+assert_best b01
+assert_tx_success txMultiAuthLastWins
+
+# ============================================================================
+# b02: Valid + invalid tuple — invalid skipped, valid still applied
+# sponsor nonce 3; valid auth nonce 4; invalid auth nonce 99
+# ============================================================================
+
+transaction_build txValidInvalidAuth
+    sender sponsor
+    nonce 3
+    receiver acc2
+    value 0
+    gas 200000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization sponsor 0000000000000000000000000000000000000003 4
+    authorization sponsor 0000000000000000000000000000000000000005 99
+    build
+
+block_build b02
+    parent b01
+    transactions txValidInvalidAuth
+    build
+
+block_connect b02
+
+assert_best b02
+assert_tx_success txValidInvalidAuth
+
+# ============================================================================
+# b03: Dual authority — sponsor and acc3 both delegated in one tx
+# sponsor nonce 5; sponsor auth 6; acc3 auth 0
+# ============================================================================
+
+transaction_build txDualAuthority
+    sender sponsor
+    nonce 5
+    receiver acc2
+    value 0
+    gas 300000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization sponsor 0000000000000000000000000000000000000003 6
+    authorization acc3 0000000000000000000000000000000000000003 0
+    build
+
+block_build b03
+    parent b02
+    transactions txDualAuthority
+    build
+
+block_connect b03
+
+assert_best b03
+assert_tx_success txDualAuthority
+
+# ============================================================================
+# b04: Re-delegate acc3 to precompile address 0x...0001, call acc3 as destination
+# sponsor nonce 7; acc3 auth nonce 1 (acc3 was 1 after b03)
+# ============================================================================
+
+transaction_build txPrecompileDelegate
+    sender sponsor
+    nonce 7
+    receiver acc3
+    value 0
+    gas 200000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc3 0000000000000000000000000000000000000001 1
+    build
+
+block_build b04
+    parent b03
+    transactions txPrecompileDelegate
+    build
+
+block_connect b04
+
+assert_best b04
+assert_tx_success txPrecompileDelegate
+
+# ============================================================================
+# b05: Value transfer — authorization runs before call credits acc2
+# sponsor nonce 8; sponsor auth nonce 9
+# ============================================================================
+
+transaction_build txValueTransfer
+    sender sponsor
+    nonce 8
+    receiver acc2
+    value 5000
+    gas 200000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization sponsor 0000000000000000000000000000000000000003 9
+    build
+
+block_build b05
+    parent b04
+    transactions txValueTransfer
+    build
+
+block_connect b05
+
+assert_best b05
+assert_tx_success txValueTransfer
+assert_balance acc2 5000
+
+# ============================================================================
+# b06: Non-zero calldata increases intrinsic gas
+# sponsor nonce 10; sponsor auth nonce 11
+# ============================================================================
+
+transaction_build txWithCalldata
+    sender sponsor
+    nonce 10
+    receiver acc2
+    value 0
+    data deadbeef
+    gas 200000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization sponsor 0000000000000000000000000000000000000003 11
+    build
+
+block_build b06
+    parent b05
+    transactions txWithCalldata
+    build
+
+block_connect b06
+
+assert_best b06
+assert_tx_success txWithCalldata
+
+# ============================================================================
+# b07: Delegated acc3 originates Type 4 (Transaction origination section)
+# acc3 nonce 2 after b04; tx nonce 2; auth nonce 3
+# ============================================================================
+
+transaction_build txDelegatedOrigin
+    sender acc3
+    nonce 2
+    receiver acc2
+    value 0
+    gas 200000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc3 0000000000000000000000000000000000000003 3
+    build
+
+block_build b07
+    parent b06
+    transactions txDelegatedOrigin
+    build
+
+block_connect b07
+
+assert_best b07
+assert_tx_success txDelegatedOrigin
+
+# ============================================================================
+# b08: Three auth tuples — two invalid nonces, one valid; upfront gas for all three
+# sponsor nonce 12; valid auth nonce 13; invalid auth nonces 99 and 100
+# ============================================================================
+
+transaction_build txTripleAuthGas
+    sender sponsor
+    nonce 12
+    receiver acc2
+    value 0
+    gas 300000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization sponsor 0000000000000000000000000000000000000003 13
+    authorization sponsor 0000000000000000000000000000000000000004 99
+    authorization sponsor 0000000000000000000000000000000000000005 100
+    build
+
+block_build b08
+    parent b07
+    transactions txTripleAuthGas
+    build
+
+block_connect b08
+
+assert_best b08
+assert_tx_success txTripleAuthGas
+
+# ============================================================================
+# b09: Self-auth to revert contract, call self — execution fails, delegation stays
+# sponsor nonce 14; auth nonce 15; receiver sponsor
+# ============================================================================
+
+transaction_build txAuthThenRevert
+    sender sponsor
+    nonce 14
+    receiver sponsor
+    value 0
+    gas 200000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization sponsor revertImpl 15
+    build
+
+block_build b09
+    parent b08
+    transactions txAuthThenRevert
+    build
+
+block_connect b09
+
+assert_best b09
+
+# ============================================================================
+# b10: Duplicate authorization tuples — first applied, gas for both
+# sponsor nonce 16; both tuples use auth nonce 17 (second fails after first wins)
+# ============================================================================
+
+transaction_build txDuplicateAuth
+    sender sponsor
+    nonce 16
+    receiver acc2
+    value 0
+    gas 300000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization sponsor 0000000000000000000000000000000000000003 17
+    authorization sponsor 0000000000000000000000000000000000000003 17
+    build
+
+block_build b10
+    parent b09
+    transactions txDuplicateAuth
+    build
+
+block_connect b10
+
+assert_best b10
+assert_tx_success txDuplicateAuth
+
+# ============================================================================
+# b11: Invalid-first ordering — second valid tuple applied
+# sponsor nonce 18; invalid auth nonce 18; valid auth nonce 19
+# ============================================================================
+
+transaction_build txInvalidFirstAuth
+    sender sponsor
+    nonce 18
+    receiver acc2
+    value 0
+    gas 300000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization sponsor 0000000000000000000000000000000000000004 18
+    authorization sponsor 0000000000000000000000000000000000000005 19
+    build
+
+block_build b11
+    parent b10
+    transactions txInvalidFirstAuth
+    build
+
+block_connect b11
+
+assert_best b11
+assert_tx_success txInvalidFirstAuth
+
+# ============================================================================
+# b12: Universal chain ID (0) on authorization tuple
+# sponsor nonce 20; auth nonce 21; authChainId 00
+# ============================================================================
+
+transaction_build txChainIdZeroAuth
+    sender sponsor
+    nonce 20
+    receiver acc2
+    value 0
+    gas 200000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization sponsor 0000000000000000000000000000000000000003 21 00
+    build
+
+block_build b12
+    parent b11
+    transactions txChainIdZeroAuth
+    build
+
+block_connect b12
+
+assert_best b12
+assert_tx_success txChainIdZeroAuth

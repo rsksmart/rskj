@@ -19,7 +19,11 @@ package org.ethereum.core;
 
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.core.types.bytes.BytesSlice;
+import co.rsk.util.HexUtils;
+import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
+import java.math.BigInteger;
 import java.util.Objects;
 
 /**
@@ -30,6 +34,9 @@ public sealed interface TransactionTypePrefix
         permits LegacyPrefix, StandardTypedPrefix, RskNamespacePrefix {
 
     TransactionTypePrefix LEGACY_INSTANCE = new LegacyPrefix();
+
+    String ERR_INVALID_TX_TYPE = "Invalid transaction type: ";
+    String ERR_INVALID_RSK_SUBTYPE = "Invalid RSK subtype: ";
 
     TransactionType type();
     boolean isLegacy();
@@ -127,5 +134,67 @@ public sealed interface TransactionTypePrefix
         BytesSlice slice = Bytes.of(rawData);
         int len = prefix.length();
         return len == 0 ? slice : slice.slice(len, rawData.length);
+    }
+
+
+     static TransactionTypePrefix fromHex(String type, String rskSubType) {
+         if (type == null) {
+             if (rskSubType != null) {
+                 throw RskJsonRpcRequestException.invalidParamError(
+                         "RSK subtype cannot be provided without a transaction type");
+             }
+             return TransactionTypePrefix.legacy(); // or  TransactionTypePrefix.LEGACY_INSTANCE;
+         }
+
+        byte typeByte;
+        try {
+            BigInteger value = HexUtils.strHexOrStrNumberToBigInteger(type);
+            if (value.signum() < 0 || value.compareTo(BigInteger.valueOf(TransactionType.MAX_TYPE_VALUE)) > 0) {
+                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + type);
+            }
+            typeByte = value.byteValue();
+        } catch (RskJsonRpcRequestException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + type, ex);
+        }
+
+         TransactionType transactionType = TransactionType.fromByte(typeByte);
+         if (transactionType == null) {
+             throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + type);
+         }
+         if (transactionType == TransactionType.LEGACY) {
+             throw RskJsonRpcRequestException.invalidParamError(
+                     ERR_INVALID_TX_TYPE + type +
+                             "; explicit type 0x00 is not allowed, omit the type field for legacy transactions");
+         }
+         Byte rskSubtype = hexToRskSubtype(rskSubType);
+         if (rskSubtype != null && transactionType != TransactionType.TYPE_2) {
+             throw RskJsonRpcRequestException.invalidParamError(
+                     "rskSubtype can only be used with type 0x02 (RSK namespace), got type: " + type);
+         }
+
+         try {
+             return TransactionTypePrefix.of(transactionType, rskSubtype);
+         } catch (IllegalArgumentException ex) {
+             throw RskJsonRpcRequestException.invalidParamError(ex.getMessage(), ex);
+         }
+    }
+
+    static Byte hexToRskSubtype(String hex) {
+        if (hex == null) {
+            return null;
+        }
+        try {
+            BigInteger value = HexUtils.strHexOrStrNumberToBigInteger(hex);
+            if (value.signum() < 0 || value.compareTo(BigInteger.valueOf(TransactionType.MAX_TYPE_VALUE)) > 0) {
+                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_RSK_SUBTYPE + hex);
+            }
+            return value.byteValue();
+        } catch (RskJsonRpcRequestException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_RSK_SUBTYPE + hex, ex);
+        }
     }
 }

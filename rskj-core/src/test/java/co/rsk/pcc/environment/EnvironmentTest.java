@@ -82,7 +82,7 @@ class EnvironmentTest {
                 .nonce(NONCE)
                 .gasPrice(GAS_PRICE)
                 .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(PrecompiledContracts.ENVIRONMENT_ADDR_STR))
+                .receiveAddress(Hex.decode(PrecompiledContracts.ENVIRONMENT_ADDR_STR))
                 .data(Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(AMOUNT)

@@ -198,7 +198,7 @@ public final class BridgeSupportTestUtil {
         Transaction tx = Transaction
             .builder()
             .nonce(BigInteger.valueOf(nonce))
-            .destination(PrecompiledContracts.BRIDGE_ADDR)
+            .receiveAddress(PrecompiledContracts.BRIDGE_ADDR)
             .data(Bridge.UPDATE_COLLECTIONS.encode())
             .chainId(Constants.MAINNET_CHAIN_ID)
             .build();

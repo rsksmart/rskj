@@ -18,13 +18,15 @@
 
 package org.ethereum.rpc.converters;
 
+import co.rsk.core.RskAddress;
+import co.rsk.util.HexUtils;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import co.rsk.core.RskAddress;
-import co.rsk.util.HexUtils;
+import java.math.BigInteger;
 
 /**
  * Created by martin.medina on 3/7/17.
@@ -39,12 +41,34 @@ public class CallArgumentsToByteArray {
     }
 
     public byte[] getGasPrice() {
-        byte[] gasPrice = new byte[] {0};
-        if (args.getGasPrice() != null && args.getGasPrice().length() != 0) {
-            gasPrice = HexUtils.strHexOrStrNumberToByteArray(args.getGasPrice());
-        }
+        // Per RSKIP-546: for EIP-1559 calls (no gasPrice), the effective gas price is
+        // min(maxPriorityFeePerGas, maxFeePerGas) since RSK has no base fee (baseFeePerGas = 0).
+        // We always go through BigInteger + BigIntegers.asUnsignedByteArray so every branch produces
+        // bytes in the same canonical unsigned form — mixing this with strHexOrStrNumberToByteArray
+        // can yield different leading-zero/length encodings for the same numeric value.
+        BigInteger price = effectiveGasPrice();
+        return price == null ? new byte[]{0} : BigIntegers.asUnsignedByteArray(price);
+    }
 
-        return gasPrice;
+    private BigInteger effectiveGasPrice() {
+        if (!isAbsent(args.getGasPrice())) {
+            return HexUtils.strHexOrStrNumberToBigInteger(args.getGasPrice());
+        }
+        boolean hasMaxFee = !isAbsent(args.getMaxFeePerGas());
+        boolean hasMaxPriority = !isAbsent(args.getMaxPriorityFeePerGas());
+        if (hasMaxFee && hasMaxPriority) {
+            BigInteger maxFee = HexUtils.strHexOrStrNumberToBigInteger(args.getMaxFeePerGas());
+            BigInteger maxPriority = HexUtils.strHexOrStrNumberToBigInteger(args.getMaxPriorityFeePerGas());
+            return maxPriority.min(maxFee);
+        }
+        if (hasMaxFee) {
+            return HexUtils.strHexOrStrNumberToBigInteger(args.getMaxFeePerGas());
+        }
+        return null;
+    }
+
+    private static boolean isAbsent(String value) {
+        return value == null || value.isEmpty();
     }
 
     public byte[] getGasLimit() {

@@ -21,7 +21,10 @@ package org.ethereum.vm;
 
 import co.rsk.util.TestContract;
 import org.ethereum.vm.program.ProgramResult;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -31,7 +34,9 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.nio.file.Path;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 
 public class ProgramTest {
