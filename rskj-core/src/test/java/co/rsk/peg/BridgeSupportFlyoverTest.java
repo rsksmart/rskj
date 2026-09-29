@@ -19,6 +19,7 @@ package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
+import static co.rsk.peg.BridgeEventsTestUtils.getLogsBySignature;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
@@ -79,6 +80,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 class BridgeSupportFlyoverTest {
+    private static final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0);
+
     private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
 
     private final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
@@ -91,7 +94,7 @@ class BridgeSupportFlyoverTest {
     private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
 
-    private final Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(1);
+    private final Keccak256 derivationArgumentsHash = RskTestUtils.createHash(1);
     private final RskAddress lbcAddress = new RskAddress(new byte[20]);
     private final Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "sender");
     private final Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "liqProvider");
@@ -3787,7 +3790,7 @@ class BridgeSupportFlyoverTest {
         @Test
         void saveFlyoverActiveFederationDataInStorage_beforeRSKIP643_shouldNotEmitFlyoverUtxosRegistered() {
             // arrange
-            setUpWithActivations(ActivationConfigsForTest.vetiver900().forBlock(0));
+            setUpWithActivations(VETIVER_ACTIVATIONS);
 
             // act
             bridgeSupport.saveFlyoverActiveFederationDataInStorage(
@@ -3869,7 +3872,7 @@ class BridgeSupportFlyoverTest {
         @Test
         void saveFlyoverRetiringFederationDataInStorage_beforeRSKIP643_shouldNotEmitFlyoverUtxosRegistered() {
             // arrange
-            setUpWithActivations(ActivationConfigsForTest.vetiver900().forBlock(0));
+            setUpWithActivations(VETIVER_ACTIVATIONS);
 
             // act
             bridgeSupport.saveFlyoverRetiringFederationDataInStorage(
@@ -3919,6 +3922,401 @@ class BridgeSupportFlyoverTest {
                 List.of(SECOND_UTXO_OUTPUT_INDEX),
                 retiringFederation.getAddress(),
                 FLYOVER_DERIVATION_HASH
+            );
+        }
+    }
+
+    @Nested
+    class FlyoverPeginUtxosRegisteredEvent {
+        private static final Coin FLYOVER_PEGIN_VALUE = Coin.COIN;
+        // the height only needs to be positive, the chain is recreated on top of it with the wanted confirmations
+        private static final int BTC_BLOCK_WITH_PMT_HEIGHT = 1;
+
+        private final int requiredConfirmations = bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations();
+        private final Coin valueBelowMinimumPegin = bridgeConstantsMainnet.getMinimumPeginTxValue(allActivations).subtract(Coin.SATOSHI);
+        // the bridge starts with no btc locked in the federation, so exceeding the initial locking cap is enough to surpass it
+        private final Coin valueSurpassingLockingCap = lockingCapMainnetConstants.getInitialValue().add(Coin.SATOSHI);
+
+        // members differ from the active federation's so both federations have different addresses
+        private final Federation retiringFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{
+                    "retiring01", "retiring02", "retiring03", "retiring04", "retiring05", "retiring06", "retiring07", "retiring08", "retiring09", "retiring10",
+                    "retiring11", "retiring12", "retiring13", "retiring14", "retiring15", "retiring16", "retiring17", "retiring18", "retiring19", "retiring20"
+                },
+                true
+            ))
+            .withNetworkParameters(btcMainnetParams)
+            .build();
+        private final Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
+            .withNetworkParameters(btcMainnetParams)
+            .build();
+
+        private List<LogInfo> logs;
+        private BridgeStorageProvider bridgeStorageProvider;
+        private BtcBlockStoreWithCache btcBlockStore;
+        private BridgeSupport bridgeSupport;
+        private Keccak256 flyoverDerivationHash;
+        private Address activeFlyoverFederationAddress;
+        private Address retiringFlyoverFederationAddress;
+        private PartialMerkleTree pmtWithFlyoverPegin;
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsSentToActiveFed_beforeRSKIP643_shouldNotEmitFlyoverUtxosRegistered() throws Exception {
+            // arrange
+            setUpWithActivations(VETIVER_ACTIVATIONS);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, activeFlyoverFederationAddress);
+
+            // act
+            BigInteger result = registerFlyoverPegin(flyoverPegin);
+
+            // assert
+            assertEquals(getExpectedRegisteredAmount(1), result);
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsSentToActiveFed_afterRSKIP643_shouldEmitFlyoverUtxosRegistered() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, activeFlyoverFederationAddress);
+
+            // act
+            BigInteger result = registerFlyoverPegin(flyoverPegin);
+
+            // assert
+            assertEquals(getExpectedRegisteredAmount(1), result);
+            assertFlyoverUtxosRegisteredInActiveFederation(flyoverPegin);
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsSentToRetiringFed_beforeRSKIP643_shouldNotEmitFlyoverUtxosRegistered() throws Exception {
+            // arrange
+            setUpWithActivations(VETIVER_ACTIVATIONS);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, retiringFlyoverFederationAddress);
+
+            // act
+            BigInteger result = registerFlyoverPegin(flyoverPegin);
+
+            // assert
+            assertEquals(getExpectedRegisteredAmount(1), result);
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsSentToRetiringFed_afterRSKIP643_shouldEmitFlyoverUtxosRegistered() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, retiringFlyoverFederationAddress);
+
+            // act
+            BigInteger result = registerFlyoverPegin(flyoverPegin);
+
+            // assert
+            assertEquals(getExpectedRegisteredAmount(1), result);
+            assertFlyoverUtxosRegisteredInRetiringFederation(flyoverPegin);
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsSentToActiveAndRetiringFed_beforeRSKIP643_shouldNotEmitFlyoverUtxosRegistered() throws Exception {
+            // arrange
+            setUpWithActivations(VETIVER_ACTIVATIONS);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, activeFlyoverFederationAddress);
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, retiringFlyoverFederationAddress);
+
+            // act
+            BigInteger result = registerFlyoverPegin(flyoverPegin);
+
+            // assert
+            assertEquals(getExpectedRegisteredAmount(2), result);
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsSentToActiveAndRetiringFed_afterRSKIP643_shouldEmitFlyoverUtxosRegisteredForEachFederation() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, activeFlyoverFederationAddress);
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, retiringFlyoverFederationAddress);
+
+            // act
+            BigInteger result = registerFlyoverPegin(flyoverPegin);
+
+            // assert
+            assertEquals(getExpectedRegisteredAmount(2), result);
+            assertFlyoverUtxosRegisteredInActiveAndRetiringFederations(flyoverPegin);
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsSentToFedsAndOtherAddresses_beforeRSKIP643_shouldNotEmitFlyoverUtxosRegistered() throws Exception {
+            // arrange
+            setUpWithActivations(VETIVER_ACTIVATIONS);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unrelated01"));
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, activeFlyoverFederationAddress);
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unrelated02"));
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, retiringFlyoverFederationAddress);
+
+            // act
+            BigInteger result = registerFlyoverPegin(flyoverPegin);
+
+            // assert
+            assertEquals(getExpectedRegisteredAmount(2), result);
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsSentToFedsAndOtherAddresses_afterRSKIP643_shouldEmitFlyoverUtxosRegisteredWithOnlyTheFederationsOutputs() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unrelated01"));
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, activeFlyoverFederationAddress);
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unrelated02"));
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, retiringFlyoverFederationAddress);
+
+            // act
+            BigInteger result = registerFlyoverPegin(flyoverPegin);
+
+            // assert
+            assertEquals(getExpectedRegisteredAmount(2), result);
+            assertFlyoverUtxosRegisteredInActiveAndRetiringFederations(flyoverPegin);
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withAlreadyRegisteredFlyoverPegin_afterRSKIP643_shouldNotEmitFlyoverUtxosRegisteredAgain() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, activeFlyoverFederationAddress);
+            registerFlyoverPegin(flyoverPegin);
+            // persist the first registration, as it happens between two rsk transactions
+            bridgeSupport.save();
+
+            // act
+            BigInteger result = registerArrangedFlyoverPegin(flyoverPegin, true);
+
+            // assert
+            assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value(), result.longValue());
+            // only the event from the first registration
+            assertEquals(1, getLogsBySignature(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent()).size());
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsBelowMinimumSentToRetiringFed_afterRSKIP643_shouldNotEmitFlyoverUtxosRegistered() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            // the output to the active federation is valid, but the one below the minimum rejects the whole transaction
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, activeFlyoverFederationAddress);
+            flyoverPegin.addOutput(valueBelowMinimumPegin, retiringFlyoverFederationAddress);
+
+            // act
+            BigInteger result = registerFlyoverPegin(flyoverPegin);
+
+            // assert
+            assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR.value(), result.longValue());
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsSurpassingLockingCap_afterRSKIP643_shouldRefundLpAndNotEmitFlyoverUtxosRegistered() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(valueSurpassingLockingCap, activeFlyoverFederationAddress);
+
+            // act
+            BigInteger result = registerFlyoverPegin(flyoverPegin);
+
+            // assert
+            assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsSurpassingLockingCapAndNoTransferToContract_afterRSKIP643_shouldRefundUserAndNotEmitFlyoverUtxosRegistered() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(valueSurpassingLockingCap, activeFlyoverFederationAddress);
+            arrangeChainWithFlyoverPegin(flyoverPegin, requiredConfirmations);
+
+            // act
+            BigInteger result = registerArrangedFlyoverPegin(flyoverPegin, false);
+
+            // assert
+            assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withFundsSentOnlyToOtherAddresses_afterRSKIP643_shouldNotEmitFlyoverUtxosRegistered() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unrelated01"));
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unrelated02"));
+
+            // act
+            BigInteger result = registerFlyoverPegin(flyoverPegin);
+
+            // assert
+            assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_withNotEnoughConfirmations_afterRSKIP643_shouldNotEmitFlyoverUtxosRegistered() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            BtcTransaction flyoverPegin = createFlyoverPeginWithoutOutputs();
+            flyoverPegin.addOutput(FLYOVER_PEGIN_VALUE, activeFlyoverFederationAddress);
+            arrangeChainWithFlyoverPegin(flyoverPegin, requiredConfirmations - 1);
+
+            // act
+            BigInteger result = registerArrangedFlyoverPegin(flyoverPegin, true);
+
+            // assert
+            assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value(), result.longValue());
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
+        private void setUpWithActivations(ActivationConfig.ForBlock activations) {
+            logs = new ArrayList<>();
+            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+                bridgeConstantsMainnet,
+                activations,
+                logs
+            );
+
+            federationStorageProvider.setOldFederation(retiringFederation);
+            federationStorageProvider.setNewFederation(activeFederation);
+            // the active federation only replaces the retiring one once it has reached its activation age
+            long activeFederationActivationBlockNumber = activeFederation.getCreationBlockNumber()
+                + federationConstantsMainnet.getFederationActivationAge(activations);
+            Block executionBlock = createRskBlock(activeFederationActivationBlockNumber);
+
+            FederationSupport federationSupport = federationSupportBuilder
+                .withFederationConstants(federationConstantsMainnet)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            LockingCapSupport lockingCapSupport = new LockingCapSupportImpl(
+                lockingCapStorageProvider,
+                activations,
+                lockingCapMainnetConstants,
+                signatureCache
+            );
+
+            // the bridge holds the max rbtc, simulating that no pegin has ever been processed, so the flyover pegins stay under the locking cap
+            repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(bridgeConstantsMainnet.getMaxRbtc()));
+            bridgeStorageProvider = new BridgeStorageProvider(repository, btcMainnetParams, activations);
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
+            btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeConstantsMainnet, bridgeStorageProvider, activations);
+
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(activations)
+                .withExecutionBlock(executionBlock)
+                .withBridgeConstants(bridgeConstantsMainnet)
+                .withProvider(bridgeStorageProvider)
+                .withRepository(repository)
+                .withEventLogger(bridgeEventLogger)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withLockingCapSupport(lockingCapSupport)
+                .build();
+
+            flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lpBtcAddress,
+                lbcAddress,
+                activations
+            );
+            activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, activeFederation);
+            retiringFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, retiringFederation);
+        }
+
+        private BtcTransaction createFlyoverPeginWithoutOutputs() {
+            BtcTransaction flyoverPegin = new BtcTransaction(btcMainnetParams);
+            flyoverPegin.addInput(BitcoinTestUtils.createHash(0), 0, new Script(new byte[]{}));
+            return flyoverPegin;
+        }
+
+        private BigInteger registerFlyoverPegin(BtcTransaction flyoverPegin) throws Exception {
+            arrangeChainWithFlyoverPegin(flyoverPegin, requiredConfirmations);
+            return registerArrangedFlyoverPegin(flyoverPegin, true);
+        }
+
+        private void arrangeChainWithFlyoverPegin(BtcTransaction flyoverPegin, int confirmations) throws Exception {
+            pmtWithFlyoverPegin = createValidPmtForTransactions(List.of(flyoverPegin), btcMainnetParams);
+            // the block with the pmt counts as the first confirmation, so the chain head sits confirmations - 1 blocks above it
+            int chainHeight = BTC_BLOCK_WITH_PMT_HEIGHT + confirmations - 1;
+            recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithFlyoverPegin, BTC_BLOCK_WITH_PMT_HEIGHT, btcMainnetParams);
+            bridgeStorageProvider.save();
+        }
+
+        private BigInteger registerArrangedFlyoverPegin(BtcTransaction flyoverPegin, boolean shouldTransferToContract) throws Exception {
+            return bridgeSupport.registerFlyoverBtcTransaction(
+                rskTx,
+                flyoverPegin.bitcoinSerialize(),
+                BTC_BLOCK_WITH_PMT_HEIGHT,
+                pmtWithFlyoverPegin.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                lpBtcAddress,
+                shouldTransferToContract
+            );
+        }
+
+        private BigInteger getExpectedRegisteredAmount(int outputsToFederationsCount) {
+            return co.rsk.core.Coin.fromBitcoin(FLYOVER_PEGIN_VALUE.multiply(outputsToFederationsCount)).asBigInteger();
+        }
+
+        private void assertFlyoverUtxosRegisteredInActiveFederation(BtcTransaction flyoverPegin) {
+            assertEquals(1, getLogsBySignature(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent()).size());
+            assertLogFlyoverUtxosRegisteredForOutputsSentTo(flyoverPegin, activeFlyoverFederationAddress, activeFederation.getAddress());
+        }
+
+        private void assertFlyoverUtxosRegisteredInRetiringFederation(BtcTransaction flyoverPegin) {
+            assertEquals(1, getLogsBySignature(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent()).size());
+            assertLogFlyoverUtxosRegisteredForOutputsSentTo(flyoverPegin, retiringFlyoverFederationAddress, retiringFederation.getAddress());
+        }
+
+        private void assertFlyoverUtxosRegisteredInActiveAndRetiringFederations(BtcTransaction flyoverPegin) {
+            assertEquals(2, getLogsBySignature(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent()).size());
+            assertLogFlyoverUtxosRegisteredForOutputsSentTo(flyoverPegin, activeFlyoverFederationAddress, activeFederation.getAddress());
+            assertLogFlyoverUtxosRegisteredForOutputsSentTo(flyoverPegin, retiringFlyoverFederationAddress, retiringFederation.getAddress());
+        }
+
+        private void assertLogFlyoverUtxosRegisteredForOutputsSentTo(
+            BtcTransaction flyoverPegin,
+            Address flyoverFederationAddress,
+            Address federationAddress
+        ) {
+            byte[] outputScriptToFlyoverFederation = ScriptBuilder.createOutputScript(flyoverFederationAddress).getProgram();
+            List<TransactionOutput> outputsToFlyoverFederation = flyoverPegin.getOutputs().stream()
+                .filter(output -> Arrays.equals(output.getScriptBytes(), outputScriptToFlyoverFederation))
+                .toList();
+
+            assertLogFlyoverUtxosRegistered(
+                logs,
+                flyoverPegin.getHash(),
+                outputsToFlyoverFederation.stream().map(TransactionOutput::getValue).toList(),
+                outputsToFlyoverFederation.stream().map(output -> (long) output.getIndex()).toList(),
+                federationAddress,
+                flyoverDerivationHash
             );
         }
     }
