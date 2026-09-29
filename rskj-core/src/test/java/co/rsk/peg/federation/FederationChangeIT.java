@@ -6,6 +6,7 @@ import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasNotEmitted;
 import static co.rsk.peg.BridgeSupportTestUtil.assertFederatorSigning;
+import static co.rsk.peg.BridgeSupportTestUtil.assertLogUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutTxSigHashWasSaved;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.createValidPmtForTransactions;
@@ -47,7 +48,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.BridgeEvents;
-import co.rsk.peg.BridgeSupportTestUtil;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
@@ -948,7 +948,7 @@ class FederationChangeIT {
 
         assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
         Coin svpFundTxChangeValue = svpFundTx.getOutput(SVP_FUND_TX_CHANGE_OUTPUT_INDEX).getValue();
-        assertLogUtxosRegistered(
+        verifyLogUtxosRegistered(
             svpFundTx,
             List.of(svpFundTxChangeValue),
             List.of((long) SVP_FUND_TX_CHANGE_OUTPUT_INDEX),
@@ -1022,7 +1022,7 @@ class FederationChangeIT {
 
         assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
         Coin svpSpendTxValueSentToActiveFed = svpSpendTx.getOutput(SVP_SPEND_TX_OUTPUT_INDEX_TO_ACTIVE_FED).getValue();
-        assertLogUtxosRegistered(
+        verifyLogUtxosRegistered(
             svpSpendTx,
             List.of(svpSpendTxValueSentToActiveFed),
             List.of((long) SVP_SPEND_TX_OUTPUT_INDEX_TO_ACTIVE_FED),
@@ -1062,14 +1062,14 @@ class FederationChangeIT {
         assertEquals(logsSizeBeforeCheckpoint, logs.size());
     }
 
-    private void assertLogUtxosRegistered(
+    private void verifyLogUtxosRegistered(
         BtcTransaction btcTransaction,
         List<Coin> expectedValuesInSatoshis,
         List<Long> expectedOutputIndexes,
         Address expectedFederationAddress
     ) {
         if (activations.isActive(ConsensusRule.RSKIP643)) {
-            BridgeSupportTestUtil.assertLogUtxosRegistered(
+            assertLogUtxosRegistered(
                 logs,
                 btcTransaction.getHash(),
                 expectedValuesInSatoshis,
@@ -1265,7 +1265,7 @@ class FederationChangeIT {
         // assert utxo was registered
         assertEquals(utxosSizeBeforeRegisteringPeginV1 + 1, federationUtxosReference.size());
         assertPeginBtcEventWasEmitted(logsSizeBeforePegin, pegin, expectedReceiver, PEGIN_VALUE, expectedProtocolVersion);
-        assertLogUtxosRegistered(
+        verifyLogUtxosRegistered(
             pegin,
             List.of(PEGIN_VALUE),
             List.of(PEGIN_OUTPUT_INDEX_TO_FED),
@@ -1342,7 +1342,7 @@ class FederationChangeIT {
         assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(pegout.getHash()));
         // assert utxo was registered
         assertEquals(utxosSizeBeforeRegisteringPegout + 1, federationUtxosReference.size());
-        assertLogUtxosRegistered(
+        verifyLogUtxosRegistered(
             pegout,
             List.of(PEGOUT_CHANGE_VALUE),
             List.of(PEGOUT_CHANGE_OUTPUT_INDEX),
