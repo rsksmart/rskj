@@ -1102,6 +1102,39 @@ class EthModuleGasEstimationDSLTest {
         assertNull(eth.getEstimationResult());
     }
 
+    // RSKIP-692 JSON-RPC interface: the estimate simulates a real transaction, which the Bridge
+    // rejects for a method that only allows local calls, so no estimate is returned for it
+    @Test
+    void estimateGas_directCallToLocalOnlyBridgeMethod_returnsExecutionError()
+            throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(EthModuleDSLTest.localOnlyBridgeGetterCallArguments());
+        BlockIdentifierParam latest = new BlockIdentifierParam(BlockTag.LATEST.getTag());
+
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class,
+                () -> eth.estimateGas(callArgumentsParam, latest));
+        assertEquals(-32015, exception.getCode());
+        assertEquals("VM Exception while processing transaction: execution failed", exception.getMessage());
+        assertNull(eth.getEstimationResult());
+    }
+
+    @Test
+    void estimateGas_directCallToBridgeMethodAllowingNonLocalCalls_returnsEstimate()
+            throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+
+        // getBtcBlockchainBestChainHeight() allows non-local calls once RSKIP220 is active
+        CallArguments args = EthModuleDSLTest.localOnlyBridgeGetterCallArguments();
+        args.setData("0x14c89c01");
+
+        // 21,000 base cost + 4 non-zero data bytes * 16 (EIP-2028), plus the Bridge's
+        // 19,000 method cost + 4 data bytes * 2
+        assertEquals(40_072L, estimateGas(eth, args, BlockTag.LATEST.getTag()));
+    }
+
     /**
      * Verbatim {@code input} field of testnet tx
      * 0xddb735039288b9b8e08c9929e26577866e9a0f38edf8c61f01da69e827face96
