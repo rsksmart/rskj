@@ -233,12 +233,12 @@ public class BridgeSupport {
             return RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED;
         }
 
-        long diffTimeStamp = bridgeConstants.getMinSecondsBetweenCallsToReceiveHeader();
+        long minSecondsBetweenCallsToReceiveHeader = bridgeConstants.getMinSecondsBetweenCallsToReceiveHeader();
+        long currentTimestampInSeconds = rskExecutionBlock.getTimestamp();
+        Optional<Long> optionalLastTimestamp = provider.getReceiveHeadersLastTimestampInSeconds();
 
-        long currentTimeStamp = rskExecutionBlock.getTimestamp(); //in seconds
-        Optional<Long> optionalLastTimeStamp = provider.getReceiveHeadersLastTimestamp();
-        if (optionalLastTimeStamp.isPresent() && (currentTimeStamp - optionalLastTimeStamp.get() < diffTimeStamp)) {
-            logger.warn("Receive header last TimeStamp less than {} milliseconds", diffTimeStamp);
+        if (optionalLastTimestamp.isPresent() && (currentTimestampInSeconds - optionalLastTimestamp.get() < minSecondsBetweenCallsToReceiveHeader)) {
+            logger.warn("[receiveHeader] Receive header last timestamp less than {} seconds", minSecondsBetweenCallsToReceiveHeader);
             return RECEIVE_HEADER_CALLED_TOO_SOON;
         }
 
@@ -263,10 +263,10 @@ public class BridgeSupport {
         } catch (Exception e) {
             // If we try to add an orphan header bitcoinj throws an exception
             // This catches that case and any other exception that may be thrown
-            logger.warn("Exception adding btc header {}", header.getHash(), e);
+            logger.warn("[receiveHeader] Exception adding btc header {}", header.getHash(), e);
             return RECEIVE_HEADER_UNEXPECTED_EXCEPTION;
         }
-        provider.setReceiveHeadersLastTimestamp(currentTimeStamp);
+        provider.setReceiveHeadersLastTimestampInSeconds(currentTimestampInSeconds);
         return 0;
     }
 

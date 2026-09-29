@@ -7483,8 +7483,8 @@ class BridgeSupportTest {
         bridgeSupport.receiveHeader(btcBlock2);
 
         verify(btcBlockStore).put(storedBlock2);
-        verify(provider).getReceiveHeadersLastTimestamp();
-        verify(provider).setReceiveHeadersLastTimestamp(anyLong());
+        verify(provider).getReceiveHeadersLastTimestampInSeconds();
+        verify(provider).setReceiveHeadersLastTimestampInSeconds(anyLong());
     }
 
     @Test
@@ -7516,7 +7516,7 @@ class BridgeSupportTest {
         );
 
         long timeStampOld = executionBlockMock.getTimestamp() - (bridgeConstantsRegtest.getMinSecondsBetweenCallsToReceiveHeader() * 2L);
-        doReturn(Optional.of(timeStampOld)).when(provider).getReceiveHeadersLastTimestamp();
+        doReturn(Optional.of(timeStampOld)).when(provider).getReceiveHeadersLastTimestampInSeconds();
 
         StoredBlock storedBlock2 = mock(StoredBlock.class);
         when(storedBlock.build(btcBlock2)).thenReturn(storedBlock2);
@@ -7524,7 +7524,7 @@ class BridgeSupportTest {
         bridgeSupport.receiveHeader(btcBlock2);
 
         verify(btcBlockStore).put(storedBlock2);
-        verify(provider).setReceiveHeadersLastTimestamp(anyLong());
+        verify(provider).setReceiveHeadersLastTimestampInSeconds(anyLong());
     }
 
     @Test
@@ -7556,14 +7556,14 @@ class BridgeSupportTest {
         );
 
         long timeStampOld = executionBlockMock.getTimestamp() - (bridgeConstantsRegtest.getMinSecondsBetweenCallsToReceiveHeader() / 2L);
-        doReturn(Optional.of(timeStampOld)).when(provider).getReceiveHeadersLastTimestamp();
+        doReturn(Optional.of(timeStampOld)).when(provider).getReceiveHeadersLastTimestampInSeconds();
 
         int result = bridgeSupport.receiveHeader(btcBlock2);
 
         StoredBlock storedBlock2 = storedBlock.build(btcBlock2);
 
         verify(btcBlockStore, never()).put(storedBlock2);
-        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
+        verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
         assertEquals(-1, result);
     }
 
@@ -7594,8 +7594,8 @@ class BridgeSupportTest {
         int result = bridgeSupport.receiveHeader(btcBlock2);
 
         verify(btcBlockStore, never()).put(storedBlock);
-        verify(provider).getReceiveHeadersLastTimestamp();
-        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
+        verify(provider).getReceiveHeadersLastTimestampInSeconds();
+        verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
         assertEquals(-99, result);
     }
 
@@ -7631,7 +7631,7 @@ class BridgeSupportTest {
 
         // Calls put when is adding the block header. (Saves his storedBlock)
         verify(btcBlockStore, never()).put(storedBlock2);
-        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
+        verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
         assertEquals(-3, result);
     }
 
@@ -7667,7 +7667,7 @@ class BridgeSupportTest {
         StoredBlock storedBlock2 = storedBlock.build(btcBlock2);
 
         verify(btcBlockStore, never()).put(storedBlock2);
-        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
+        verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
         assertEquals(-2, result);
     }
 
@@ -7701,7 +7701,7 @@ class BridgeSupportTest {
 
         // Calls put when is adding the block header. (Saves his storedBlock)
         verify(btcBlockStore, never()).put(any(StoredBlock.class));
-        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
+        verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
         assertEquals(-4, result);
     }
 
