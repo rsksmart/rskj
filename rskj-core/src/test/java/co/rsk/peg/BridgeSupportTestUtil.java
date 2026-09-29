@@ -50,6 +50,7 @@ import co.rsk.test.builders.UTXOBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -490,8 +491,13 @@ public final class BridgeSupportTestUtil {
             expectedFederationAddress.toString()
         );
 
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
+        // topics and data must match on the same log; checked separately, they could
+        // come from different utxos_registered logs, since equal registrations share data
+        List<LogInfo> matchingLogs = logs.stream()
+            .filter(log -> log.getTopics().equals(encodedTopics))
+            .filter(log -> Arrays.equals(log.getData(), encodedData))
+            .toList();
+        assertEquals(1, matchingLogs.size());
     }
 
     private static void assertReleaseOutpointsValuesWereSaved(Repository repository, BridgeStorageProvider bridgeStorageProvider, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
