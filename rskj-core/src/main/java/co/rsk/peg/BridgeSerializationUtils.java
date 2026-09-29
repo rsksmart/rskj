@@ -793,6 +793,8 @@ public class BridgeSerializationUtils {
         int n = 0;
 
         for (ReleaseRequestQueue.Entry entry : entries) {
+            // The canonical textual form of the address, which is what a requester recognises
+            // and what the address parser reads back on load.
             bytes[n++] = RLP.encodeElement(entry.getDestination().toString().getBytes(StandardCharsets.UTF_8));
             bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getAmount().getValue()));
             bytes[n++] = RLP.encodeElement(entry.getRskTxHash().getBytes());
@@ -833,10 +835,11 @@ public class BridgeSerializationUtils {
                 rlpList.size()));
         }
 
+        AddressParser addressParser = AddressParser.getDefault(networkParameters);
         int n = rlpList.size() / 3;
         for (int k = 0; k < n; k++) {
             String address = new String(rlpList.get(k * 3).getRLPData(), StandardCharsets.UTF_8);
-            Address destination = AddressParser.getDefault(networkParameters).parseAddress(address);
+            Address destination = addressParser.parseAddress(address);
             long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 3 + 1).getRLPData()).longValue();
             Keccak256 txHash = deserializeRskTxHash(rlpList.get(k * 3 + 2).getRLPData());
 

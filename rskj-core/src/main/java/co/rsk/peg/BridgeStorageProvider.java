@@ -211,6 +211,8 @@ public class BridgeStorageProvider {
             return;
         }
 
+        // Serializes getEntriesWithoutHash, which is empty once RSKIP146 is active, so this keeps
+        // writing an empty cell rather than rejecting a destination it cannot store.
         safeSaveToRepository(RELEASE_REQUEST_QUEUE, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueue);
 
         if (!activations.isActive(RSKIP146)) {

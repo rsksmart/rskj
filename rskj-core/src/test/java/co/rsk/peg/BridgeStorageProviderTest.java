@@ -1613,6 +1613,47 @@ class BridgeStorageProviderTest {
         }
     }
 
+    /**
+     * The whole point of the new cell: a destination that is not a legacy address survives a save
+     * and a read.
+     *
+     * <p>This also covers the unconditional write to RELEASE_REQUEST_QUEUE at the top of
+     * saveReleaseRequestQueue. That cell's serializer stores a bare 20-byte hash and rejects
+     * anything else, and it is safe only because it serializes getEntriesWithoutHash, which is
+     * empty once RSKIP146 is active. Nothing said so before this test.</p>
+     */
+    @Test
+    void saveReleaseRequestQueue_afterRskip690_roundTripsEverySupportedDestination() throws IOException {
+        Repository repository = createRepository();
+        BridgeStorageProvider storageProvider =
+            new BridgeStorageProvider(repository, testnetBtcParams, activationsAllForks);
+
+        byte[] pubKeyHash = Hex.decode("f7ee9ab7297134a0ccc76f3d50e94def17488f2c");
+        byte[] taprootProgram =
+            Hex.decode("4c679657ca8d4aa7e29deaaaba90463a2af9e182012791112634c4d585b324a7");
+        List<Address> destinations = Arrays.asList(
+            new LegacyAddress(testnetBtcParams, pubKeyHash),
+            LegacyAddress.fromP2SHHash(testnetBtcParams, pubKeyHash),
+            SegwitAddress.fromHash(testnetBtcParams, pubKeyHash),
+            SegwitAddress.fromProgram(testnetBtcParams, 1, taprootProgram));
+
+        ReleaseRequestQueue queue = storageProvider.getReleaseRequestQueue();
+        for (int i = 0; i < destinations.size(); i++) {
+            queue.add(destinations.get(i), Coin.COIN, PegTestUtils.createHash3(i));
+        }
+
+        storageProvider.saveReleaseRequestQueue();
+
+        BridgeStorageProvider reader =
+            new BridgeStorageProvider(repository, testnetBtcParams, activationsAllForks);
+        List<ReleaseRequestQueue.Entry> read = reader.getReleaseRequestQueue().getEntries();
+
+        Assertions.assertEquals(destinations.size(), read.size());
+        for (int i = 0; i < destinations.size(); i++) {
+            Assertions.assertEquals(destinations.get(i), read.get(i).getDestination());
+        }
+    }
+
     @Test
     void getReleaseRequestQueue_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);
