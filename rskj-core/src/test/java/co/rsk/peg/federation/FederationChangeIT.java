@@ -4,6 +4,7 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
+import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasNotEmitted;
 import static co.rsk.peg.BridgeSupportTestUtil.assertFederatorSigning;
 import static co.rsk.peg.BridgeSupportTestUtil.assertLogUtxosRegistered;
@@ -1087,7 +1088,7 @@ class FederationChangeIT {
             BridgeEvents.UTXOS_REGISTERED.getEvent(),
             btcTransaction.getHash().getBytes()
         );
-        assertTrue(logs.stream().noneMatch(log -> log.getTopics().equals(encodedTopics)));
+        assertTrue(getLogsTopics(logs, encodedTopics).isEmpty());
     }
 
     private void activateNewFederation() {
