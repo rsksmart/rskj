@@ -3665,6 +3665,13 @@ class BridgeSupportFlyoverTest {
             .withValue(SECOND_UTXO_VALUE)
             .build();
         private final Federation retiringFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{
+                    "retiring01", "retiring02", "retiring03", "retiring04", "retiring05", "retiring06", "retiring07", "retiring08", "retiring09", "retiring10",
+                    "retiring11", "retiring12", "retiring13", "retiring14", "retiring15", "retiring16", "retiring17", "retiring18", "retiring19", "retiring20"
+                },
+                true
+            ))
             .withNetworkParameters(btcMainnetParams)
             .build();
         private final Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
@@ -3874,6 +3881,45 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
+        @Test
+        void saveFlyoverActiveAndRetiringFederationDataInStorage_afterRSKIP643_shouldEmitFlyoverUtxosRegisteredForEachFederation() {
+            // arrange
+            setUpWithActivations(allActivations);
+
+            // act
+            // a flyover pegin sending one output to each federation, as registerFlyoverBtcTransaction does after RSKIP293
+            bridgeSupport.saveFlyoverActiveFederationDataInStorage(
+                FLYOVER_BTC_TX_HASH,
+                FLYOVER_DERIVATION_HASH,
+                flyoverFederationInformation,
+                List.of(firstUtxo)
+            );
+            bridgeSupport.saveFlyoverRetiringFederationDataInStorage(
+                FLYOVER_BTC_TX_HASH,
+                FLYOVER_DERIVATION_HASH,
+                flyoverFederationInformation,
+                List.of(secondUtxo)
+            );
+
+            // assert
+            assertLogFlyoverUtxosRegistered(
+                logs,
+                FLYOVER_BTC_TX_HASH,
+                List.of(FIRST_UTXO_VALUE),
+                List.of(FIRST_UTXO_OUTPUT_INDEX),
+                activeFederation.getAddress(),
+                FLYOVER_DERIVATION_HASH
+            );
+            assertLogFlyoverUtxosRegistered(
+                logs,
+                FLYOVER_BTC_TX_HASH,
+                List.of(SECOND_UTXO_VALUE),
+                List.of(SECOND_UTXO_OUTPUT_INDEX),
+                retiringFederation.getAddress(),
+                FLYOVER_DERIVATION_HASH
+            );
         }
     }
 
