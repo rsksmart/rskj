@@ -19,9 +19,11 @@ package co.rsk.cli.tools;
 
 import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.validators.BlockUnclesHashValidationRule;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
@@ -76,6 +78,8 @@ public class DecodeDifferential extends PicoCliToolRskContextAware {
     private long blocksVisited;
     private long transactionsVisited;
     private long mismatches;
+    private BlockFactory blockFactory;
+    private final BlockUnclesHashValidationRule unclesHashRule = new BlockUnclesHashValidationRule();
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
@@ -86,6 +90,7 @@ public class DecodeDifferential extends PicoCliToolRskContextAware {
         BlockStore blockStore = ctx.getBlockStore();
         ActivationConfig activationConfig = ctx.getRskSystemProperties().getActivationConfig();
         SignatureCache signatureCache = ctx.getBlockTxSignatureCache();
+        blockFactory = ctx.getBlockFactory();
 
         try (Writer writer = openWriter()) {
             visitRange(blockStore, activationConfig, signatureCache, writer);
@@ -135,6 +140,17 @@ public class DecodeDifferential extends PicoCliToolRskContextAware {
         }
     }
 
+    /** Encode, decode and re-encode: the block must come back as itself, byte for byte. */
+    private boolean roundTrips(Block block) {
+        byte[] encoded = block.getEncoded();
+        try {
+            Block decoded = blockFactory.decodeBlock(encoded);
+            return decoded.getHash().equals(block.getHash()) && Arrays.equals(decoded.getEncoded(), encoded);
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
     private void visitBlock(Block block, ActivationConfig activationConfig,
                             SignatureCache signatureCache, Writer writer) throws IOException {
         long number = block.getNumber();
@@ -144,16 +160,21 @@ public class DecodeDifferential extends PicoCliToolRskContextAware {
         byte[] storedRoot = block.getTxTrieRoot();
         byte[] recomputedRoot = BlockHashesHelper.getTxTrieRoot(transactions, isRskip126Enabled);
         boolean rootOk = Arrays.equals(storedRoot, recomputedRoot);
+        // The real validation rule, so the check runs whatever encoder this build ships.
+        boolean unclesHashOk = unclesHashRule.isValid(block);
+        boolean blockRoundTrip = roundTrips(block);
 
-        if (!rootOk) {
+        if (!rootOk || !unclesHashOk || !blockRoundTrip) {
             mismatches++;
         }
 
         writer.write(String.format(
                 "{\"kind\":\"block\",\"number\":%d,\"txCount\":%d,\"txTrieRootOk\":%b,"
-                        + "\"storedTxTrieRoot\":\"%s\",\"recomputedTxTrieRoot\":\"%s\"}%n",
+                        + "\"storedTxTrieRoot\":\"%s\",\"recomputedTxTrieRoot\":\"%s\","
+                        + "\"uncleCount\":%d,\"unclesHashOk\":%b,\"blockRoundTrip\":%b}%n",
                 number, transactions.size(), rootOk,
-                ByteUtil.toHexString(storedRoot), ByteUtil.toHexString(recomputedRoot)));
+                ByteUtil.toHexString(storedRoot), ByteUtil.toHexString(recomputedRoot),
+                block.getUncleList().size(), unclesHashOk, blockRoundTrip));
 
         for (int i = 0; i < transactions.size(); i++) {
             visitTransaction(number, i, transactions, signatureCache, writer);

@@ -26,6 +26,8 @@ import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.util.NodeStopper;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.db.BlockStore;
@@ -66,6 +68,9 @@ class DecodeDifferentialTest {
                 "the range must contain at least one transaction, otherwise the run proves nothing");
         Assertions.assertTrue(lines.stream().allMatch(DecodeDifferentialTest::isClean),
                 "every record must be clean: " + lines);
+        Assertions.assertTrue(lines.stream().filter(l -> l.contains("\"kind\":\"block\""))
+                        .allMatch(l -> l.contains("\"unclesHashOk\":true") && l.contains("\"blockRoundTrip\":true")),
+                "every block must pass the uncles-hash rule and the block round trip: " + lines);
     }
 
     /**
@@ -86,6 +91,42 @@ class DecodeDifferentialTest {
 
         Assertions.assertTrue(lines.stream().anyMatch(l -> l.contains("\"txTrieRootOk\":false")),
                 "a tampered stored root must be reported: " + lines);
+    }
+
+    /** Sensitivity probe: the uncles hash is checked by the real validation rule, so a mismatch must surface. */
+    @Test
+    void tamperedUnclesHashIsDetected() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        Path report = tempDir.resolve("tampered-uncles.jsonl");
+
+        Block real = world.getBlockStore().getChainBlockByNumber(1);
+        BlockHeader header = spy(real.getHeader());
+        doReturn(new byte[32]).when(header).getUnclesHash();
+        Block tampered = spy(real);
+        doReturn(header).when(tampered).getHeader();
+
+        runToolExpectingFailure(world, blockStoreReturning(world, tampered), report);
+
+        List<String> lines = Files.readAllLines(report, StandardCharsets.UTF_8);
+        Assertions.assertTrue(lines.stream().anyMatch(l -> l.contains("\"number\":1,") && l.contains("\"unclesHashOk\":false")),
+                "a block whose uncles do not hash to its header must be reported: " + lines);
+    }
+
+    /** Sensitivity probe: a block whose encoding decodes to a different block must fail the round trip. */
+    @Test
+    void blockThatDoesNotRoundTripIsDetected() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        Path report = tempDir.resolve("block-roundtrip.jsonl");
+
+        Block other = world.getBlockStore().getChainBlockByNumber(2);
+        Block tampered = spy(world.getBlockStore().getChainBlockByNumber(1));
+        doReturn(other.getEncoded()).when(tampered).getEncoded();
+
+        runToolExpectingFailure(world, blockStoreReturning(world, tampered), report);
+
+        List<String> lines = Files.readAllLines(report, StandardCharsets.UTF_8);
+        Assertions.assertTrue(lines.stream().anyMatch(l -> l.contains("\"number\":1,") && l.contains("\"blockRoundTrip\":false")),
+                "a block that re-encodes to another block must be reported: " + lines);
     }
 
     /**
@@ -142,7 +183,9 @@ class DecodeDifferentialTest {
         return !line.contains("\"txTrieRootOk\":false")
                 && !line.contains("\"roundTrip\":false")
                 && !line.contains("\"hashStable\":false")
-                && !line.contains("\"missing\":true");
+                && !line.contains("\"missing\":true")
+                && !line.contains("\"unclesHashOk\":false")
+                && !line.contains("\"blockRoundTrip\":false");
     }
 
     private static World buildWorld() throws FileNotFoundException, DslProcessorException {
@@ -190,6 +233,7 @@ class DecodeDifferentialTest {
         doReturn(blockStore).when(rskContext).getBlockStore();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(world.getBlockTxSignatureCache()).when(rskContext).getBlockTxSignatureCache();
+        doReturn(new BlockFactory(world.getConfig().getActivationConfig())).when(rskContext).getBlockFactory();
 
         NodeStopper stopper = mock(NodeStopper.class);
 
