@@ -1067,13 +1067,6 @@ class FederationChangeIT {
         assertEquals(logsSizeBeforeCheckpoint, logs.size());
     }
 
-    private void assertOnlyFlyoverUtxosRegisteredWasEmittedSinceIfActive(int logsSizeBeforeCheckpoint) {
-        // Flyover crediting goes straight to the LBC contract; no PEGIN_BTC/LOCK_BTC event is emitted for it,
-        // so its only event is flyover_utxos_registered, emitted after RSKIP643
-        int expectedEventsEmittedByFlyoverPegin = activations.isActive(ConsensusRule.RSKIP643) ? 1 : 0;
-        assertEquals(logsSizeBeforeCheckpoint + expectedEventsEmittedByFlyoverPegin, logs.size());
-    }
-
     private void verifyLogUtxosRegistered(
         BtcTransaction btcTransaction,
         List<Coin> expectedValuesInSatoshis,
@@ -1095,15 +1088,19 @@ class FederationChangeIT {
     }
 
     private void verifyLogFlyoverUtxosRegistered(
+        int logsSizeBeforeCheckpoint,
         BtcTransaction flyoverPeginBtcTx,
         List<Coin> expectedValuesInSatoshis,
         List<Long> expectedOutputIndexes,
         Address expectedFederationAddress,
         Keccak256 expectedFlyoverDerivationHash
     ) {
+        // Flyover crediting goes straight to the LBC contract; no PEGIN_BTC/LOCK_BTC event is emitted for it,
+        // so its only event is flyover_utxos_registered, emitted after RSKIP643
         if (activations.isActive(ConsensusRule.RSKIP643)) {
+            assertEquals(logsSizeBeforeCheckpoint + 1, logs.size());
             assertLogFlyoverUtxosRegistered(
-                logs,
+                logs.subList(logsSizeBeforeCheckpoint, logs.size()),
                 flyoverPeginBtcTx.getHash(),
                 expectedValuesInSatoshis,
                 expectedOutputIndexes,
@@ -1111,8 +1108,7 @@ class FederationChangeIT {
                 expectedFlyoverDerivationHash
             );
         } else {
-            // before RSKIP643 no flyover_utxos_registered event is ever emitted in the whole flow
-            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertNoEventWasEmittedSince(logsSizeBeforeCheckpoint);
         }
     }
 
@@ -1351,8 +1347,8 @@ class FederationChangeIT {
         ));
         // assert utxo was registered
         assertEquals(utxosSizeBeforeRegisteringFlyoverPegin + 1, federationUtxosReference.size());
-        assertOnlyFlyoverUtxosRegisteredWasEmittedSinceIfActive(logsSizeBeforeFlyoverPegin);
         verifyLogFlyoverUtxosRegistered(
+            logsSizeBeforeFlyoverPegin,
             flyoverPeginBtcTx,
             List.of(FLYOVER_PEGIN_VALUE),
             List.of(FLYOVER_PEGIN_OUTPUT_INDEX_TO_FED),
