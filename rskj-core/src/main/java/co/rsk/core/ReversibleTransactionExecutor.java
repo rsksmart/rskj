@@ -54,11 +54,12 @@ public class ReversibleTransactionExecutor {
 
     /**
      * Estimates gas against the provided snapshot using the executor's
-     * configured precompiled contracts.
+     * configured precompiled contracts. The simulated transaction is not marked as a local call,
+     * so native contracts treat it as the real transaction it estimates.
      */
     public TransactionExecutor estimateGas(Block executionBlock, RskAddress coinbase, RepositorySnapshot snapshot,
                                            ReversibleTransactionParams params) {
-        return reversibleExecution(snapshot, executionBlock, coinbase, precompiledContracts, params);
+        return reversibleExecution(snapshot, executionBlock, coinbase, precompiledContracts, params, false);
     }
 
     public ProgramResult executeTransactionAtBlock(
@@ -75,7 +76,7 @@ public class ReversibleTransactionExecutor {
             RskAddress coinbase,
             PrecompiledContracts precompiledContracts,
             ReversibleTransactionParams params) {
-        return reversibleExecution(snapshot, executionBlock, coinbase, precompiledContracts, params).getResult();
+        return reversibleExecution(snapshot, executionBlock, coinbase, precompiledContracts, params, true).getResult();
     }
 
     @SuppressWarnings("java:S6218")
@@ -96,7 +97,7 @@ public class ReversibleTransactionExecutor {
 
     private TransactionExecutor reversibleExecution(RepositorySnapshot snapshot, Block executionBlock, RskAddress coinbase,
                                                     PrecompiledContracts precompiledContracts,
-                                                    ReversibleTransactionParams params) {
+                                                    ReversibleTransactionParams params, boolean localCallTransaction) {
         Repository track = snapshot.startTracking();
 
         ReversibleTransaction tx = new ReversibleTransaction(CommonParsingUtils.unsignedBytes(track.getNonce(params.fromAddress())), params);
@@ -104,6 +105,8 @@ public class ReversibleTransactionExecutor {
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, coinbase, track, executionBlock, 0, precompiledContracts)
                 .setLocalCall(true);
+        // setLocalCall also marks the transaction itself, which native contracts read to tell a local call apart
+        tx.setLocalCallTransaction(localCallTransaction);
 
         if (!executor.executeTransaction()) {
             throw new TransactionExecutionRejectedException(executor.getExecutionError());
