@@ -3991,6 +3991,14 @@ class BridgeSupportFlyoverTest {
         private static final Coin FLYOVER_PEGIN_VALUE = Coin.COIN;
         // the height only needs to be positive, the chain is recreated on top of it with the wanted confirmations
         private static final int BTC_BLOCK_WITH_PMT_HEIGHT = 1;
+        // when the pegin sends funds to a single federation, that output is the only one in the tx
+        private static final long OUTPUT_INDEX_TO_FLYOVER_FED = 0;
+        // when the pegin sends funds to both federations, the active federation's output goes first
+        private static final long OUTPUT_INDEX_TO_ACTIVE_FLYOVER_FED = 0;
+        private static final long OUTPUT_INDEX_TO_RETIRING_FLYOVER_FED = 1;
+        // the unrelated outputs sit at 0 and 2, interleaved with the federations' outputs
+        private static final long OUTPUT_INDEX_TO_ACTIVE_FLYOVER_FED_AFTER_UNRELATED_OUTPUT = 1;
+        private static final long OUTPUT_INDEX_TO_RETIRING_FLYOVER_FED_AFTER_UNRELATED_OUTPUTS = 3;
 
         private final int requiredConfirmations = bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations();
         private final Coin valueBelowMinimumPegin = bridgeConstantsMainnet.getMinimumPeginTxValue(allActivations).subtract(Coin.SATOSHI);
@@ -4110,7 +4118,11 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEquals(getExpectedRegisteredAmount(2), result);
-            assertFlyoverUtxosRegisteredInActiveAndRetiringFederations(flyoverPegin);
+            assertFlyoverUtxosRegisteredInActiveAndRetiringFederations(
+                flyoverPegin,
+                OUTPUT_INDEX_TO_ACTIVE_FLYOVER_FED,
+                OUTPUT_INDEX_TO_RETIRING_FLYOVER_FED
+            );
         }
 
         @Test
@@ -4146,7 +4158,11 @@ class BridgeSupportFlyoverTest {
 
             // assert
             assertEquals(getExpectedRegisteredAmount(2), result);
-            assertFlyoverUtxosRegisteredInActiveAndRetiringFederations(flyoverPegin);
+            assertFlyoverUtxosRegisteredInActiveAndRetiringFederations(
+                flyoverPegin,
+                OUTPUT_INDEX_TO_ACTIVE_FLYOVER_FED_AFTER_UNRELATED_OUTPUT,
+                OUTPUT_INDEX_TO_RETIRING_FLYOVER_FED_AFTER_UNRELATED_OUTPUTS
+            );
         }
 
         @Test
@@ -4346,42 +4362,54 @@ class BridgeSupportFlyoverTest {
 
         private void assertFlyoverUtxosRegisteredInActiveFederation(BtcTransaction flyoverPegin) {
             assertEquals(1, getLogsBySignature(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent()).size());
-            assertLogFlyoverUtxosRegisteredForOutputsSentTo(flyoverPegin, activeFlyoverFederationAddress, activeFederation.getAddress());
+            assertLogFlyoverUtxosRegistered(
+                logs,
+                flyoverPegin.getHash(),
+                List.of(FLYOVER_PEGIN_VALUE),
+                List.of(OUTPUT_INDEX_TO_FLYOVER_FED),
+                activeFederation.getAddress(),
+                flyoverDerivationHash
+            );
         }
 
         private void assertFlyoverUtxosRegisteredInRetiringFederation(BtcTransaction flyoverPegin) {
             assertEquals(1, getLogsBySignature(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent()).size());
-            assertLogFlyoverUtxosRegisteredForOutputsSentTo(flyoverPegin, retiringFlyoverFederationAddress, retiringFederation.getAddress());
+            assertLogFlyoverUtxosRegistered(
+                logs,
+                flyoverPegin.getHash(),
+                List.of(FLYOVER_PEGIN_VALUE),
+                List.of(OUTPUT_INDEX_TO_FLYOVER_FED),
+                retiringFederation.getAddress(),
+                flyoverDerivationHash
+            );
         }
 
-        private void assertFlyoverUtxosRegisteredInActiveAndRetiringFederations(BtcTransaction flyoverPegin) {
+        private void assertFlyoverUtxosRegisteredInActiveAndRetiringFederations(
+            BtcTransaction flyoverPegin,
+            long expectedActiveFedOutputIndex,
+            long expectedRetiringFedOutputIndex
+        ) {
             assertEquals(2, getLogsBySignature(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent()).size());
-            assertLogFlyoverUtxosRegisteredForOutputsSentTo(flyoverPegin, activeFlyoverFederationAddress, activeFederation.getAddress());
-            assertLogFlyoverUtxosRegisteredForOutputsSentTo(flyoverPegin, retiringFlyoverFederationAddress, retiringFederation.getAddress());
+            assertLogFlyoverUtxosRegistered(
+                logs,
+                flyoverPegin.getHash(),
+                List.of(FLYOVER_PEGIN_VALUE),
+                List.of(expectedActiveFedOutputIndex),
+                activeFederation.getAddress(),
+                flyoverDerivationHash
+            );
+            assertLogFlyoverUtxosRegistered(
+                logs,
+                flyoverPegin.getHash(),
+                List.of(FLYOVER_PEGIN_VALUE),
+                List.of(expectedRetiringFedOutputIndex),
+                retiringFederation.getAddress(),
+                flyoverDerivationHash
+            );
         }
 
         private void assertFlyoverUtxosRegisteredWasNotEmitted() {
             assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
-        }
-
-        private void assertLogFlyoverUtxosRegisteredForOutputsSentTo(
-            BtcTransaction flyoverPegin,
-            Address flyoverFederationAddress,
-            Address federationAddress
-        ) {
-            byte[] outputScriptToFlyoverFederation = ScriptBuilder.createOutputScript(flyoverFederationAddress).getProgram();
-            List<TransactionOutput> outputsToFlyoverFederation = flyoverPegin.getOutputs().stream()
-                .filter(output -> Arrays.equals(output.getScriptBytes(), outputScriptToFlyoverFederation))
-                .toList();
-
-            assertLogFlyoverUtxosRegistered(
-                logs,
-                flyoverPegin.getHash(),
-                outputsToFlyoverFederation.stream().map(TransactionOutput::getValue).toList(),
-                outputsToFlyoverFederation.stream().map(output -> (long) output.getIndex()).toList(),
-                federationAddress,
-                flyoverDerivationHash
-            );
         }
     }
 
