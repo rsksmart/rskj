@@ -29,6 +29,8 @@ import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.util.NodeStopper;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import co.rsk.core.bc.BlockResult;
 import org.ethereum.core.BlockHeader;
@@ -55,6 +57,8 @@ import java.util.function.Consumer;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -548,6 +552,27 @@ class ConsensusReplayTest {
                 "the untouched block must stay clean: " + lines);
     }
 
+    /**
+     * Before RSKIP-560 a failed precompile call is charged the full limit while its receipt reports
+     * less gas, so fees cannot be derived from receipts and a mismatch there is valid history.
+     */
+    @Test
+    void feeInvariantIsNotEvaluatedBeforeRskip560() throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        Path report = tempDir.resolve("invariant-fees-pre560.jsonl");
+        ActivationConfig pre560 = spy(world.getConfig().getActivationConfig());
+        doReturn(false).when(pre560).isActive(eq(ConsensusRule.RSKIP560), anyLong());
+
+        NodeStopper stopper = run(new ConsensusReplay(), pre560, world, world.getBlockStore(),
+                executorReturning(world, 1, result -> doReturn(Coin.valueOf(12345L)).when(result).getPaidFees()),
+                report, "DIGEST");
+
+        verify(stopper).stop(0);
+        List<String> lines = Files.readAllLines(report, StandardCharsets.UTF_8);
+        Assertions.assertTrue(lines.stream().noneMatch(l -> l.contains("\"invariant\":\"fees\"")),
+                "fees must not be judged where the protocol does not guarantee them: " + lines);
+    }
+
     /** Sensitivity probe: a block may not consume more gas than its own header allows. */
     @Test
     void gasBoundsViolationIsDetected() throws FileNotFoundException, DslProcessorException, IOException {
@@ -852,6 +877,11 @@ class ConsensusReplayTest {
 
     private NodeStopper run(ConsensusReplay tool, World world, BlockStore blockStore, BlockExecutor blockExecutor,
                             Path report, String scenario, String... extra) {
+        return run(tool, world.getConfig().getActivationConfig(), world, blockStore, blockExecutor, report, scenario, extra);
+    }
+
+    private NodeStopper run(ConsensusReplay tool, ActivationConfig activationConfig, World world, BlockStore blockStore,
+                            BlockExecutor blockExecutor, Path report, String scenario, String... extra) {
         List<String> argList = new ArrayList<>(List.of(
                 "--fromBlock", "1",
                 "--toBlock", "2",
@@ -861,7 +891,7 @@ class ConsensusReplayTest {
         String[] args = argList.toArray(new String[0]);
 
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
-        doReturn(world.getConfig().getActivationConfig()).when(rskSystemProperties).getActivationConfig();
+        doReturn(activationConfig).when(rskSystemProperties).getActivationConfig();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
         doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
 
