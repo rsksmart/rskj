@@ -21,7 +21,8 @@ public enum RejectedPegoutReason {
 
     LOW_AMOUNT(1),
     CALLER_CONTRACT(2),
-    FEE_ABOVE_VALUE(3);
+    FEE_ABOVE_VALUE(3),
+    UNSUPPORTED_ADDRESS_TYPE(4);
 
     private final int value;
 
