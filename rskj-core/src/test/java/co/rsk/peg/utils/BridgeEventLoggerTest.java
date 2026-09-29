@@ -30,7 +30,7 @@ class BridgeEventLoggerTest {
         assertThrows(UnsupportedOperationException.class, () -> eventLogger.logLockBtc(
             mock(RskAddress.class),
             btcTxMock,
-            mock(Address.class),
+            mock(LegacyAddress.class),
             Coin.SATOSHI
         ));
     }
@@ -75,7 +75,7 @@ class BridgeEventLoggerTest {
     void logReleaseBtcRequestReceived() {
         RskAddress sender = new RskAddress("0x0000000000000000000000000000000000001101");
         String base58Address = "16SL1Qsw1eyYWM58MFh9KwKYoxYmm3fM1Z";
-        Address btcDestinationAddress = Address.fromBase58(
+        LegacyAddress btcDestinationAddress = LegacyAddress.fromBase58(
             NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
             base58Address
         );

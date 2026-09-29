@@ -4,7 +4,7 @@ import static co.rsk.peg.whitelist.WhitelistStorageIndexKey.LOCK_ONE_OFF;
 import static co.rsk.peg.whitelist.WhitelistStorageIndexKey.LOCK_UNLIMITED;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP87;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.storage.StorageAccessor;
@@ -60,7 +60,7 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
     }
 
     private LockWhitelist initializeLockWhitelist(ActivationConfig.ForBlock activations, NetworkParameters networkParameters) {
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData = bridgeStorageAccessor.getFromRepository(
+        Pair<HashMap<LegacyAddress, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData = bridgeStorageAccessor.getFromRepository(
             LOCK_ONE_OFF.getKey(),
             data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters)
         );
@@ -70,7 +70,7 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
             return lockWhitelist;
         }
 
-        Map<Address, LockWhitelistEntry> whitelistedAddresses = new HashMap<>(oneOffWhitelistAndDisableBlockHeightData.getLeft());
+        Map<LegacyAddress, LockWhitelistEntry> whitelistedAddresses = new HashMap<>(oneOffWhitelistAndDisableBlockHeightData.getLeft());
 
         if (activations.isActive(RSKIP87)) {
             whitelistedAddresses.putAll(bridgeStorageAccessor.getFromRepository(

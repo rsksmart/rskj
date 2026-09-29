@@ -231,7 +231,9 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         if (activations.isActive(ConsensusRule.RSKIP326)) {
             logReleaseBtcRequestReceived(sender.toHexString(), btcDestinationAddress.toString(), amountInWeis);
         } else {
-            logReleaseBtcRequestReceived(sender.toHexString(), btcDestinationAddress.getHash160(), amountInWeis.toBitcoin());
+            // Before RSKIP326 the event carried the bare 20-byte hash, which only a legacy
+            // destination has. Every destination is legacy today.
+            logReleaseBtcRequestReceived(sender.toHexString(), ((LegacyAddress) btcDestinationAddress).getHash160(), amountInWeis.toBitcoin());
         }
     }
 

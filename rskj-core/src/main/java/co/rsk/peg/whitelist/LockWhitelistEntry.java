@@ -18,7 +18,7 @@
 
 package co.rsk.peg.whitelist;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.Coin;
 
 /**
@@ -28,7 +28,7 @@ import co.rsk.bitcoinj.core.Coin;
  * @author Jose Dahlquist
  */
 public interface LockWhitelistEntry {
-    Address address();
+    LegacyAddress address();
     boolean canLock(Coin value);
     boolean isConsumed();
     void consume();

@@ -2000,7 +2000,7 @@ class BridgeIT {
             .signatureCache(signatureCache)
             .bridgeSupport(bridgeSupport)
             .build();
-        Address retiringFederationAddress = new BtcECKey().toAddress(regtestParameters);
+        LegacyAddress retiringFederationAddress = new BtcECKey().toAddress(regtestParameters);
         when(bridgeSupport.getRetiringFederationAddress()).thenReturn(Optional.of(retiringFederationAddress));
 
         // Act & Assert
@@ -2519,7 +2519,7 @@ class BridgeIT {
     void getLockWhitelistEntryByAddressBeforeRskip87And88Fork() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP87), anyLong());
         doReturn(false).when(activationConfig).isActive(eq(RSKIP88), anyLong());
-        Address address = new BtcECKey().toAddress(regtestParameters);
+        LegacyAddress address = new BtcECKey().toAddress(regtestParameters);
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -2549,8 +2549,8 @@ class BridgeIT {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Address mockedAddressForUnlimited = new BtcECKey().toAddress(regtestParameters);
-        Address mockedAddressForOneOff = new BtcECKey().toAddress(regtestParameters);
+        LegacyAddress mockedAddressForUnlimited = new BtcECKey().toAddress(regtestParameters);
+        LegacyAddress mockedAddressForOneOff = new BtcECKey().toAddress(regtestParameters);
 
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2884,7 +2884,7 @@ class BridgeIT {
                 bridgeSupportFactoryMock, signatureCache);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Address address = new BtcECKey().toAddress(regtestParameters);
+        LegacyAddress address = new BtcECKey().toAddress(regtestParameters);
         when(bridgeSupportMock.getActiveFederationAddress()).thenReturn(address);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
 
@@ -2907,7 +2907,7 @@ class BridgeIT {
         Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
-        Address expectedResult = new BtcECKey().toAddress(regtestParameters);
+        LegacyAddress expectedResult = new BtcECKey().toAddress(regtestParameters);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getActiveFederationAddress()).thenReturn(expectedResult);
@@ -3613,7 +3613,7 @@ class BridgeIT {
 
         input.addOutput(Coin.COIN, btcECKey.toAddress(params));
 
-        Address to = BtcECKey.fromPrivate(BigInteger.valueOf(toPk)).toAddress(params);
+        LegacyAddress to = BtcECKey.fromPrivate(BigInteger.valueOf(toPk)).toAddress(params);
 
         BtcTransaction result = new BtcTransaction(params);
         result.addInput(input.getOutput(0));
@@ -3728,7 +3728,7 @@ class BridgeIT {
             super(params);
             BtcTransaction inputTx = new BtcTransaction(params);
             inputTx.addOutput(Coin.FIFTY_COINS, BtcECKey.fromPrivate(BigInteger.valueOf(123456)).toAddress(params));
-            Address to = BtcECKey.fromPrivate(BigInteger.valueOf(1000)).toAddress(params);
+            LegacyAddress to = BtcECKey.fromPrivate(BigInteger.valueOf(1000)).toAddress(params);
             this.addInput(inputTx.getOutput(0));
             this.getInput(0).disconnect();
             TransactionWitness witness = new TransactionWitness(1);

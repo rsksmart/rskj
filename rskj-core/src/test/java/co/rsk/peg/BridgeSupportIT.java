@@ -1394,7 +1394,7 @@ public class BridgeSupportIT {
         BtcTransaction tx = new BtcTransaction(btcParams);
         Address address = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey())).getToAddress(btcParams);
         tx.addOutput(Coin.COIN, address);
-        Address address2 = federation.getAddress();
+        LegacyAddress address2 = federation.getAddress();
         tx.addOutput(Coin.COIN, address2);
 
         // Create previous tx
@@ -1528,7 +1528,7 @@ public class BridgeSupportIT {
         Repository track = repository.startTracking();
 
         BtcTransaction tx = new BtcTransaction(parameters);
-        Address activeFederationAddress = activeFederation.getAddress();
+        LegacyAddress activeFederationAddress = activeFederation.getAddress();
         tx.addOutput(Coin.COIN, activeFederationAddress);
 
         // Create previous tx
@@ -1658,14 +1658,14 @@ public class BridgeSupportIT {
         when(federationStorageProvider.getOldFederation(federationConstants, activationsBeforeForks)).thenReturn(retiringFederation);
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(retiringFederationUtxos);
 
-        Address retiringFederationAddress = retiringFederation.getAddress();
+        LegacyAddress retiringFederationAddress = retiringFederation.getAddress();
 
         // Peg-out from retiring federation with a change output
         BtcTransaction releaseWithChangeTx = new BtcTransaction(params);
 
         releaseWithChangeTx.addInput(Sha256Hash.ZERO_HASH, 0, retiringFederation.getRedeemScript());
 
-        Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        LegacyAddress randomAddress = new LegacyAddress(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
         releaseWithChangeTx.addOutput(Coin.COIN, randomAddress);
 
         Coin changeValue = Coin.COIN.plus(Coin.COIN);
@@ -1807,9 +1807,9 @@ public class BridgeSupportIT {
         );
         // Whitelist the addresses
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, btcParams);
-        Address address1 = srcKey1.toAddress(btcParams);
-        Address address2 = srcKey2.toAddress(btcParams);
-        Address address3 = srcKey3.toAddress(btcParams);
+        LegacyAddress address1 = srcKey1.toAddress(btcParams);
+        LegacyAddress address2 = srcKey2.toAddress(btcParams);
+        LegacyAddress address3 = srcKey3.toAddress(btcParams);
         whitelist.put(address1, new OneOffWhiteListEntry(address1, Coin.COIN.multiply(5)));
         whitelist.put(address2, new OneOffWhiteListEntry(address2, Coin.COIN.multiply(10)));
         whitelist.put(address3, new OneOffWhiteListEntry(address3, Coin.COIN.multiply(2).add(Coin.COIN.multiply(3))));
@@ -2210,7 +2210,7 @@ public class BridgeSupportIT {
         assertTrue(retiringFederationCreationTime.isPresent());
         assertEquals(1000, retiringFederationCreationTime.get().toEpochMilli());
 
-        Optional<Address> retiringFederationAddress = bridgeSupport.getRetiringFederationAddress();
+        Optional<LegacyAddress> retiringFederationAddress = bridgeSupport.getRetiringFederationAddress();
         assertTrue(retiringFederationAddress.isPresent());
         assertEquals(mockedOldFederation.getAddress().toString(), retiringFederationAddress.get().toString());
         List<FederationMember> members = FederationTestUtils.getFederationMembers(4);

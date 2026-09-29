@@ -1,6 +1,6 @@
 package co.rsk.peg.pegininstructions;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
@@ -49,7 +49,7 @@ class PeginInstructionsVersion1Test {
         peginInstructionsVersion1.parseAdditionalData(opReturnScript.getChunks().get(1).data);
 
         // Assert
-        Optional<Address> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddress();
+        Optional<LegacyAddress> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddress();
         Assertions.assertFalse(obtainedBtcAddress.isPresent());
     }
 
@@ -57,7 +57,7 @@ class PeginInstructionsVersion1Test {
     void parseAdditionalData_p2pkhTypeAddress() throws PeginInstructionsException {
         // Arrange
         BtcECKey key = new BtcECKey();
-        Address btcRefundAddress = key.toAddress(params);
+        LegacyAddress btcRefundAddress = key.toAddress(params);
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(
             1,
             new RskAddress(new byte[20]),
@@ -69,7 +69,7 @@ class PeginInstructionsVersion1Test {
         peginInstructionsVersion1.parseAdditionalData(opReturnScript.getChunks().get(1).data);
 
         // Assert
-        Optional<Address> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddress();
+        Optional<LegacyAddress> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddress();
         Assertions.assertTrue(obtainedBtcAddress.isPresent());
         Assertions.assertEquals(btcRefundAddress, obtainedBtcAddress.get());
         Assertions.assertFalse(obtainedBtcAddress.get().isP2SHAddress());
@@ -82,7 +82,7 @@ class PeginInstructionsVersion1Test {
             2,
             Arrays.asList(new BtcECKey(), new BtcECKey(), new BtcECKey())
         );
-        Address btcRefundAddress = Address.fromP2SHScript(params, p2shScript);
+        LegacyAddress btcRefundAddress = LegacyAddress.fromP2SHScript(params, p2shScript);
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(
             1,
             new RskAddress(new byte[20]),
@@ -94,7 +94,7 @@ class PeginInstructionsVersion1Test {
         peginInstructionsVersion1.parseAdditionalData(opReturnScript.getChunks().get(1).data);
 
         // Assert
-        Optional<Address> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddress();
+        Optional<LegacyAddress> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddress();
         Assertions.assertTrue(obtainedBtcAddress.isPresent());
         Assertions.assertEquals(btcRefundAddress, obtainedBtcAddress.get());
         Assertions.assertTrue(obtainedBtcAddress.get().isP2SHAddress());
@@ -104,7 +104,7 @@ class PeginInstructionsVersion1Test {
     void parseAdditionalData_invalidAddressType() {
         // Arrange
         BtcECKey key = new BtcECKey();
-        Address btcRefundAddress = key.toAddress(params);
+        LegacyAddress btcRefundAddress = key.toAddress(params);
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(
             1,
             new RskAddress(new byte[20]),

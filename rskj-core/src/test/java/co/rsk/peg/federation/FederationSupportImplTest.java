@@ -132,7 +132,7 @@ class FederationSupportImplTest {
         @Test
         @Tag("getActiveFederationAddress")
         void getActiveFederationAddress_returnsGenesisFederationAddress() {
-            Address activeFederationAddress = federationSupport.getActiveFederationAddress();
+            LegacyAddress activeFederationAddress = federationSupport.getActiveFederationAddress();
             assertThat(activeFederationAddress, is(genesisFederation.getAddress()));
         }
 
@@ -311,7 +311,7 @@ class FederationSupportImplTest {
         @Test
         @Tag("getActiveFederationAddress")
         void getActiveFederationAddress_returnsNewFederationAddress() {
-            Address activeFederationAddress = federationSupport.getActiveFederationAddress();
+            LegacyAddress activeFederationAddress = federationSupport.getActiveFederationAddress();
             assertThat(activeFederationAddress, is(newFederation.getAddress()));
         }
 
@@ -714,7 +714,7 @@ class FederationSupportImplTest {
         void getActiveFederationAddress_returnsExpectedAddressAccordingToActivationAgeAndActivations(
             long currentBlock,
             ActivationConfig.ForBlock activations,
-            Address expectedAddress) {
+            LegacyAddress expectedAddress) {
 
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
@@ -726,7 +726,7 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Address activeFederationAddress = federationSupport.getActiveFederationAddress();
+            LegacyAddress activeFederationAddress = federationSupport.getActiveFederationAddress();
             assertThat(activeFederationAddress, is(expectedAddress));
         }
 
@@ -1305,7 +1305,7 @@ class FederationSupportImplTest {
         @Test
         @Tag("getRetiringFederationAddress")
         void getRetiringFederationAddress_returnsEmpty() {
-            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            Optional<LegacyAddress> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
             assertTrue(retiringFederationAddress.isEmpty());
         }
 
@@ -1394,7 +1394,7 @@ class FederationSupportImplTest {
         @Test
         @Tag("getRetiringFederationAddress")
         void getRetiringFederationAddress_returnsEmpty() {
-            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            Optional<LegacyAddress> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
             assertTrue(retiringFederationAddress.isEmpty());
         }
 
@@ -1562,7 +1562,7 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            Optional<LegacyAddress> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
             assertTrue(retiringFederationAddress.isEmpty());
         }
 
@@ -1583,7 +1583,7 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            Optional<LegacyAddress> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
             assertTrue(retiringFederationAddress.isPresent());
             assertThat(retiringFederationAddress.get(), is(oldFederation.getAddress()));
         }
@@ -2300,7 +2300,7 @@ class FederationSupportImplTest {
     @Test
     @Tag("new federation btc utxos")
     void getNewFederationBtcUTXOs_whenSavingUTXOs_returnsNewFederationUTXOs() {
-        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(federationMainnetConstants.getBtcParams(), "address");
+        LegacyAddress btcAddress = BitcoinTestUtils.createP2PKHAddress(federationMainnetConstants.getBtcParams(), "address");
         Script outputScript = ScriptBuilder.createOutputScript(btcAddress);
         int numberOfUtxos = 10;
         List<UTXO> newFederationUTXOs = UTXOBuilder.builder()
@@ -2420,7 +2420,7 @@ class FederationSupportImplTest {
     @Test
     void getProposedFederationAddress_whenStorageProviderReturnsEmpty_shouldReturnEmpty() {
         // Act
-        Optional<Address> actualProposedFederationAddress = federationSupport.getProposedFederationAddress();
+        Optional<LegacyAddress> actualProposedFederationAddress = federationSupport.getProposedFederationAddress();
 
         // Assert
         assertFalse(actualProposedFederationAddress.isPresent());
@@ -2433,7 +2433,7 @@ class FederationSupportImplTest {
         storageProvider.setProposedFederation(proposedFederation);
 
         // Act
-        Optional<Address> actualProposedFederationAddress = federationSupport.getProposedFederationAddress();
+        Optional<LegacyAddress> actualProposedFederationAddress = federationSupport.getProposedFederationAddress();
 
         // Assert
         assertTrue(actualProposedFederationAddress.isPresent());

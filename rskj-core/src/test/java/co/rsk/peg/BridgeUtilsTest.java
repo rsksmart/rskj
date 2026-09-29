@@ -115,8 +115,8 @@ class BridgeUtilsTest {
         byte[] privKey = generatePrivKey();
         tx.sign(privKey);
 
-        Address expectedAddress = BtcECKey.fromPrivate(privKey).toAddress(RegTestParams.get());
-        Address result = BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
+        LegacyAddress expectedAddress = BtcECKey.fromPrivate(privKey).toAddress(RegTestParams.get());
+        LegacyAddress result = BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
 
         assertEquals(expectedAddress, result);
     }
@@ -666,7 +666,7 @@ class BridgeUtilsTest {
 
     @Test
     void serializeBtcAddressWithVersion_p2pkh_testnet_before_rskip284() {
-        Address address = Address.fromBase58(networkParameters, "mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs");
+        LegacyAddress address = LegacyAddress.fromBase58(networkParameters, "mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs");
         byte[] serializedVersion = Hex.decode("6f"); // Testnet pubkey hash
         byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
@@ -675,7 +675,7 @@ class BridgeUtilsTest {
 
     @Test
     void serializeBtcAddressWithVersion_p2sh_testnet_before_rskip284() {
-        Address address = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
+        LegacyAddress address = LegacyAddress.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
         byte[] serializedVersion = Hex.decode("00c4"); // Testnet script hash, with leading zeroes
         byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
@@ -684,7 +684,7 @@ class BridgeUtilsTest {
 
     @Test
     void serializeBtcAddressWithVersion_p2pkh_mainnet_before_rskip284() {
-        Address address = Address.fromBase58(bridgeConstantsMainnet.getBtcParams(), "16zJJhTZWB1txoisGjEmhtHQam4sikpTd2");
+        LegacyAddress address = LegacyAddress.fromBase58(bridgeConstantsMainnet.getBtcParams(), "16zJJhTZWB1txoisGjEmhtHQam4sikpTd2");
         byte[] serializedVersion = Hex.decode("00"); // Mainnet pubkey hash
         byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
@@ -693,7 +693,7 @@ class BridgeUtilsTest {
 
     @Test
     void serializeBtcAddressWithVersion_p2sh_mainnet_before_rskip284() {
-        Address address = Address.fromBase58(bridgeConstantsMainnet.getBtcParams(), "37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn");
+        LegacyAddress address = LegacyAddress.fromBase58(bridgeConstantsMainnet.getBtcParams(), "37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn");
         byte[] serializedVersion = Hex.decode("05"); // Mainnet script hash
         byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
@@ -702,7 +702,7 @@ class BridgeUtilsTest {
 
     @Test
     void serializeBtcAddressWithVersion_p2pkh_testnet_after_rskip284() {
-        Address address = Address.fromBase58(networkParameters, "mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs");
+        LegacyAddress address = LegacyAddress.fromBase58(networkParameters, "mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs");
         byte[] serializedVersion = Hex.decode("6f"); // Testnet pubkey hash
         byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
@@ -711,7 +711,7 @@ class BridgeUtilsTest {
 
     @Test
     void serializeBtcAddressWithVersion_p2sh_testnet_after_rskip284() {
-        Address address = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
+        LegacyAddress address = LegacyAddress.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
         byte[] serializedVersion = Hex.decode("c4"); // Testnet script hash, no leading zeroes after HF activation
         byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
@@ -720,7 +720,7 @@ class BridgeUtilsTest {
 
     @Test
     void serializeBtcAddressWithVersion_p2pkh_mainnet_after_rskip284() {
-        Address address = Address.fromBase58(bridgeConstantsMainnet.getBtcParams(), "16zJJhTZWB1txoisGjEmhtHQam4sikpTd2");
+        LegacyAddress address = LegacyAddress.fromBase58(bridgeConstantsMainnet.getBtcParams(), "16zJJhTZWB1txoisGjEmhtHQam4sikpTd2");
         byte[] serializedVersion = Hex.decode("00"); // Mainnet pubkey hash
         byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
@@ -729,7 +729,7 @@ class BridgeUtilsTest {
 
     @Test
     void serializeBtcAddressWithVersion_p2sh_mainnet_after_rskip284() {
-        Address address = Address.fromBase58(bridgeConstantsMainnet.getBtcParams(), "37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn");
+        LegacyAddress address = LegacyAddress.fromBase58(bridgeConstantsMainnet.getBtcParams(), "37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn");
         byte[] serializedVersion = Hex.decode("05"); // Mainnet script hash
         byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
@@ -1238,7 +1238,7 @@ class BridgeUtilsTest {
         }
         Coin outputValue = Coin.COIN;
         for (int i = 0; i < outputsCount; i++) {
-            Address userAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, String.valueOf(i));
+            LegacyAddress userAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, String.valueOf(i));
             pegoutTxBuilder.withOutput(outputValue, userAddress);
         }
 
@@ -1269,7 +1269,7 @@ class BridgeUtilsTest {
         int outputsCount = 50;
         Coin outputValue = Coin.valueOf(20_000);
         for (int i = 0; i < outputsCount; i++) {
-            Address userAddress = Address.fromBase58(networkParameters, "mi2KEWHb9WUBLBm4LCTUx75jWCSr68uxRr");
+            LegacyAddress userAddress = LegacyAddress.fromBase58(networkParameters, "mi2KEWHb9WUBLBm4LCTUx75jWCSr68uxRr");
             pegoutTxBuilder.withOutput(outputValue, userAddress);
         }
 
@@ -1468,10 +1468,10 @@ class BridgeUtilsTest {
 
     private void getAmountSentToAddresses_ok_by_network(BridgeConstants bridgeConstants) {
         Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
-        Address activeFederationAddress = activeFederation.getAddress();
+        LegacyAddress activeFederationAddress = activeFederation.getAddress();
 
         Federation retiringFederation = PegTestUtils.createFederation(bridgeConstants, "fa01", "fa02");
-        Address retiringFederationAddress = retiringFederation.getAddress();
+        LegacyAddress retiringFederationAddress = retiringFederation.getAddress();
 
         Coin valueToTransfer = Coin.COIN;
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
@@ -1549,7 +1549,7 @@ class BridgeUtilsTest {
 
     private void getAmountSentToAddresses_no_output_for_address_by_network(BridgeConstants bridgeConstants) {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet.getFederationConstants());
-        Address receiver = genesisFederation.getAddress();
+        LegacyAddress receiver = genesisFederation.getAddress();
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
 
         Assertions.assertEquals(
@@ -1573,7 +1573,7 @@ class BridgeUtilsTest {
 
     private void getAmountSentToAddresses_output_value_is_0_by_network(BridgeConstants bridgeConstants) {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet.getFederationConstants());
-        Address receiver = genesisFederation.getAddress();
+        LegacyAddress receiver = genesisFederation.getAddress();
 
         Coin valueToTransfer = Coin.ZERO;
 
@@ -1599,7 +1599,7 @@ class BridgeUtilsTest {
         getAmountSentToAddresses_output_value_is_0_by_network(bridgeConstantsRegtest);
     }
 
-    private void test_serializeBtcAddressWithVersion(boolean isRskip284Active, Address address, byte[] serializedVersion, byte[] serializedAddress) {
+    private void test_serializeBtcAddressWithVersion(boolean isRskip284Active, LegacyAddress address, byte[] serializedVersion, byte[] serializedAddress) {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
 
         byte[] addressWithVersionBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, address);
@@ -1625,7 +1625,7 @@ class BridgeUtilsTest {
             BridgeMainNetConstants.getInstance() :
             new BridgeRegTestConstants();
 
-        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
+        LegacyAddress address = BridgeUtils.deserializeBtcAddressWithVersion(
             bridgeConstants.getBtcParams(),
             activations,
             serializedAddress
@@ -1636,7 +1636,7 @@ class BridgeUtilsTest {
         Assertions.assertEquals(expectedAddress, address.toBase58());
     }
 
-    private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {
+    private void assertIsWatching(LegacyAddress address, Wallet wallet, NetworkParameters parameters) {
         List<Script> watchedScripts = wallet.getWatchedScripts();
         Assertions.assertEquals(1, watchedScripts.size());
         Script watchedScript = watchedScripts.get(0);
@@ -1689,7 +1689,7 @@ class BridgeUtilsTest {
         boolean isFlyover
     ) {
         // Setup
-        Address address;
+        LegacyAddress address;
         byte[] program;
 
         if (federation == null) {
@@ -1705,7 +1705,7 @@ class BridgeUtilsTest {
             );
 
             Script flyoverP2SH = getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion());
-            address = Address.fromP2SHHash(networkParameters, flyoverP2SH.getPubKeyHash());
+            address = LegacyAddress.fromP2SHHash(networkParameters, flyoverP2SH.getPubKeyHash());
             program = flyoverRedeemScript.getProgram();
 
         } else {
@@ -1759,7 +1759,7 @@ class BridgeUtilsTest {
     }
 
     private BtcTransaction createPegOutTxLegacy(int inputSize, int outputSize, Federation federation, List<BtcECKey> keys) {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
 
@@ -1882,7 +1882,7 @@ class BridgeUtilsTest {
     void testValidateFlyoverPeginValue_sent_zero_amount_before_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
-        Address btcAddressReceivingFunds = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddressReceivingFunds = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         Context btcContext = new Context(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
@@ -1908,8 +1908,8 @@ class BridgeUtilsTest {
     void testValidateFlyoverPeginValue_sent_one_utxo_with_amount_below_minimum_before_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
-        Address addressReceivingFundsBelowMinimum = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address addressReceivingFundsAboveMinimum = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress addressReceivingFundsBelowMinimum = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress addressReceivingFundsAboveMinimum = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
 
@@ -1936,7 +1936,7 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(networkParameters);
-        Address btcAddressReceivingFunds = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddressReceivingFunds = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         Coin valueBelowMinimum = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).minus(Coin.SATOSHI);
@@ -1960,8 +1960,8 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address secondBtcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress secondBtcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         Coin minimumPegInTxValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations);
 
@@ -1985,8 +1985,8 @@ class BridgeUtilsTest {
     void testValidateFlyoverPeginValue_funds_sent_above_minimum_after_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddressReceivingFundsAboveMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddressReceivingFundsAboveMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
 
         Coin minimumPegInTxValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations);
@@ -2013,7 +2013,7 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         TransactionOutput bech32Output = PegTestUtils.createBech32Output(networkParameters, Coin.COIN);
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
@@ -2037,10 +2037,10 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddress2 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress2 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addOutput(Coin.COIN, btcAddress1);
@@ -2084,9 +2084,9 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addOutput(Coin.COIN, btcAddress1);
@@ -2112,7 +2112,7 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(networkParameters);
-        Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         TransactionOutput bech32Output = PegTestUtils.createBech32Output(networkParameters, Coin.COIN);
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
@@ -2153,10 +2153,10 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(networkParameters);
-        Address btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddress2 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress2 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         btcTx.addOutput(Coin.COIN, btcAddress1);
@@ -2204,10 +2204,10 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Context btcContext = new Context(networkParameters);
-        Address btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddress2 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress2 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         btcTx.addOutput(Coin.COIN, btcAddress1);

@@ -859,10 +859,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public String getRetiringFederationAddress(Object[] args) {
         logger.trace("getRetiringFederationAddress");
-        Optional<Address> address = bridgeSupport.getRetiringFederationAddress();
+        Optional<LegacyAddress> address = bridgeSupport.getRetiringFederationAddress();
 
         // When there's no address, empty string is returned
-        return address.map(Address::toBase58).orElse("");
+        return address.map(LegacyAddress::toBase58).orElse("");
 
     }
 
@@ -1055,7 +1055,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getProposedFederationAddress");
         
         return bridgeSupport.getProposedFederationAddress()
-            .map(Address::toBase58)
+            .map(LegacyAddress::toBase58)
             .orElse("");
     }
 
@@ -1352,7 +1352,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             Keccak256 derivationArgumentsHash = new Keccak256((byte[]) args[3]);
             // Parse data to create BTC user refund address with version and hash
             byte[] refundAddressInfo = (byte[]) args[4];
-            Address userRefundAddress = BridgeUtils.deserializeBtcAddressWithVersion(
+            LegacyAddress userRefundAddress = BridgeUtils.deserializeBtcAddressWithVersion(
                 bridgeConstants.getBtcParams(),
                 activations,
                 refundAddressInfo
@@ -1361,7 +1361,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             RskAddress lbcAddress = new RskAddress((DataWord) args[5]);
             // Parse data to create BTC liquidity provider address with version and hash
             byte[] lpAddressInfo = (byte[]) args[6];
-            Address lpBtcAddress = BridgeUtils.deserializeBtcAddressWithVersion(
+            LegacyAddress lpBtcAddress = BridgeUtils.deserializeBtcAddressWithVersion(
                 bridgeConstants.getBtcParams(),
                 activations,
                 lpAddressInfo

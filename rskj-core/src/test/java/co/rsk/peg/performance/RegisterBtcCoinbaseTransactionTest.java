@@ -122,7 +122,7 @@ class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCase {
             System.arraycopy(witnessCommitment, 0, scriptData, opcode.length, witnessCommitment.length);
 
             coinbaseTx.addInput(new TransactionInput(networkParameters, null, new byte[2]));
-            coinbaseTx.addOutput(Coin.COIN.multiply(10), Address.fromBase58(networkParameters, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+            coinbaseTx.addOutput(Coin.COIN.multiply(10), LegacyAddress.fromBase58(networkParameters, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
             coinbaseTx.addOutput(Coin.ZERO, new Script(scriptData));
 
             byte[] bits = new byte[1];

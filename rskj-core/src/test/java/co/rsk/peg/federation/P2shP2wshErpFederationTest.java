@@ -134,7 +134,7 @@ class P2shP2wshErpFederationTest {
         private Script redeemScript;
         private Script outputScript;
         private Sha256Hash prevTxHash;
-        private Address receiver;
+        private LegacyAddress receiver;
         private BtcTransaction tx;
 
 
@@ -277,7 +277,7 @@ class P2shP2wshErpFederationTest {
             // act
             // recreate signed tx
             prevTxHash = Sha256Hash.wrap("8bd31413fef1d5d509572f329075d61606fa0fc515e74bc0e48abfa42ebe619f");
-            receiver = Address.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP");
+            receiver = LegacyAddress.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP");
             arrangeSignedTx();
 
             // assert
@@ -332,7 +332,7 @@ class P2shP2wshErpFederationTest {
             // act
             // recreate signed tx
             prevTxHash = Sha256Hash.wrap("ca9c3ff2685d65a0adf571a30d77c6d12857af9edfbf8f3a19ca4c1fc1eb47f5");
-            receiver = Address.fromBase58(networkParameters,"12MXsCtte9onzqaHwN5VcnwZKGd7oDSsQq");
+            receiver = LegacyAddress.fromBase58(networkParameters,"12MXsCtte9onzqaHwN5VcnwZKGd7oDSsQq");
             arrangeSignedTx();
 
             // assert
@@ -377,8 +377,8 @@ class P2shP2wshErpFederationTest {
             assertArrayEquals(expectedP2SHScript, p2shScript);
         }
 
-        private void assertAddress(String expectedAddressString, Address address) {
-            Address expectedAddress = Address.fromBase58(networkParameters, expectedAddressString);
+        private void assertAddress(String expectedAddressString, LegacyAddress address) {
+            LegacyAddress expectedAddress = LegacyAddress.fromBase58(networkParameters, expectedAddressString);
             assertEquals(expectedAddress, address);
         }
 

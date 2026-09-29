@@ -60,7 +60,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public Optional<LockWhitelistEntry> getLockWhitelistEntryByAddress(String addressBase58) {
         try {
-            Address address = Address.fromBase58(networkParameters, addressBase58);
+            LegacyAddress address = LegacyAddress.fromBase58(networkParameters, addressBase58);
 
             return Optional.ofNullable(storageProvider.getLockWhitelist(activations, networkParameters).get(address));
         } catch (AddressFormatException e) {
@@ -72,7 +72,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public int addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
         try {
-            Address address = Address.fromBase58(networkParameters, addressBase58);
+            LegacyAddress address = LegacyAddress.fromBase58(networkParameters, addressBase58);
             Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
             LockWhitelistEntry entry = new OneOffWhiteListEntry(address, maxTransferValueCoin);
 
@@ -86,7 +86,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public int addUnlimitedLockWhitelistAddress(Transaction tx, String addressBase58) {
         try {
-            Address address = Address.fromBase58(networkParameters, addressBase58);
+            LegacyAddress address = LegacyAddress.fromBase58(networkParameters, addressBase58);
             LockWhitelistEntry entry = new UnlimitedWhiteListEntry(address);
 
             return addLockWhitelistAddress(tx, entry);
@@ -117,7 +117,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
 
         LockWhitelist whitelist = storageProvider.getLockWhitelist(activations, networkParameters);
         try {
-            Address address = Address.fromBase58(networkParameters, addressBase58);
+            LegacyAddress address = LegacyAddress.fromBase58(networkParameters, addressBase58);
             if (!whitelist.remove(address)) {
                 return ADDRESS_NOT_EXIST.getCode();
             }
@@ -151,7 +151,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     }
 
     @Override
-    public boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height) {
+    public boolean verifyLockSenderIsWhitelisted(LegacyAddress senderBtcAddress, Coin totalAmount, int height) {
         final String ADDRESS_NOT_WHITELISTED_MESSAGE = "Rejected lock. Address is not whitelisted. Address: ";
         LockWhitelist lockWhitelist = storageProvider.getLockWhitelist(activations, networkParameters);
         if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {

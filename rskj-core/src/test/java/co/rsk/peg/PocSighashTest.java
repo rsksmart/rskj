@@ -88,7 +88,7 @@ class PocSighashTest {
         txWithOutputToMultisig.addOutput(Coin.valueOf(700_002), fed.getAddress());
         utxos.add(FedUtxo.of(txWithOutputToMultisig, 1));
 
-        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         Coin totalAmount = utxos.stream().map(fedUtxo -> fedUtxo.btcTransaction.getOutput(fedUtxo.getOutputIdx()).getValue()).reduce(Coin.ZERO, Coin::add);
 
         // Act
@@ -144,7 +144,7 @@ class PocSighashTest {
         peginTx.addOutput(Coin.valueOf(100_000), p2shErpFederation.getAddress());
         utxos.add(FedUtxo.of(peginTx, 0));
 
-        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         Coin totalAmount = utxos.stream().map(fedUtxo -> fedUtxo.btcTransaction.getOutput(fedUtxo.getOutputIdx()).getValue()).reduce(Coin.ZERO, Coin::add);
 
         // Act
@@ -240,7 +240,7 @@ class PocSighashTest {
         }
 
         Coin totalAmount = utxos.stream().map(fedUtxo -> fedUtxo.btcTransaction.getOutput(fedUtxo.getOutputIdx()).getValue()).reduce(Coin.ZERO, Coin::add);
-        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        LegacyAddress destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         // Act
         Set<Sha256Hash> sighashes = new HashSet<>();
@@ -289,7 +289,7 @@ class PocSighashTest {
         FederationArgs federationArgs = new FederationArgs(fedMembers, Instant.now(), 0L, networkParameters);
         ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
-        Address expectedAddress = Address.fromBase58(
+        LegacyAddress expectedAddress = LegacyAddress.fromBase58(
             networkParameters,
             "2NEfaGq4tGe6bJUxLEzGFoVyZrSrZtXRzJ7"
         );
@@ -309,7 +309,7 @@ class PocSighashTest {
 
         List<FedUtxo> utxos = Arrays.asList(utxo1, utxo2, utxo3, utxo4);
 
-        Address destinationAddress = Address.fromBase58(networkParameters, "2MtYSUzFWEQV62r92bsGX8ewE5Mgpv4xn9M");
+        LegacyAddress destinationAddress = LegacyAddress.fromBase58(networkParameters, "2MtYSUzFWEQV62r92bsGX8ewE5Mgpv4xn9M");
 
         // Act
         Set<Sha256Hash> sighashes = new HashSet<>();
@@ -371,7 +371,7 @@ class PocSighashTest {
         FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, networkParameters);
         ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
-        Address expectedAddress = Address.fromBase58(
+        LegacyAddress expectedAddress = LegacyAddress.fromBase58(
             networkParameters,
             "2NEfaGq4tGe6bJUxLEzGFoVyZrSrZtXRzJ7"
         );
@@ -391,7 +391,7 @@ class PocSighashTest {
 
         List<FedUtxo> utxos = Arrays.asList(utxo1, utxo2, utxo3, utxo4);
 
-        Address destinationAddress = Address.fromBase58(networkParameters, "2MtYSUzFWEQV62r92bsGX8ewE5Mgpv4xn9M");
+        LegacyAddress destinationAddress = LegacyAddress.fromBase58(networkParameters, "2MtYSUzFWEQV62r92bsGX8ewE5Mgpv4xn9M");
 
         // Act
         Set<Sha256Hash> sighashes = new HashSet<>();
@@ -455,7 +455,7 @@ class PocSighashTest {
         FederationArgs federationArgs = new FederationArgs(fedMembers, Instant.now(), 0L, networkParameters);
         ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
-        Address expectedAddress = Address.fromBase58(
+        LegacyAddress expectedAddress = LegacyAddress.fromBase58(
             networkParameters,
             "2NEfaGq4tGe6bJUxLEzGFoVyZrSrZtXRzJ7"
         );
@@ -481,7 +481,7 @@ class PocSighashTest {
             );
         Coin pegoutTxAmount = totalUtxosAmount.minus(fees);
 
-        Address destinationAddress = Address.fromBase58(networkParameters, "2MtYSUzFWEQV62r92bsGX8ewE5Mgpv4xn9M");
+        LegacyAddress destinationAddress = LegacyAddress.fromBase58(networkParameters, "2MtYSUzFWEQV62r92bsGX8ewE5Mgpv4xn9M");
 
         BtcTransaction pegoutTx = new BtcTransaction(networkParameters);
         pegoutTx.addOutput(pegoutTxAmount, destinationAddress);
@@ -501,7 +501,7 @@ class PocSighashTest {
         boolean signWithEmergencyMultisig,
         List<FedUtxo> utxos,
         Coin amount,
-        Address destinationAddress,
+        LegacyAddress destinationAddress,
         Set<Sha256Hash> sighashes
     ) {
         BtcTransaction pegoutTx = new BtcTransaction(networkParameters);

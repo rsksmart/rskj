@@ -521,7 +521,7 @@ public class BridgeSupport {
         BtcTransaction btcTx,
         Keccak256 rskTxHash,
         PeginEvaluationResult peginEvaluationResult,
-        Address btcRefundAddress
+        LegacyAddress btcRefundAddress
     ) throws IOException {
 
         RejectedPeginReason rejectedPeginReason = peginEvaluationResult.getRejectedPeginReason()
@@ -653,7 +653,7 @@ public class BridgeSupport {
         PeginInformation peginInformation,
         Coin totalAmount) throws IOException, RegisterBtcTransactionException {
 
-        Address senderBtcAddress = peginInformation.getSenderBtcAddress();
+        LegacyAddress senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
 
         if (!BridgeUtils.txIsProcessableInLegacyVersion(senderBtcAddressType, activations)) {
@@ -710,7 +710,7 @@ public class BridgeSupport {
 
     private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) throws IOException {
         RskAddress rskDestinationAddress = peginInformation.getRskDestinationAddress();
-        Address senderBtcAddress = peginInformation.getSenderBtcAddress();
+        LegacyAddress senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
         int protocolVersion = peginInformation.getProtocolVersion();
         co.rsk.core.Coin amountInWeis = co.rsk.core.Coin.fromBitcoin(amount);
@@ -742,7 +742,7 @@ public class BridgeSupport {
         PeginInformation peginInformation,
         Coin amount) throws IOException {
 
-        Address btcRefundAddress = peginInformation.getBtcRefundAddress();
+        LegacyAddress btcRefundAddress = peginInformation.getBtcRefundAddress();
         if (btcRefundAddress != null) {
             generateRejectionRelease(btcTx, btcRefundAddress, rskTxHash, amount);
         } else {
@@ -773,7 +773,7 @@ public class BridgeSupport {
     private boolean shouldProcessPegInVersionLegacy(
         TxSenderAddressType txSenderAddressType,
         BtcTransaction btcTx,
-        Address senderBtcAddress,
+        LegacyAddress senderBtcAddress,
         Coin totalAmount,
         int height) {
 
@@ -782,7 +782,7 @@ public class BridgeSupport {
             verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount);
     }
 
-    protected boolean isTxLockableForLegacyVersion(TxSenderAddressType txSenderAddressType, BtcTransaction btcTx, Address senderBtcAddress) {
+    protected boolean isTxLockableForLegacyVersion(TxSenderAddressType txSenderAddressType, BtcTransaction btcTx, LegacyAddress senderBtcAddress) {
 
         if (txSenderAddressType == TxSenderAddressType.P2PKH ||
                 (txSenderAddressType == TxSenderAddressType.P2SHP2WPKH && activations.isActive(ConsensusRule.RSKIP143))) {
@@ -1306,7 +1306,7 @@ public class BridgeSupport {
     ) throws IOException {
         logRetiringFederationBalance(retiringFederationWallet.getBalance());
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
-        Address activeFederationAddress = getActiveFederationAddress();
+        LegacyAddress activeFederationAddress = getActiveFederationAddress();
         ReleaseTransactionBuilder.BuildResult migrationTransactionResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
         BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
         List<UTXO> selectedUTXOs = migrationTransactionResult.selectedUTXOs();
@@ -1471,7 +1471,7 @@ public class BridgeSupport {
             // Further logging is done at the tx builder level.
                 logger.warn(
                     "Couldn't build a pegout transaction for <{}, {}>. Reason: {}",
-                    pegoutRequest.getDestination().toBase58(),
+                    pegoutRequest.getDestination(),
                     pegoutRequest.getAmount(),
                     result.responseCode());
                 return false;
@@ -2333,7 +2333,7 @@ public class BridgeSupport {
         return federationSupport.getProposedFederation();
     }
 
-    public Address getActiveFederationAddress() {
+    public LegacyAddress getActiveFederationAddress() {
         return federationSupport.getActiveFederationAddress();
     }
 
@@ -2361,7 +2361,7 @@ public class BridgeSupport {
         return federationSupport.getActiveFederationCreationBlockNumber();
     }
 
-    public Optional<Address> getRetiringFederationAddress() {
+    public Optional<LegacyAddress> getRetiringFederationAddress() {
         return federationSupport.getRetiringFederationAddress();
     }
 
@@ -2409,7 +2409,7 @@ public class BridgeSupport {
         return federationSupport.getPendingFederatorPublicKeyOfType(index, keyType);
     }
 
-    public Optional<Address> getProposedFederationAddress() {
+    public Optional<LegacyAddress> getProposedFederationAddress() {
         return federationSupport.getProposedFederationAddress();
     }
 
@@ -2738,9 +2738,9 @@ public class BridgeSupport {
         int height,
         byte[] pmtSerialized,
         Keccak256 derivationArgumentsHash,
-        Address userRefundAddress,
+        LegacyAddress userRefundAddress,
         RskAddress lbcAddress,
-        Address lpBtcAddress,
+        LegacyAddress lpBtcAddress,
         boolean shouldTransferToContract
     ) throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         if (!BridgeUtils.isContractTx(rskTx)) {
@@ -3300,7 +3300,7 @@ public class BridgeSupport {
 
     private void generateRejectionRelease(
         BtcTransaction btcTx,
-        Address senderBtcAddress,
+        LegacyAddress senderBtcAddress,
         Keccak256 rskTxHash,
         Coin totalAmount
     ) throws IOException {

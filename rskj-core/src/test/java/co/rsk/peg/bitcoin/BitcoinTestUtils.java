@@ -58,17 +58,17 @@ public class BitcoinTestUtils {
         return keys;
     }
 
-    public static Address createP2PKHAddress(NetworkParameters networkParameters, String seed) {
+    public static LegacyAddress createP2PKHAddress(NetworkParameters networkParameters, String seed) {
         BtcECKey key = BtcECKey.fromPrivate(
             HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
         return key.toAddress(networkParameters);
     }
 
-    public static Address createP2SHMultisigAddress(NetworkParameters networkParameters, List<BtcECKey> keys) {
+    public static LegacyAddress createP2SHMultisigAddress(NetworkParameters networkParameters, List<BtcECKey> keys) {
         Script redeemScript = ScriptBuilder.createRedeemScript((keys.size() / 2) + 1, keys);
         Script outputScript = createP2SHOutputScript(redeemScript);
 
-        return Address.fromP2SHScript(networkParameters, outputScript);
+        return LegacyAddress.fromP2SHScript(networkParameters, outputScript);
     }
 
     public static Sha256Hash createHash(int nHash) {
@@ -106,7 +106,7 @@ public class BitcoinTestUtils {
     public static BtcTransaction createBtcTransactionWithOutputToAddress(
         NetworkParameters networkParameters,
         Coin amount,
-        Address btcAddress) {
+        LegacyAddress btcAddress) {
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(amount, btcAddress);
@@ -224,7 +224,7 @@ public class BitcoinTestUtils {
     }
 
     public static BtcTransaction createCoinbaseTransaction(NetworkParameters networkParameters) {
-        Address rewardAddress = createP2PKHAddress(networkParameters, "miner");
+        LegacyAddress rewardAddress = createP2PKHAddress(networkParameters, "miner");
         Script inputScript = new Script(new byte[]{ 1, 0 }); // Free-form, as long as it's has at least 2 bytes
 
         BtcTransaction coinbaseTx = new BtcTransaction(networkParameters);

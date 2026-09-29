@@ -93,8 +93,8 @@ class BridgeSupportFlyoverTest {
 
     private final Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(1);
     private final RskAddress lbcAddress = new RskAddress(new byte[20]);
-    private final Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "sender");
-    private final Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "liqProvider");
+    private final LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "sender");
+    private final LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "liqProvider");
 
     private final Transaction rskTx = new InternalTransaction(
         Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
@@ -137,7 +137,7 @@ class BridgeSupportFlyoverTest {
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
     }
 
-    private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
+    private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, LegacyAddress btcAddress) {
         return BitcoinTestUtils.createBtcTransactionWithOutputToAddress(btcRegTestParams, amount, btcAddress);
     }
 
@@ -189,7 +189,7 @@ class BridgeSupportFlyoverTest {
             activations
         );
 
-        Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -288,8 +288,8 @@ class BridgeSupportFlyoverTest {
         when(federationStorageProvider.getNewFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(activeFederation);
         when(federationStorageProvider.getOldFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(retiringFederation);
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -322,7 +322,7 @@ class BridgeSupportFlyoverTest {
             activations
         );
 
-        Address retiringFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress retiringFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             retiringFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -422,7 +422,7 @@ class BridgeSupportFlyoverTest {
         when(federationStorageProvider.getNewFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(activeFederation);
         when(federationStorageProvider.getOldFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(retiringFederation);
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -457,7 +457,7 @@ class BridgeSupportFlyoverTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
 
-        Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -465,7 +465,7 @@ class BridgeSupportFlyoverTest {
 
         btcTx.addOutput(valueToSend, activeFederationAddress);
 
-        Address retiringFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress retiringFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             retiringFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -614,13 +614,13 @@ class BridgeSupportFlyoverTest {
             activations
         );
 
-        Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
         );
 
-        Address retiringFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress retiringFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             retiringFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -695,8 +695,8 @@ class BridgeSupportFlyoverTest {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcRegTestParams, "refund");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcRegTestParams, "lp");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcRegTestParams, "refund");
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcRegTestParams, "lp");
 
         // For simplicity of this test, the max rbtc value is set as the current balance for the repository
         // This simulates that no pegin has ever been processed
@@ -736,13 +736,13 @@ class BridgeSupportFlyoverTest {
             activations
         );
 
-        Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstantsRegtest,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
         );
 
-        Address retiringFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress retiringFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstantsRegtest,
             retiringFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -1914,7 +1914,7 @@ class BridgeSupportFlyoverTest {
             activations
         );
 
-        Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
@@ -2105,7 +2105,7 @@ class BridgeSupportFlyoverTest {
             activations
         );
 
-        Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
@@ -2291,7 +2291,7 @@ class BridgeSupportFlyoverTest {
             activations
         );
 
-        Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
@@ -2483,7 +2483,7 @@ class BridgeSupportFlyoverTest {
             activations
         );
 
-        Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
@@ -2648,7 +2648,7 @@ class BridgeSupportFlyoverTest {
             activations
         );
 
-        Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
@@ -2810,7 +2810,7 @@ class BridgeSupportFlyoverTest {
             activations
         );
 
-        Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
@@ -2923,9 +2923,9 @@ class BridgeSupportFlyoverTest {
             0,
             new byte[]{},
             PegTestUtils.createHash3(0),
-            mock(Address.class),
+            mock(LegacyAddress.class),
             mock(RskAddress.class),
-            mock(Address.class),
+            mock(LegacyAddress.class),
             false
         );
 
@@ -2954,9 +2954,9 @@ class BridgeSupportFlyoverTest {
             100,
             Hex.decode("ab"),
             PegTestUtils.createHash3(0),
-            mock(Address.class),
+            mock(LegacyAddress.class),
             mock(RskAddress.class),
-            mock(Address.class),
+            mock(LegacyAddress.class),
             false
         );
 
@@ -2971,7 +2971,7 @@ class BridgeSupportFlyoverTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction tx = new BtcTransaction(btcRegTestParams);
-        Address activeFlyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress activeFlyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeConstantsRegtest,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(derivationArgumentsHash.getBytes())
@@ -3032,7 +3032,7 @@ class BridgeSupportFlyoverTest {
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
 
-        Address btcAddress = Address.fromBase58(
+        LegacyAddress btcAddress = LegacyAddress.fromBase58(
             btcRegTestParams,
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
@@ -3043,7 +3043,7 @@ class BridgeSupportFlyoverTest {
             lbcAddress,
             activations
         );
-        Address activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
+        LegacyAddress activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.ZERO, activeFlyoverFederationAddress);
 
@@ -3111,7 +3111,7 @@ class BridgeSupportFlyoverTest {
         when(bridgeSupport.getActiveFederation()).thenReturn(genesisFederation);
         when(bridgeSupport.validationsForRegisterBtcTransaction(any(), anyInt(), any(), any())).thenReturn(true);
 
-        Address btcAddress = Address.fromBase58(
+        LegacyAddress btcAddress = LegacyAddress.fromBase58(
             btcRegTestParams,
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
@@ -3123,7 +3123,7 @@ class BridgeSupportFlyoverTest {
             lbcAddress,
             activations
         );
-        Address activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
+        LegacyAddress activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, activeFlyoverFederationAddress);
         byte[] pmtSerialized = Hex.decode("ab");
@@ -3194,7 +3194,7 @@ class BridgeSupportFlyoverTest {
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
 
-        Address btcAddress = Address.fromBase58(
+        LegacyAddress btcAddress = LegacyAddress.fromBase58(
             btcRegTestParams,
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
@@ -3205,7 +3205,7 @@ class BridgeSupportFlyoverTest {
             lbcAddress,
             activations
         );
-        Address activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
+        LegacyAddress activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, activeFlyoverFederationAddress);
         byte[] pmtSerialized = Hex.decode("ab");
@@ -3277,7 +3277,7 @@ class BridgeSupportFlyoverTest {
             Optional.of(Coin.FIFTY_COINS) // The next time we simulate a height locking cap, to verify the user can't attempt to register the already reimbursed tx
         ).when(lockingCapSupport).getLockingCap();
 
-        Address btcAddress = Address.fromBase58(
+        LegacyAddress btcAddress = LegacyAddress.fromBase58(
             btcRegTestParams,
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
@@ -3289,7 +3289,7 @@ class BridgeSupportFlyoverTest {
             lbcAddress,
             activations
         );
-        Address activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
+        LegacyAddress activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, activeFlyoverFederationAddress);
         byte[] pmtSerialized = Hex.decode("ab");
@@ -3374,7 +3374,7 @@ class BridgeSupportFlyoverTest {
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
 
-        Address btcAddress = Address.fromBase58(
+        LegacyAddress btcAddress = LegacyAddress.fromBase58(
             btcRegTestParams,
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
@@ -3387,7 +3387,7 @@ class BridgeSupportFlyoverTest {
             lbcAddress,
             activations
         );
-        Address activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
+        LegacyAddress activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(valueToSend, activeFlyoverFederationAddress);
 
@@ -3562,13 +3562,13 @@ class BridgeSupportFlyoverTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        Address userRefundBtcAddress = Address.fromBase58(
+        LegacyAddress userRefundBtcAddress = LegacyAddress.fromBase58(
             btcRegTestParams,
             "mgy8yiUZYB7o9vvCu2Yi8GB3Vr32MQsyQJ"
         );
         byte[] userRefundBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, userRefundBtcAddress);
 
-        Address lpBtcAddress = Address.fromBase58(
+        LegacyAddress lpBtcAddress = LegacyAddress.fromBase58(
             btcRegTestParams,
             "mhoDGMzHHDq2ZD6cFrKV9USnMfpxEtLwGm"
         );
@@ -3641,6 +3641,6 @@ class BridgeSupportFlyoverTest {
     }
 
     private interface BtcTransactionProvider {
-        BtcTransaction provide(BridgeConstants bridgeConstants, Address activeFederationAddress, Address retiringFederationAddress);
+        BtcTransaction provide(BridgeConstants bridgeConstants, LegacyAddress activeFederationAddress, LegacyAddress retiringFederationAddress);
     }
 }

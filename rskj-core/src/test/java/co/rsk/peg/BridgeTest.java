@@ -503,9 +503,9 @@ class BridgeTest {
             anyInt(),
             any(byte[].class),
             any(Keccak256.class),
-            any(Address.class),
+            any(LegacyAddress.class),
             any(RskAddress.class),
-            any(Address.class),
+            any(LegacyAddress.class),
             anyBoolean()
         )).thenReturn(BigInteger.valueOf(2));
 
@@ -517,7 +517,7 @@ class BridgeTest {
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
-        Address refundBtcAddress = Address.fromBase58(
+        LegacyAddress refundBtcAddress = LegacyAddress.fromBase58(
             testnetNetworkParameters,
             "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP"
         );
@@ -527,7 +527,7 @@ class BridgeTest {
         );
 
         BtcECKey btcECKeyLp = new BtcECKey();
-        Address lpBtcAddress = btcECKeyLp.toAddress(testnetNetworkParameters);
+        LegacyAddress lpBtcAddress = btcECKeyLp.toAddress(testnetNetworkParameters);
         byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
             activationConfig.forBlock(0),
             lpBtcAddress
@@ -578,9 +578,9 @@ class BridgeTest {
             anyInt(),
             any(byte[].class),
             any(Keccak256.class),
-            any(Address.class),
+            any(LegacyAddress.class),
             any(RskAddress.class),
-            any(Address.class),
+            any(LegacyAddress.class),
             anyBoolean()
         )).thenReturn(BigInteger.valueOf(2));
 
@@ -592,7 +592,7 @@ class BridgeTest {
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
-        Address refundBtcAddress = Address.fromBase58(
+        LegacyAddress refundBtcAddress = LegacyAddress.fromBase58(
             testnetNetworkParameters,
             "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP"
         );
@@ -602,7 +602,7 @@ class BridgeTest {
         );
 
         BtcECKey btcECKeyLp = new BtcECKey();
-        Address lpBtcAddress = btcECKeyLp.toAddress(testnetNetworkParameters);
+        LegacyAddress lpBtcAddress = btcECKeyLp.toAddress(testnetNetworkParameters);
         byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
             activationConfig.forBlock(0),
             lpBtcAddress
@@ -650,9 +650,9 @@ class BridgeTest {
             anyInt(),
             any(byte[].class),
             any(Keccak256.class),
-            any(Address.class),
+            any(LegacyAddress.class),
             any(RskAddress.class),
-            any(Address.class),
+            any(LegacyAddress.class),
             anyBoolean()
         )).thenReturn(BigInteger.valueOf(FlyoverTxResponseCodes.GENERIC_ERROR.value()));
 
@@ -1633,7 +1633,7 @@ class BridgeTest {
         Transaction rskTxMock = mock(Transaction.class);
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
 
-        Address federationAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
+        LegacyAddress federationAddress = LegacyAddress.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getActiveFederationAddress()).thenReturn(federationAddress);
         Bridge bridge = bridgeBuilder
@@ -2108,7 +2108,7 @@ class BridgeTest {
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Address retiringFederationAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
+        LegacyAddress retiringFederationAddress = LegacyAddress.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
         when(bridgeSupportMock.getRetiringFederationAddress()).thenReturn(Optional.of(retiringFederationAddress));
 
         Bridge bridge = bridgeBuilder
@@ -2361,7 +2361,7 @@ class BridgeTest {
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Address expectedAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
+        LegacyAddress expectedAddress = LegacyAddress.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
         when(bridgeSupportMock.getProposedFederationAddress()).thenReturn(Optional.of(expectedAddress));
 
         Bridge bridge = bridgeBuilder
@@ -3241,9 +3241,9 @@ class BridgeTest {
                     anyInt(),
                     any(byte[].class),
                     any(Keccak256.class),
-                    any(Address.class),
+                    any(LegacyAddress.class),
                     any(RskAddress.class),
-                    any(Address.class),
+                    any(LegacyAddress.class),
                     any(boolean.class)
                 );
             }

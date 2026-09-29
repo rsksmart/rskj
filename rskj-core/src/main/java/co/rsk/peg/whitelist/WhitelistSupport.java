@@ -1,6 +1,6 @@
 package co.rsk.peg.whitelist;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.Coin;
 import java.math.BigInteger;
 import java.util.Optional;
@@ -86,7 +86,7 @@ public interface WhitelistSupport {
      * @param height the Bitcoin network height where the peg-in transaction was included
      * @return true if sender is authorized to peg-in the corresponding amount, false otherwise
      */
-    boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height);
+    boolean verifyLockSenderIsWhitelisted(LegacyAddress senderBtcAddress, Coin totalAmount, int height);
 
     /**
      * Saves the whitelisted addresses to the storage

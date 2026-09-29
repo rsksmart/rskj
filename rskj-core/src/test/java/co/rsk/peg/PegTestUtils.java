@@ -97,7 +97,7 @@ public final class PegTestUtils {
     public static Script createOpReturnScriptForRsk(
         int protocolVersion,
         RskAddress rskDestinationAddress,
-        Optional<Address> btcRefundAddressOptional
+        Optional<LegacyAddress> btcRefundAddressOptional
     ) {
         int index = 0;
         int payloadLength;
@@ -125,7 +125,7 @@ public final class PegTestUtils {
         index += rskDestinationAddress.getBytes().length;
 
         if (btcRefundAddressOptional.isPresent()) {
-            Address btcRefundAddress = btcRefundAddressOptional.get();
+            LegacyAddress btcRefundAddress = btcRefundAddressOptional.get();
             if (btcRefundAddress.isP2SHAddress()) {
                 payloadBytes[index] = 2; // P2SH address type
             } else {
@@ -148,7 +148,7 @@ public final class PegTestUtils {
     public static Script createOpReturnScriptWithInvalidPrefix(
         int protocolVersion,
         RskAddress rskDestinationAddress,
-        Optional<Address> btcRefundAddressOptional
+        Optional<LegacyAddress> btcRefundAddressOptional
     ) {
         int index = 0;
         int payloadLength;
@@ -176,7 +176,7 @@ public final class PegTestUtils {
         index += rskDestinationAddress.getBytes().length;
 
         if (btcRefundAddressOptional.isPresent()) {
-            Address btcRefundAddress = btcRefundAddressOptional.get();
+            LegacyAddress btcRefundAddress = btcRefundAddressOptional.get();
             if (btcRefundAddress.isP2SHAddress()) {
                 payloadBytes[index] = 2; // P2SH address type
             } else {
@@ -219,7 +219,7 @@ public final class PegTestUtils {
      * Avoid using random values in tests
      */
     @Deprecated
-    public static Address createRandomP2PKHBtcAddress(NetworkParameters networkParameters) {
+    public static LegacyAddress createRandomP2PKHBtcAddress(NetworkParameters networkParameters) {
         BtcECKey key = new BtcECKey();
         return key.toAddress(networkParameters);
     }
@@ -261,7 +261,7 @@ public final class PegTestUtils {
         return entries;
     }
 
-    public static Address getFlyoverAddressFromRedeemScript(BridgeConstants bridgeConstants, Script redeemScript, Sha256Hash derivationArgumentHash) {
+    public static LegacyAddress getFlyoverAddressFromRedeemScript(BridgeConstants bridgeConstants, Script redeemScript, Sha256Hash derivationArgumentHash) {
 
         Keccak256 flyoverDerivationHash = new Keccak256(derivationArgumentHash.getBytes());
         Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
@@ -270,7 +270,7 @@ public final class PegTestUtils {
         );
 
         Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
-        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), flyoverP2SH);
+        return LegacyAddress.fromP2SHScript(bridgeConstants.getBtcParams(), flyoverP2SH);
     }
 
     public static Federation createSimpleActiveFederation(BridgeConstants bridgeConstants) {
@@ -308,9 +308,9 @@ public final class PegTestUtils {
     }
 
     public static TransactionOutput createP2pkhOutput(NetworkParameters networkParameters, Coin valuesToSend) {
-        Address address = networkParameters.getId().equals(NetworkParameters.ID_MAINNET)?
-                              Address.fromBase58(networkParameters, "1JMaBRALrJQArLrqe5zRSn3bVk1z9RGzML") :
-                              Address.fromBase58(networkParameters, "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn");
+        LegacyAddress address = networkParameters.getId().equals(NetworkParameters.ID_MAINNET)?
+                              LegacyAddress.fromBase58(networkParameters, "1JMaBRALrJQArLrqe5zRSn3bVk1z9RGzML") :
+                              LegacyAddress.fromBase58(networkParameters, "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn");
         return new TransactionOutput(networkParameters, null,
             valuesToSend,
             address
@@ -318,9 +318,9 @@ public final class PegTestUtils {
     }
 
     public static TransactionOutput createP2shOutput(NetworkParameters networkParameters, Coin valuesToSend) {
-        Address address = networkParameters.getId().equals(NetworkParameters.ID_MAINNET)?
-                              Address.fromBase58(networkParameters, "3FiMaJinRy86WgJZDfAfRUt2ZLEBGZSfLL") :
-                              Address.fromBase58(networkParameters, "2N7TdMZSYfwFMUwyr8YADSKUhLUyH6eqohz");
+        LegacyAddress address = networkParameters.getId().equals(NetworkParameters.ID_MAINNET)?
+                              LegacyAddress.fromBase58(networkParameters, "3FiMaJinRy86WgJZDfAfRUt2ZLEBGZSfLL") :
+                              LegacyAddress.fromBase58(networkParameters, "2N7TdMZSYfwFMUwyr8YADSKUhLUyH6eqohz");
         return new TransactionOutput(networkParameters, null,
             valuesToSend,
             address

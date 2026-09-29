@@ -18,7 +18,7 @@
 
 package co.rsk.peg.whitelist;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -36,9 +36,9 @@ import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
 class LockWhitelistTest {
-    private Map<Address, LockWhitelistEntry> addresses;
+    private Map<LegacyAddress, LockWhitelistEntry> addresses;
     private LockWhitelist whitelist;
-    private Address existingAddress;
+    private LegacyAddress existingAddress;
 
     @BeforeEach
     void createWhitelist() {
@@ -46,7 +46,7 @@ class LockWhitelistTest {
         int existingPrivate = 300;
         addresses = Arrays.stream(new Integer[]{ 100, 200, existingPrivate, 400 })
             .map(i -> {
-                Address address = BtcECKey.fromPrivate(BigInteger.valueOf(i)).toAddress(params);
+                LegacyAddress address = BtcECKey.fromPrivate(BigInteger.valueOf(i)).toAddress(params);
                 if (i == existingPrivate) {
                     existingAddress = address;
                 }
@@ -69,11 +69,11 @@ class LockWhitelistTest {
 
     @Test
     void isWhitelisted() {
-        for (Address address : addresses.keySet()) {
+        for (LegacyAddress address : addresses.keySet()) {
             assertExistance(address, true);
         }
 
-        Address randomAddress = Address.fromBase58(
+        LegacyAddress randomAddress = LegacyAddress.fromBase58(
           NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
           "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
@@ -83,7 +83,7 @@ class LockWhitelistTest {
 
     @Test
     void addOneOff() {
-        Address randomAddress = Address.fromBase58(
+        LegacyAddress randomAddress = LegacyAddress.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
         );
@@ -99,7 +99,7 @@ class LockWhitelistTest {
 
     @Test
     void addUnlimited() {
-        Address randomAddress = Address.fromBase58(
+        LegacyAddress randomAddress = LegacyAddress.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
         );
@@ -115,7 +115,7 @@ class LockWhitelistTest {
 
     @Test
     void addOneOffAfterUnlimited() {
-        Address randomAddress = Address.fromBase58(
+        LegacyAddress randomAddress = LegacyAddress.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
         );
@@ -131,7 +131,7 @@ class LockWhitelistTest {
 
     @Test
     void addUnlimitedAfterOneOff() {
-        Address randomAddress = Address.fromBase58(
+        LegacyAddress randomAddress = LegacyAddress.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
         );
@@ -173,7 +173,7 @@ class LockWhitelistTest {
 
     @Test
     void consumeUnlimited() {
-        Address randomAddress = Address.fromBase58(
+        LegacyAddress randomAddress = LegacyAddress.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
         );
@@ -192,7 +192,7 @@ class LockWhitelistTest {
     @Test
     void canLockOneOff() {
 
-        Address randomAddress = Address.fromBase58(
+        LegacyAddress randomAddress = LegacyAddress.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
         );
@@ -209,7 +209,7 @@ class LockWhitelistTest {
     @Test
     void cantLockOneOffMoreThanMaxValue() {
 
-        Address randomAddress = Address.fromBase58(
+        LegacyAddress randomAddress = LegacyAddress.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
         );
@@ -226,7 +226,7 @@ class LockWhitelistTest {
     @Test
     void cantLockOneOffAfterConsume() {
 
-        Address randomAddress = Address.fromBase58(
+        LegacyAddress randomAddress = LegacyAddress.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
         );
@@ -243,7 +243,7 @@ class LockWhitelistTest {
     @Test
     void canLockUnlimited() {
 
-        Address randomAddress = Address.fromBase58(
+        LegacyAddress randomAddress = LegacyAddress.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
         );
@@ -256,7 +256,7 @@ class LockWhitelistTest {
     @Test
     void canLockUnlimitedAfterConsume() {
 
-        Address randomAddress = Address.fromBase58(
+        LegacyAddress randomAddress = LegacyAddress.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
         );
@@ -287,7 +287,7 @@ class LockWhitelistTest {
         Assertions.assertEquals(addresses.size(), whitelist.getAll().size());
     }
 
-    private void assertExistance(Address address, boolean exists) {
+    private void assertExistance(LegacyAddress address, boolean exists) {
         Assertions.assertEquals(exists, whitelist.isWhitelisted(address));
         Assertions.assertEquals(exists, whitelist.isWhitelisted(address.getHash160()));
     }

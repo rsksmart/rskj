@@ -1,6 +1,6 @@
 package co.rsk.peg.btcLockSender;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
@@ -11,7 +11,7 @@ import org.ethereum.util.ByteUtil;
 public class P2shP2wshBtcLockSender implements BtcLockSender {
 
     private TxSenderAddressType txSenderAddressType;
-    private Address btcAddress;
+    private LegacyAddress btcAddress;
 
     public P2shP2wshBtcLockSender() {
         this.txSenderAddressType = TxSenderAddressType.P2SHP2WSH;
@@ -23,7 +23,7 @@ public class P2shP2wshBtcLockSender implements BtcLockSender {
     }
 
     @Override
-    public Address getBTCAddress() {
+    public LegacyAddress getBTCAddress() {
         return this.btcAddress;
     }
 
@@ -69,7 +69,7 @@ public class P2shP2wshBtcLockSender implements BtcLockSender {
             byte[] hashedAgain = Sha256Hash.hash(merged);
             byte[] scriptPubKey = HashUtil.ripemd160(hashedAgain);
 
-            this.btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
+            this.btcAddress = new LegacyAddress(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
         } catch (Exception e) {
             return false;
         }

@@ -18,7 +18,7 @@
 
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
@@ -47,7 +47,7 @@ public abstract class Federation {
     protected Script redeemScript;
     protected int formatVersion;
     protected Script p2shScript;
-    protected Address address;
+    protected LegacyAddress address;
 
     protected Federation(
         FederationArgs federationArgs,
@@ -119,9 +119,9 @@ public abstract class Federation {
         return p2shScript;
     }
 
-    public Address getAddress() {
+    public LegacyAddress getAddress() {
         if (address == null) {
-            address = Address.fromP2SHScript(btcParams, getP2SHScript());
+            address = LegacyAddress.fromP2SHScript(btcParams, getP2SHScript());
         }
 
         return address;

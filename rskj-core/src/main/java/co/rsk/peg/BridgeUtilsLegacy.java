@@ -118,7 +118,7 @@ public class BridgeUtilsLegacy {
     }
 
     @Deprecated
-    protected static Address deserializeBtcAddressWithVersionLegacy(
+    protected static LegacyAddress deserializeBtcAddressWithVersionLegacy(
         NetworkParameters networkParameters,
         ActivationConfig.ForBlock activations,
         byte[] addressBytes) throws BridgeIllegalArgumentException {
@@ -137,7 +137,7 @@ public class BridgeUtilsLegacy {
         byte[] hashBytes = new byte[20];
         System.arraycopy(addressBytes, 1, hashBytes, 0, 20);
 
-        return new Address(networkParameters, version, hashBytes);
+        return new LegacyAddress(networkParameters, version, hashBytes);
     }
 
     /**

@@ -80,7 +80,7 @@ class BridgeUtilsLegacyTest {
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        Address address = BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+        LegacyAddress address = BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
             bridgeConstantsRegtest.getBtcParams(),
             activations,
             addressBytes
@@ -149,7 +149,7 @@ class BridgeUtilsLegacyTest {
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        Address address = BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+        LegacyAddress address = BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
             bridgeConstantsMainnet.getBtcParams(),
             activations,
             addressBytes
@@ -184,7 +184,7 @@ class BridgeUtilsLegacyTest {
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        Address address = BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+        LegacyAddress address = BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
             bridgeConstantsMainnet.getBtcParams(),
             activations,
             addressBytes
@@ -225,7 +225,7 @@ class BridgeUtilsLegacyTest {
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex).concat(extraData));
 
         // The extra data should be ignored
-        Address address = BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+        LegacyAddress address = BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
             bridgeConstantsRegtest.getBtcParams(),
             activations,
             addressBytes
@@ -260,7 +260,7 @@ class BridgeUtilsLegacyTest {
     ) {
         SimpleBtcTransaction simpleBtcTransaction = btcTransactionProvider.provide(constants);
         BtcTransaction btcTx = simpleBtcTransaction.getBtcTransaction();
-        Address address = simpleBtcTransaction.getDestinationAddress();
+        LegacyAddress address = simpleBtcTransaction.getDestinationAddress();
         // Add output to a random btc address to test that only output sent to the given address
         // are being taken into account
         btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(constants.getBtcParams()));
@@ -280,7 +280,7 @@ class BridgeUtilsLegacyTest {
         Coin expectedResult = Coin.COIN.multiply(2);
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-            Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+            LegacyAddress btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
             btcTx.addOutput(Coin.COIN, btcAddress);
             btcTx.addOutput(Coin.COIN, btcAddress);
             return new SimpleBtcTransaction(btcTx, btcAddress);
@@ -293,7 +293,7 @@ class BridgeUtilsLegacyTest {
     void getAmountSentToAddress_no_outputs() {
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-            Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+            LegacyAddress btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
             return new SimpleBtcTransaction(btcTx, btcAddress);
         };
         testGetAmountSentToAddress(bridgeConstantsRegtest, btcTransactionProvider, Coin.ZERO);
@@ -304,7 +304,7 @@ class BridgeUtilsLegacyTest {
     void getAmountSentToAddress_zero_amount() {
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-            Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+            LegacyAddress btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
             btcTx.addOutput(Coin.ZERO, btcAddress);
             return new SimpleBtcTransaction(btcTx, btcAddress);
         };
@@ -317,7 +317,7 @@ class BridgeUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-            Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+            LegacyAddress btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
             btcTx.addOutput(Coin.ZERO, btcAddress);
             return new SimpleBtcTransaction(btcTx, btcAddress);
         };
@@ -332,7 +332,7 @@ class BridgeUtilsLegacyTest {
     ) {
         SimpleBtcTransaction simpleBtcTransaction = btcTransactionProvider.provide(bridgeConstants);
         BtcTransaction btcTx = simpleBtcTransaction.getBtcTransaction();
-        Address address = simpleBtcTransaction.getDestinationAddress();
+        LegacyAddress address = simpleBtcTransaction.getDestinationAddress();
 
         // Add output to a random btc address to test that only utxos sent to the given address are being returned
         btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()));
@@ -364,7 +364,7 @@ class BridgeUtilsLegacyTest {
 
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-            Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+            LegacyAddress btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
             btcTx.addOutput(Coin.COIN, btcAddress);
             return new SimpleBtcTransaction(btcTx, btcAddress);
         };
@@ -388,7 +388,7 @@ class BridgeUtilsLegacyTest {
         };
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-            Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+            LegacyAddress btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
             return new SimpleBtcTransaction(btcTx, btcAddress);
         };
         testGetUTXOsSentToAddress(
@@ -429,7 +429,7 @@ class BridgeUtilsLegacyTest {
             btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()));
             btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()));
 
-            Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+            LegacyAddress btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
             btcTx.addOutput(Coin.COIN, btcAddress);
             btcTx.addOutput(Coin.COIN, btcAddress);
             btcTx.addOutput(Coin.COIN, btcAddress);
@@ -454,7 +454,7 @@ class BridgeUtilsLegacyTest {
 
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-            Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+            LegacyAddress btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
             btcTx.addOutput(Coin.COIN, btcAddress);
             return new SimpleBtcTransaction(btcTx, btcAddress);
         };
@@ -515,9 +515,9 @@ class BridgeUtilsLegacyTest {
 
     private class SimpleBtcTransaction {
         private BtcTransaction btcTransaction;
-        private Address destinationAddress;
+        private LegacyAddress destinationAddress;
 
-        SimpleBtcTransaction(BtcTransaction btcTransaction, Address destinationAddress) {
+        SimpleBtcTransaction(BtcTransaction btcTransaction, LegacyAddress destinationAddress) {
             this.btcTransaction = btcTransaction;
             this.destinationAddress = destinationAddress;
         }
@@ -526,7 +526,7 @@ class BridgeUtilsLegacyTest {
             return btcTransaction;
         }
 
-        public Address getDestinationAddress() {
+        public LegacyAddress getDestinationAddress() {
             return destinationAddress;
         }
     }

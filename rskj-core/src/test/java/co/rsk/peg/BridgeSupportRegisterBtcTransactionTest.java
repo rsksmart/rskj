@@ -92,7 +92,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     private WhitelistStorageProvider whitelistStorageProvider;
     private FederationStorageProvider federationStorageProvider;
     private FederationSupport federationSupport;
-    private Address userAddress;
+    private LegacyAddress userAddress;
 
     private List<BtcECKey> retiredFedSigners;
     private Federation retiredFed;
@@ -486,7 +486,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
         whitelistStorageProvider = mock(WhitelistStorageProvider.class);
-        when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
+        when(lockWhitelist.isWhitelistedFor(any(LegacyAddress.class), any(Coin.class), any(int.class))).thenReturn(true);
         when(whitelistStorageProvider.getLockWhitelist(allActivations, btcMainnetParams)).thenReturn(lockWhitelist);
 
         feePerKbSupport = mock(FeePerKbSupport.class);
@@ -606,7 +606,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
         whitelistStorageProvider = mock(WhitelistStorageProvider.class);
-        when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
+        when(lockWhitelist.isWhitelistedFor(any(LegacyAddress.class), any(Coin.class), any(int.class))).thenReturn(true);
         when(whitelistStorageProvider.getLockWhitelist(activations, btcMainnetParams)).thenReturn(lockWhitelist);
 
         federationSupport = FederationSupportBuilder.builder()
@@ -1873,7 +1873,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         private final Script multiSigRedeemScript = ScriptBuilder.createRedeemScript(2, multiSigKeys);
         private final Coin prevTxValue = Coin.COIN;
         private final Coin valueToSend = prevTxValue.div(4);
-        private final Address anotherOutputAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "address");
+        private final LegacyAddress anotherOutputAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "address");
 
         private BtcTransaction prevTx;
 
@@ -3045,8 +3045,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
@@ -3059,7 +3059,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             activations
         );
 
-        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -3114,8 +3114,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
@@ -3128,7 +3128,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             activations
         );
 
-        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -3184,8 +3184,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
         when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
@@ -3198,7 +3198,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             activations
         );
 
-        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -3261,8 +3261,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
         when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        LegacyAddress userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        LegacyAddress lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
@@ -3275,7 +3275,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             activations
         );
 
-        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        LegacyAddress flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
             activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
@@ -3359,7 +3359,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
-        when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
+        when(lockWhitelist.isWhitelistedFor(any(LegacyAddress.class), any(Coin.class), any(int.class))).thenReturn(true);
         when(whitelistStorageProvider.getLockWhitelist(allActivations, btcRegTestsParams)).thenReturn(lockWhitelist);
 
         when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, activations)).thenReturn(activeFederationUtxos);

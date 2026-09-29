@@ -20,7 +20,7 @@ package co.rsk.peg.utils;
 
 import static org.hamcrest.CoreMatchers.is;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -102,7 +102,7 @@ class BtcTransactionFormatUtilsTest {
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
         otherTx.setWitness(0, txWit);
-        otherTx.addOutput(Coin.COIN, Address.fromBase58(params, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        otherTx.addOutput(Coin.COIN, LegacyAddress.fromBase58(params, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
 
         BtcTransaction tx = new BtcTransaction(params, Hex.decode(rawTx));
 

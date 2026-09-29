@@ -121,7 +121,7 @@ public class PegUtilsLegacy {
      * @return true if it is a peg-out. Otherwise returns false.
      */
     @Deprecated
-    protected static boolean txIsFromOldFederation(BtcTransaction btcTx, Address oldFederationAddress) {
+    protected static boolean txIsFromOldFederation(BtcTransaction btcTx, LegacyAddress oldFederationAddress) {
         Script p2shScript = ScriptBuilder.createP2SHOutputScript(oldFederationAddress.getHash160());
 
         for (int i = 0; i < btcTx.getInputs().size(); i++) {
@@ -298,7 +298,7 @@ public class PegUtilsLegacy {
     protected static PegTxType getTransactionType(
         BtcTransaction btcTx,
         FederationContext federationContext,
-        Address oldFederationAddress,
+        LegacyAddress oldFederationAddress,
         ActivationConfig.ForBlock activations,
         Coin minimumPeginTxValue,
         Wallet federationsWallet

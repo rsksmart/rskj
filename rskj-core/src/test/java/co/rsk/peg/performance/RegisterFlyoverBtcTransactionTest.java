@@ -47,9 +47,9 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
     }
 
     private static class AddressesBuilder {
-        protected static Address userRefundAddress;
+        protected static LegacyAddress userRefundAddress;
         protected static RskAddress lbcAddress;
-        protected static Address lpBtcAddress;
+        protected static LegacyAddress lpBtcAddress;
 
         protected static void build() {
             BtcECKey btcECKeyUserRefundAddress = new BtcECKey();
@@ -174,7 +174,7 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
             );
 
             Script flyoverP2SH = getFlyoverFederationOutputScript(flyoverRedeemScript, genesisFederation.getFormatVersion());
-            Address flyoverFederationAddress = Address.fromP2SHScript(
+            LegacyAddress flyoverFederationAddress = LegacyAddress.fromP2SHScript(
                 bridgeConstants.getBtcParams(), flyoverP2SH);
 
             btcTx = createBtcTransactionWithOutputToAddress(totalAmount, flyoverFederationAddress);
@@ -193,7 +193,7 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
         };
     }
 
-    private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
+    private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, LegacyAddress btcAddress) {
         BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
         tx.addOutput(amount, btcAddress);
         BtcECKey srcKey = new BtcECKey();
@@ -204,8 +204,8 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
 
     private Keccak256 getFlyoverDerivationHash(
             Keccak256 derivationArgumentsHash,
-            Address userRefundAddress,
-            Address lpBtcAddress,
+            LegacyAddress userRefundAddress,
+            LegacyAddress lpBtcAddress,
             RskAddress lbcAddress
     ) {
         byte[] flyoverDerivationHashData = derivationArgumentsHash.getBytes();
@@ -257,7 +257,7 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
         return new Keccak256(HashUtil.keccak256(result));
     }
 
-    private byte[] getBytesFromBtcAddress(Address btcAddress) {
+    private byte[] getBytesFromBtcAddress(LegacyAddress btcAddress) {
         byte[] hash160 = btcAddress.getHash160();
         byte[] version = BigInteger.valueOf(btcAddress.getVersion()).toByteArray();
         byte[] btcAddressBytes = new byte[hash160.length + version.length];
