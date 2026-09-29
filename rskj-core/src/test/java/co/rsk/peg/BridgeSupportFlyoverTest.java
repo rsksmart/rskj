@@ -3640,6 +3640,147 @@ class BridgeSupportFlyoverTest {
         Assertions.assertArrayEquals(flyoverFederationInformation.getFederationRedeemScriptHash(), obtainedFlyoverFederationInformation.getFederationRedeemScriptHash());
     }
 
+    @Nested
+    class SaveFlyoverActiveFederationDataInStorage {
+        private static final Sha256Hash FLYOVER_BTC_TX_HASH = BitcoinTestUtils.createHash(1);
+        private static final Keccak256 FLYOVER_DERIVATION_HASH = RskTestUtils.createHash(1);
+        private static final Coin FIRST_UTXO_VALUE = Coin.COIN;
+        private static final long FIRST_UTXO_OUTPUT_INDEX = 0;
+        private static final Coin SECOND_UTXO_VALUE = Coin.COIN.multiply(2);
+        private static final long SECOND_UTXO_OUTPUT_INDEX = 1;
+
+        private final FlyoverFederationInformation flyoverFederationInformation = new FlyoverFederationInformation(
+            FLYOVER_DERIVATION_HASH,
+            new byte[]{0x1},
+            new byte[]{0x1}
+        );
+        private final UTXO firstUtxo = UTXOBuilder.builder()
+            .withTransactionHash(FLYOVER_BTC_TX_HASH)
+            .withOutpointIndex(FIRST_UTXO_OUTPUT_INDEX)
+            .withValue(FIRST_UTXO_VALUE)
+            .build();
+        private final UTXO secondUtxo = UTXOBuilder.builder()
+            .withTransactionHash(FLYOVER_BTC_TX_HASH)
+            .withOutpointIndex(SECOND_UTXO_OUTPUT_INDEX)
+            .withValue(SECOND_UTXO_VALUE)
+            .build();
+
+        private List<LogInfo> logs;
+        private FederationSupport federationSupport;
+        private BridgeSupport bridgeSupport;
+
+        private void setUpWithActivations(ActivationConfig.ForBlock activations) {
+            logs = new ArrayList<>();
+            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+                bridgeConstantsRegtest,
+                activations,
+                logs
+            );
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationConstantsRegtest)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withActivations(activations)
+                .build();
+
+            BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                repository,
+                btcRegTestParams,
+                activations
+            );
+
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeConstantsRegtest)
+                .withProvider(bridgeStorageProvider)
+                .withActivations(activations)
+                .withEventLogger(bridgeEventLogger)
+                .withFederationSupport(federationSupport)
+                .build();
+        }
+
+        @Test
+        void saveFlyoverActiveFederationDataInStorage_afterRSKIP643_shouldEmitFlyoverUtxosRegistered() {
+            // arrange
+            setUpWithActivations(allActivations);
+
+            // act
+            bridgeSupport.saveFlyoverActiveFederationDataInStorage(
+                FLYOVER_BTC_TX_HASH,
+                FLYOVER_DERIVATION_HASH,
+                flyoverFederationInformation,
+                List.of(firstUtxo)
+            );
+
+            // assert
+            assertLogFlyoverUtxosRegistered(
+                logs,
+                FLYOVER_BTC_TX_HASH,
+                List.of(FIRST_UTXO_VALUE),
+                List.of(FIRST_UTXO_OUTPUT_INDEX),
+                federationSupport.getActiveFederationAddress(),
+                FLYOVER_DERIVATION_HASH
+            );
+        }
+
+        @Test
+        void saveFlyoverActiveFederationDataInStorage_withMultipleUtxos_afterRSKIP643_shouldEmitFlyoverUtxosRegisteredWithAllUtxos() {
+            // arrange
+            setUpWithActivations(allActivations);
+
+            // act
+            bridgeSupport.saveFlyoverActiveFederationDataInStorage(
+                FLYOVER_BTC_TX_HASH,
+                FLYOVER_DERIVATION_HASH,
+                flyoverFederationInformation,
+                List.of(firstUtxo, secondUtxo)
+            );
+
+            // assert
+            assertLogFlyoverUtxosRegistered(
+                logs,
+                FLYOVER_BTC_TX_HASH,
+                List.of(FIRST_UTXO_VALUE, SECOND_UTXO_VALUE),
+                List.of(FIRST_UTXO_OUTPUT_INDEX, SECOND_UTXO_OUTPUT_INDEX),
+                federationSupport.getActiveFederationAddress(),
+                FLYOVER_DERIVATION_HASH
+            );
+        }
+
+        @Test
+        void saveFlyoverActiveFederationDataInStorage_withEmptyUtxos_afterRSKIP643_shouldNotEmitFlyoverUtxosRegistered() {
+            // arrange
+            setUpWithActivations(allActivations);
+
+            // act
+            bridgeSupport.saveFlyoverActiveFederationDataInStorage(
+                FLYOVER_BTC_TX_HASH,
+                FLYOVER_DERIVATION_HASH,
+                flyoverFederationInformation,
+                List.of()
+            );
+
+            // assert
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+
+        @Test
+        void saveFlyoverActiveFederationDataInStorage_beforeRSKIP643_shouldNotEmitFlyoverUtxosRegistered() {
+            // arrange
+            setUpWithActivations(ActivationConfigsForTest.vetiver900().forBlock(0));
+
+            // act
+            bridgeSupport.saveFlyoverActiveFederationDataInStorage(
+                FLYOVER_BTC_TX_HASH,
+                FLYOVER_DERIVATION_HASH,
+                flyoverFederationInformation,
+                List.of(firstUtxo)
+            );
+
+            // assert
+            assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+        }
+    }
+
     private interface BtcTransactionProvider {
         BtcTransaction provide(BridgeConstants bridgeConstants, Address activeFederationAddress, Address retiringFederationAddress);
     }
