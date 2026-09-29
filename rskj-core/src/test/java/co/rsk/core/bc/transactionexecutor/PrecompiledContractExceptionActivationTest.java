@@ -30,6 +30,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.NetworkUpgrade;
 import org.ethereum.core.*;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.db.BlockStoreDummy;
@@ -441,7 +442,7 @@ class PrecompiledContractExceptionActivationTest {
                 heights.put(rule, activations.isActive(rule, 0L) ? 0L : -1L);
             }
             heights.put(ConsensusRule.RSKIP545, 0L);
-            return new ActivationConfig(heights, new HashMap<>());
+            return new ActivationConfig(heights, new EnumMap<>(NetworkUpgrade.class));
         }
     }
 

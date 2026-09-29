@@ -445,7 +445,9 @@ public class EthModule
     private void handleTransactionExceptionIfHappens(String method, ProgramResult res) {
         Exception exception = res.getException();
         if (exception != null) {
-            LOGGER.warn("{}(): execution failed: {}", method, exception.toString());
+            if (LOGGER.isWarnEnabled()) {
+                LOGGER.warn("{}(): execution failed: {}", method, exception.toString());
+            }
             throw RskJsonRpcRequestException.transactionExecutionFailedError();
         }
     }
