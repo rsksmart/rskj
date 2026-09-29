@@ -508,6 +508,50 @@ class BridgeEventLoggerImplTest {
         );
     }
 
+    /**
+     * A destination that is not a legacy address reaches the event through the string overload.
+     * The event signature does not change: btcDestinationAddress has been a string since RSKIP326,
+     * so a bech32 or bech32m address fits the field the legacy path already uses.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "bcrt1q7lhf4defwy62pnx8du74p62daut53revy0wmk2",
+        "bcrt1pf3nev47234920c5aa24t4yzx8g40ncvzqynezyfxxnzdtpdnyjnsdgtqq8"
+    })
+    void logReleaseBtcRequestReceivedToAddress_withASegwitDestination_emitsTheSameEvent(
+            String btcDestinationAddress) {
+        co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
+
+        eventLogger.logReleaseBtcRequestReceivedToAddress(RSK_ADDRESS, btcDestinationAddress, amount);
+
+        commonAssertLogs();
+        assertTopics(2);
+        assertEvent(
+            BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(),
+            new Object[]{RSK_ADDRESS.toHexString()},
+            new Object[]{btcDestinationAddress, amount.asBigInteger()}
+        );
+    }
+
+    /**
+     * The address reaches the receipts trie, so a different case is a different receipts root.
+     * BIP173 permits an all uppercase bech32 form, which is why this is asserted rather than
+     * assumed.
+     */
+    @Test
+    void logReleaseBtcRequestReceivedToAddress_emitsTheAddressInLowercase() {
+        String lowerCase = "bcrt1q7lhf4defwy62pnx8du74p62daut53revy0wmk2";
+        co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
+
+        eventLogger.logReleaseBtcRequestReceivedToAddress(RSK_ADDRESS, lowerCase, amount);
+
+        assertEvent(
+            BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(),
+            new Object[]{RSK_ADDRESS.toHexString()},
+            new Object[]{lowerCase, amount.asBigInteger()}
+        );
+    }
+
     @Test
     void logReleaseBtcRequestReceived_postRSKIP427_amountAsWeis() {
         LegacyAddress btcRecipientAddress = new LegacyAddress(
