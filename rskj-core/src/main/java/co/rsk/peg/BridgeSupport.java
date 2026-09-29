@@ -3197,6 +3197,14 @@ public class BridgeSupport {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverRetiringFederationInformation(flyoverRetiringFederationInformation);
         federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosList);
+        federationSupport.getRetiringFederationAddress().ifPresent(retiringFederationAddress ->
+            logFlyoverUtxosRegistered(
+                btcTxHash,
+                utxosList,
+                retiringFederationAddress,
+                derivationHash
+            )
+        );
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {
