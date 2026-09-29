@@ -47,6 +47,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.BeforeEach;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -220,6 +221,27 @@ class BridgeSupportReleaseBtcToTest {
             "",
             signatureCache
         );
+    }
+
+    /**
+     * The method only exists once RSKIP690 is active. Nothing else asserts the gate, and a method
+     * that answered before its activation would be a consensus change on every node that replayed
+     * the chain.
+     */
+    @Test
+    void releaseBtcTo_beforeRskip690_isNotEnabled() {
+        ActivationConfig.ForBlock beforeActivation = ActivationConfigsForTest.papyrus200().forBlock(0L);
+
+        assertFalse(BridgeMethods.RELEASE_BTC_TO.isEnabled(beforeActivation));
+        assertTrue(BridgeMethods.RELEASE_BTC_TO.isEnabled(ALL_ACTIVATIONS));
+    }
+
+    /** releaseBtc has no such gate, and this change must not give it one. */
+    @Test
+    void releaseBtc_shouldStayEnabledBeforeRskip690() {
+        ActivationConfig.ForBlock beforeActivation = ActivationConfigsForTest.papyrus200().forBlock(0L);
+
+        assertTrue(BridgeMethods.RELEASE_BTC.isEnabled(beforeActivation));
     }
 
     private Transaction buildReleaseTx() {
