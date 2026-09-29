@@ -3652,10 +3652,16 @@ class BridgeSupportFlyoverTest {
         private static final Coin SECOND_UTXO_VALUE = Coin.COIN.multiply(2);
         private static final long SECOND_UTXO_OUTPUT_INDEX = 1;
 
-        private final FlyoverFederationInformation flyoverFederationInformation = new FlyoverFederationInformation(
+        private final FlyoverFederationInformation activeFlyoverFederationInformation = new FlyoverFederationInformation(
             FLYOVER_DERIVATION_HASH,
             new byte[]{0x1},
             new byte[]{0x1}
+        );
+        // different redeem script hashes, so the retiring federation's information is stored under its own key
+        private final FlyoverFederationInformation retiringFlyoverFederationInformation = new FlyoverFederationInformation(
+            FLYOVER_DERIVATION_HASH,
+            new byte[]{0x2},
+            new byte[]{0x2}
         );
         private final UTXO firstUtxo = UTXOBuilder.builder()
             .withTransactionHash(FLYOVER_BTC_TX_HASH)
@@ -3682,6 +3688,8 @@ class BridgeSupportFlyoverTest {
             .build();
 
         private List<LogInfo> logs;
+        private BridgeStorageProvider bridgeStorageProvider;
+        private FederationSupport federationSupport;
         private BridgeSupport bridgeSupport;
 
         private void setUpWithActivations(ActivationConfig.ForBlock activations) {
@@ -3699,14 +3707,14 @@ class BridgeSupportFlyoverTest {
                 + federationConstantsMainnet.getFederationActivationAge(activations);
             Block executionBlock = createRskBlock(activeFederationActivationBlockNumber);
 
-            FederationSupport federationSupport = federationSupportBuilder
+            federationSupport = federationSupportBuilder
                 .withFederationConstants(federationConstantsMainnet)
                 .withFederationStorageProvider(federationStorageProvider)
                 .withRskExecutionBlock(executionBlock)
                 .withActivations(activations)
                 .build();
 
-            BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+            bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
                 btcMainnetParams,
                 activations
@@ -3722,6 +3730,30 @@ class BridgeSupportFlyoverTest {
                 .build();
         }
 
+        private void assertFlyoverActiveFederationDataWasSaved(List<UTXO> expectedUtxos) {
+            assertTrue(bridgeStorageProvider.isFlyoverDerivationHashUsed(FLYOVER_BTC_TX_HASH, FLYOVER_DERIVATION_HASH));
+            assertFlyoverFederationInformationWasSaved(activeFlyoverFederationInformation);
+            assertEquals(expectedUtxos, federationSupport.getActiveFederationBtcUTXOs());
+        }
+
+        private void assertFlyoverRetiringFederationDataWasSaved(List<UTXO> expectedUtxos) {
+            assertTrue(bridgeStorageProvider.isFlyoverDerivationHashUsed(FLYOVER_BTC_TX_HASH, FLYOVER_DERIVATION_HASH));
+            assertFlyoverFederationInformationWasSaved(retiringFlyoverFederationInformation);
+            assertEquals(expectedUtxos, federationSupport.getRetiringFederationBtcUTXOs());
+        }
+
+        private void assertFlyoverFederationInformationWasSaved(FlyoverFederationInformation expectedFlyoverFederationInformation) {
+            Optional<FlyoverFederationInformation> savedFlyoverFederationInformation = bridgeStorageProvider.getFlyoverFederationInformation(
+                expectedFlyoverFederationInformation.getFlyoverFederationRedeemScriptHash()
+            );
+            assertTrue(savedFlyoverFederationInformation.isPresent());
+            assertEquals(expectedFlyoverFederationInformation.getDerivationHash(), savedFlyoverFederationInformation.get().getDerivationHash());
+            assertArrayEquals(
+                expectedFlyoverFederationInformation.getFederationRedeemScriptHash(),
+                savedFlyoverFederationInformation.get().getFederationRedeemScriptHash()
+            );
+        }
+
         @Test
         void saveFlyoverActiveFederationDataInStorage_afterRSKIP643_shouldEmitFlyoverUtxosRegistered() {
             // arrange
@@ -3731,9 +3763,11 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.saveFlyoverActiveFederationDataInStorage(
                 FLYOVER_BTC_TX_HASH,
                 FLYOVER_DERIVATION_HASH,
-                flyoverFederationInformation,
+                activeFlyoverFederationInformation,
                 List.of(firstUtxo)
             );
+            // the storage provider only reads the saved data back from the repository
+            bridgeSupport.save();
 
             // assert
             assertLogFlyoverUtxosRegistered(
@@ -3744,6 +3778,7 @@ class BridgeSupportFlyoverTest {
                 activeFederation.getAddress(),
                 FLYOVER_DERIVATION_HASH
             );
+            assertFlyoverActiveFederationDataWasSaved(List.of(firstUtxo));
         }
 
         @Test
@@ -3755,9 +3790,11 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.saveFlyoverActiveFederationDataInStorage(
                 FLYOVER_BTC_TX_HASH,
                 FLYOVER_DERIVATION_HASH,
-                flyoverFederationInformation,
+                activeFlyoverFederationInformation,
                 List.of(firstUtxo, secondUtxo)
             );
+            // the storage provider only reads the saved data back from the repository
+            bridgeSupport.save();
 
             // assert
             assertLogFlyoverUtxosRegistered(
@@ -3768,6 +3805,7 @@ class BridgeSupportFlyoverTest {
                 activeFederation.getAddress(),
                 FLYOVER_DERIVATION_HASH
             );
+            assertFlyoverActiveFederationDataWasSaved(List.of(firstUtxo, secondUtxo));
         }
 
         @Test
@@ -3779,12 +3817,15 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.saveFlyoverActiveFederationDataInStorage(
                 FLYOVER_BTC_TX_HASH,
                 FLYOVER_DERIVATION_HASH,
-                flyoverFederationInformation,
+                activeFlyoverFederationInformation,
                 List.of()
             );
+            // the storage provider only reads the saved data back from the repository
+            bridgeSupport.save();
 
             // assert
             assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverActiveFederationDataWasSaved(List.of());
         }
 
         @Test
@@ -3796,12 +3837,15 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.saveFlyoverActiveFederationDataInStorage(
                 FLYOVER_BTC_TX_HASH,
                 FLYOVER_DERIVATION_HASH,
-                flyoverFederationInformation,
+                activeFlyoverFederationInformation,
                 List.of(firstUtxo)
             );
+            // the storage provider only reads the saved data back from the repository
+            bridgeSupport.save();
 
             // assert
             assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverActiveFederationDataWasSaved(List.of(firstUtxo));
         }
 
         @Test
@@ -3813,9 +3857,11 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.saveFlyoverRetiringFederationDataInStorage(
                 FLYOVER_BTC_TX_HASH,
                 FLYOVER_DERIVATION_HASH,
-                flyoverFederationInformation,
+                retiringFlyoverFederationInformation,
                 List.of(firstUtxo)
             );
+            // the storage provider only reads the saved data back from the repository
+            bridgeSupport.save();
 
             // assert
             assertLogFlyoverUtxosRegistered(
@@ -3826,6 +3872,7 @@ class BridgeSupportFlyoverTest {
                 retiringFederation.getAddress(),
                 FLYOVER_DERIVATION_HASH
             );
+            assertFlyoverRetiringFederationDataWasSaved(List.of(firstUtxo));
         }
 
         @Test
@@ -3837,9 +3884,11 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.saveFlyoverRetiringFederationDataInStorage(
                 FLYOVER_BTC_TX_HASH,
                 FLYOVER_DERIVATION_HASH,
-                flyoverFederationInformation,
+                retiringFlyoverFederationInformation,
                 List.of(firstUtxo, secondUtxo)
             );
+            // the storage provider only reads the saved data back from the repository
+            bridgeSupport.save();
 
             // assert
             assertLogFlyoverUtxosRegistered(
@@ -3850,6 +3899,7 @@ class BridgeSupportFlyoverTest {
                 retiringFederation.getAddress(),
                 FLYOVER_DERIVATION_HASH
             );
+            assertFlyoverRetiringFederationDataWasSaved(List.of(firstUtxo, secondUtxo));
         }
 
         @Test
@@ -3861,12 +3911,15 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.saveFlyoverRetiringFederationDataInStorage(
                 FLYOVER_BTC_TX_HASH,
                 FLYOVER_DERIVATION_HASH,
-                flyoverFederationInformation,
+                retiringFlyoverFederationInformation,
                 List.of()
             );
+            // the storage provider only reads the saved data back from the repository
+            bridgeSupport.save();
 
             // assert
             assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverRetiringFederationDataWasSaved(List.of());
         }
 
         @Test
@@ -3878,12 +3931,15 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.saveFlyoverRetiringFederationDataInStorage(
                 FLYOVER_BTC_TX_HASH,
                 FLYOVER_DERIVATION_HASH,
-                flyoverFederationInformation,
+                retiringFlyoverFederationInformation,
                 List.of(firstUtxo)
             );
+            // the storage provider only reads the saved data back from the repository
+            bridgeSupport.save();
 
             // assert
             assertEventWasNotEmitted(logs, BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent());
+            assertFlyoverRetiringFederationDataWasSaved(List.of(firstUtxo));
         }
 
         @Test
@@ -3896,15 +3952,17 @@ class BridgeSupportFlyoverTest {
             bridgeSupport.saveFlyoverActiveFederationDataInStorage(
                 FLYOVER_BTC_TX_HASH,
                 FLYOVER_DERIVATION_HASH,
-                flyoverFederationInformation,
+                activeFlyoverFederationInformation,
                 List.of(firstUtxo)
             );
             bridgeSupport.saveFlyoverRetiringFederationDataInStorage(
                 FLYOVER_BTC_TX_HASH,
                 FLYOVER_DERIVATION_HASH,
-                flyoverFederationInformation,
+                retiringFlyoverFederationInformation,
                 List.of(secondUtxo)
             );
+            // the storage provider only reads the saved data back from the repository
+            bridgeSupport.save();
 
             // assert
             assertLogFlyoverUtxosRegistered(
@@ -3923,6 +3981,8 @@ class BridgeSupportFlyoverTest {
                 retiringFederation.getAddress(),
                 FLYOVER_DERIVATION_HASH
             );
+            assertFlyoverActiveFederationDataWasSaved(List.of(firstUtxo));
+            assertFlyoverRetiringFederationDataWasSaved(List.of(secondUtxo));
         }
     }
 
