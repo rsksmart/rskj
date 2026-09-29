@@ -795,13 +795,13 @@ class BridgeSupportRegisterBtcTransactionTest {
     class PeginTransaction {
         private static final int ONE_PEGIN_UTXO = 1;
         private static final int MANY_PEGIN_UTXOS = 10;
-        private static final Coin peginValue = Coin.COIN;
-        // pegin output to the federation is the first one
-        private static final long outputIndexForPeginOutputToFed = 0;
+        private static final Coin PEGIN_VALUE = Coin.COIN;
+        // pegin v1 and legacy output to the federation is the first one
+        private static final long OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED = 0;
         // pegin output to the retiring federation comes after the one to the active federation
-        private static final long outputIndexForPeginOutputToRetiringFed = 1;
+        private static final long OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_RETIRING_FED = 1;
         // in buildPeginV1, the output to the federation comes after the op return output
-        private static final long outputIndexForPeginV1OutputToFed = 1;
+        private static final long OUTPUT_INDEX_FOR_PEGIN_V1_OUTPUT_TO_FED = 1;
 
         private void assertPeginIsRejectedAndRefunded(ActivationConfig.ForBlock activations, BtcTransaction btcTransaction, Coin sentAmount, RejectedPeginReason expectedRejectedPeginReason) throws IOException {
             verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
@@ -1113,7 +1113,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 activations,
                 btcTransaction,
                 List.of(amountToSend),
-                List.of(outputIndexForPeginOutputToFed),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
                 activeFederation
             );
         }
@@ -1219,7 +1219,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 activations,
                 btcTransaction,
                 List.of(amountToSend),
-                List.of(outputIndexForPeginOutputToFed),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
                 activeFederation
             );
         }
@@ -1270,7 +1270,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 activations,
                 btcTransaction,
                 List.of(minimumPeginTxValue),
-                List.of(outputIndexForPeginOutputToFed),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
                 activeFederation
             );
         }
@@ -1431,14 +1431,14 @@ class BridgeSupportRegisterBtcTransactionTest {
                 activations,
                 btcTransaction,
                 List.of(minimumPeginTxValue),
-                List.of(outputIndexForPeginOutputToFed),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
                 activeFederation
             );
             verifyLogUtxosRegistered(
                 activations,
                 btcTransaction,
                 List.of(minimumPeginTxValue),
-                List.of(outputIndexForPeginOutputToRetiringFed),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_RETIRING_FED),
                 retiringFederation
             );
         }
@@ -1517,14 +1517,14 @@ class BridgeSupportRegisterBtcTransactionTest {
                 activations,
                 btcTransaction,
                 List.of(minimumPeginTxValue),
-                List.of(outputIndexForPeginOutputToFed),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
                 activeFederation
             );
             verifyLogUtxosRegistered(
                 activations,
                 btcTransaction,
                 List.of(minimumPeginTxValue),
-                List.of(outputIndexForPeginOutputToRetiringFed),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_RETIRING_FED),
                 retiringFederation
             );
         }
@@ -1576,7 +1576,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 activations,
                 btcTransaction,
                 List.of(amountToSend),
-                List.of(outputIndexForPeginOutputToFed),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
                 retiringFederation
             );
         }
@@ -1727,7 +1727,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 activations,
                 btcTransaction,
                 List.of(amountToSend),
-                List.of(outputIndexForPeginOutputToFed),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
                 activeFederation
             );
         }
@@ -1785,7 +1785,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 activations,
                 btcTransaction,
                 List.of(amountToSend),
-                List.of(outputIndexForPeginOutputToFed),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
                 retiringFederation
             );
         }
@@ -2476,7 +2476,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             BtcTransaction pegin = new BtcTransaction(networkParameters);
             pegin.addInput(BTC_TX_HASH, 0, userScriptPubKey);
 
-            pegin.addOutput(peginValue, federation.getAddress());
+            pegin.addOutput(PEGIN_VALUE, federation.getAddress());
 
             return pegin;
         }
@@ -2486,7 +2486,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             pegin.addInput(BTC_TX_HASH, 0, userScriptPubKey);
 
             pegin.addOutput(Coin.ZERO, opReturnScript);
-            pegin.addOutput(peginValue, federation.getAddress());
+            pegin.addOutput(PEGIN_VALUE, federation.getAddress());
 
             return pegin;
         }
@@ -2751,8 +2751,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 assertLogUtxosRegistered(
                     logs,
                     pegin.getHash(),
-                    List.of(peginValue),
-                    List.of(outputIndexForPeginOutputToFed),
+                    List.of(PEGIN_VALUE),
+                    List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
                     activeFederation.getAddress()
                 );
             }
@@ -2761,8 +2761,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 assertLogUtxosRegistered(
                     logs,
                     pegin.getHash(),
-                    List.of(peginValue),
-                    List.of(outputIndexForPeginV1OutputToFed),
+                    List.of(PEGIN_VALUE),
+                    List.of(OUTPUT_INDEX_FOR_PEGIN_V1_OUTPUT_TO_FED),
                     activeFederation.getAddress()
                 );
             }

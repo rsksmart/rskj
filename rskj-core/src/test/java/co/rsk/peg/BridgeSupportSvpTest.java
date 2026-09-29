@@ -75,22 +75,23 @@ class BridgeSupportSvpTest {
         Coin.valueOf(300_000)
     );
     private static final Coin svpFundTxOutputsValue = bridgeMainNetConstants.getSvpFundTxOutputsValue();
-    private static final Coin changeValue = Coin.COIN.multiply(10);
-    private static final Coin svpSpendTxOutputValue = Coin.valueOf(1762);
-    // svp fund tx change output comes after the proposed and flyover proposed federation outputs
-    private static final long outputIndexForSvpFundTxChange = 2;
-    // pegout change output comes after the user output
-    private static final long outputIndexForPegoutChange = 1;
-    // pegin output to the active federation is the first one
-    private static final long outputIndexForPeginOutputToFed = 0;
-    // svp spend tx output to the active federation is the only one
-    private static final long outputIndexForSpendTxOutputToFed = 0;
     private static final Coin totalValueSentToProposedFederation = svpFundTxOutputsValue.multiply(2);
     private static final Coin feePerKb = Coin.valueOf(1000L);
     private static final Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
 
     private static final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
     private static final CallTransaction.Function commitFederationFailedEvent = BridgeEvents.COMMIT_FEDERATION_FAILED.getEvent();
+
+    private static final Coin CHANGE_VALUE = Coin.COIN.multiply(10);
+    private static final Coin SVP_SPEND_TX_OUTPUT_VALUE = Coin.valueOf(1762);
+    // svp fund tx change output comes after the proposed and flyover proposed federation outputs
+    private static final long OUTPUT_INDEX_FOR_SVP_FUND_TX_CHANGE = 2;
+    // pegout change output comes after the user output
+    private static final long OUTPUT_INDEX_FOR_PEGOUT_CHANGE = 1;
+    // pegin output to the active federation is the first one
+    private static final long OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED = 0;
+    // svp spend tx output to the active federation is the only one
+    private static final long OUTPUT_INDEX_FOR_SPEND_TX_OUTPUT_TO_FED = 0;
 
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
 
@@ -699,7 +700,7 @@ class BridgeSupportSvpTest {
             BtcTransaction pegout = PegoutTransactionBuilder.builder()
                 .withActiveFederation(activeFederation)
                 .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
-                .withChangeAmount(changeValue)
+                .withChangeAmount(CHANGE_VALUE)
                 .withSignatures(activeFederationKeys)
                 .build();
 
@@ -819,8 +820,8 @@ class BridgeSupportSvpTest {
             assertLogUtxosRegistered(
                 logs,
                 svpFundTransactionHash,
-                List.of(changeValue),
-                List.of(outputIndexForSvpFundTxChange),
+                List.of(CHANGE_VALUE),
+                List.of(OUTPUT_INDEX_FOR_SVP_FUND_TX_CHANGE),
                 activeFederation.getAddress()
             );
         }
@@ -1128,7 +1129,7 @@ class BridgeSupportSvpTest {
             BtcTransaction pegout = PegoutTransactionBuilder.builder()
                 .withActiveFederation(activeFederation)
                 .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
-                .withChangeAmount(changeValue)
+                .withChangeAmount(CHANGE_VALUE)
                 .withSignatures(activeFederationKeys)
                 .build();
 
@@ -1542,6 +1543,7 @@ class BridgeSupportSvpTest {
 
             // assert
             assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, btcBlockWithPmtHeight);
+            assertLogUtxosRegisteredForSvpSpendTransaction(SVP_SPEND_TX_OUTPUT_VALUE);
         }
 
         @Test
@@ -1590,7 +1592,7 @@ class BridgeSupportSvpTest {
 
             // assert
             assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, btcBlockWithPmtHeight);
-            assertLogUtxosRegisteredForSvpSpendTransaction(svpSpendTxOutputValue);
+            assertLogUtxosRegisteredForSvpSpendTransaction(SVP_SPEND_TX_OUTPUT_VALUE);
         }
 
         @Test
@@ -1647,7 +1649,7 @@ class BridgeSupportSvpTest {
 
             // assert utxo was registered just once
             assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, btcBlockWithPmtHeight);
-            assertLogUtxosRegisteredForSvpSpendTransaction(svpSpendTxOutputValue);
+            assertLogUtxosRegisteredForSvpSpendTransaction(SVP_SPEND_TX_OUTPUT_VALUE);
             assertEquals(1, getLogsBySignature(logs, BridgeEvents.UTXOS_REGISTERED.getEvent()).size());
         }
 
@@ -1656,7 +1658,7 @@ class BridgeSupportSvpTest {
                 logs,
                 svpSpendTransaction.getHash(),
                 List.of(expectedValueSent),
-                List.of(outputIndexForSpendTxOutputToFed),
+                List.of(OUTPUT_INDEX_FOR_SPEND_TX_OUTPUT_TO_FED),
                 activeFederation.getAddress()
             );
         }
@@ -1666,7 +1668,7 @@ class BridgeSupportSvpTest {
                 logs,
                 pegin.getHash(),
                 List.of(expectedValueSent),
-                List.of(outputIndexForPeginOutputToFed),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
                 activeFederation.getAddress()
             );
         }
@@ -1817,7 +1819,7 @@ class BridgeSupportSvpTest {
     private void addOutputChange(BtcTransaction transaction) {
         // add output to the active fed
         Script activeFederationP2SHScript = activeFederation.getP2SHScript();
-        transaction.addOutput(changeValue, activeFederationP2SHScript);
+        transaction.addOutput(CHANGE_VALUE, activeFederationP2SHScript);
     }
 
     private void signInputs(BtcTransaction transaction) {
@@ -1838,7 +1840,7 @@ class BridgeSupportSvpTest {
         createSpendTransaction();
         addSpendTransactionInputs();
 
-        addSpendTransactionOutput(svpSpendTxOutputValue);
+        addSpendTransactionOutput(SVP_SPEND_TX_OUTPUT_VALUE);
     }
 
     private void createSpendTransaction() {
@@ -1928,8 +1930,8 @@ class BridgeSupportSvpTest {
         assertLogUtxosRegistered(
             logs,
             pegout.getHash(),
-            List.of(changeValue),
-            List.of(outputIndexForPegoutChange),
+            List.of(CHANGE_VALUE),
+            List.of(OUTPUT_INDEX_FOR_PEGOUT_CHANGE),
             activeFederation.getAddress()
         );
     }
