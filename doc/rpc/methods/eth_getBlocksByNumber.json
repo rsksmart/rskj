@@ -1,0 +1,65 @@
+{
+  "name": "eth_getBlocksByNumber",
+  "summary": "Returns every block known at the given height, canonical or not.",
+  "description": "Where `eth_getBlockByNumber` answers with the one block on the main chain, this returns all blocks the node has stored at that height and flags which of them is canonical. That makes reorganisations at a given height observable. The height accepts a hex quantity or a plain decimal string; block tags such as `latest` are not accepted.",
+  "params": [
+    {
+      "name": "blockNumber",
+      "required": true,
+      "description": "The height to look up, as a hex quantity or a decimal string",
+      "schema": {
+        "title": "blockNumberHexOrDecimal",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BlockNumberHex"
+          },
+          {
+            "title": "blockNumberDecimalString",
+            "type": "string",
+            "description": "The block's height as a plain decimal string",
+            "pattern": "^[0-9]+$"
+          }
+        ]
+      }
+    }
+  ],
+  "result": {
+    "name": "blocks",
+    "description": "Every block stored at that height; empty if the node has none",
+    "schema": {
+      "title": "blocksAtHeight",
+      "type": "array",
+      "description": "Every block stored at that height",
+      "items": {
+        "$ref": "#/components/schemas/BlockInformation"
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "getBlocksByNumberExample",
+      "description": "A height with one canonical block and one sibling left behind by a reorganisation",
+      "params": [
+        {
+          "name": "blockNumber",
+          "value": "0x1b4"
+        }
+      ],
+      "result": {
+        "name": "blocksAtHeightResult",
+        "value": [
+          {
+            "hash": "0x1cd0e5cbd3ba2c9b48eb6ff5bc0be6ba9d5a0e1b7c4ec9b3e6cb1d1b3f7a1e0d",
+            "totalDifficulty": "0x4a817c800",
+            "inMainChain": true
+          },
+          {
+            "hash": "0x7bf47e6a5a3a3e37d4b0e0f7c0b3a4b1b04ac9b6de8b5ff1a0e5a51e9c3a1f42",
+            "totalDifficulty": "0x4a817c7f0",
+            "inMainChain": false
+          }
+        ]
+      }
+    }
+  ]
+}

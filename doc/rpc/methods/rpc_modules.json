@@ -1,0 +1,37 @@
+{
+  "name": "rpc_modules",
+  "summary": "Returns the JSON-RPC modules this node serves.",
+  "description": "Returns a map of enabled module name to module version. A namespace absent from this map is not routed by this node, so every method in it will be rejected.",
+  "params": [],
+  "result": {
+    "name": "modules",
+    "description": "The enabled modules, mapped to their version",
+    "schema": {
+      "title": "modules",
+      "type": "object",
+      "description": "The enabled modules, mapped to their version",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "modulesExample",
+      "params": [],
+      "result": {
+        "name": "modulesResult",
+        "value": {
+          "eth": "1.0",
+          "net": "1.0",
+          "rpc": "1.0",
+          "web3": "1.0",
+          "evm": "1.0",
+          "personal": "1.0",
+          "txpool": "1.0",
+          "rsk": "1.0"
+        }
+      }
+    }
+  ]
+}

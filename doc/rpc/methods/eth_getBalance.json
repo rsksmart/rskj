@@ -1,6 +1,6 @@
 {
   "name": "eth_getBalance",
-  "summary": "Returns the balance of the account of given address, 0 if not fo",
+  "summary": "Returns the balance of the account of the given address, `0x0` if the address is not found.",
   "params": [
     {
       "name": "address",
@@ -35,6 +35,27 @@
         {
           "name": "blockTag",
           "value": "latest"
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": "0x0234c8a3397aab58"
+      }
+    },
+    {
+      "name": "getBalanceAtBlockHashExample",
+      "description": "Referencing the block by hash instead of by tag, using the block reference object form. `requireCanonical` travels as the JSON string `\"true\"`, not as a boolean.",
+      "params": [
+        {
+          "name": "address",
+          "value": "0xc94770007dda54cF92009BFF0dE90c06F603a09f"
+        },
+        {
+          "name": "blockRef",
+          "value": {
+            "blockHash": "0xf1652d8322a880e520f996f7d28b645814a58a202d7d2ab7f058e5566fe4f9f3",
+            "requireCanonical": "true"
+          }
         }
       ],
       "result": {
