@@ -36,13 +36,12 @@ import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
-import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCode;
 import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
 import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegin.*;
@@ -78,10 +77,6 @@ import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Helper class to move funds from btc to rsk and rsk to btc
- * @author Oscar Guindzberg
- */
 public class BridgeSupport {
     public static final RskAddress BURN_ADDRESS = new RskAddress("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
@@ -93,18 +88,11 @@ public class BridgeSupport {
     public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE = -4;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE = -5;
 
-    public static final Integer RECEIVE_HEADER_CALLED_TOO_SOON = -1;
-    public static final Integer RECEIVE_HEADER_BLOCK_TOO_OLD = -2;
-    public static final Integer RECEIVE_HEADER_CANT_FOUND_PREVIOUS_BLOCK = -3;
-    public static final Integer RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED = -4;
-    public static final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
-
     // Enough depth to be able to search backwards one month worth of blocks
     // (6 blocks/hour, 24 hours/day, 30 days/month)
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
 
     private static final Logger logger = LoggerFactory.getLogger(BridgeSupport.class);
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final BridgeConstants bridgeConstants;
     private final NetworkParameters networkParameters;
@@ -230,32 +218,32 @@ public class BridgeSupport {
         this.ensureBtcBlockChain();
 
         if (btcBlockStore.get(header.getHash()) != null) {
-            return RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED;
+            return ReceiveHeaderResponseCode.BLOCK_PREVIOUSLY_SAVED.getCode();
         }
 
-        long diffTimeStamp = bridgeConstants.getMinSecondsBetweenCallsToReceiveHeader();
+        long minSecondsBetweenCallsToReceiveHeader = bridgeConstants.getMinSecondsBetweenCallsToReceiveHeader();
+        long currentTimestampInSeconds = rskExecutionBlock.getTimestamp();
+        Optional<Long> optionalLastTimestamp = provider.getReceiveHeadersLastTimestampInSeconds();
 
-        long currentTimeStamp = rskExecutionBlock.getTimestamp(); //in seconds
-        Optional<Long> optionalLastTimeStamp = provider.getReceiveHeadersLastTimestamp();
-        if (optionalLastTimeStamp.isPresent() && (currentTimeStamp - optionalLastTimeStamp.get() < diffTimeStamp)) {
-            logger.warn("Receive header last TimeStamp less than {} milliseconds", diffTimeStamp);
-            return RECEIVE_HEADER_CALLED_TOO_SOON;
+        if (optionalLastTimestamp.isPresent() && (currentTimestampInSeconds - optionalLastTimestamp.get() < minSecondsBetweenCallsToReceiveHeader)) {
+            logger.warn("[receiveHeader] Receive header last timestamp less than {} seconds", minSecondsBetweenCallsToReceiveHeader);
+            return ReceiveHeaderResponseCode.CALLED_TOO_SOON.getCode();
         }
 
         //Depth
         StoredBlock previousBlock = btcBlockStore.get(header.getPrevBlockHash());
         if (previousBlock == null) {
-            return RECEIVE_HEADER_CANT_FOUND_PREVIOUS_BLOCK;
+            return ReceiveHeaderResponseCode.CANNOT_FIND_PREVIOUS_BLOCK.getCode();
         }
 
         // height of best chain - height of current header block greater than maximum depth accepted
         if ((getBtcBlockchainBestChainHeight() - (previousBlock.getHeight() + 1)) > bridgeConstants.getMaxDepthBlockchainAccepted()) {
-            return RECEIVE_HEADER_BLOCK_TOO_OLD;
+            return ReceiveHeaderResponseCode.BLOCK_TOO_OLD.getCode();
         }
 
         if (cannotProcessNextBlock(previousBlock)) {
             logger.warn("[receiveHeader] Header {} has too much work to be processed", header.getHash());
-            return RECEIVE_HEADER_UNEXPECTED_EXCEPTION;
+            return ReceiveHeaderResponseCode.UNEXPECTED_EXCEPTION.getCode();
         }
 
         try {
@@ -263,11 +251,12 @@ public class BridgeSupport {
         } catch (Exception e) {
             // If we try to add an orphan header bitcoinj throws an exception
             // This catches that case and any other exception that may be thrown
-            logger.warn("Exception adding btc header {}", header.getHash(), e);
-            return RECEIVE_HEADER_UNEXPECTED_EXCEPTION;
+            logger.warn("[receiveHeader] Exception adding btc header {}", header.getHash(), e);
+            return ReceiveHeaderResponseCode.UNEXPECTED_EXCEPTION.getCode();
         }
-        provider.setReceiveHeadersLastTimestamp(currentTimeStamp);
-        return 0;
+        provider.setReceiveHeadersLastTimestampInSeconds(currentTimestampInSeconds);
+
+        return ReceiveHeaderResponseCode.SUCCESSFUL.getCode();
     }
 
     private boolean cannotProcessNextBlock(StoredBlock previousBlock) {
@@ -1279,9 +1268,9 @@ public class BridgeSupport {
                     logger.error(
                         "[processFundsMigration] Unable to complete retiring federation migration. Balance left: {} in {}",
                         retiringFederationWallet.getBalance().toFriendlyString(),
-                        retiringFederationWallet.getWatchedAddresses()
+                        retiringFederationWallet.getWatchedAddresses(),
+                        e
                     );
-                    panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
                 }
             }
 
@@ -2080,8 +2069,7 @@ public class BridgeSupport {
                     i++;
                 }
             } catch (Exception e) {
-                logger.error("Failed to walk the block chain whilst constructing a locator");
-                panicProcessor.panic("btcblockchain", "Failed to walk the block chain whilst constructing a locator");
+                logger.error("[getBtcBlockchainBlockLocator] Failed to walk the block chain whilst constructing a locator");
                 throw new RuntimeException(e);
             }
             if (!stop) {
@@ -2745,7 +2733,7 @@ public class BridgeSupport {
     ) throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         if (!BridgeUtils.isContractTx(rskTx)) {
             logger.debug("[registerFlyoverBtcTransaction] (rskTx:{}) Sender not a contract", rskTx.getHash());
-            return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.getCode());
         }
 
         RskAddress sender = rskTx.getSender(signatureCache);
@@ -2756,7 +2744,7 @@ public class BridgeSupport {
                 sender,
                 lbcAddress
             );
-            return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.getCode());
         }
 
         Context.propagate(btcContext);
@@ -2778,7 +2766,7 @@ public class BridgeSupport {
                 btcTxHash,
                 flyoverDerivationHash
             );
-            return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode());
         }
 
         if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
@@ -2786,7 +2774,7 @@ public class BridgeSupport {
                 "[registerFlyoverBtcTransaction] (btcTx:{}) error during validationsForRegisterBtcTransaction",
                 btcTxHash
             );
-            return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_VALIDATIONS_ERROR.getCode());
         }
 
         BtcTransaction btcTx = new BtcTransaction(networkParameters, btcTxSerialized);
@@ -2803,7 +2791,7 @@ public class BridgeSupport {
                 btcTxHashWithoutWitness,
                 flyoverDerivationHash
             );
-            return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode());
         }
 
         FlyoverFederationInformation flyoverActiveFederationInformation = createFlyoverFederationInformation(flyoverDerivationHash);
@@ -2823,17 +2811,17 @@ public class BridgeSupport {
             logger.debug("[registerFlyoverBtcTransaction] flyover retiring federation address: {}", flyoverRetiringFederationAddress);
         }
 
-        FlyoverTxResponseCodes txResponse = BridgeUtils.validateFlyoverPeginValue(
+        FlyoverTxResponseCode txResponse = BridgeUtils.validateFlyoverPeginValue(
             activations,
             bridgeConstants,
             btcContext,
             btcTx,
             addresses
         );
-        logger.debug("[registerFlyoverBtcTransaction] validate flyover pegin value response: {}", txResponse.value());
+        logger.debug("[registerFlyoverBtcTransaction] validate flyover pegin value response: {}", txResponse.getCode());
 
-        if (txResponse != FlyoverTxResponseCodes.VALID_TX){
-            return BigInteger.valueOf(txResponse.value());
+        if (txResponse != FlyoverTxResponseCode.VALID_TX){
+            return BigInteger.valueOf(txResponse.getCode());
         }
 
         Coin totalAmount = BridgeUtils.getAmountSentToAddresses(
@@ -2859,12 +2847,12 @@ public class BridgeSupport {
             if (shouldTransferToContract) {
                 logger.debug("[registerFlyoverBtcTransaction] Returning to liquidity provider");
                 generateFlyoverRejectionReleaseWithWalletProvider(btcTx, lpBtcAddress, flyoverDerivationHash, addresses, rskTxHash, totalAmount, walletProvider);
-                return BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value());
+                return BigInteger.valueOf(FlyoverTxResponseCode.REFUNDED_LP_ERROR.getCode());
             }
 
             logger.debug("[registerFlyoverBtcTransaction] Returning to user");
             generateFlyoverRejectionReleaseWithWalletProvider(btcTx, userRefundAddress, flyoverDerivationHash, addresses, rskTxHash, totalAmount, walletProvider);
-            return BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode());
         }
 
         transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
@@ -3276,7 +3264,6 @@ public class BridgeSupport {
                 rskTxHash,
                 totalAmount
             );
-            panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s. Reason %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount, buildReturnResult.responseCode()));
             return;
         }
 

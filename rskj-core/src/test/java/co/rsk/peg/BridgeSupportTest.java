@@ -7483,8 +7483,8 @@ class BridgeSupportTest {
         bridgeSupport.receiveHeader(btcBlock2);
 
         verify(btcBlockStore).put(storedBlock2);
-        verify(provider).getReceiveHeadersLastTimestamp();
-        verify(provider).setReceiveHeadersLastTimestamp(anyLong());
+        verify(provider).getReceiveHeadersLastTimestampInSeconds();
+        verify(provider).setReceiveHeadersLastTimestampInSeconds(anyLong());
     }
 
     @Test
@@ -7516,7 +7516,7 @@ class BridgeSupportTest {
         );
 
         long timeStampOld = executionBlockMock.getTimestamp() - (bridgeConstantsRegtest.getMinSecondsBetweenCallsToReceiveHeader() * 2L);
-        doReturn(Optional.of(timeStampOld)).when(provider).getReceiveHeadersLastTimestamp();
+        doReturn(Optional.of(timeStampOld)).when(provider).getReceiveHeadersLastTimestampInSeconds();
 
         StoredBlock storedBlock2 = mock(StoredBlock.class);
         when(storedBlock.build(btcBlock2)).thenReturn(storedBlock2);
@@ -7524,7 +7524,7 @@ class BridgeSupportTest {
         bridgeSupport.receiveHeader(btcBlock2);
 
         verify(btcBlockStore).put(storedBlock2);
-        verify(provider).setReceiveHeadersLastTimestamp(anyLong());
+        verify(provider).setReceiveHeadersLastTimestampInSeconds(anyLong());
     }
 
     @Test
@@ -7556,15 +7556,15 @@ class BridgeSupportTest {
         );
 
         long timeStampOld = executionBlockMock.getTimestamp() - (bridgeConstantsRegtest.getMinSecondsBetweenCallsToReceiveHeader() / 2L);
-        doReturn(Optional.of(timeStampOld)).when(provider).getReceiveHeadersLastTimestamp();
+        doReturn(Optional.of(timeStampOld)).when(provider).getReceiveHeadersLastTimestampInSeconds();
 
         int result = bridgeSupport.receiveHeader(btcBlock2);
 
         StoredBlock storedBlock2 = storedBlock.build(btcBlock2);
 
         verify(btcBlockStore, never()).put(storedBlock2);
-        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
-        assertEquals(-1, result);
+        verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
+        assertEquals(ReceiveHeaderResponseCode.CALLED_TOO_SOON.getCode(), result);
     }
 
     @Test
@@ -7594,9 +7594,9 @@ class BridgeSupportTest {
         int result = bridgeSupport.receiveHeader(btcBlock2);
 
         verify(btcBlockStore, never()).put(storedBlock);
-        verify(provider).getReceiveHeadersLastTimestamp();
-        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
-        assertEquals(-99, result);
+        verify(provider).getReceiveHeadersLastTimestampInSeconds();
+        verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
+        assertEquals(ReceiveHeaderResponseCode.UNEXPECTED_EXCEPTION.getCode(), result);
     }
 
     @Test
@@ -7631,8 +7631,8 @@ class BridgeSupportTest {
 
         // Calls put when is adding the block header. (Saves his storedBlock)
         verify(btcBlockStore, never()).put(storedBlock2);
-        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
-        assertEquals(-3, result);
+        verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
+        assertEquals(ReceiveHeaderResponseCode.CANNOT_FIND_PREVIOUS_BLOCK.getCode(), result);
     }
 
     @Test
@@ -7667,8 +7667,8 @@ class BridgeSupportTest {
         StoredBlock storedBlock2 = storedBlock.build(btcBlock2);
 
         verify(btcBlockStore, never()).put(storedBlock2);
-        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
-        assertEquals(-2, result);
+        verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
+        assertEquals(ReceiveHeaderResponseCode.BLOCK_TOO_OLD.getCode(), result);
     }
 
     @Test
@@ -7701,8 +7701,8 @@ class BridgeSupportTest {
 
         // Calls put when is adding the block header. (Saves his storedBlock)
         verify(btcBlockStore, never()).put(any(StoredBlock.class));
-        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
-        assertEquals(-4, result);
+        verify(provider, never()).setReceiveHeadersLastTimestampInSeconds(anyLong());
+        assertEquals(ReceiveHeaderResponseCode.BLOCK_PREVIOUSLY_SAVED.getCode(), result);
     }
 
     @Nested
@@ -7887,8 +7887,7 @@ class BridgeSupportTest {
             assertEquals(btcBlockStoreWithCachePreRSKIP434.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
 
             // assert receive header returns an exception and does not save the block
-            final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
-            assertThat(bridgeSupportPreRSKIP434.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_UNEXPECTED_EXCEPTION));
+            assertThat(bridgeSupportPreRSKIP434.receiveHeader(blockWithTooMuchWork), is(ReceiveHeaderResponseCode.UNEXPECTED_EXCEPTION.getCode()));
             assertNull(btcBlockStoreWithCachePreRSKIP434.get(blockWithTooMuchWork.getHash()));
         }
 
@@ -7930,8 +7929,7 @@ class BridgeSupportTest {
             assertEquals(btcBlockStoreWithCachePostRSKIP434.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
 
             // assert receive header returns successful response and saves the block
-            final Integer RECEIVE_HEADER_SUCCESSFUL = 0;
-            assertThat(bridgeSupportPostRSKIP434.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_SUCCESSFUL));
+            assertThat(bridgeSupportPostRSKIP434.receiveHeader(blockWithTooMuchWork), is(ReceiveHeaderResponseCode.SUCCESSFUL.getCode()));
             assertNotNull(btcBlockStoreWithCachePostRSKIP434.get(blockWithTooMuchWork.getHash()));
         }
 
@@ -7987,8 +7985,7 @@ class BridgeSupportTest {
             assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
 
             // assert receive header returns successful response and saves the block
-            final Integer RECEIVE_HEADER_SUCCESSFUL = 0;
-            assertThat(bridgeSupport.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_SUCCESSFUL));
+            assertThat(bridgeSupport.receiveHeader(blockWithTooMuchWork), is(ReceiveHeaderResponseCode.SUCCESSFUL.getCode()));
             assertNotNull(btcBlockStoreWithCache.get(blockWithTooMuchWork.getHash()));
         }
 
