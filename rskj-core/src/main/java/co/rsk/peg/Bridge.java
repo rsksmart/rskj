@@ -36,7 +36,7 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationChangeResponseCode;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.feeperkb.FeePerKbResponseCode;
-import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCode;
 import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.vote.ABICallSpec;
@@ -1379,7 +1379,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             );
         } catch (Exception e) {
             logger.warn("Exception in registerFlyoverBtcTransaction", e);
-            return BigInteger.valueOf(FlyoverTxResponseCodes.GENERIC_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.GENERIC_ERROR.getCode());
         }
     }
 

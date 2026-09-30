@@ -41,7 +41,7 @@ import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
-import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCode;
 import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
 import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegin.*;
@@ -2733,7 +2733,7 @@ public class BridgeSupport {
     ) throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         if (!BridgeUtils.isContractTx(rskTx)) {
             logger.debug("[registerFlyoverBtcTransaction] (rskTx:{}) Sender not a contract", rskTx.getHash());
-            return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.getCode());
         }
 
         RskAddress sender = rskTx.getSender(signatureCache);
@@ -2744,7 +2744,7 @@ public class BridgeSupport {
                 sender,
                 lbcAddress
             );
-            return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.getCode());
         }
 
         Context.propagate(btcContext);
@@ -2766,7 +2766,7 @@ public class BridgeSupport {
                 btcTxHash,
                 flyoverDerivationHash
             );
-            return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode());
         }
 
         if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
@@ -2774,7 +2774,7 @@ public class BridgeSupport {
                 "[registerFlyoverBtcTransaction] (btcTx:{}) error during validationsForRegisterBtcTransaction",
                 btcTxHash
             );
-            return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_VALIDATIONS_ERROR.getCode());
         }
 
         BtcTransaction btcTx = new BtcTransaction(networkParameters, btcTxSerialized);
@@ -2791,7 +2791,7 @@ public class BridgeSupport {
                 btcTxHashWithoutWitness,
                 flyoverDerivationHash
             );
-            return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode());
         }
 
         FlyoverFederationInformation flyoverActiveFederationInformation = createFlyoverFederationInformation(flyoverDerivationHash);
@@ -2811,17 +2811,17 @@ public class BridgeSupport {
             logger.debug("[registerFlyoverBtcTransaction] flyover retiring federation address: {}", flyoverRetiringFederationAddress);
         }
 
-        FlyoverTxResponseCodes txResponse = BridgeUtils.validateFlyoverPeginValue(
+        FlyoverTxResponseCode txResponse = BridgeUtils.validateFlyoverPeginValue(
             activations,
             bridgeConstants,
             btcContext,
             btcTx,
             addresses
         );
-        logger.debug("[registerFlyoverBtcTransaction] validate flyover pegin value response: {}", txResponse.value());
+        logger.debug("[registerFlyoverBtcTransaction] validate flyover pegin value response: {}", txResponse.getCode());
 
-        if (txResponse != FlyoverTxResponseCodes.VALID_TX){
-            return BigInteger.valueOf(txResponse.value());
+        if (txResponse != FlyoverTxResponseCode.VALID_TX){
+            return BigInteger.valueOf(txResponse.getCode());
         }
 
         Coin totalAmount = BridgeUtils.getAmountSentToAddresses(
@@ -2847,12 +2847,12 @@ public class BridgeSupport {
             if (shouldTransferToContract) {
                 logger.debug("[registerFlyoverBtcTransaction] Returning to liquidity provider");
                 generateFlyoverRejectionReleaseWithWalletProvider(btcTx, lpBtcAddress, flyoverDerivationHash, addresses, rskTxHash, totalAmount, walletProvider);
-                return BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value());
+                return BigInteger.valueOf(FlyoverTxResponseCode.REFUNDED_LP_ERROR.getCode());
             }
 
             logger.debug("[registerFlyoverBtcTransaction] Returning to user");
             generateFlyoverRejectionReleaseWithWalletProvider(btcTx, userRefundAddress, flyoverDerivationHash, addresses, rskTxHash, totalAmount, walletProvider);
-            return BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode());
         }
 
         transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
