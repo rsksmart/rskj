@@ -72,7 +72,16 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
         try {
             synchronized (transactionPool) {
-                Transaction tx = Transaction.fromCallArguments(args, getAccountNextNonce(senderAccount),  constants.getChainId());
+                // Resolved outside the parse catch: a pending-state failure is a node fault, not bad input.
+                if (args.getNonce() == null) {
+                    args.setNonce(getAccountNextNonce(senderAccount).get());
+                }
+                Transaction tx;
+                try {
+                    tx = Transaction.fromCallArguments(args, null, constants.getChainId());
+                } catch (IllegalArgumentException e) {
+                    throw invalidParamError("Invalid transaction: " + e.getMessage(), e);
+                }
                 tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
                 tx.checkInvalidChain(constants, ""+tx.getChainId());
                 TransactionPoolAddResult result = transactionGateway.receiveTransaction(new ImmutableTransaction(tx.getEncoded()));
@@ -85,8 +94,6 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
             return txHash;
 
-        } catch (IllegalArgumentException e) {
-            throw invalidParamError("Invalid transaction: " + e.getMessage(), e);
         } finally {
             LOGGER.debug("eth_sendTransaction({}): {}", args, txHash);
         }

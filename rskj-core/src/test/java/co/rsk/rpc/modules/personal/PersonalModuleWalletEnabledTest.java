@@ -112,6 +112,33 @@ class PersonalModuleWalletEnabledTest {
         verify(eth, never()).submitTransaction(any());
     }
 
+    @Test
+    void sendTransaction_pendingStateLookupFails_isNotReportedAsInvalidParams() {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount("passphrase1");
+        TransactionPool transactionPool = mock(TransactionPool.class);
+        when(transactionPool.getPendingState()).thenThrow(new IllegalArgumentException("The trie with root 0xabc is missing in this store"));
+        PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(config, mock(Ethereum.class), wallet, transactionPool);
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, new RskAddress(new ECKey().getAddress()));
+        args.setNonce(null);
+        CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> personalModuleWalletEnabled.sendTransaction(argsParam, "passphrase1"));
+    }
+
+    @Test
+    void sendTransaction_submitFailsWithIllegalArgument_isNotReportedAsInvalidParams() {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount("passphrase1");
+        Ethereum eth = mock(Ethereum.class);
+        when(eth.submitTransaction(any())).thenThrow(new IllegalArgumentException("The trie with root 0xabc is missing in this store"));
+        PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(config, eth, wallet, mock(TransactionPool.class));
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, new RskAddress(new ECKey().getAddress()));
+        CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> personalModuleWalletEnabled.sendTransaction(argsParam, "passphrase1"));
+    }
+
     private PersonalModuleWalletEnabled createPersonalModuleWalletEnabled(Wallet wallet) {
         return new PersonalModuleWalletEnabled(config, null, wallet, null);
     }

@@ -858,6 +858,33 @@ class EthModuleTest {
     }
 
     @Test
+    void sendTransaction_pendingStateLookupFails_isNotReportedAsInvalidParams() {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, wallet.addAccount());
+        args.setNonce(null);
+        TransactionPool transactionPool = mock(TransactionPool.class);
+        when(transactionPool.getPendingState()).thenThrow(new IllegalArgumentException("The trie with root 0xabc is missing in this store"));
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(Constants.regtest(), wallet, transactionPool, mock(TransactionGateway.class));
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        assertThrows(IllegalArgumentException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+    }
+
+    @Test
+    void sendTransaction_poolFailsWithIllegalArgument_isNotReportedAsInvalidParams() {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, wallet.addAccount());
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenThrow(new IllegalArgumentException("The trie with root 0xabc is missing in this store"));
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(Constants.regtest(), wallet, mock(TransactionPool.class), transactionGateway);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        assertThrows(IllegalArgumentException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+    }
+
+    @Test
     void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
         // Given
         Constants constants = Constants.regtest();
