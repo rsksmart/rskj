@@ -114,13 +114,14 @@ class ReversibleTransactionExecutorTest {
         RskAddress from = TestUtils.generateAddress("from");
         byte[] gasLimit = BigInteger.valueOf(20000).toByteArray();
         Block bestBlock = factory.getBlockchain().getBestBlock();
+        RskAddress coinbase = bestBlock.getCoinbase();
         ReversibleTransactionExecutor.ReversibleTransactionParams params = new ReversibleTransactionExecutor.ReversibleTransactionParams(
                 gasPrice, gasLimit, to, new byte[]{0}, data, from,
                 null, (byte) 0, TransactionType.LEGACY, null, null, null
         );
 
         TransactionExecutionRejectedException ex = Assertions.assertThrows(TransactionExecutionRejectedException.class,
-                () -> reversibleTransactionExecutor.executeTransactionAtBlock(bestBlock, bestBlock.getCoinbase(), params));
+                () -> reversibleTransactionExecutor.executeTransactionAtBlock(bestBlock, coinbase, params));
         assertEquals("Not enough gas for transaction execution: tx needs: " + intrinsic + " tx sent: 20000", ex.getMessage());
     }
 

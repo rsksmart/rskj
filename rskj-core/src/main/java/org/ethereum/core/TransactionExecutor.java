@@ -168,41 +168,12 @@ public class TransactionExecutor {
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
-        if (tx.isTypedTransactionNotAllowed(activations)) {
-            logger.warn("Transaction type {} is not supported before its activation, tx {}", tx.getTypePrefix(), tx.getHash());
-            execError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
+        if (!transactionTypeIsValid()) {
             return false;
-        }
-        if(tx.isType4()){
-            if(tx.isContractCreation()){
-                logger.warn("Transaction type {} can not execute a contract, tx {}", tx.getTypePrefix(), tx.getHash());
-                execError("transaction type " + tx.getTypePrefix() + " can not execute a contract");
-                return false;
-            }
-            if (!isSenderCodeValid()) {
-                logger.warn("Transaction type {} sender has non-delegated code, tx {}", tx.getTypePrefix(), tx.getHash());
-                execError("transaction type " + tx.getTypePrefix() + " sender must be an EOA or an already-delegated account");
-                return false;
-            }
-
-        }else{
-            if (tx.isInitCodeSizeInvalidForTx(activations)) {
-                String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
-                logger.warn(errorMessage);
-                execError(errorMessage);
-                return false;
-            }
         }
 
         if (localCall) {
-            // eth_call / eth_estimateGas skip the block-level checks below, but the intrinsic-cost
-            // check must still run: otherwise GasCost.subtract() throws later and leaks as -32603.
-            long localCallGasLimit = GasCost.toGas(tx.getGasLimit());
-            if (localCallGasLimit < basicTxCost) {
-                execError(String.format("Not enough gas for transaction execution: tx needs: %s tx sent: %s", basicTxCost, localCallGasLimit));
-                return false;
-            }
-            return true;
+            return localCallGasIsValid();
         }
 
 
@@ -239,6 +210,46 @@ public class TransactionExecutor {
         }
 
         return transactionAddressesAreValid();
+    }
+
+    private boolean transactionTypeIsValid() {
+        if (tx.isTypedTransactionNotAllowed(activations)) {
+            logger.warn("Transaction type {} is not supported before its activation, tx {}", tx.getTypePrefix(), tx.getHash());
+            execError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
+            return false;
+        }
+        if(tx.isType4()){
+            if(tx.isContractCreation()){
+                logger.warn("Transaction type {} can not execute a contract, tx {}", tx.getTypePrefix(), tx.getHash());
+                execError("transaction type " + tx.getTypePrefix() + " can not execute a contract");
+                return false;
+            }
+            if (!isSenderCodeValid()) {
+                logger.warn("Transaction type {} sender has non-delegated code, tx {}", tx.getTypePrefix(), tx.getHash());
+                execError("transaction type " + tx.getTypePrefix() + " sender must be an EOA or an already-delegated account");
+                return false;
+            }
+
+        }else{
+            if (tx.isInitCodeSizeInvalidForTx(activations)) {
+                String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
+                logger.warn(errorMessage);
+                execError(errorMessage);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean localCallGasIsValid() {
+        // eth_call / eth_estimateGas skip the block-level checks in init(), but the intrinsic-cost
+        // check must still run: otherwise GasCost.subtract() throws later and leaks as -32603.
+        long localCallGasLimit = GasCost.toGas(tx.getGasLimit());
+        if (localCallGasLimit < basicTxCost) {
+            execError(String.format("Not enough gas for transaction execution: tx needs: %s tx sent: %s", basicTxCost, localCallGasLimit));
+            return false;
+        }
+        return true;
     }
 
     private boolean isSenderCodeValid() {
