@@ -1,0 +1,43 @@
+# Drives TraceGasCharacterizationTest failed-precompile cases.
+# tx01: a direct call to the Bridge with junk data. Under RSKIP-560 the
+# precompile's exception fails the tx (status 0, full gas limit consumed).
+# tx02: a plain value transfer to an EOA, which must keep a successful frame.
+# tx03: a direct call to the identity precompile (0x04) with gas below
+# intrinsic (21000 + 32 * 16) + identity cost (15 + 3), so it fails out of gas.
+
+account_new acc1 10000000
+account_new acc2 0
+
+transaction_build tx01
+    sender acc1
+    receiverAddress 0000000000000000000000000000000001000006
+    value 0
+    data deadbeef
+    gas 100000
+    build
+
+transaction_build tx02
+    sender acc1
+    receiver acc2
+    value 1000
+    nonce 1
+    gas 21000
+    build
+
+transaction_build tx03
+    sender acc1
+    receiverAddress 0000000000000000000000000000000000000004
+    value 0
+    data 1111111111111111111111111111111111111111111111111111111111111111
+    nonce 2
+    gas 21520
+    build
+
+block_build b01
+    parent g00
+    transactions tx01 tx02 tx03
+    build
+
+block_connect b01
+
+assert_best b01

@@ -17,10 +17,13 @@
  */
 package co.rsk.rpc.modules.trace;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.WorldDslProcessor;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.typesafe.config.ConfigValueFactory;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
@@ -29,6 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,8 +54,19 @@ class TraceGasCharacterizationTest {
     }
 
     private static World world(String fixture, ReceiptStore receiptStore) throws Exception {
-        World world = new World(receiptStore);
+        return world(fixture, new World(receiptStore));
+    }
+
+    private static World world(String fixture, World world) throws Exception {
         new WorldDslProcessor(world).processCommands(DslParser.fromResource(fixture));
+        return world;
+    }
+
+    private static World worldWithoutRskip560(String fixture, ReceiptStore receiptStore) throws Exception {
+        TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
+                .withValue("blockchain.config.consensusRules.rskip560", ConfigValueFactory.fromAnyRef(-1)));
+        World world = world(fixture, new World(receiptStore, config));
+        assertFalse(world.getConfig().getActivationConfig().isActive(ConsensusRule.RSKIP560, 1));
         return world;
     }
 
@@ -141,6 +156,80 @@ class TraceGasCharacterizationTest {
         assertEquals(2, traces.size());
         assertFrame(traces.get(0), "[]", "0x124f80", "0x552b");
         assertFrame(traces.get(1), "[0]", "0x1000", "0x6");
+    }
+
+    /** A RSKIP-560 failed direct precompile call (status 0) must trace as a failed frame. */
+    @Test
+    void failedPrecompileCall_hasErrorAndNoResult() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = world("dsl/trace_failed_precompile.txt", receiptStore);
+        assertFalse(world.getTransactionReceiptByName("tx01").isSuccessful());
+
+        JsonNode traces = traceOf(world, traceModule(world, receiptStore), "tx01");
+
+        assertEquals(1, traces.size());
+        assertTrue(traces.get(0).get("result").isNull(), "failed frame must carry a null result");
+        String error = traces.get(0).get("error").asText();
+        assertTrue(error.contains("org.ethereum.vm.exception.VMException"), error);
+        assertTrue(error.contains("Exception executing bridge"), error);
+    }
+
+    /** A precompile call that runs out of gas (status 0) must also trace as a failed frame. */
+    @Test
+    void outOfGasPrecompileCall_hasErrorAndNoResult() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = world("dsl/trace_failed_precompile.txt", receiptStore);
+        assertFalse(world.getTransactionReceiptByName("tx03").isSuccessful());
+
+        JsonNode traces = traceOf(world, traceModule(world, receiptStore), "tx03");
+
+        assertEquals(1, traces.size());
+        assertTrue(traces.get(0).get("result").isNull(), "failed frame must carry a null result");
+        assertTrue(traces.get(0).get("error").asText()
+                .startsWith("class org.ethereum.vm.program.Program$OutOfGasException: Out of Gas calling precompiled contract"));
+    }
+
+    /** Before RSKIP-560 a precompile call that runs out of gas already fails, so it traces as a failed frame too. */
+    @Test
+    void outOfGasPrecompileCall_withoutRskip560_hasErrorAndNoResult() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = worldWithoutRskip560("dsl/trace_failed_precompile.txt", receiptStore);
+        assertFalse(world.getTransactionReceiptByName("tx03").isSuccessful());
+
+        JsonNode traces = traceOf(world, traceModule(world, receiptStore), "tx03");
+
+        assertEquals(1, traces.size());
+        assertTrue(traces.get(0).get("result").isNull(), "failed frame must carry a null result");
+        assertTrue(traces.get(0).get("error").asText()
+                .startsWith("class org.ethereum.vm.program.Program$OutOfGasException: Out of Gas calling precompiled contract"));
+    }
+
+    /** Before RSKIP-560 a junk Bridge call succeeds (status 1), so its trace keeps a result and no error. */
+    @Test
+    void failedPrecompileCall_withoutRskip560_hasResultAndNoError() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = worldWithoutRskip560("dsl/trace_failed_precompile.txt", receiptStore);
+        assertTrue(world.getTransactionReceiptByName("tx01").isSuccessful());
+
+        JsonNode traces = traceOf(world, traceModule(world, receiptStore), "tx01");
+
+        assertEquals(1, traces.size());
+        assertFalse(traces.get(0).get("result").isNull());
+        assertTrue(traces.get(0).get("error") == null || traces.get(0).get("error").isNull());
+    }
+
+    /** A successful plain transfer (no program, no precompile) keeps its result and no error. */
+    @Test
+    void plainTransfer_hasResultAndNoError() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = world("dsl/trace_failed_precompile.txt", receiptStore);
+        assertTrue(world.getTransactionReceiptByName("tx02").isSuccessful());
+
+        JsonNode traces = traceOf(world, traceModule(world, receiptStore), "tx02");
+
+        assertEquals(1, traces.size());
+        assertFalse(traces.get(0).get("result").isNull());
+        assertTrue(traces.get(0).get("error") == null || traces.get(0).get("error").isNull());
     }
 
     /** Genesis and out-of-range blocks stay empty / null. */

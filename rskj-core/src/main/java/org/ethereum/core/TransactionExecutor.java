@@ -747,6 +747,15 @@ public class TransactionExecutor {
                 }
             }
 
+            // A failing direct call to a precompiled contract must not trace as a success, and its trace
+            // reports the error as the trace of a failing contract call does
+            if (precompiledContract != null && !executionError.isEmpty()) {
+                Exception error = result.getException() != null
+                        ? result.getException()
+                        : new Program.OutOfGasException("%s", executionError);
+                trace.error(error);
+            }
+
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
     }
