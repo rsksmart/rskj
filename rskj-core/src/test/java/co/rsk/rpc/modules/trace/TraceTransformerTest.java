@@ -19,12 +19,26 @@
 package co.rsk.rpc.modules.trace;
 
 import co.rsk.core.types.bytes.Bytes;
+import co.rsk.crypto.Keccak256;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionReceipt;
+import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
+import java.util.Locale;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+@Isolated
 class TraceTransformerTest {
     @Test
     void getActionFromInvokeData() {
@@ -61,6 +75,70 @@ class TraceTransformerTest {
         // a CALL action carries calldata in input, never creation-only fields
         Assertions.assertNull(action.getInit());
         Assertions.assertNull(action.getCreationMethod());
+    }
+
+    @Test
+    @ResourceLock(Resources.LOCALE)
+    void getCallTypeIsLocaleIndependent() {
+        Locale previous = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+
+            TraceAction action = new TraceAction(
+                    CallType.STATICCALL,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null);
+
+            Assertions.assertEquals("staticcall", action.getCallType());
+        } finally {
+            Locale.setDefault(previous);
+        }
+    }
+
+    @Test
+    @ResourceLock(Resources.LOCALE)
+    void traceTypeIsLocaleIndependent() {
+        Locale previous = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+
+            ProgramInvoke invoke = mock(ProgramInvoke.class);
+            when(invoke.getCallerAddress()).thenReturn(DataWord.valueOf(1));
+            when(invoke.getOwnerAddress()).thenReturn(DataWord.valueOf(2));
+            when(invoke.getCallValue()).thenReturn(DataWord.ZERO);
+
+            Transaction transaction = mock(Transaction.class);
+            when(transaction.getHash()).thenReturn(new Keccak256(new byte[Keccak256.HASH_LEN]));
+            TransactionReceipt receipt = new TransactionReceipt();
+            receipt.setTransaction(transaction);
+            TransactionInfo txInfo = new TransactionInfo(receipt, new byte[Keccak256.HASH_LEN], 0);
+
+            TransactionTrace trace = TraceTransformer.toTrace(
+                    TraceType.SUICIDE,
+                    invoke,
+                    ProgramResult.empty(),
+                    txInfo,
+                    1L,
+                    new TraceAddress(),
+                    CallType.NONE,
+                    null,
+                    null,
+                    null,
+                    0,
+                    null);
+
+            Assertions.assertEquals("suicide", trace.getType());
+        } finally {
+            Locale.setDefault(previous);
+        }
     }
 
     @Test

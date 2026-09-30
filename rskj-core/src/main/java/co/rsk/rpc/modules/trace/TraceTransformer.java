@@ -31,6 +31,7 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class TraceTransformer {
     private TraceTransformer() {
@@ -111,7 +112,7 @@ public class TraceTransformer {
         String blockHash = HexUtils.toUnformattedJsonHex(txInfo.getBlockHash());
         String transactionHash = txInfo.getReceipt().getTransaction().getHash().toJsonString();
         int transactionPosition = txInfo.getIndex();
-        String type = traceType.name().toLowerCase();
+        String type = traceType.name().toLowerCase(Locale.ROOT);
 
         return new TransactionTrace(
                 action,
