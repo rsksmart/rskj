@@ -244,8 +244,9 @@ public class TransactionExecutor {
     private boolean localCallGasIsValid() {
         // eth_call / eth_estimateGas skip the block-level checks in init(), but the intrinsic-cost
         // check must still run: otherwise GasCost.subtract() throws later and leaks as -32603.
-        long localCallGasLimit = GasCost.toGas(tx.getGasLimit());
-        if (localCallGasLimit < basicTxCost) {
+        // Read unsigned: GasCost.toGas throws for 8-byte limits of 2^63 or more, which eth_call can send
+        BigInteger localCallGasLimit = new BigInteger(1, tx.getGasLimit());
+        if (localCallGasLimit.compareTo(BigInteger.valueOf(basicTxCost)) < 0) {
             execError(String.format("Not enough gas for transaction execution: tx needs: %s tx sent: %s", basicTxCost, localCallGasLimit));
             return false;
         }

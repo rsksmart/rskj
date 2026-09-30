@@ -108,6 +108,25 @@ class ReversibleTransactionExecutorTest {
                 helloFn.decodeResult(result.getHReturn()));
     }
 
+    @Test
+    void executeTransaction_gasLimitAboveLongMax_runsTheCall() {
+        TestContract hello = TestContract.hello();
+        CallTransaction.Function helloFn = hello.functions.get("hello");
+        RskAddress contractAddress = contractRunner.addContract(hello.runtimeBytecode);
+
+        RskAddress from = TestUtils.generateAddress("from");
+        byte[] gasLimit = Hex.decode("ffffffffffffffff");
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                Hex.decode("00"), gasLimit, contractAddress.getBytes(), Hex.decode("00"), helloFn.encode(), from,
+                null, (byte) 0, TransactionType.LEGACY, null, null, null
+        );
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(bestBlock, bestBlock.getCoinbase(), params);
+
+        assertArrayEquals(new String[]{"chinchilla"}, helloFn.decodeResult(result.getHReturn()));
+    }
+
     @ParameterizedTest
     @MethodSource("localCallsBelowIntrinsicGas")
     void executeTransaction_gasBelowIntrinsicCost_isRejectedWithMessage(byte[] to, byte[] data, long intrinsic) {
