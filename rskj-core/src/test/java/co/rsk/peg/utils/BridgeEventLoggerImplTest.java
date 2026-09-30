@@ -872,6 +872,36 @@ class BridgeEventLoggerImplTest {
         }
 
         @Test
+        void logUtxosRegistered_whenMultipleUtxos_shouldEmitEventDecodableToTheRegisteredUtxos() {
+            // act
+            eventLogger.logUtxosRegistered(
+                BTC_TX_HASH,
+                MULTIPLE_VALUES,
+                MULTIPLE_OUTPUT_INDEXES,
+                FEDERATION_BTC_ADDRESS
+            );
+
+            // assert
+            commonAssertLogs();
+            Function event = BridgeEvents.UTXOS_REGISTERED.getEvent();
+            Object[] decodedData = event.decodeEventData(eventLogs.get(0).getData());
+            // positions of the non-indexed params in utxos_registered(bytes32,bytes,bytes,string);
+            // the btcTxHash is indexed, so it goes to the topics instead of the data
+
+            int valuesDataIndex = 0;
+            List<Coin> decodedValues = UtxoUtils.decodeOutpointValues((byte[]) decodedData[valuesDataIndex]);
+            assertEquals(MULTIPLE_VALUES, decodedValues);
+
+            int outputIndexesDataIndex = 1;
+            List<Long> decodedOutputIndexes = UtxoUtils.decodeOutputIndexes((byte[]) decodedData[outputIndexesDataIndex]);
+            assertEquals(MULTIPLE_OUTPUT_INDEXES, decodedOutputIndexes);
+
+            int federationBtcAddressDataIndex = 2;
+            String decodedFederationBtcAddress = (String) decodedData[federationBtcAddressDataIndex];
+            assertEquals(FEDERATION_BTC_ADDRESS.toString(), decodedFederationBtcAddress);
+        }
+
+        @Test
         void logUtxosRegistered_whenFiftyUtxos_shouldEmitEvent() {
             // arrange
             List<Coin> values = createFiftyOutputValues();
@@ -1149,6 +1179,41 @@ class BridgeEventLoggerImplTest {
                 expectedSerializedValues,
                 expectedSerializedOutputIndexes
             );
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenMultipleUtxos_shouldEmitEventDecodableToTheRegisteredUtxos() {
+            // act
+            eventLogger.logFlyoverUtxosRegistered(
+                BTC_TX_HASH,
+                MULTIPLE_VALUES,
+                MULTIPLE_OUTPUT_INDEXES,
+                FEDERATION_BTC_ADDRESS,
+                flyoverDerivationHash
+            );
+
+            // assert
+            commonAssertLogs();
+            Function event = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
+            Object[] decodedData = event.decodeEventData(eventLogs.get(0).getData());
+            // positions of the non-indexed params in flyover_utxos_registered(bytes32,bytes,bytes,string,bytes32);
+            // the btcTxHash is indexed, so it goes to the topics instead of the data
+
+            int valuesDataIndex = 0;
+            List<Coin> decodedValues = UtxoUtils.decodeOutpointValues((byte[]) decodedData[valuesDataIndex]);
+            assertEquals(MULTIPLE_VALUES, decodedValues);
+
+            int outputIndexesDataIndex = 1;
+            List<Long> decodedOutputIndexes = UtxoUtils.decodeOutputIndexes((byte[]) decodedData[outputIndexesDataIndex]);
+            assertEquals(MULTIPLE_OUTPUT_INDEXES, decodedOutputIndexes);
+
+            int federationBtcAddressDataIndex = 2;
+            String decodedFederationBtcAddress = (String) decodedData[federationBtcAddressDataIndex];
+            assertEquals(FEDERATION_BTC_ADDRESS.toString(), decodedFederationBtcAddress);
+
+            int flyoverDerivationHashDataIndex = 3;
+            Keccak256 decodedFlyoverDerivationHash = new Keccak256((byte[]) decodedData[flyoverDerivationHashDataIndex]);
+            assertEquals(flyoverDerivationHash, decodedFlyoverDerivationHash);
         }
 
         @Test
