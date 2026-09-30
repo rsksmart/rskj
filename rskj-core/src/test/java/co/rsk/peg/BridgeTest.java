@@ -1,6 +1,9 @@
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.core.RskAddress.ZERO_ADDRESS;
+import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.createHash3;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,7 +24,10 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.storage.InMemoryStorage;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
@@ -34,6 +40,8 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
+
+import co.rsk.test.builders.FederationSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
@@ -46,27 +54,33 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.exception.VMException;
+import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
 
 class BridgeTest {
-    private NetworkParameters networkParameters;
-    private BridgeBuilder bridgeBuilder;
+    private final ActivationConfig genesisConfig = ActivationConfigsForTest.genesis();
+    private final ActivationConfig wasabi100Config = ActivationConfigsForTest.wasabi100();
+    private final ActivationConfig papyrus200Config = ActivationConfigsForTest.papyrus200();
+    private final ActivationConfig iris300Config = ActivationConfigsForTest.iris300();
+    private final ActivationConfig hop400Config = ActivationConfigsForTest.hop400();
+    private final ActivationConfig allActivationsConfig = ActivationConfigsForTest.all();
+    private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+    private final FederationConstants federationMainNetConstants = bridgeMainNetConstants.getFederationConstants();
+    private final NetworkParameters networkParameters = bridgeMainNetConstants.getBtcParams();
+    private BridgeBuilder bridgeBuilder;
 
     @BeforeEach
-    void resetConfigToMainnet() {
-        networkParameters = BridgeMainNetConstants.getInstance().getBtcParams();
+    void setup() {
         bridgeBuilder = new BridgeBuilder();
     }
 
     @Test
     void getActivePowpegRedeemScript_before_RSKIP293_activation() {
-        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
-
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(iris300Config)
             .build();
 
         byte[] data = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode();
@@ -76,18 +90,17 @@ class BridgeTest {
 
     @Test
     void getActivePowpegRedeemScript_after_RSKIP293_activation() throws VMException {
-        ActivationConfig activationConfig = ActivationConfigsForTest.hop400();
         CallTransaction.Function getActivePowpegRedeemScriptFunction = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Script activePowpegRedeemScript = FederationTestUtils.getGenesisFederation(
-            bridgeMainNetConstants.getFederationConstants()).getRedeemScript();
+            federationMainNetConstants).getRedeemScript();
         when(bridgeSupportMock.getActiveFederationRedeemScript()).thenReturn(
             Optional.of(activePowpegRedeemScript)
         );
 
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(hop400Config)
             .bridgeSupport(bridgeSupportMock)
             .build();
 
@@ -101,10 +114,8 @@ class BridgeTest {
 
     @Test
     void getLockingCap_before_RSKIP134_activation() {
-        ActivationConfig activationConfig = ActivationConfigsForTest.wasabi100();
-
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(wasabi100Config)
             .build();
 
         byte[] data = BridgeMethods.GET_LOCKING_CAP.getFunction().encode();
@@ -114,7 +125,6 @@ class BridgeTest {
 
     @Test
     void getLockingCap_after_RSKIP134_activation() throws VMException {
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
         CallTransaction.Function getLockingCapFunction = Bridge.GET_LOCKING_CAP;
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -125,7 +135,7 @@ class BridgeTest {
         when(tx.isLocalCallTransaction()).thenReturn(true);
 
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(papyrus200Config)
             .transaction(tx)
             .bridgeSupport(bridgeSupportMock)
             .build();
@@ -144,10 +154,8 @@ class BridgeTest {
 
     @Test
     void increaseLockingCap_before_RSKIP134_activation() {
-        ActivationConfig activationConfig = ActivationConfigsForTest.wasabi100();
-
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(wasabi100Config)
             .build();
 
         byte[] data = BridgeMethods.INCREASE_LOCKING_CAP.getFunction().encode();
@@ -157,14 +165,13 @@ class BridgeTest {
     @ParameterizedTest()
     @MethodSource("lockingCapValues")
     void increaseLockingCap_after_RSKIP134_activation(long newLockingCapValue) throws VMException {
-        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.increaseLockingCap(any(), any())).thenReturn(true);
 
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(allActivationsConfig)
             .bridgeSupport(bridgeSupportMock)
             .build();
 
@@ -188,10 +195,9 @@ class BridgeTest {
 
     @Test
     void increaseLockingCap_whenNewLockingCapIsInvalidParameter_shouldThrowVMException() {
-        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(allActivationsConfig)
             .build();
 
         // Uses the proper signature but appends an invalid data type
@@ -210,10 +216,9 @@ class BridgeTest {
     @Test
     void increaseLockingCap_whenNoArgumentsInTheMethodSignature_shouldThrowVMException() {
         // Arrange
-        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(allActivationsConfig)
             .build();
 
         // No arguments signature
@@ -226,10 +231,9 @@ class BridgeTest {
     @Test
     void increaseLockingCap_whenNewLockingCapIsNegativeValue_shouldThrowVMException() {
         // Arrange
-        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(allActivationsConfig)
             .build();
 
         // When new LockingCap is a negative value
@@ -242,10 +246,9 @@ class BridgeTest {
     @Test
     void increaseLockingCap_whenNewLockingCapIsZeroValue_shouldThrowVMException() {
         // Arrange
-        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(allActivationsConfig)
             .build();
 
         // When new LockingCap is a zero value
@@ -257,10 +260,8 @@ class BridgeTest {
 
     @Test
     void registerBtcCoinbaseTransaction_before_RSKIP143_activation() {
-        ActivationConfig activationConfig = ActivationConfigsForTest.wasabi100();
-
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(wasabi100Config)
             .build();
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
@@ -272,11 +273,9 @@ class BridgeTest {
 
     @Test
     void registerBtcCoinbaseTransaction_after_RSKIP143_activation() throws VMException {
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
-
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(papyrus200Config)
             .bridgeSupport(bridgeSupportMock)
             .build();
 
@@ -297,11 +296,10 @@ class BridgeTest {
 
     @Test
     void registerBtcCoinbaseTransaction_after_RSKIP143_activation_null_data() {
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
         CallTransaction.Function registerBtcCoinbaseTransactionFunction = Bridge.REGISTER_BTC_COINBASE_TRANSACTION;
 
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(papyrus200Config)
             .build();
 
         final byte[] emptyData = registerBtcCoinbaseTransactionFunction.encodeSignature();
@@ -316,7 +314,6 @@ class BridgeTest {
 
     @Test
     void registerBtcTransaction_beforeRskip199_rejectsExternalCalls() throws VMException, IOException, BlockStoreException {
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         FederationArgs activeFederationArgs = new FederationArgs(
@@ -335,7 +332,7 @@ class BridgeTest {
         when(rskTx.getSender(any(SignatureCache.class))).thenReturn(senderAddress);
 
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(papyrus200Config)
             .bridgeSupport(bridgeSupportMock)
             .transaction(rskTx)
             .build();
@@ -361,7 +358,6 @@ class BridgeTest {
 
     @Test
     void registerBtcTransaction_beforeRskip199_acceptsCallFromFederationMember() throws VMException, IOException, BlockStoreException {
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcECKey fed1Key = new BtcECKey();
@@ -383,7 +379,7 @@ class BridgeTest {
         when(rskTx.getSender(any(SignatureCache.class))).thenReturn(fed1Address);
 
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(papyrus200Config)
             .bridgeSupport(bridgeSupportMock)
             .transaction(rskTx)
             .build();
@@ -404,11 +400,10 @@ class BridgeTest {
 
     @Test
     void registerBtcTransaction_afterRskip199_acceptsExternalCalls() throws VMException, IOException, BlockStoreException {
-        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
         Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
+            .activationConfig(iris300Config)
             .bridgeSupport(bridgeSupportMock)
             .build();
 
@@ -424,6 +419,527 @@ class BridgeTest {
             anyInt(),
             any(byte[].class)
         );
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class RegisterBtcTransactionValidations {
+        // https://mempool.space/api/tx/c45d0fb6de99036369a7a4e742788e5cd5d6dc3975c0a3204a52a1222f70bc54/hex
+        private final byte[] rawTx = Hex.decode("01000000000101f91568ef99e4de831ca45122043350a475c27421ef906346e40d11b23c48598301000000171600142485710340e82b89bb7f186eb91c66b0719a0c850000000002899501000000000016001424582813242cc560dfb5c2a1cec8c4bf0b1f018b7ff51000000000001600148093cf03a527f7029fd0caab5a4351bf6f7a1cb702483045022100b51fbaa52016aa684a39d924498f4cefb21d3a90ccb8103aaf38cb96b156c455022029939a092c4b44321448ac2479ed8f41621bd71ec41828fe4062cc3839504ced0121025201cd83d1a8564ae106f0cd55843ec90e1951e2ec8640997a34670658d0d9eb00000000");
+        private final BtcTransaction tx = new BtcTransaction(networkParameters, rawTx);
+
+        //https://mempool.space/api/tx/e9207ddb8392adc3becaad3e77cabc30674d945b63b38799c63fb02d6fe88040/hex
+        private final byte[] anotherRawTx = Hex.decode("02000000000101003ac42a5185daaeb8d6f4ba29ad0ac1bda390c33df627c8220b7d626e8d120b000000000005000000044a010000000000002251207d949036e6e34880d4809a79da59fb526ed35c5f53b3e2d81ca7526ca5827bde4a010000000000002251207d949036e6e34880d4809a79da59fb526ed35c5f53b3e2d81ca7526ca5827bde0000000000000000176a5d1402050482b88305010205a14d0680eaade9071601e944000000000000225120049600e5b1893f3a296c36e121794a37dcbf38555e627d9a6a272c997dfce8850340cc07cc51ce3ebd4054d8bc325e211258f0fcf529b9fd42c999abf5266c5ba01985e5e6b78ebcb2e0a6fcc1dcdf96cf587892669cc3fa51019297277c4b55927055202262eb9be8a5b079989e2d2629d55bcc590f6aab3dbe57b3a86debf95043ebfeac0063036f7264010b2061b906924d26697a2ff4815ae74540f675f718bf05dfe998d8747383a68af009010200010d0302dca06821c02262eb9be8a5b079989e2d2629d55bcc590f6aab3dbe57b3a86debf95043ebfe00000000");
+        private final BtcTransaction anotherTx = new BtcTransaction(networkParameters, anotherRawTx);
+
+        private BtcBlockStoreWithCache btcBlockStore;
+        private BridgeStorageProvider bridgeStorageProvider;
+        private BridgeSupport bridgeSupport;
+        private Bridge bridge;
+        private int enoughConfirmationsHeight;
+        private int notEnoughConfirmationsHeight;
+
+        @BeforeEach
+        void setup() throws BlockStoreException, IOException {
+            Repository repository = createRepository();
+            bridgeStorageProvider = new BridgeStorageProvider(repository, networkParameters, allActivations);
+
+            StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+            FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+
+            Block executionBlock = createRskBlock(1);
+            FederationSupport federationSupport = FederationSupportBuilder.builder()
+                .withFederationConstants(federationMainNetConstants)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(allActivations)
+                .build();
+
+            RepositoryBtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters, 100, 100);
+            btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, allActivations);
+            bridgeSupport = BridgeSupportBuilder.builder()
+                .withActivations(allActivations)
+                .withExecutionBlock(executionBlock)
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withRepository(repository)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withFederationSupport(federationSupport)
+                .build();
+
+            // to have enough confirmations, we need that btcBestChainHeight - height + 1 >= minimumConfirmations
+            // => btcBestChainHeight + 1 - minimumConfirmations >= height
+            // => height := (btcBestChainHeight + 1 - minimumConfirmations) works
+            int btcBestChainHeight = bridgeSupport.getBtcBlockchainBestChainHeight();
+            int minimumConfirmations = bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
+            enoughConfirmationsHeight = btcBestChainHeight + 1 - minimumConfirmations;
+
+            // to not have enough confirmations, we need that btcBestChainHeight - height + 1 < minimumConfirmations
+            // => btcBestChainHeight + 1 - minimumConfirmations < height
+            // => height := (btcBestChainHeight + 1 - minimumConfirmations) + 1 works
+            notEnoughConfirmationsHeight = enoughConfirmationsHeight + 1;
+
+            bridge = bridgeBuilder
+                .activationConfig(allActivationsConfig)
+                .bridgeSupport(bridgeSupport)
+                .build();
+        }
+
+        @Nested
+        @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+        class RegisterBtcTransaction {
+            @BeforeEach
+            void setup() {
+                bridge = bridgeBuilder
+                    .activationConfig(allActivationsConfig)
+                    .bridgeSupport(bridgeSupport)
+                    .build();
+            }
+
+            @Test
+            void registerBtcTransaction_negativeHeight_shouldNotThrow_shouldNotRegisterTx() throws IOException {
+                // Arrange
+                int height = -1;
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(tx), networkParameters);
+                byte[] data = encodeRegisterBtcTransaction(
+                    tx,
+                    height,
+                    pmt.bitcoinSerialize()
+                );
+
+                // Act & Assert
+                assertDoesNotThrow(() -> bridge.execute(data));
+                assertTxNotRegistered(tx);
+            }
+
+            @Test
+            void registerBtcTransaction_notEnoughConfirmations_shouldNotThrow_shouldNotRegisterTx() throws IOException {
+                // Arrange
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(tx), networkParameters);
+                byte[] data = encodeRegisterBtcTransaction(
+                    tx,
+                    notEnoughConfirmationsHeight,
+                    pmt.bitcoinSerialize()
+                );
+
+                // Act & Assert
+                assertDoesNotThrow(() -> bridge.execute(data));
+                assertTxNotRegistered(tx);
+            }
+
+            @Test
+            void registerBtcTransaction_wrongPMTSize_shouldThrowVME_shouldNotRegisterTx() throws IOException {
+                // Arrange
+                byte[] pmtSerialized = new byte[]{};
+                byte[] data = encodeRegisterBtcTransaction(
+                    tx,
+                    enoughConfirmationsHeight,
+                    pmtSerialized
+                );
+
+                // Act & Assert
+                assertThrows(VMException.class, () -> bridge.execute(data));
+                assertTxNotRegistered(tx);
+            }
+
+            @Test
+            void registerBtcTransaction_pmtNonParseableBeforeRskip88_shouldReturnNull_shouldNotRegisterTx() throws VMException, IOException {
+                // Arrange
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(tx), networkParameters);
+                byte[] pmtSerialized = pmt.bitcoinSerialize();
+                // override the first four bytes to make a non-parseable pmt
+                Arrays.fill(pmtSerialized, 0, 4, (byte) 0);
+
+                // before RSKIP199 only a federation member can call registerBtcTransaction
+                Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
+                RskAddress federatorAddress = BitcoinTestUtils.getRskAddressFromBtcPublicKey(
+                    genesisFederation.getMembers().get(0).getBtcPublicKey()
+                );
+                Transaction rskTx = mock(Transaction.class);
+                when(rskTx.getSender(any(SignatureCache.class))).thenReturn(federatorAddress);
+
+                bridge = bridgeBuilder
+                    .activationConfig(genesisConfig)
+                    .bridgeSupport(bridgeSupport)
+                    .transaction(rskTx)
+                    .build();
+
+                byte[] data = encodeRegisterBtcTransaction(
+                    tx,
+                    enoughConfirmationsHeight,
+                    pmtSerialized
+                );
+
+                // Act & Assert
+                assertNull(bridge.execute(data));
+                assertTxNotRegistered(tx);
+
+            }
+
+            @Test
+            void registerBtcTransaction_pmtNonParseable_shouldThrowVME_shouldNotRegisterTx() throws IOException {
+                // Arrange
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(tx), networkParameters);
+                byte[] pmtSerialized = pmt.bitcoinSerialize();
+                // override the first four bytes to make a non-parseable pmt
+                Arrays.fill(pmtSerialized, 0, 4, (byte) 0);
+
+                byte[] data = encodeRegisterBtcTransaction(
+                    tx,
+                    enoughConfirmationsHeight,
+                    pmtSerialized
+                );
+
+                // Act & Assert
+                assertThrows(VMException.class, () -> bridge.execute(data));
+                assertTxNotRegistered(tx);
+            }
+
+            @Test
+            void registerBtcTransaction_pmtNotInMerkleRoot_shouldNotThrow_shouldNotRegisterTx() throws IOException {
+                // Arrange
+                //
+                PartialMerkleTree pmtForAnotherTx = createValidPmtForTransactions(List.of(anotherTx), networkParameters);
+                byte[] data = encodeRegisterBtcTransaction(
+                    tx,
+                    enoughConfirmationsHeight,
+                    pmtForAnotherTx.bitcoinSerialize()
+                );
+
+                // Act & Assert
+                assertDoesNotThrow(() -> bridge.execute(data));
+                assertTxNotRegistered(tx);
+            }
+
+            @Test
+            void registerBtcTransaction_withNoInputs_shouldThrowVME_shouldNotRegisterTx() throws IOException {
+                // Arrange
+                BtcTransaction btcTxNoInputs = new BtcTransaction(networkParameters);
+                Address userAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "userAddress");
+                btcTxNoInputs.addOutput(Coin.COIN, userAddress);
+                assertEquals(1, btcTxNoInputs.getOutputs().size());
+                assertEquals(0, btcTxNoInputs.getInputs().size());
+
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(btcTxNoInputs), networkParameters);
+
+                bridge = bridgeBuilder
+                    .activationConfig(allActivationsConfig)
+                    .bridgeSupport(bridgeSupport)
+                    .build();
+
+                byte[] data = encodeRegisterBtcTransaction(
+                    btcTxNoInputs,
+                    enoughConfirmationsHeight,
+                    pmt.bitcoinSerialize()
+                );
+
+                // Act & Assert
+                assertThrows(VMException.class, () -> bridge.execute(data));
+                assertTxNotRegistered(btcTxNoInputs);
+            }
+
+            @Test
+            void registerBtcTransaction_blockBelowDepthLimit_shouldThrowVME_shouldNotRegisterTx() throws BlockStoreException, IOException {
+                // Arrange
+                int maxDepthToSearch = bridgeMainNetConstants.getMaxDepthToSearchBlocksBelowIndexActivation();
+                int heightBelowDepthLimit = bridgeSupport.getBtcBlockchainBestChainHeight() - maxDepthToSearch - 1;
+
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(tx), networkParameters);
+                byte[] data = encodeRegisterBtcTransaction(
+                    tx,
+                    heightBelowDepthLimit,
+                    pmt.bitcoinSerialize()
+                );
+
+                // Act & Assert
+                // the block store throws a BlockStoreException for a height below the depth limit,
+                // and that exception is not swallowed by the bridge
+                assertThrows(VMException.class, () -> bridge.execute(data));
+                assertTxNotRegistered(tx);
+            }
+
+            @Test
+            void registerBtcTransaction_invalidMerkleRootForThatTx_shouldNotThrow_shouldNotRegisterTx() throws BlockStoreException, IOException {
+                // Arrange
+                int maxDepthToSearch = bridgeMainNetConstants.getMaxDepthToSearchBlocksBelowIndexActivation();
+                int heightWithoutExceedingDepthLimit = bridgeSupport.getBtcBlockchainBestChainHeight() - maxDepthToSearch;
+
+                // save another tx (with correct data) in the block store,
+                // so we have a txs mismatch
+                buildPMTAndRecreateChainForTransactionRegistration(
+                    bridgeStorageProvider,
+                    bridgeMainNetConstants,
+                    heightWithoutExceedingDepthLimit,
+                    anotherTx,
+                    btcBlockStore
+                );
+
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(tx), networkParameters);
+                byte[] data = encodeRegisterBtcTransaction(
+                    tx,
+                    heightWithoutExceedingDepthLimit,
+                    pmt.bitcoinSerialize()
+                );
+
+                // Act & Assert
+                assertDoesNotThrow(() -> bridge.execute(data));
+                assertTxNotRegistered(tx);
+            }
+
+            private byte[] encodeRegisterBtcTransaction(BtcTransaction tx, int height, byte[] pmtSerialized) {
+                return Bridge.REGISTER_BTC_TRANSACTION.encode(
+                    tx.bitcoinSerialize(),
+                    height,
+                    pmtSerialized
+                );
+            }
+
+            private void assertTxNotRegistered(BtcTransaction tx) throws IOException {
+                bridgeSupport.save();
+                assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(tx.getHash()));
+            }
+        }
+
+        @Nested
+        @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+        class RegisterFlyoverBtcTransaction {
+
+            // https://mempool.space/testnet/api/tx/4162be923536bf16eec5ba34854846b42bb33bd0e306e08653fe47b575c1be18/hex
+            private final byte[] flyoverRawTx = Hex.decode("02000000000101bbf1ed97348d449959119a544a655b461ebfc6ada200275259fb1968767e3187000000001716001465d8ae4ff4192dbd14f261cd4208c1ed998685fdffffffff0300000000000000001b6a1952534b5401b69d88d37e8788f1e8f86fd26c710eaa93de331120a107000000000017a914a3562b6a12b34eb98a8164ea5c5f7e40fd6ddac88784b72a000000000017a91486357cc0fc7a43b7256ad94a384f4deaaa4ed3478702473044022049b84f2ef2ca96160211abc8fc1b7936d16fac0a6d4e28d1c6ffc2f33a54d248022040391fcf3b06e0f04111c7a028a2ec691048d4246490634b2b3dc70be11414b301210228b30e295492d8f0f25ef5e52b894bd547a0205e094301f6bf0f3dbe0af72abf00000000");
+            private final BtcTransaction flyoverTx = new BtcTransaction(networkParameters, flyoverRawTx);
+
+            // https://mempool.space/testnet/api/tx/c21249b8c4125a4fca150bde03497f728d9cbe3659940aebc2f30bb1b18903c5/hex
+            private final byte[] anotherFlyoverRawTx = Hex.decode("02000000000101ce9a64674b64cc5885694d41a7849ec9ee84efcb6bb29020d94bf8fdd403d87c0000000000ffffffff0300000000000000001b6a1952534b5401b69d88d37e8788f1e8f86fd26c710eaa93de331120a107000000000017a914a3562b6a12b34eb98a8164ea5c5f7e40fd6ddac887a2850100000000001600141cd762df9d81cfad2cf7876869a28c466710c24e0247304402203af510e62f51fe0e3ae01ae4162de17de54897dc93eda6315f02407206a3101702202a765132e4dd418898e776bd4bcf0419048cb28304ad1c4440b48e90212c1dcd01210398781810e51924ec9462d238eb7db2ebee57615965b970b76c39c7dcbab6d5d900000000");
+            private final BtcTransaction anotherFlyoverTx = new BtcTransaction(networkParameters, anotherFlyoverRawTx);
+            private final Keccak256 derivationArgumentsHash = createHash3(1);
+            private final RskAddress lbcAddress = new RskAddress(new ECKey().getAddress());
+            private final Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "userRefund");
+            private final Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "liquidityProvider");
+
+            // the flyover method is only callable from a contract, and the sender must be the lbc address
+            private final Transaction lbcTx = new InternalTransaction(
+                Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
+                lbcAddress.getBytes(), null, null, null, null, null
+            );
+
+            @BeforeEach
+            void setup() {
+                bridge = bridgeBuilder
+                    .activationConfig(allActivationsConfig)
+                    .bridgeSupport(bridgeSupport)
+                    .transaction(lbcTx)
+                    .build();
+            }
+
+            @Test
+            void registerFlyoverBtcTransaction_negativeHeight_shouldReturnValidationsError_shouldNotMarkHashAsUsed() throws VMException {
+                // Arrange
+                int height = -1;
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(flyoverTx), networkParameters);
+
+                byte[] data = encodeRegisterFlyoverBtcTransaction(
+                    flyoverTx,
+                    height,
+                    pmt.bitcoinSerialize()
+                );
+
+                // Act
+                byte[] result = bridge.execute(data);
+
+                // Assert
+                assertResponseCode(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR, result);
+                assertFlyoverDerivationHashNotUsed(flyoverTx);
+            }
+
+            @Test
+            void registerFlyoverBtcTransaction_notEnoughConfirmations_shouldReturnValidationsError_shouldNotMarkHashAsUsed() throws VMException {
+                // Arrange
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(flyoverTx), networkParameters);
+
+                byte[] data = encodeRegisterFlyoverBtcTransaction(
+                    flyoverTx,
+                    notEnoughConfirmationsHeight,
+                    pmt.bitcoinSerialize()
+                );
+
+                // Act
+                byte[] result = bridge.execute(data);
+
+                // Assert
+                assertResponseCode(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR, result);
+                assertFlyoverDerivationHashNotUsed(flyoverTx);
+            }
+
+            @Test
+            void registerFlyoverBtcTransaction_wrongPMTSize_shouldReturnGenericError_shouldNotMarkHashAsUsed() throws VMException {
+                // Arrange
+                byte[] pmtWithWrongSize = new byte[]{};
+                byte[] data = encodeRegisterFlyoverBtcTransaction(
+                    flyoverTx,
+                    enoughConfirmationsHeight,
+                    pmtWithWrongSize
+                );
+
+                // Act
+                byte[] result = bridge.execute(data);
+
+                // Assert
+                assertResponseCode(FlyoverTxResponseCodes.GENERIC_ERROR, result);
+                assertFlyoverDerivationHashNotUsed(flyoverTx);
+            }
+
+            @Test
+            void registerFlyoverBtcTransaction_pmtNonParseable_shouldReturnGenericError_shouldNotMarkHashAsUsed() throws VMException {
+                // Arrange
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(flyoverTx), networkParameters);
+                byte[] pmtSerialized = pmt.bitcoinSerialize();
+                // override the transaction count, the only field that is not part of the size check,
+                // so the pmt has the expected size but cannot be parsed
+                Arrays.fill(pmtSerialized, 0, 4, (byte) 0);
+
+                byte[] data = encodeRegisterFlyoverBtcTransaction(
+                    flyoverTx,
+                    enoughConfirmationsHeight,
+                    pmtSerialized
+                );
+
+                // Act
+                byte[] result = bridge.execute(data);
+
+                // Assert
+                assertResponseCode(FlyoverTxResponseCodes.GENERIC_ERROR, result);
+                assertFlyoverDerivationHashNotUsed(flyoverTx);
+            }
+
+            @Test
+            void registerFlyoverBtcTransaction_pmtNotInMerkleRoot_shouldReturnValidationsError_shouldNotMarkHashAsUsed() throws VMException {
+                // Arrange
+                //
+                PartialMerkleTree pmtForAnotherTx = createValidPmtForTransactions(List.of(anotherFlyoverTx), networkParameters);
+
+                byte[] data = encodeRegisterFlyoverBtcTransaction(
+                    flyoverTx,
+                    enoughConfirmationsHeight,
+                    pmtForAnotherTx.bitcoinSerialize()
+                );
+
+                // Act
+                byte[] result = bridge.execute(data);
+
+                // Assert
+                assertResponseCode(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR, result);
+                assertFlyoverDerivationHashNotUsed(flyoverTx);
+            }
+
+            @Test
+            void registerFlyoverBtcTransaction_withNoInputs_shouldReturnGenericError_shouldNotMarkHashAsUsed() throws VMException {
+                // Arrange
+                BtcTransaction btcTxNoInputs = new BtcTransaction(networkParameters);
+                Address userAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "userAddress");
+                btcTxNoInputs.addOutput(Coin.COIN, userAddress);
+                assertEquals(0, btcTxNoInputs.getInputs().size());
+
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(btcTxNoInputs), networkParameters);
+                byte[] data = encodeRegisterFlyoverBtcTransaction(
+                    btcTxNoInputs,
+                    enoughConfirmationsHeight,
+                    pmt.bitcoinSerialize()
+                );
+
+                // Act
+                byte[] result = bridge.execute(data);
+
+                // Assert
+                assertResponseCode(FlyoverTxResponseCodes.GENERIC_ERROR, result);
+                assertFlyoverDerivationHashNotUsed(btcTxNoInputs);
+            }
+
+            @Test
+            void registerFlyoverBtcTransaction_blockBelowDepthLimit_shouldReturnGenericError_shouldNotMarkHashAsUsed() throws BlockStoreException, IOException, VMException {
+                // Arrange
+                int maxDepthToSearch = bridgeMainNetConstants.getMaxDepthToSearchBlocksBelowIndexActivation();
+                int heightBelowDepthLimit = bridgeSupport.getBtcBlockchainBestChainHeight() - maxDepthToSearch - 1;
+
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(flyoverTx), networkParameters);
+                byte[] data = encodeRegisterFlyoverBtcTransaction(
+                    flyoverTx,
+                    heightBelowDepthLimit,
+                    pmt.bitcoinSerialize()
+                );
+
+                // Act
+                byte[] result = bridge.execute(data);
+
+                // Assert
+                assertResponseCode(FlyoverTxResponseCodes.GENERIC_ERROR, result);
+                assertFlyoverDerivationHashNotUsed(flyoverTx);
+            }
+
+            @Test
+            void registerFlyoverBtcTransaction_invalidMerkleRootForThatTx_shouldReturnValidationsError_shouldNotMarkHashAsUsed() throws BlockStoreException, IOException, VMException {
+                // Arrange
+                int maxDepthToSearch = bridgeMainNetConstants.getMaxDepthToSearchBlocksBelowIndexActivation();
+                int heightWithoutExceedingDepthLimit = bridgeSupport.getBtcBlockchainBestChainHeight() - maxDepthToSearch - 1;
+
+                // save another tx (with correct data) in the block store,
+                // so we have a txs mismatch
+                buildPMTAndRecreateChainForTransactionRegistration(
+                    bridgeStorageProvider,
+                    bridgeMainNetConstants,
+                    heightWithoutExceedingDepthLimit,
+                    anotherFlyoverTx,
+                    btcBlockStore
+                );
+
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(flyoverTx), networkParameters);
+                byte[] data = encodeRegisterFlyoverBtcTransaction(
+                    flyoverTx,
+                    heightWithoutExceedingDepthLimit,
+                    pmt.bitcoinSerialize()
+                );
+
+                // Act
+                byte[] result = bridge.execute(data);
+
+                // Assert
+                assertResponseCode(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR, result);
+                assertFlyoverDerivationHashNotUsed(flyoverTx);
+            }
+
+            private void assertResponseCode(FlyoverTxResponseCodes expectedResponseCode, byte[] result) {
+                long response = ((BigInteger) Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]).longValue();
+                assertEquals(expectedResponseCode.value(), response);
+            }
+
+            private void assertFlyoverDerivationHashNotUsed(BtcTransaction tx) {
+                bridgeSupport.save();
+
+                // a registered flyover pegin is marked by its derivation hash, not by the btc tx hash
+                Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+                    derivationArgumentsHash,
+                    userRefundBtcAddress,
+                    lpBtcAddress,
+                    lbcAddress,
+                    allActivations
+                );
+                assertFalse(bridgeStorageProvider.isFlyoverDerivationHashUsed(tx.getHash(false), flyoverDerivationHash));
+            }
+
+            private byte[] encodeRegisterFlyoverBtcTransaction(BtcTransaction tx, int height, byte[] pmtSerialized) {
+                byte[] txSerialized = tx.bitcoinSerialize();
+
+                return Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encode(
+                    txSerialized,
+                    height,
+                    pmtSerialized,
+                    derivationArgumentsHash.getBytes(),
+                    BridgeUtils.serializeBtcAddressWithVersion(allActivations, userRefundBtcAddress),
+                    lbcAddress.toHexString(),
+                    BridgeUtils.serializeBtcAddressWithVersion(allActivations, lpBtcAddress),
+                    false
+                );
+            }
+        }
     }
 
     @Test
@@ -804,7 +1320,7 @@ class BridgeTest {
     void receiveHeaders_after_RSKIP200_notFederation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants.getFederationConstants());
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
         when(bridgeSupportMock.getActiveFederation()).thenReturn(genesisFederation);
