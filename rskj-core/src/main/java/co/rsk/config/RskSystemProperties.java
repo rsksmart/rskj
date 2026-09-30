@@ -70,6 +70,7 @@ public class RskSystemProperties extends SystemProperties {
     private static final int CHUNK_SIZE = 192;
 
     public static final String PROPERTY_SYNC_TOP_BEST = "sync.topBest";
+    public static final String PROPERTY_ADD_SUPPLY_BUG = "supply.addBug";
     public static final String USE_PEERS_FROM_LAST_SESSION = "peer.discovery.usePeersFromLastSession";
 
     public static final String PROPERTY_SNAP_CLIENT_ENABLED = "sync.snapshot.client.enabled";
@@ -250,6 +251,15 @@ public class RskSystemProperties extends SystemProperties {
     public int soLingerTime() {
         return configFromFiles.getInt("rpc.providers.web.http.linger_time");
 
+    }
+
+    /**
+     * Whether {@code --add-supply-bug} was given. When true, block execution deliberately creates
+     * rBTC from nothing so that the supply conservation check can be seen to reject a block.
+     * Off unless explicitly asked for, and refused on mainnet.
+     */
+    public boolean isSupplyBugEnabled() {
+        return getBoolean(PROPERTY_ADD_SUPPLY_BUG, false);
     }
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
