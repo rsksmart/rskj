@@ -40,6 +40,8 @@ class UtxoUtilsTest {
     private static final int FIRST_OUTPUT_INDEX = 0;
     // 00 = 0, FC = 252, FD1027 = 10_000
     private static final String ENCODED_VALUES_OF_DIFFERENT_SIZES = "00FCFD1027";
+    // FE announces a five byte VarInt, followed by 0xFFFFFFFF
+    private static final String ENCODED_MAX_OUTPUT_INDEX = "FEFFFFFFFF";
     private static final Address testAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "test");
 
     private static Stream<Arguments> validOutpointValues() {
@@ -305,6 +307,29 @@ class UtxoUtilsTest {
     }
 
     @Test
+    void encodeOutputIndexes_withMaxOutputIndex_shouldReturnEncodedOutputIndex() {
+        // arrange
+        List<Long> outputIndexes = List.of(BitcoinUtils.MAX_OUTPUT_INDEX);
+
+        // act
+        byte[] encodedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
+
+        // assert
+        byte[] expectedEncodedOutputIndexes = Hex.decode(ENCODED_MAX_OUTPUT_INDEX);
+        assertArrayEquals(expectedEncodedOutputIndexes, encodedOutputIndexes);
+    }
+
+    @Test
+    void encodeOutputIndexes_withOutputIndexAboveMax_shouldThrowInvalidOutputIndexException() {
+        // arrange
+        List<Long> outputIndexes = List.of(BitcoinUtils.MAX_OUTPUT_INDEX + 1);
+
+        // act & assert
+        assertThrows(InvalidOutputIndexException.class,
+            () -> UtxoUtils.encodeOutputIndexes(outputIndexes));
+    }
+
+    @Test
     void encodeOutputIndexes_withNegativeOutputIndex_shouldThrowInvalidOutputIndexException() {
         // arrange
         List<Long> outputIndexes = List.of(-1L);
@@ -364,6 +389,29 @@ class UtxoUtilsTest {
 
         // assert
         assertThrows(UnsupportedOperationException.class, () -> outputIndexes.add(1L));
+    }
+
+    @Test
+    void decodeOutputIndexes_withEncodedMaxOutputIndex_shouldReturnMaxOutputIndex() {
+        // arrange
+        byte[] encodedOutputIndexes = Hex.decode(ENCODED_MAX_OUTPUT_INDEX);
+
+        // act
+        List<Long> outputIndexes = UtxoUtils.decodeOutputIndexes(encodedOutputIndexes);
+
+        // assert
+        assertEquals(List.of(BitcoinUtils.MAX_OUTPUT_INDEX), outputIndexes);
+    }
+
+    @Test
+    void decodeOutputIndexes_withEncodedOutputIndexAboveMax_shouldThrowInvalidOutputIndexException() {
+        // arrange
+        // FF announces a nine byte VarInt, followed by 0x100000000 in little-endian
+        byte[] encodedOutputIndexes = Hex.decode("FF0000000001000000");
+
+        // act & assert
+        assertThrows(InvalidOutputIndexException.class,
+            () -> UtxoUtils.decodeOutputIndexes(encodedOutputIndexes));
     }
 
     @Test

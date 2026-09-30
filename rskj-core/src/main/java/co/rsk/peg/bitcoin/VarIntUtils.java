@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public final class VarIntUtils {
+final class VarIntUtils {
 
     private VarIntUtils() {
     }

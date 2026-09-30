@@ -1,5 +1,6 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.MAX_OUTPUT_INDEX;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
@@ -82,14 +83,19 @@ public final class UtxoUtils {
      * preserving the order of the entries. Empty when {@code encodedOutputIndexes}
      * is {@code null} or an {@code empty byte[]}.
      * @throws InvalidOutputIndexException when the bytes are not a valid sequence of
-     * VarInts, or a value decodes to a negative number.
+     * VarInts, or a value decodes to a negative number or to a number greater than
+     * {@value BitcoinUtils#MAX_OUTPUT_INDEX}.
      */
     public static List<Long> decodeOutputIndexes(byte[] encodedOutputIndexes) {
+        List<Long> outputIndexes;
         try {
-            return VarIntUtils.decode(encodedOutputIndexes);
+            outputIndexes = VarIntUtils.decode(encodedOutputIndexes);
         } catch (VarIntException ex) {
             throw new InvalidOutputIndexException(ex.getMessage(), ex);
         }
+
+        outputIndexes.forEach(UtxoUtils::validateOutputIndexUpperBound);
+        return outputIndexes;
     }
 
     /**
@@ -99,13 +105,28 @@ public final class UtxoUtils {
      * @return {@code byte[]} the list of output indexes encoded preserving the order of the
      * entries. Or an {@code empty byte[]} when {@code outputIndexes} is {@code null} or
      * {@code empty}.
-     * @throws InvalidOutputIndexException when an output index is {@code null} or negative.
+     * @throws InvalidOutputIndexException when an output index is {@code null}, negative, or
+     * greater than {@value BitcoinUtils#MAX_OUTPUT_INDEX}.
      */
     public static byte[] encodeOutputIndexes(List<Long> outputIndexes) {
+        if (outputIndexes == null) {
+            return EMPTY_BYTE_ARRAY;
+        }
+
+        outputIndexes.forEach(UtxoUtils::validateOutputIndexUpperBound);
         try {
             return VarIntUtils.encode(outputIndexes);
         } catch (VarIntException ex) {
             throw new InvalidOutputIndexException(ex.getMessage(), ex);
+        }
+    }
+
+    // Null and negative output indexes are rejected by VarIntUtils
+    private static void validateOutputIndexUpperBound(Long outputIndex) {
+        if (outputIndex != null && outputIndex > MAX_OUTPUT_INDEX) {
+            throw new InvalidOutputIndexException(String.format(
+                "Invalid output index: %s. Output indexes cannot be greater than %s.",
+                outputIndex, MAX_OUTPUT_INDEX));
         }
     }
 
