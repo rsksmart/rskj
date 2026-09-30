@@ -106,6 +106,23 @@ class CallTracerTest {
     /** A RSKIP-560 failed direct precompile call (status 0) must carry an error in the callTracer. */
     @Test
     void failedPrecompileCallTrace() throws Exception {
+        TxTraceResult traceResult = failedPrecompileTraceResult("tx01");
+
+        assertTrue(traceResult.getError().contains("org.ethereum.vm.exception.VMException"), traceResult.getError());
+        assertTrue(traceResult.getError().contains("Exception executing bridge"), traceResult.getError());
+    }
+
+    /** A direct precompile call that runs out of gas (status 0) must carry an error in the callTracer. */
+    @Test
+    void outOfGasPrecompileCallTrace() throws Exception {
+        TxTraceResult traceResult = failedPrecompileTraceResult("tx03");
+
+        assertTrue(traceResult.getError()
+                .startsWith("class org.ethereum.vm.program.Program$OutOfGasException: Out of Gas calling precompiled contract"),
+                traceResult.getError());
+    }
+
+    private TxTraceResult failedPrecompileTraceResult(String txName) throws Exception {
         DslParser parser = DslParser.fromResource("dsl/trace_failed_precompile.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -115,7 +132,7 @@ class CallTracerTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        TransactionReceipt receipt = world.getTransactionReceiptByName("tx01");
+        TransactionReceipt receipt = world.getTransactionReceiptByName(txName);
         assertFalse(receipt.isSuccessful());
 
         CallTracer callTracer = new CallTracer(world.getBlockStore(), world.getBlockExecutor(), web3InformationRetriever, receiptStore, world.getBlockChain());
@@ -125,7 +142,7 @@ class CallTracerTest {
 
         assertNotNull(traceResult);
         assertNotNull(traceResult.getError());
-        assertFalse(traceResult.getError().isEmpty());
+        return traceResult;
     }
 
     /**
