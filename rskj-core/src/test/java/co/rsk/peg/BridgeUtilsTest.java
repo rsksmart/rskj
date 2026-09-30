@@ -414,20 +414,21 @@ class BridgeUtilsTest {
 
     @Test
     void validateHeightAndConfirmations_invalid_height() {
-        Assertions.assertThrows(Exception.class, () -> Assertions.assertFalse(BridgeUtils.validateHeightAndConfirmations(-1, 0, 0, null)));
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateHeightAndConfirmations(-1, 0, bridgeConstantsMainnet, null));
     }
 
     @Test
-    void validateHeightAndConfirmation_insufficient_confirmations() throws Exception {
-        Assertions.assertFalse(BridgeUtils.validateHeightAndConfirmations(2, 5, 10, Sha256Hash.of(Hex.decode("ab"))));
+    void validateHeightAndConfirmation_insufficient_confirmations() {
+        Sha256Hash btcTxHash = Sha256Hash.of(Hex.decode("ab"));
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateHeightAndConfirmations(200, 298, bridgeConstantsMainnet, btcTxHash));
     }
 
     @Test
-    void validateHeightAndConfirmation_enough_confirmations() throws Exception {
-        Assertions.assertTrue(BridgeUtils.validateHeightAndConfirmations(
-            2,
-            5,
-            3,
+    void validateHeightAndConfirmation_enough_confirmations() {
+        assertDoesNotThrow(() -> BridgeUtils.validateHeightAndConfirmations(
+            200,
+            300,
+            bridgeConstantsMainnet,
             Sha256Hash.of(Hex.decode("ab")))
         );
     }
@@ -447,7 +448,7 @@ class BridgeUtilsTest {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 1);
 
-        Assertions.assertNull(BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()));
+        Assertions.assertTrue(BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()).isEmpty());
     }
 
     @Test
@@ -459,21 +460,22 @@ class BridgeUtilsTest {
         hashes.add(Sha256Hash.ZERO_HASH);
         hashes.add(tx.getHash());
         PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 2);
-        Sha256Hash merkleRoot = BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash());
+        Sha256Hash merkleRoot = BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()).get();
         Assertions.assertNotNull(merkleRoot);
     }
 
     @Test
     void validateInputsCount_active_rskip() {
         byte[] decode = Hex.decode("00000000000100");
-        Assertions.assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(decode, true));
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+        Assertions.assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(decode, activations));
     }
 
     @Test
     void validateInputsCount_inactive_rskip() {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         byte[] btcTxSerialized = tx.bitcoinSerialize();
-        Assertions.assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(btcTxSerialized, false));
+        Assertions.assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(btcTxSerialized, activations));
     }
 
     @Test
