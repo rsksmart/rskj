@@ -834,6 +834,30 @@ class EthModuleTest {
     }
 
     @Test
+    void sendTransaction_type2PriorityFeeAboveMaxFee_throwsInvalidParams() {
+        Constants constants = Constants.regtest();
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        args.setGasPrice(null);
+        args.setType("0x2");
+        args.setChainId("0x21");
+        args.setMaxPriorityFeePerGas("0x77359400");
+        args.setMaxFeePerGas("0x3b9aca00");
+
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, mock(TransactionPool.class), transactionGateway);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Invalid transaction: maxPriorityFeePerGas (2000000000) must not exceed maxFeePerGas (1000000000)", ex.getMessage());
+        verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
     void sendRawTransaction_highSLegacy_reportsInvalidSignatureNotChainId() {
         // cow, chainId 33, s replaced by n - s (and v parity flipped)
         assertSendRawTransactionError("0xf86380843b9aca00825208940000000000000000000000000000000000001234018066a0f53d18aab36abf06f1a949c41b22e595c238359cee7b21de5f5aca46e5348643a0eeb67fbc51d66da3ac6c08a71e966a662e01e0ac81fc67afa62ac0f1121e378f",
@@ -882,6 +906,33 @@ class EthModuleTest {
         assertEquals(-32602, e.getCode());
         assertEquals(expectedMessage, e.getMessage());
         verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
+    void sendTransaction_pendingStateLookupFails_isNotReportedAsInvalidParams() {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, wallet.addAccount());
+        args.setNonce(null);
+        TransactionPool transactionPool = mock(TransactionPool.class);
+        when(transactionPool.getPendingState()).thenThrow(new IllegalArgumentException("The trie with root 0xabc is missing in this store"));
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(Constants.regtest(), wallet, transactionPool, mock(TransactionGateway.class));
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        assertThrows(IllegalArgumentException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+    }
+
+    @Test
+    void sendTransaction_poolFailsWithIllegalArgument_isNotReportedAsInvalidParams() {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, wallet.addAccount());
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenThrow(new IllegalArgumentException("The trie with root 0xabc is missing in this store"));
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(Constants.regtest(), wallet, mock(TransactionPool.class), transactionGateway);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        assertThrows(IllegalArgumentException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
     }
 
     @Test

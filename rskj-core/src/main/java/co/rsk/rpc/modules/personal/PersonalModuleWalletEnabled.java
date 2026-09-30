@@ -209,7 +209,16 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         String txHash;
 
         synchronized (transactionPool) {
-            Transaction tx = Transaction.fromCallArguments(args, getAccountNextNonce(senderAccount),  constants.getChainId());
+            // Resolved outside the parse catch: a pending-state failure is a node fault, not bad input.
+            if (args.getNonce() == null) {
+                args.setNonce(getAccountNextNonce(senderAccount).get());
+            }
+            Transaction tx;
+            try {
+                tx = Transaction.fromCallArguments(args, null, constants.getChainId());
+            } catch (IllegalArgumentException e) {
+                throw RskJsonRpcRequestException.invalidParamError("Invalid transaction: " + e.getMessage(), e);
+            }
             tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
             tx.checkInvalidChain(constants);
 
