@@ -858,6 +858,20 @@ class EthModuleTest {
                 "Invalid chainId: 31");
     }
 
+    @Test
+    void sendRawTransaction_highSAndWrongChain_reportsInvalidSignature() {
+        // chainId 31 (wrong for regtest) AND s > n/2: the signature problem is reported first
+        Transaction tx = Transaction.builder()
+                .nonce(new byte[]{1}).gasPrice(BigInteger.valueOf(1_000_000_000L)).gasLimit(BigInteger.valueOf(21000))
+                .receiveAddress(new RskAddress(new byte[20])).value(BigInteger.ONE).chainId((byte) 31).build();
+        tx.sign(ECKey.fromPrivate(BigInteger.ONE).getPrivKeyBytes());
+        ECDSASignature sig = tx.getSignature();
+        BigInteger highS = Constants.getSECP256K1N().subtract(sig.getS());
+        tx.setSignature(new ECDSASignature(sig.getR(), highS, sig.getV() == 27 ? (byte) 28 : (byte) 27));
+        assertSendRawTransactionError("0x" + Hex.toHexString(tx.getEncoded()),
+                "Invalid transaction signature");
+    }
+
     private static void assertSendRawTransactionError(String rawHex, String expectedMessage) {
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
