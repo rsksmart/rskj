@@ -91,6 +91,7 @@ public class Transaction {
     public static final byte CHAIN_ID_INC = 35;
     public static final byte LOWER_REAL_V = 27;
     private static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
+    private static final String ERR_INVALID_SIGNATURE = "Invalid transaction signature";
     private final TransactionTypePrefix typePrefix;
 
     protected RskAddress sender;
@@ -453,6 +454,16 @@ public class Transaction {
         return gasPrice;
     }
 
+    /**
+     * The gasPrice field as decoded, for encoders: {@code null} when it was received as the RLP empty string
+     * ({@code 0x80}), as opposed to {@link Coin#ZERO} for a single zero byte ({@code 0x00}). Unlike
+     * {@link #getGasPrice()}, it keeps the two apart, so a legacy transaction re-encodes to the bytes that were signed.
+     */
+    @Nullable
+    public Coin getEncodableGasPrice() {
+        return gasPrice;
+    }
+
     @Nullable
     public Coin getMaxPriorityFeePerGas() {
         return maxPriorityFeePerGas;
@@ -493,7 +504,7 @@ public class Transaction {
     }
 
     public boolean acceptTransactionSignature(byte currentChainId) {
-        if (signature == null || !signature.validateComponents() || signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
+        if (!hasAcceptableSignatureComponents()) {
             return false;
         }
 
@@ -659,10 +670,18 @@ public class Transaction {
                 : (byte) (this.signature.getV() - LOWER_REAL_V + CHAIN_ID_INC + this.chainId * 2);
     }
 
-    public  void checkInvalidChain(Constants constants, String chainId) {
-        if (!acceptTransactionSignature(constants.getChainId())) {
-            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + chainId);
+    private boolean hasAcceptableSignatureComponents() {
+        return signature != null && signature.validateComponents() && signature.getS().compareTo(SECP256K1N_HALF) < 0;
+    }
+
+    public void checkInvalidChain(Constants constants) {
+        if (acceptTransactionSignature(constants.getChainId())) {
+            return;
         }
+        if (!hasAcceptableSignatureComponents()) {
+            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_SIGNATURE);
+        }
+        throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + Byte.toUnsignedInt(getChainId()));
     }
 
     @Override

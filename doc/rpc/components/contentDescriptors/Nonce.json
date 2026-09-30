@@ -1,9 +1,0 @@
-{
-  "Nonce": {
-    "name": "nonce",
-    "required": true,
-    "schema": {
-      "$ref": "#/components/schemas/Nonce"
-    }
-  }
-}

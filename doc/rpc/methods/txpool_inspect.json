@@ -1,0 +1,45 @@
+{
+  "name": "txpool_inspect",
+  "summary": "Returns a summary of the transactions currently in the pool.",
+  "description": "The same `pending` and `queued` grouping as `txpool_content`, but each transaction is reduced to a single `recipient: value wei + gas x gasPrice gas` string, so the pool can be inspected without transferring it in full.\n\nBoth addresses here are bare hex without the `0x` prefix: the sender as the map key, and the recipient at the head of the summary string. The value and the gas price are decimal wei, not hex. A transaction that creates a contract has no recipient, so its summary begins with the empty string and a colon.",
+  "params": [],
+  "result": {
+    "name": "inspect",
+    "description": "The pending and queued transactions, one summary string each",
+    "schema": {
+      "title": "txPoolInspect",
+      "type": "object",
+      "properties": {
+        "pending": {
+          "$ref": "#/components/schemas/TxPoolSummariesBySender"
+        },
+        "queued": {
+          "$ref": "#/components/schemas/TxPoolSummariesBySender"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "inspectExample",
+      "description": "The same two transactions as the `txpool_content` example. The contract creation has no recipient, so its summary begins with a bare colon.",
+      "params": [],
+      "result": {
+        "name": "inspectResult",
+        "value": {
+          "pending": {
+            "7986b3df570230288501eea3d890bd66948c9b79": {
+              "12": [
+                "0dc4a4c0c5c9f1a6bb0d84b6b0a0d0b5d6b34d9d: 10000000000000000 wei + 21000 x 1000000000 gas"
+              ],
+              "13": [
+                ": 0 wei + 210000 x 1000000000 gas"
+              ]
+            }
+          },
+          "queued": {}
+        }
+      }
+    }
+  ]
+}

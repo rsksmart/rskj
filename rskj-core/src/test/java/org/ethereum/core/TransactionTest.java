@@ -34,6 +34,7 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
@@ -46,6 +47,7 @@ import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.LogInfo;
@@ -65,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("squid:S1607") // many @Disabled annotations for diverse reasons
@@ -72,6 +75,52 @@ class TransactionTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+
+    private Transaction signedLegacyTx(byte chainId) {
+        Transaction tx = Transaction.builder()
+                .nonce(new byte[]{1}).gasPrice(BigInteger.valueOf(1_000_000_000L)).gasLimit(BigInteger.valueOf(21000))
+                .receiveAddress(new RskAddress(new byte[20])).value(BigInteger.ONE).chainId(chainId).build();
+        tx.sign(ECKey.fromPrivate(BigInteger.ONE).getPrivKeyBytes());
+        return tx;
+    }
+
+    private void assertCheckInvalidChainMessage(Transaction tx, String expected) {
+        RskJsonRpcRequestException e = assertThrows(RskJsonRpcRequestException.class,
+                () -> tx.checkInvalidChain(Constants.regtest()));
+        assertEquals(expected, e.getMessage());
+    }
+
+    @Test
+    void checkInvalidChain_rZero_reportsInvalidSignature() {
+        Transaction tx = signedLegacyTx((byte) 33);
+        ECDSASignature sig = tx.getSignature();
+        tx.setSignature(new ECDSASignature(BigInteger.ZERO, sig.getS(), sig.getV()));
+        assertCheckInvalidChainMessage(tx, "Invalid transaction signature");
+    }
+
+    @Test
+    void checkInvalidChain_rEqualsN_reportsInvalidSignature() {
+        Transaction tx = signedLegacyTx((byte) 33);
+        ECDSASignature sig = tx.getSignature();
+        tx.setSignature(new ECDSASignature(Constants.getSECP256K1N(), sig.getS(), sig.getV()));
+        assertCheckInvalidChainMessage(tx, "Invalid transaction signature");
+    }
+
+    @Test
+    void checkInvalidChain_sZero_reportsInvalidSignature() {
+        Transaction tx = signedLegacyTx((byte) 33);
+        ECDSASignature sig = tx.getSignature();
+        tx.setSignature(new ECDSASignature(sig.getR(), BigInteger.ZERO, sig.getV()));
+        assertCheckInvalidChainMessage(tx, "Invalid transaction signature");
+    }
+
+    @Test
+    void checkInvalidChain_badComponentsAndWrongChain_reportsInvalidSignature() {
+        Transaction tx = signedLegacyTx((byte) 31);
+        ECDSASignature sig = tx.getSignature();
+        tx.setSignature(new ECDSASignature(BigInteger.ZERO, sig.getS(), sig.getV()));
+        assertCheckInvalidChainMessage(tx, "Invalid transaction signature");
+    }
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */
     void test1() {

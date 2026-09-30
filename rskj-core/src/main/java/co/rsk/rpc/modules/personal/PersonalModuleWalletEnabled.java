@@ -220,7 +220,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
                 throw RskJsonRpcRequestException.invalidParamError("Invalid transaction: " + e.getMessage(), e);
             }
             tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
-            tx.checkInvalidChain(constants, ""+tx.getChainId());
+            tx.checkInvalidChain(constants);
 
             TransactionPoolAddResult result = eth.submitTransaction(tx);
             if (!result.transactionsWereAdded()) {

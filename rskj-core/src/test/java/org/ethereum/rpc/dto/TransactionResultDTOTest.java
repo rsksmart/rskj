@@ -178,6 +178,9 @@ class TransactionResultDTOTest {
         JsonNode json = new ObjectMapper().valueToTree(dto);
         Assertions.assertTrue(json.has("chainId"), "chainId must appear in JSON for Type 1");
         Assertions.assertTrue(json.has("accessList"), "accessList must appear in JSON for Type 1");
+        Assertions.assertEquals(dto.getYParity(), json.path("yParity").asText(null),
+                "yParity must appear in JSON (camel case) for Type 1");
+        Assertions.assertFalse(json.has("yparity"), "no lowercase yparity key may be emitted");
         Assertions.assertFalse(json.has("maxFeePerGas"), "maxFeePerGas must be omitted from JSON for Type 1");
         Assertions.assertFalse(json.has("maxPriorityFeePerGas"),
                 "maxPriorityFeePerGas must be omitted from JSON for Type 1");
@@ -248,6 +251,12 @@ class TransactionResultDTOTest {
         JsonNode json = new ObjectMapper().valueToTree(dto);
         Assertions.assertTrue(json.has("authorizationList"));
         Assertions.assertEquals(3, json.get("authorizationList").size());
+        Assertions.assertTrue(json.has("yParity"), "yParity must appear in JSON (camel case) for Type 4");
+        Assertions.assertFalse(json.has("yparity"), "no lowercase yparity key may be emitted");
+        for (JsonNode entry : json.get("authorizationList")) {
+            Assertions.assertTrue(entry.has("yParity"), "authorization entries must carry yParity (camel case)");
+            Assertions.assertFalse(entry.has("yparity"), "authorization entries must not carry lowercase yparity");
+        }
         Assertions.assertTrue(json.has("accessList"), "accessList must appear in JSON for Type 4");
     }
 
@@ -291,6 +300,7 @@ class TransactionResultDTOTest {
         // Typed-only fields must be OMITTED (not null) for legacy transactions.
         Assertions.assertFalse(json.has("chainId"), "chainId must be omitted from JSON for legacy tx");
         Assertions.assertFalse(json.has("yParity"), "yParity must be omitted from JSON for legacy tx");
+        Assertions.assertFalse(json.has("yparity"), "no lowercase yparity key may be emitted for legacy tx");
         Assertions.assertFalse(json.has("accessList"), "accessList must be omitted from JSON for legacy tx");
         Assertions.assertFalse(json.has("maxFeePerGas"), "maxFeePerGas must be omitted from JSON for legacy tx");
         Assertions.assertFalse(json.has("maxPriorityFeePerGas"),

@@ -1,0 +1,22 @@
+{
+  "name": "rsk_protocolVersion",
+  "summary": "Returns the highest RSK wire protocol version this node supports.",
+  "params": [],
+  "result": {
+    "name": "protocolVersion",
+    "description": "The highest supported RSK wire protocol version",
+    "schema": {
+      "$ref": "#/components/schemas/IntegerHex"
+    }
+  },
+  "examples": [
+    {
+      "name": "protocolVersionExample",
+      "params": [],
+      "result": {
+        "name": "protocolVersionResult",
+        "value": "0x3e"
+      }
+    }
+  ]
+}

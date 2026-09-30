@@ -1,0 +1,31 @@
+{
+  "name": "eth_accounts",
+  "summary": "Returns the addresses of the accounts held by this client.",
+  "description": "Returns the list of addresses this node holds a key for and can therefore sign with. It is empty unless the node was started with a wallet.",
+  "params": [],
+  "result": {
+    "name": "accounts",
+    "description": "The addresses held by this client",
+    "schema": {
+      "title": "accounts",
+      "type": "array",
+      "description": "The addresses held by this client",
+      "items": {
+        "$ref": "#/components/schemas/Address"
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "accountsExample",
+      "params": [],
+      "result": {
+        "name": "accountsResult",
+        "value": [
+          "0x7986b3df570230288501eea3d890bd66948c9b79",
+          "0x0dc4a4c0c5c9f1a6bb0d84b6b0a0d0b5d6b34d9d"
+        ]
+      }
+    }
+  ]
+}

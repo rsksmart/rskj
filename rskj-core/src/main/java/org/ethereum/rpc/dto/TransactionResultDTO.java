@@ -21,6 +21,7 @@ import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -42,8 +43,8 @@ import java.util.List;
  *
  * Fields defined for legacy transactions (blockHash, blockNumber, transactionIndex, etc.) are always
  * serialized, including as JSON null, per the Ethereum JSON-RPC contract. Only the EIP-2718 / EIP-1559
- * typed-transaction fields below are annotated with {@link JsonInclude.Include#NON_NULL} so they are
- * omitted entirely for legacy transactions that do not have them.
+ * typed-transaction fields below are annotated with {@link JsonInclude.Include#NON_NULL} (yParity on its
+ * getter) so they are omitted entirely for legacy transactions that do not have them.
  */
 public class TransactionResultDTO {
 
@@ -71,7 +72,6 @@ public class TransactionResultDTO {
     private String chainId;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<AccessListEntryDTO> accessList;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String yParity;
 
     // Type 2 / Type 4 fields (omitted from JSON for legacy and Type 1)
@@ -278,6 +278,7 @@ public class TransactionResultDTO {
             return nonce;
         }
 
+        @JsonProperty("yParity")
         public String getYParity() {
             return yParity;
         }
@@ -359,6 +360,9 @@ public class TransactionResultDTO {
         return accessList;
     }
 
+    // Jackson names getYParity() "yparity", so the field's annotations never attach: set name and inclusion here
+    @JsonProperty("yParity")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getYParity() {
         return yParity;
     }

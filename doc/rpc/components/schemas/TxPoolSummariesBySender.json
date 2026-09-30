@@ -1,0 +1,20 @@
+{
+  "TxPoolSummariesBySender": {
+    "title": "txPoolSummariesBySender",
+    "type": "object",
+    "description": "Transaction summaries keyed by sender address in bare hex, without the `0x` prefix, then by decimal nonce",
+    "additionalProperties": {
+      "title": "txPoolSummariesByNonce",
+      "type": "object",
+      "description": "Summaries of one sender's transactions, keyed by decimal nonce",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "title": "txPoolSummary",
+          "type": "string",
+          "description": "`recipient: value wei + gas x gasPrice gas`, where the recipient is bare hex without the `0x` prefix, and the value and gas price are decimal wei. The recipient is empty when the transaction creates a contract."
+        }
+      }
+    }
+  }
+}
