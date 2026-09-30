@@ -183,7 +183,7 @@ public class TransactionResultDTO {
      * where {@code address} is 20 bytes and each {@code storageKey} is 32 bytes.
      *
      * <p>Since the access-list RLP is already validated at transaction ingress
-     * ({@code Transaction.validateAccessListRlp}), a decoding failure here indicates data corruption
+     * ({@link org.ethereum.core.transaction.parser.util.AccessListCodec#defaultAccessListBytes}), a decoding failure here indicates data corruption
      * or an encoder bug. We log at ERROR with full context so the incident is visible, and still
      * return an empty list to avoid breaking the RPC response for other clients.
      */

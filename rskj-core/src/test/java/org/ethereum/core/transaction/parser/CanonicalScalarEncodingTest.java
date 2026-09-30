@@ -18,24 +18,25 @@
 package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.core.transaction.encoder.util.TransactionEncodingUtils;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.encoder.util.TransactionEncodingUtils;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -329,8 +330,9 @@ class CanonicalScalarEncodingTest {
             CallArguments args = type2Args("0x1", "0x5208");
             args.setChainId("0x0");
 
-            assertThrows(RskJsonRpcRequestException.class,
+            RskJsonRpcRequestException e = assertThrows(RskJsonRpcRequestException.class,
                     () -> Transaction.fromCallArguments(args, () -> "0x1", REGTEST_CHAIN_ID));
+            assertEquals("Typed transaction chainId must be between 1 and 255, got: 0", e.getMessage());
         }
 
         @ParameterizedTest
@@ -341,6 +343,39 @@ class CanonicalScalarEncodingTest {
 
             assertThrows(RskJsonRpcRequestException.class,
                     () -> Transaction.fromCallArguments(args, () -> "0x1", REGTEST_CHAIN_ID));
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"-1", "-56"})
+        void rpcNegativeChainIdIsRejectedForTypedTransactions(String chainId) {
+            CallArguments args = type2Args("0x1", "0x5208");
+            args.setChainId(chainId);
+
+            RskJsonRpcRequestException e = assertThrows(RskJsonRpcRequestException.class,
+                    () -> TransactionInput.fromCallArguments(args, null));
+            assertEquals(-32602, e.getCode());
+            assertEquals("Typed transaction chainId must be between 1 and 255, got: " + chainId, e.getMessage());
+        }
+
+        @Test
+        void parseExplicitChainIdRequiresAValue() {
+            NullPointerException e = assertThrows(NullPointerException.class,
+                    () -> TransactionInput.parseExplicitChainId(null, false));
+            assertEquals("chainId", e.getMessage());
+        }
+
+        @Test
+        void parseExplicitChainIdReturnsALegacyZeroAsWritten() {
+            assertEquals(0, TransactionInput.parseExplicitChainId("0x0", false));
+        }
+
+        @Test
+        void rpcNegativeChainIdKeepsItsLegacyReading() {
+            // Kept as in production: legacy reads "-1" as the single byte 0xff.
+            CallArguments args = new CallArguments();
+            args.setChainId("-1");
+
+            assertEquals(Byte.valueOf((byte) 0xff), TransactionInput.fromCallArguments(args, null).chainId());
         }
 
         @Test
@@ -629,54 +664,33 @@ class CanonicalScalarEncodingTest {
         }
     }
 
-    /**
-     * The typed encoders assert the minimal-nonce invariant rather than canonicalising, because on
-     * the raw path the signature commits to the bytes as received. Legacy keeps the lenient helper.
-     */
+    /** The typed encoders emit fields as held; the constructor guarantees they are minimal. */
     @Nested
-    class TypedEncodersAssertMinimalNonce {
+    class TypedEncodersEmitFieldsAsHeld {
 
         @Test
-        void encodeTypedNonceRejectsALeadingZero() {
-            IllegalStateException e = assertThrows(IllegalStateException.class,
-                    () -> TransactionEncodingUtils.encodeTypedNonce(NON_CANONICAL_128));
-            assertTrue(e.getMessage().contains("minimally encoded"), e.getMessage());
+        void encodeNonceSpellsMinimalAndEmptyNonces() {
+            assertArrayEquals(RLP.encodeElement(CANONICAL_128), TransactionEncodingUtils.encodeNonce(CANONICAL_128));
+            assertArrayEquals(RLP.encodeElement(null), TransactionEncodingUtils.encodeNonce(new byte[0]));
+            assertArrayEquals(RLP.encodeElement(null), TransactionEncodingUtils.encodeNonce(null));
         }
 
-        @Test
-        void encodeTypedNonceAcceptsMinimalAndEmptyNonces() {
-            assertArrayEquals(RLP.encodeElement(CANONICAL_128),
-                    TransactionEncodingUtils.encodeTypedNonce(CANONICAL_128));
-            assertArrayEquals(RLP.encodeElement(null),
-                    TransactionEncodingUtils.encodeTypedNonce(new byte[0]));
-            assertArrayEquals(RLP.encodeElement(null),
-                    TransactionEncodingUtils.encodeTypedNonce(null));
+        @ParameterizedTest
+        @ValueSource(strings = {"5208", ""})
+        void typedEncoderSpellsGasLimitAsHeld(String gasLimitHex) {
+            byte[] gasLimit = Hex.decode(gasLimitHex);
+
+            RLPList fields = encodedType2Fields(gasLimit, REGTEST_CHAIN_ID);
+
+            assertArrayEquals(gasLimit, CommonParsingUtils.nullToEmpty(fields.get(4).getRLPData()));
         }
 
-        @Test
-        void encodeTypedGasLimitRejectsALeadingZero() {
-            IllegalStateException e = assertThrows(IllegalStateException.class,
-                    () -> TransactionEncodingUtils.encodeTypedGasLimit(new byte[]{0x00, 0x52, 0x08}));
-            assertTrue(e.getMessage().contains("minimally encoded"), e.getMessage());
-        }
+        @ParameterizedTest
+        @ValueSource(ints = {33, 200})
+        void typedEncoderSpellsChainIdAsHeld(int chainId) {
+            RLPList fields = encodedType2Fields(new byte[]{0x52, 0x08}, (byte) chainId);
 
-        @Test
-        void encodeTypedGasLimitAcceptsMinimalAndEmpty() {
-            assertArrayEquals(RLP.encodeElement(new byte[]{0x52, 0x08}),
-                    TransactionEncodingUtils.encodeTypedGasLimit(new byte[]{0x52, 0x08}));
-            assertArrayEquals(RLP.encodeElement(null),
-                    TransactionEncodingUtils.encodeTypedGasLimit(new byte[0]));
-        }
-
-        @Test
-        void encodeTypedChainIdRejectsZero() {
-            assertThrows(IllegalStateException.class, () -> TransactionEncodingUtils.encodeTypedChainId((byte) 0));
-        }
-
-        @Test
-        void encodeTypedChainIdSpellsNonZeroValuesAsBefore() {
-            assertArrayEquals(RLP.encodeByte((byte) 33), TransactionEncodingUtils.encodeTypedChainId((byte) 33));
-            assertArrayEquals(RLP.encodeByte((byte) 200), TransactionEncodingUtils.encodeTypedChainId((byte) 200));
+            assertArrayEquals(new byte[]{(byte) chainId}, fields.get(0).getRLPData());
         }
 
         @Test
@@ -686,6 +700,16 @@ class CanonicalScalarEncodingTest {
                     TransactionEncodingUtils.encodeNonce(NON_CANONICAL_128));
             assertArrayEquals(RLP.encodeElement(null),
                     TransactionEncodingUtils.encodeNonce(new byte[]{0x00}));
+        }
+
+        /** Type-2 layout: [chainId, nonce, maxPriorityFee, maxFee, gasLimit, ...]. */
+        private RLPList encodedType2Fields(byte[] gasLimit, byte chainId) {
+            Transaction tx = new Transaction(new byte[]{0x01}, Coin.ZERO, gasLimit, DEFAULT_RECEIVER, Coin.ZERO,
+                    new byte[0], chainId, false, TransactionTypePrefix.typed(TransactionType.TYPE_2), EMPTY_ACCESS_LIST,
+                    DEFAULT_MAX_PRIORITY, DEFAULT_MAX_FEE, null);
+            tx.sign(PRIVATE_KEY);
+            byte[] encoded = tx.getEncoded();
+            return RLP.decodeList(Arrays.copyOfRange(encoded, 1, encoded.length));
         }
     }
 

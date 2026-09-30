@@ -77,14 +77,9 @@ public final class TypedTransactionCodec {
         if (chainIdData == null || chainIdData.length == 0) {
             throw new IllegalArgumentException("Typed transaction chainId must not be zero or absent");
         }
-        // Canonical plus non-empty already implies non-zero: the first byte cannot be 0x00, so no
-        // separate zero check is needed below.
         CommonParsingUtils.requireCanonicalScalar(chainIdData, "Typed transaction chainId");
         BigInteger chainIdValue = new BigInteger(1, chainIdData);
-        if (!CommonParsingUtils.isValidTypedChainId(chainIdValue)) {
-            throw new IllegalArgumentException("Typed transaction chainId must be between 1 and "
-                    + CommonParsingUtils.MAX_TYPED_CHAIN_ID + ", got: " + chainIdValue);
-        }
+        CommonParsingUtils.requireValidTypedChainId(chainIdValue);
         return chainIdValue.byteValue();
     }
 }

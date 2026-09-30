@@ -18,12 +18,12 @@
 package org.ethereum.rpc.dto;
 
 import co.rsk.config.TestSystemProperties;
-import org.bouncycastle.util.BigIntegers;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockTxSignatureCache;
@@ -377,21 +377,9 @@ class TransactionResultDTOTest {
                 new byte[0],
                 Rskip546TestSupport.EMPTY_ACCESS_LIST);
         signed.sign(new byte[]{});
-        Transaction tx = new Transaction(
-                signed.getNonce(),
-                signed.getGasPrice(),
-                signed.getGasLimit(),
-                signed.getReceiveAddress(),
-                signed.getValue(),
-                signed.getData(),
-                signed.getChainId(),
-                false,
-                signed.getTypePrefix(),
-                new byte[]{(byte) 0xff, 0x01},
-                null,
-                null,
-                null);
-        tx.setSignature(signed.getSignature());
+        // The constructor refuses corrupt access-list bytes, so stored corruption is simulated.
+        Transaction tx = Mockito.spy(signed);
+        Mockito.doReturn(new byte[]{(byte) 0xff, 0x01}).when(tx).getAccessListBytes();
 
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
                 new BlockTxSignatureCache(new ReceivedTxSignatureCache()));

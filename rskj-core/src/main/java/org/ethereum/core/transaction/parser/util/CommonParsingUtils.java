@@ -31,17 +31,9 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Shared field checks for the transaction parsers. The {@code require*Bytes} / {@code require*Coin}
- * family bounds the value a field carries; the {@code requireCanonical*} family checks the bytes the
- * encoding carried, and is for typed transactions only — Type-0 is live consensus code and still
- * accepts non-minimal scalars.
- *
- * <p>Ingress rule: a received RLP encoding is validated, never rewritten, since the sender's
- * signature commits to the exact bytes. Structured ingress minimises instead, because it receives a
- * value and chooses the encoding itself.
- *
- * <p>Each {@code requireCanonical*ScalarFields} mirrors a bounds sibling field for field; a scalar
- * added to one must be added to the other.
+ * Shared field checks for the transaction parsers. {@code requireCanonical*} checks are typed-only:
+ * received RLP is validated, never rewritten, since the signature commits to its bytes.
+ * Each {@code requireCanonical*ScalarFields} mirrors a bounds sibling; keep their fields in step.
  */
 public final class CommonParsingUtils {
 
@@ -58,16 +50,28 @@ public final class CommonParsingUtils {
     /** Inclusive upper bound of a typed transaction chainId; RSKj carries it in a single byte. */
     public static final int MAX_TYPED_CHAIN_ID = 255;
 
-    /**
-     * Value rule for a typed transaction chainId: {@code [1, MAX_TYPED_CHAIN_ID]}. Both ingress
-     * paths share the rule but raise different errors — a JSON-RPC parameter error on the
-     * structured path, an {@link IllegalArgumentException} on the raw one — so this reports
-     * validity rather than throwing. Encoding rules stay with each path.
-     */
+    /** Deepest list nesting in a typed envelope: envelope, access list, entry, storage keys. */
+    private static final int MAX_TYPED_LIST_DEPTH = 4;
+
+    /** Typed chainId value rule, {@code [1, MAX_TYPED_CHAIN_ID]}; each ingress path raises its own error. */
     public static boolean isValidTypedChainId(BigInteger chainId) {
         return chainId != null
                 && chainId.signum() > 0
                 && chainId.compareTo(BigInteger.valueOf(MAX_TYPED_CHAIN_ID)) <= 0;
+    }
+
+    public static void requireValidTypedChainId(BigInteger chainId) {
+        if (!isValidTypedChainId(chainId)) {
+            throw new IllegalArgumentException(invalidTypedChainIdMessage(chainId));
+        }
+    }
+
+    public static void requireValidTypedChainId(byte chainId) {
+        requireValidTypedChainId(BigInteger.valueOf(Byte.toUnsignedInt(chainId)));
+    }
+
+    public static String invalidTypedChainIdMessage(BigInteger chainId) {
+        return "Typed transaction chainId must be between 1 and " + MAX_TYPED_CHAIN_ID + ", got: " + chainId;
     }
 
     public static void requireDataWordBytes(byte[] field, String message) {
@@ -153,11 +157,7 @@ public final class CommonParsingUtils {
         requireDataWordCoin(value, "Value is not valid");
     }
 
-    /**
-     * Encoding counterpart of {@link #requireLegacyScalarFields}, for the field set carrying a
-     * {@code gasPrice}. Named for the field set, not the type: the bounds sibling serves Type-0 and
-     * Type-1, but only Type-1 checks encodings. Any field may be {@code null}.
-     */
+    /** Encoding counterpart of {@link #requireLegacyScalarFields}, used by Type-1 only. Fields may be {@code null}. */
     public static void requireCanonicalGasPriceScalarFields(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] value) {
         requireCanonicalScalar(nonce, "Nonce");
         requireCanonicalScalar(gasPrice, "Gas Price");
@@ -190,29 +190,14 @@ public final class CommonParsingUtils {
         }
     }
 
-    /**
-     * Requires a nested-list field — access list, authorization list — to have arrived framed as an
-     * RLP list. {@link RLPElement#getRLPRawData()} returns a list's whole frame but a byte string's
-     * payload, and both then decode as RLP, so the distinction survives only here while the element
-     * is still typed. Raw ingress only.
-     */
+    /** Requires a list-valued field (access or authorization list) to be framed as an RLP list. */
     public static void requireListFramed(RLPElement field, String fieldLabel) {
         if (!(field instanceof RLPList)) {
             throw new IllegalArgumentException(fieldLabel + " must be encoded as an RLP list");
         }
     }
 
-    /**
-     * Requires every envelope field other than the given list-valued ones to be a byte string.
-     * The counterpart of {@link #requireListFramed}, which covers the list-valued fields: between
-     * them each field carries the framing its schema calls for.
-     *
-     * <p>Both directions matter because {@link RLPElement#getRLPData()} yields a list's whole frame
-     * but a byte string's payload, so a list in a byte-string slot is read as the bytes of its own
-     * frame and re-emitted by the encoders as a byte string.
-     *
-     * <p>Raw ingress only. Structured ingress builds these fields itself and has no frame to check.
-     */
+    /** Requires every non-list envelope field to be framed as an RLP byte string. */
     public static void requireByteStringFields(RLPList txFields, int... listFieldIndices) {
         for (int i = 0; i < txFields.size(); i++) {
             if (isListField(i, listFieldIndices)) {
@@ -222,12 +207,7 @@ public final class CommonParsingUtils {
         }
     }
 
-    /**
-     * Single-element form of {@link #requireByteStringFields}, for schema slots reached one at a
-     * time — the access-list address and storage keys. A length check alone cannot stand in for it:
-     * a list whose frame happens to be exactly 20 or 32 bytes measures the same as the byte string
-     * the schema calls for.
-     */
+    /** Single-element {@link #requireByteStringFields}; a length check alone cannot tell a list from a byte string. */
     public static void requireByteStringFramed(RLPElement field, String fieldLabel) {
         if (field instanceof RLPList) {
             throw new IllegalArgumentException(fieldLabel + " must be encoded as an RLP byte string");
@@ -243,15 +223,19 @@ public final class CommonParsingUtils {
         return false;
     }
 
-    /**
-     * Re-encodes a decoded element, so comparing the result with the bytes received proves the
-     * whole RLP frame was minimal: list headers, item prefixes and nested lists alike.
-     */
+    /** Re-encodes a decoded element minimally, for comparison with the bytes received. */
     public static byte[] reencodeCanonical(RLPElement element) {
+        return reencodeCanonical(element, 1);
+    }
+
+    private static byte[] reencodeCanonical(RLPElement element, int depth) {
         if (element instanceof RLPList list) {
+            if (depth > MAX_TYPED_LIST_DEPTH) {
+                throw new IllegalArgumentException("RLP lists are nested too deeply");
+            }
             byte[][] items = new byte[list.size()][];
             for (int i = 0; i < list.size(); i++) {
-                items[i] = reencodeCanonical(list.get(i));
+                items[i] = reencodeCanonical(list.get(i), depth + 1);
             }
             return RLP.encodeList(items);
         }

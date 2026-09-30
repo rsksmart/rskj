@@ -19,11 +19,13 @@ package org.ethereum.core.transaction.encoder;
 
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.transaction.encoder.util.TransactionEncodingUtils;
 import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
+import static org.ethereum.core.transaction.encoder.util.TransactionEncodingUtils.encodeAccessList;
+import static org.ethereum.core.transaction.encoder.util.TransactionEncodingUtils.encodeFeeScalar;
+import static org.ethereum.core.transaction.encoder.util.TransactionEncodingUtils.encodeNonce;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class Type4TransactionEncoder implements TransactionEncoder {
@@ -62,15 +64,15 @@ public class Type4TransactionEncoder implements TransactionEncoder {
         }
 
         return new byte[][]{
-                TransactionEncodingUtils.encodeTypedChainId(transaction.getChainId()),
-                TransactionEncodingUtils.encodeTypedNonce(transaction.getNonce()),
-                TransactionEncodingUtils.encodeFeeScalar(transaction.getMaxPriorityFeePerGas()),
-                TransactionEncodingUtils.encodeFeeScalar(transaction.getMaxFeePerGas()),
-                TransactionEncodingUtils.encodeTypedGasLimit(transaction.getGasLimit()),
+                RLP.encodeByte(transaction.getChainId()),
+                encodeNonce(transaction.getNonce()),
+                encodeFeeScalar(transaction.getMaxPriorityFeePerGas()),
+                encodeFeeScalar(transaction.getMaxFeePerGas()),
+                RLP.encodeElement(transaction.getGasLimit()),
                 RLP.encodeRskAddress(transaction.getReceiveAddress()),
                 RLP.encodeCoinNullZero(transaction.getValue()),
                 RLP.encodeElement(transaction.getData()),
-                TransactionEncodingUtils.encodeAccessList(transaction.getAccessListBytes()),
+                encodeAccessList(transaction.getAccessListBytes()),
                 AuthorizationListCodec.encodeList(transaction.getAuthorizationList())
         };
     }

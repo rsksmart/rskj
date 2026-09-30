@@ -37,6 +37,7 @@ import static org.ethereum.core.transaction.encoder.EncoderTestSupport.unsignedL
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.withFixedSignature;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Pins {@code encodeForSigning} and {@code encodeSigned} output for every supported
@@ -106,18 +107,14 @@ class GoldenTransactionEncoderTest {
     }
 
     /**
-     * A typed chainId of zero has no encoding the typed parser accepts, so the encoders refuse it
-     * rather than pin an unparseable vector. Legacy keeps its chainId-0 vector above.
+     * A typed chainId of zero has no encoding the typed parser accepts, so it is refused before
+     * any encoder runs rather than pinned as an unparseable vector. Legacy keeps its chainId-0 vector above.
      */
     @ParameterizedTest(name = "{0}")
     @MethodSource("typedChainIdZeroCases")
-    void typedEncoders_refuseChainIdZero(String id, Supplier<Transaction> transactionSupplier) {
-        Transaction tx = transactionSupplier.get();
-        TransactionEncoder encoder = TransactionEncoderFactory.getEncoder(tx);
-
-        assertThrows(IllegalStateException.class, () -> encoder.encodeForSigning(tx));
-        assertThrows(IllegalStateException.class,
-                () -> encoder.encodeSigned(withFixedSignature(transactionSupplier.get(), FIXED_V)));
+    void typedTransactions_refuseChainIdZero(String id, Supplier<Transaction> transactionSupplier) {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, transactionSupplier::get);
+        assertTrue(e.getMessage().contains("chainId"), e.getMessage());
     }
 
     @Test

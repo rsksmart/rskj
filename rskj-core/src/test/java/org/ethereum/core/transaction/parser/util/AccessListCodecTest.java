@@ -18,6 +18,7 @@
 package org.ethereum.core.transaction.parser.util;
 
 import co.rsk.core.Coin;
+import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.HashUtil;
@@ -42,7 +43,9 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
 /**
@@ -309,12 +312,42 @@ class AccessListCodecTest {
         tx.sign(HashUtil.keccak256("access-list-sender".getBytes()));
         byte[] raw = tx.getEncoded();
 
+        byte[] payload = Arrays.copyOfRange(raw, 1, raw.length);
+
         try (MockedStatic<CommonParsingUtils> utils =
                      Mockito.mockStatic(CommonParsingUtils.class, Mockito.CALLS_REAL_METHODS)) {
             Transaction.fromRaw(raw);
 
             utils.verify(() -> CommonParsingUtils.reencodeCanonical(argThat(element ->
-                    element instanceof RLPList && Arrays.equals(accessList, element.getRLPRawData()))), times(1));
+                    element instanceof RLPList && Arrays.equals(payload, element.getRLPRawData()))), times(1));
+            utils.verify(() -> CommonParsingUtils.reencodeCanonical(argThat(element ->
+                    element instanceof RLPList && Arrays.equals(accessList, element.getRLPRawData()))), never());
+        }
+    }
+
+    /** The parser has already validated the access list, so raw ingress does not validate it again at construction. */
+    @Test
+    void typedRawIngressDoesNotRevalidateTheAccessListAtConstruction() {
+        Transaction tx = Transaction.builder()
+                .type(TransactionType.TYPE_2)
+                .nonce(BigInteger.ONE)
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(2))
+                .gasLimit(BigInteger.valueOf(30_000))
+                .receiveAddress(new byte[20])
+                .value(BigInteger.ZERO)
+                .accessList(populatedAccessList())
+                .chainId((byte) 33)
+                .build();
+        tx.sign(HashUtil.keccak256("access-list-sender".getBytes()));
+        byte[] raw = tx.getEncoded();
+
+        try (MockedStatic<AccessListCodec> codec =
+                     Mockito.mockStatic(AccessListCodec.class, Mockito.CALLS_REAL_METHODS)) {
+            Transaction.fromRaw(raw);
+            new ImmutableTransaction(raw);
+
+            codec.verify(() -> AccessListCodec.defaultAccessListBytes(any()), never());
         }
     }
 

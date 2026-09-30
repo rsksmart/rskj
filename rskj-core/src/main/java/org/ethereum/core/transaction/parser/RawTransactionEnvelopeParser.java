@@ -17,6 +17,7 @@
  */
 package org.ethereum.core.transaction.parser;
 
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.core.types.bytes.BytesSlice;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
@@ -25,7 +26,6 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -79,24 +79,14 @@ public final class RawTransactionEnvelopeParser {
     }
 
     /**
-     * Requires re-encoding the decoded tree to reproduce the payload received, so each item is
-     * framed the way the sender wrote it. The scalar checks inspect a decoded payload and cannot see
-     * its frame — {@code 0x81 0x05} and {@code 0x05} decode alike.
-     *
-     * <p>Framing only. Scalar minimality is a separate rule, enforced per field by
-     * {@link CommonParsingUtils#requireCanonicalScalar}: a non-minimal scalar is a well-formed item
-     * that re-encodes to itself, so this check cannot see it. The two are complements, not
-     * alternatives — neither makes the other redundant.
-     *
-     * <p>Runs after the type parser, so the tree it walks already has the shape the schema defines.
-     *
-     * <p>Typed transactions only.
+     * Requires the typed payload to re-encode to itself, proving every RLP frame is minimal.
+     * Scalar minimality is checked per field; this runs after the type parser has checked the shape.
      */
     private static void requireCanonicalEnvelopeRlp(TransactionTypePrefix typePrefix, BytesSlice payload, RLPList txFields) {
         if (typePrefix.type() == TransactionType.LEGACY) {
             return;
         }
-        if (!Arrays.equals(payload.copyArray(), CommonParsingUtils.reencodeCanonical(txFields))) {
+        if (!BytesSlice.equals(payload, Bytes.of(CommonParsingUtils.reencodeCanonical(txFields)))) {
             throw new IllegalArgumentException(
                     "Typed transaction envelope is not canonically encoded");
         }

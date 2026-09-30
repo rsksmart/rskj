@@ -42,6 +42,7 @@ import org.ethereum.core.transaction.parser.ParsedType1Transaction;
 import org.ethereum.core.transaction.parser.ParsedType2Transaction;
 import org.ethereum.core.transaction.parser.ParsedType4Transaction;
 import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
+import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.Type4TransactionValidation;
 import org.ethereum.cost.InitcodeCostCalculator;
@@ -183,7 +184,8 @@ public class Transaction {
                 tx.accessListBytes,
                 tx.maxPriorityFeePerGas,
                 tx.maxFeePerGas,
-                tx.authorizationList
+                tx.authorizationList,
+                false
         );
 
         this.signature = tx.signature;
@@ -270,7 +272,8 @@ public class Transaction {
                     accessListBytes,
                     maxPriorityFeePerGas,
                     maxFeePerGas,
-                    authorizationList
+                    authorizationList,
+                    false
             );
             tx.signature = parsed.signature();
             return tx;
@@ -281,9 +284,21 @@ public class Transaction {
                           byte chainId, final boolean localCall, TransactionTypePrefix typePrefix, byte[] accessListBytes,
                           @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas,
                           @Nullable List<SetCodeAuthorization> authorizationList) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, localCall, typePrefix,
+                accessListBytes, maxPriorityFeePerGas, maxFeePerGas, authorizationList, true);
+    }
+
+    /** {@code checkTypedFields} is false only for fields a parser or an existing transaction already validated. */
+    private Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
+                        byte chainId, boolean localCall, TransactionTypePrefix typePrefix, byte[] accessListBytes,
+                        @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas,
+                        @Nullable List<SetCodeAuthorization> authorizationList, boolean checkTypedFields) {
 
         if (typePrefix.isRskNamespace()) {
             throw new IllegalArgumentException(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
+        }
+        if (checkTypedFields && typePrefix.isTyped()) {
+            requireCanonicalTypedFields(nonce, gasLimit, chainId, accessListBytes);
         }
 
         this.nonce = ByteUtil.cloneBytes(nonce);
@@ -300,6 +315,18 @@ public class Transaction {
         this.maxFeePerGas = maxFeePerGas;
         this.authorizationList = authorizationList == null ? null : List.copyOf(authorizationList);
 
+    }
+
+    private static void requireCanonicalTypedFields(byte[] nonce, byte[] gasLimit, byte chainId, byte[] accessListBytes) {
+        CommonParsingUtils.requireCanonicalScalar(nonce, "Nonce");
+        CommonParsingUtils.requireCanonicalScalar(gasLimit, "Gas Limit");
+        CommonParsingUtils.requireValidTypedChainId(chainId);
+        if (accessListBytes != null) {
+            if (accessListBytes.length == 0) {
+                throw new IllegalArgumentException("Access list must be an RLP list");
+            }
+            AccessListCodec.defaultAccessListBytes(accessListBytes);
+        }
     }
 
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:

@@ -26,12 +26,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -400,5 +401,42 @@ class CommonParsingUtilsTest {
     void isValidTypedChainId_nullOrNegative_isFalse() {
         assertFalse(CommonParsingUtils.isValidTypedChainId(null));
         assertFalse(CommonParsingUtils.isValidTypedChainId(BigInteger.valueOf(-1)));
+    }
+
+    // -------------------------------------------------------------------------
+    // reencodeCanonical
+    // -------------------------------------------------------------------------
+
+    @Test
+    void reencodeCanonical_deeplyNestedList_throwsInsteadOfOverflowingTheStack() {
+        RLPList nested = RLP.decodeList(nestedEmptyLists(100_000));
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.reencodeCanonical(nested));
+        assertTrue(e.getMessage().contains("nested too deeply"), e.getMessage());
+    }
+
+    @Test
+    void reencodeCanonical_typedSchemaDepth_roundTrips() {
+        byte[] envelope = RLP.encodeList(RLP.encodeList(RLP.encodeList(
+                RLP.encodeElement(new byte[20]),
+                RLP.encodeList(RLP.encodeElement(new byte[32])))));
+
+        assertArrayEquals(envelope, CommonParsingUtils.reencodeCanonical(RLP.decodeList(envelope)));
+    }
+
+    /** {@code depth} lists, each holding only the next, around an empty list. */
+    private static byte[] nestedEmptyLists(int depth) {
+        int[] lengths = new int[depth + 1];
+        lengths[0] = 1;
+        for (int i = 1; i <= depth; i++) {
+            lengths[i] = lengths[i - 1] + RLP.encodeListHeader(lengths[i - 1]).length;
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream(lengths[depth]);
+        for (int i = depth; i >= 1; i--) {
+            out.writeBytes(RLP.encodeListHeader(lengths[i - 1]));
+        }
+        out.write(0xc0);
+        return out.toByteArray();
     }
 }

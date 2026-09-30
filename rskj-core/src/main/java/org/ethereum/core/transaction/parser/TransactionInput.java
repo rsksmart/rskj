@@ -121,7 +121,7 @@ public final class TransactionInput {
         Coin value = CommonParsingUtils.parseCoin(args.getValue());
         RskAddress receiveAddress = CommonParsingUtils.parseAddress(args.getTo());
         byte[] data = CommonParsingUtils.parseHexData(args.getData());
-        Byte chainId = parseOptionalChainId(args.getChainId());
+        Byte chainId = parseOptionalChainId(args.getChainId(), typePrefix.isTyped());
         byte[] accessListBytes = AccessListCodec.encodeAccessList(args.getAccessList());
         List<SetCodeAuthorization> authorizationList = args.getAuthorizationList() == null
                 ? null
@@ -244,12 +244,19 @@ public final class TransactionInput {
     }
 
     @Nullable
-    private static Byte parseOptionalChainId(String hex) {
+    private static Byte parseOptionalChainId(String hex, boolean typed) {
         if (hex == null) {
             return null;
         }
         try {
             byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
+            // Legacy keeps reading a negative decimal as its two's-complement byte.
+            if (typed) {
+                BigInteger value = HexUtils.strHexOrStrNumberToBigInteger(hex);
+                if (value.signum() < 0) {
+                    throw invalidParamError(CommonParsingUtils.invalidTypedChainIdMessage(value));
+                }
+            }
             if (bytes.length != 1) {
                 throw invalidParamError(ERR_INVALID_CHAIN_ID + hex);
             }
@@ -268,21 +275,22 @@ public final class TransactionInput {
         return chainId == 0 ? defaultChainId : chainId;
     }
 
-    /**
-     * Zero is rejected rather than defaulted: the typed encoders spell it as an empty chainId field,
-     * which the raw parser then refuses, so the transaction could not be reparsed from its own
-     * encoding. Legacy keeps its separate zero-to-default behaviour. The bound itself lives in
-     * {@link CommonParsingUtils#isValidTypedChainId}, shared with the raw path.
-     */
+    /** Zero is rejected, not defaulted as in legacy: it would encode as an empty field the parser refuses. */
     static byte resolveTypedChainId(@Nullable Byte chainId) {
         if (chainId == null) {
             throw invalidParamError("Typed transaction requires chainId");
         }
-        if (!CommonParsingUtils.isValidTypedChainId(BigInteger.valueOf(Byte.toUnsignedInt(chainId)))) {
-            throw invalidParamError("Typed transaction chainId must be between 1 and "
-                    + CommonParsingUtils.MAX_TYPED_CHAIN_ID);
+        BigInteger value = BigInteger.valueOf(Byte.toUnsignedInt(chainId));
+        if (!CommonParsingUtils.isValidTypedChainId(value)) {
+            throw invalidParamError(CommonParsingUtils.invalidTypedChainIdMessage(value));
         }
         return chainId;
+    }
+
+    /** A present JSON-RPC chainId: typed values are range-checked, a legacy one is returned as written, 0 included. */
+    public static byte parseExplicitChainId(String hex, boolean typed) {
+        Byte chainId = parseOptionalChainId(Objects.requireNonNull(hex, "chainId"), typed);
+        return typed ? resolveTypedChainId(chainId) : chainId;
     }
 
     /**
