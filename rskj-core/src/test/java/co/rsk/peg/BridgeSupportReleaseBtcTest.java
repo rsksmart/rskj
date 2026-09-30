@@ -1963,18 +1963,7 @@ class BridgeSupportReleaseBtcTest {
      *********************************/
 
     private Transaction buildReleaseRskTx(co.rsk.core.Coin coin) {
-        Transaction releaseTransaction = Transaction.builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(BRIDGE_ADDRESS)
-            .data(Hex.decode(DATA))
-            .chainId(Constants.MAINNET_CHAIN_ID)
-            .value(coin)
-            .build();
-        releaseTransaction.sign(SENDER.getPrivKeyBytes());
-
-        return releaseTransaction;
+        return buildPegoutRequestTransaction(coin, NONCE.longValue(), SENDER);
     }
 
     private Transaction buildReleaseRskTx_fromContract(co.rsk.core.Coin pegoutRequestValue) {
