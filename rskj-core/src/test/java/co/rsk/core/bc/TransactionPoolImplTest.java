@@ -1174,6 +1174,45 @@ class TransactionPoolImplTest {
     }
 
     @Test
+    void delegatedAccount_liveQueuedTransactionStillOccupiesSlot() {
+        createTestAccounts(2, Coin.valueOf(1_000_000));
+        Transaction queued = createSampleTransaction(1, 2, 1000, 2);
+        Assertions.assertTrue(transactionPool.addTransaction(queued).queuedTransactionsWereAdded());
+        makeAccountDelegated(1, 2);
+
+        TransactionPoolAddResult r = transactionPool.addTransaction(createSampleTransaction(1, 2, 1000, 0));
+        Assertions.assertFalse(r.transactionsWereAdded());
+        Assertions.assertEquals("delegated account already has a transaction in the pool", r.getErrorMessage());
+    }
+
+    @Test
+    void delegatedAccount_staleCostIsNotCountedInBalanceCheck() {
+        createTestAccounts(2, Coin.valueOf(1_000_000));
+        Account sender = createAccount(1);
+        Transaction stale = createSampleTransaction(1, 2, 479_000, 0); // costs 500,000
+        Assertions.assertTrue(transactionPool.addTransaction(stale).pendingTransactionsWereAdded());
+        repository.increaseNonce(sender.getAddress());
+        makeAccountDelegated(1, 2);
+
+        // costs 500,001, which the balance covers on its own
+        TransactionPoolAddResult r = transactionPool.addTransaction(createSampleTransaction(1, 2, 479_001, 1));
+        Assertions.assertTrue(r.pendingTransactionsWereAdded(), r.getErrorMessage());
+    }
+
+    @Test
+    void nonDelegatedAccount_staleCostIsNotCountedInBalanceCheck() {
+        createTestAccounts(2, Coin.valueOf(1_000_000));
+        Account sender = createAccount(1);
+        Transaction stale = createSampleTransaction(1, 2, 479_000, 0); // costs 500,000
+        Assertions.assertTrue(transactionPool.addTransaction(stale).pendingTransactionsWereAdded());
+        repository.increaseNonce(sender.getAddress());
+
+        // costs 500,001, which the balance covers on its own
+        TransactionPoolAddResult r = transactionPool.addTransaction(createSampleTransaction(1, 2, 479_001, 1));
+        Assertions.assertTrue(r.pendingTransactionsWereAdded(), r.getErrorMessage());
+    }
+
+    @Test
     void addTransaction_withNonCanonicalNonce_isRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
