@@ -461,21 +461,21 @@ class BridgeUtilsTest {
         hashes.add(tx.getHash());
         PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 2);
         Sha256Hash merkleRoot = BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()).get();
-        Assertions.assertNotNull(merkleRoot);
+        assertNotNull(merkleRoot);
     }
 
     @Test
     void validateInputsCount_active_rskip() {
         byte[] decode = Hex.decode("00000000000100");
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
-        Assertions.assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(decode, activations));
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(decode, activations));
     }
 
     @Test
     void validateInputsCount_inactive_rskip() {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         byte[] btcTxSerialized = tx.bitcoinSerialize();
-        Assertions.assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(btcTxSerialized, activations));
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(btcTxSerialized, activations));
     }
 
     @Test
