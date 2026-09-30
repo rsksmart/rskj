@@ -453,6 +453,16 @@ public class Transaction {
         return gasPrice;
     }
 
+    /**
+     * The gasPrice field as decoded, for encoders: {@code null} when it was received as the RLP empty string
+     * ({@code 0x80}), as opposed to {@link Coin#ZERO} for a single zero byte ({@code 0x00}). Unlike
+     * {@link #getGasPrice()}, it keeps the two apart, so a legacy transaction re-encodes to the bytes that were signed.
+     */
+    @Nullable
+    public Coin getEncodableGasPrice() {
+        return gasPrice;
+    }
+
     @Nullable
     public Coin getMaxPriorityFeePerGas() {
         return maxPriorityFeePerGas;
