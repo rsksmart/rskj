@@ -57,6 +57,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static org.ethereum.util.BIUtil.toBI;
 
@@ -502,19 +503,23 @@ public class TransactionPoolImpl implements TransactionPool {
      * @return whether the sender balance is enough to pay for all pending transactions + newTx
      */
     private boolean senderCanPayPendingTransactionsAndNewTx(Transaction newTx, RepositorySnapshot currentRepository) {
-        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender(signatureCache));
+        RskAddress sender = newTx.getSender(signatureCache);
+        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(sender);
+        BigInteger stateNonce = currentRepository.getNonce(sender);
 
         Coin accumTxCost = Coin.ZERO;
         for (Transaction t : transactions) {
             boolean isReplacedTx = Arrays.equals(t.getNonce(), newTx.getNonce());
-            // do not consider replaced transaction for the calculations
-            if (!isReplacedTx) {
+            // a stale tx (nonce already consumed in state) can never be mined, so its cost can never be spent
+            boolean isStaleTx = t.getNonceAsInteger().compareTo(stateNonce) < 0;
+            // do not consider replaced or stale transactions for the calculations
+            if (!isReplacedTx && !isStaleTx) {
                 accumTxCost = accumTxCost.add(getTxBaseCost(t));
             }
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
-        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0;
+        return costWithNewTx.compareTo(currentRepository.getBalance(sender)) <= 0;
     }
 
     private Coin getTxBaseCost(Transaction tx) {
@@ -551,7 +556,13 @@ public class TransactionPoolImpl implements TransactionPool {
             return Optional.empty();
         }
 
-        boolean alreadyHasTransaction = !pendingTransactions.getTransactionsWithSender(sender).isEmpty() || !queuedTransactions.getTransactionsWithSender(sender).isEmpty();
+        // Stale entries (nonce already consumed in mined state, e.g. by a sponsor's
+        // authorization tuple) can never be mined, so they must not occupy the slot.
+        BigInteger stateNonce = repository.getNonce(sender);
+        boolean alreadyHasTransaction = Stream.concat(
+                        pendingTransactions.getTransactionsWithSender(sender).stream(),
+                        queuedTransactions.getTransactionsWithSender(sender).stream())
+                .anyMatch(t -> t.getNonceAsInteger().compareTo(stateNonce) >= 0);
 
         if (alreadyHasTransaction) {
             return Optional.of(TransactionPoolAddResult.withError("delegated account already has a transaction in the pool"));
