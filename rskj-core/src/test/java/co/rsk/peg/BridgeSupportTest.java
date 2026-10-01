@@ -34,11 +34,13 @@ import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasSettled;
 import static co.rsk.peg.BridgeSupportTestUtil.assertScriptSigHasExpectedInputRedeemData;
 import static co.rsk.peg.BridgeSupportTestUtil.assertTransactionWasProcessed;
 import static co.rsk.peg.BridgeSupportTestUtil.assertWitnessAndScriptSigHaveExpectedInputRedeemData;
+import static co.rsk.peg.BridgeSupportTestUtil.buildExpectedUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.createValidPmtForTransactions;
 import static co.rsk.peg.BridgeSupportTestUtil.getReleaseFromPegoutsWFC;
 import static co.rsk.peg.BridgeSupportTestUtil.getStorageKeyForReleaseOutpointsValues;
 import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
 import static co.rsk.peg.BridgeSupportTestUtil.recreateChainFromPmt;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateSignerEncodedSignatures;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateTransactionInputsSigHashes;
@@ -8375,7 +8377,7 @@ class BridgeSupportTest {
             }
             assertLogReleaseBtc(logs, pegoutWFS, rskTxHash);
 
-            int activeFedUtxosSizeBeforeRegisteringChange = federationSupport.getActiveFederationBtcUTXOs().size();
+            List<UTXO> activeFedUtxosBeforeRegisteringChange = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
             // register release change utxo
             int releaseTxBlockNumber = (int) currentBlock.getNumber();
             setUpForTransactionRegistration(pegoutWFS, releaseTxBlockNumber, allActivations);
@@ -8388,7 +8390,16 @@ class BridgeSupportTest {
             );
 
             // assert utxo was registered
-            assertEquals(activeFedUtxosSizeBeforeRegisteringChange + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+            List<UTXO> activeFederationBtcUTXOsAfterRegisteringChange = federationSupport.getActiveFederationBtcUTXOs();
+            assertEquals(activeFedUtxosBeforeRegisteringChange.size() + 1, activeFederationBtcUTXOsAfterRegisteringChange.size());
+            List<UTXO> expectedActiveFedUtxos = new ArrayList<>(activeFedUtxosBeforeRegisteringChange);
+            List<UTXO> expectedChangeUtxoRegistered = buildExpectedUtxosRegistered(
+                pegoutWFS,
+                activeFederation,
+                releaseTxBlockNumber
+            );
+            expectedActiveFedUtxos.addAll(expectedChangeUtxoRegistered);
+            assertUtxosAreEqual(expectedActiveFedUtxos, activeFederationBtcUTXOsAfterRegisteringChange);
 
             assertTransactionWasProcessed(bridgeStorageProvider, pegoutWFS.getHash(), releaseTxBlockNumber);
         }
