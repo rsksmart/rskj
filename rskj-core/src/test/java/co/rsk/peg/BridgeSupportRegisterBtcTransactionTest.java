@@ -4,6 +4,7 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.getSigHashForPegoutIndex;
@@ -50,6 +51,7 @@ import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import co.rsk.test.builders.MigrationTransactionBuilder;
 import co.rsk.test.builders.PegoutTransactionBuilder;
+import co.rsk.test.builders.UTXOBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -2557,6 +2559,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @Nested
     class ReleaseTransactions {
+        private static final int UTXO_HEIGHT = 0;
 
         private final Coin changeValue = minimumPeginTxValue.add(Coin.SATOSHI);
         private final List<BtcECKey> erpPubKeys = federationMainnetConstants.getErpFedPubKeysList();
@@ -2811,7 +2814,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2824,7 +2828,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2837,7 +2842,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2850,7 +2856,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2864,7 +2871,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2878,7 +2886,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2892,7 +2901,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(btcTransaction);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2906,7 +2916,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(btcTransaction);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2919,7 +2930,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2932,7 +2944,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2945,7 +2958,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2958,7 +2972,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2972,7 +2987,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -2986,7 +3002,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -3000,7 +3017,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(btcTransaction);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -3014,7 +3032,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(btcTransaction);
 
                 // assert
-                assertPegoutWithChangeWasProcessed(btcTransaction);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(btcTransaction);
+                assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
             }
 
             @Test
@@ -3125,9 +3144,9 @@ class BridgeSupportRegisterBtcTransactionTest {
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
             }
 
-            private void assertPegoutWithChangeWasProcessed(BtcTransaction pegout) throws IOException {
+            private void assertPegoutWithChangeWasProcessed(BtcTransaction pegout, List<UTXO> expectedUtxosRegistered) throws IOException {
                 assertReleaseTxWasProcessed(pegout);
-                assertUtxosAddedInActiveFed(1);
+                assertUtxosAreEqual(expectedUtxosRegistered, federationSupport.getActiveFederationBtcUTXOs());
                 assertNoUtxoWasAddedInRetiringFed();
             }
 
@@ -3217,7 +3236,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3230,7 +3254,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3244,7 +3273,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3258,7 +3292,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3272,7 +3311,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3334,7 +3378,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3347,7 +3396,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3361,7 +3415,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3375,7 +3434,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3389,7 +3453,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3402,7 +3471,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3415,7 +3489,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3429,7 +3508,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3443,7 +3527,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3456,7 +3545,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3469,7 +3563,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3483,7 +3582,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3497,7 +3601,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3510,7 +3619,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3523,7 +3637,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3537,7 +3656,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3551,7 +3675,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3565,7 +3694,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3578,7 +3712,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3591,7 +3730,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3605,7 +3749,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3619,7 +3768,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    MANY_MIGRATION_UTXOS,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3633,7 +3787,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3647,7 +3806,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3709,7 +3873,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3723,7 +3892,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(migrationTx);
+                assertMigrationTxWasProcessed(
+                    migrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3796,7 +3970,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(realMigrationTx, OLD_FEDERATION_MIGRATION_HEIGHT, bridgeConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(realMigrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(realMigrationTx);
+                assertMigrationTxWasProcessed(
+                    realMigrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             @Test
@@ -3881,7 +4060,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerLegacyReleaseTransaction(realMigrationTx, OLD_FEDERATION_MIGRATION_HEIGHT, bridgeConstants);
 
                 // assert
-                assertMigrationTxWasProcessed(realMigrationTx, ONE_MIGRATION_UTXO);
+                List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(realMigrationTx);
+                assertMigrationTxWasProcessed(
+                    realMigrationTx,
+                    ONE_MIGRATION_UTXO,
+                    expectedUtxosRegistered
+                );
             }
 
             // Before RSKIP199, BridgeStorageProvider.getBtcBestBlockHashByHeight always returns empty,
@@ -3920,9 +4104,14 @@ class BridgeSupportRegisterBtcTransactionTest {
                 bridgeSupport.save();
             }
 
-            private void assertMigrationTxWasProcessed(BtcTransaction migrationTx, int expectedUtxosCount) throws IOException {
+            private void assertMigrationTxWasProcessed(
+                BtcTransaction migrationTx,
+                int expectedUtxosCount,
+                List<UTXO> expectedUtxosRegistered
+            ) throws IOException {
                 assertReleaseTxWasProcessed(migrationTx);
                 assertUtxosAddedInActiveFed(expectedUtxosCount);
+                assertUtxosAreEqual(expectedUtxosRegistered, federationSupport.getActiveFederationBtcUTXOs());
                 assertNoUtxoWasAddedInRetiringFed();
             }
 
@@ -4119,6 +4308,21 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         private void assertReleaseTxWasProcessed(BtcTransaction releaseTransaction) throws IOException {
             assertTransactionWasProcessed(bridgeStorageProvider, releaseTransaction.getHash(false), (int) currentBlock.getNumber());
+        }
+
+        private List<UTXO> buildExpectedUtxosRegistered(BtcTransaction releaseTx) {
+            Script activeFederationScript = activeFederation.getP2SHScript();
+            return releaseTx.getOutputs().stream()
+                .filter(output -> output.getScriptPubKey().equals(activeFederationScript))
+                .map(output -> UTXOBuilder.builder()
+                    .withTransactionHash(releaseTx.getHash())
+                    .withOutpointIndex(output.getIndex())
+                    .withValue(output.getValue())
+                    .withBlockHeight(UTXO_HEIGHT)
+                    .withScriptPubKey(output.getScriptPubKey())
+                    .build()
+                )
+                .toList();
         }
 
         private void assertUtxosAddedInActiveFed(int expectedUtxosCount) {
