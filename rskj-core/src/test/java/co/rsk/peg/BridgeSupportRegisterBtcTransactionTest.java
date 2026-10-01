@@ -789,6 +789,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @Nested
     class PeginTransaction {
+        private static final int ONE_PEGIN_UTXO = 1;
+        private static final int MANY_PEGIN_UTXOS = 10;
 
         private void assertPeginIsRejectedAndRefunded(ActivationConfig.ForBlock activations, BtcTransaction btcTransaction, Coin sentAmount, RejectedPeginReason expectedRejectedPeginReason) throws IOException {
             verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
@@ -817,9 +819,11 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         private void assertUtxosWereRegisteredInActiveFed(
             BtcTransaction btcTransaction,
+            int expectedUtxosCount,
             int expectedBtcTxHeight
         ) throws IOException {
             verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
+            assertEquals(expectedUtxosCount, activeFederationUtxos.size());
             List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
                 btcTransaction,
                 activeFederation,
@@ -1065,6 +1069,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
             assertUtxosWereRegisteredInActiveFed(
                 btcTransaction,
+                ONE_PEGIN_UTXO,
                 expectedUtxoHeight
             );
         }
@@ -1082,7 +1087,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < MANY_PEGIN_UTXOS; i++) {
                 btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
             }
 
@@ -1105,9 +1110,10 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
-            verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(10)), eq(0));
+            verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(MANY_PEGIN_UTXOS)), eq(0));
             assertUtxosWereRegisteredInActiveFed(
                 btcTransaction,
+                MANY_PEGIN_UTXOS,
                 expectedUtxoHeight
             );
         }
@@ -1151,6 +1157,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
             assertUtxosWereRegisteredInActiveFed(
                 btcTransaction,
+                ONE_PEGIN_UTXO,
                 expectedUtxoHeight
             );
         }
@@ -1194,6 +1201,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue), eq(0));
             assertUtxosWereRegisteredInActiveFed(
                 btcTransaction,
+                ONE_PEGIN_UTXO,
                 expectedUtxoHeight
             );
         }
@@ -1604,6 +1612,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
             assertUtxosWereRegisteredInActiveFed(
                 btcTransaction,
+                ONE_PEGIN_UTXO,
                 expectedUtxoHeight
             );
         }
@@ -3435,6 +3444,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             // coinbase, so prev tx indexes start at 1
             private static final int FIRST_PREV_TX_INDEX = 1;
             private static final int MANY_MIGRATION_INPUTS = 50;
+            private static final int ONE_MIGRATION_UTXO = 1;
+            private static final int MANY_MIGRATION_UTXOS = 40;
             private static final int OLD_FEDERATION_MIGRATION_HEIGHT = 5;
 
             @Test
@@ -3454,6 +3465,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3475,6 +3487,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3497,6 +3510,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3519,6 +3533,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3541,6 +3556,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3563,6 +3579,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3633,6 +3650,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -3654,6 +3672,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -3676,6 +3695,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -3698,6 +3718,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -3720,6 +3741,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -3742,6 +3764,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -3763,6 +3786,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -3784,6 +3808,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -3806,6 +3831,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -3828,6 +3854,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -3849,6 +3876,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3870,6 +3898,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3892,6 +3921,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3914,6 +3944,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3935,6 +3966,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3956,6 +3988,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -3978,6 +4011,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -4000,6 +4034,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -4022,6 +4057,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -4044,6 +4080,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -4065,6 +4102,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -4086,6 +4124,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -4108,6 +4147,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -4130,6 +4170,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    MANY_MIGRATION_UTXOS,
                     expectedUtxosRegistered
                 );
             }
@@ -4152,6 +4193,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -4174,6 +4216,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -4244,6 +4287,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -4266,6 +4310,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     migrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -4347,6 +4392,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     realMigrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -4440,6 +4486,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertMigrationTxWasProcessed(
                     realMigrationTx,
+                    ONE_MIGRATION_UTXO,
                     expectedUtxosRegistered
                 );
             }
@@ -4482,10 +4529,13 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             private void assertMigrationTxWasProcessed(
                 BtcTransaction migrationTx,
+                int expectedUtxosCount,
                 List<UTXO> expectedUtxosRegistered
             ) throws IOException {
                 assertReleaseTxWasProcessed(migrationTx);
-                assertUtxosAreEqual(expectedUtxosRegistered, federationSupport.getActiveFederationBtcUTXOs());
+                List<UTXO> activeFederationUtxos = federationSupport.getActiveFederationBtcUTXOs();
+                assertEquals(expectedUtxosCount, activeFederationUtxos.size());
+                assertUtxosAreEqual(expectedUtxosRegistered, activeFederationUtxos);
                 assertNoUtxoWasAddedInRetiringFed();
             }
 
