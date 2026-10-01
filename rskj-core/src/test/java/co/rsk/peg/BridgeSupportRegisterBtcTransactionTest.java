@@ -815,28 +815,30 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
         }
 
-        private void assertUtxosWereRegisteredInActiveFed(BtcTransaction btcTransaction, int expectedUtxosCount) throws IOException {
+        private void assertUtxosWereRegisteredInActiveFed(
+            BtcTransaction btcTransaction,
+            int expectedUtxosCount,
+            int expectedBtcTxHeight
+        ) throws IOException {
             verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
             assertEquals(expectedUtxosCount, activeFederationUtxos.size());
             List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
                 btcTransaction,
                 activeFederation,
-                UTXO_HEIGHT_BEFORE_CARDAMOM
+                expectedBtcTxHeight
             );
             assertUtxosAreEqual(expectedUtxosRegistered, activeFederationUtxos);
             assertTrue(retiringFederationUtxos.isEmpty());
         }
 
-        private void assertUtxosWereRegisteredInActiveAndRetiringFed(
-            BtcTransaction btcTransaction
-        ) throws IOException {
+        private void assertUtxosWereRegisteredInActiveAndRetiringFed(BtcTransaction btcTransaction, int expectedBtcTxHeight) throws IOException {
             verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
 
             assertEquals(1, activeFederationUtxos.size());
             List<UTXO> expectedActiveFederationUtxosRegistered = buildExpectedUtxosRegistered(
                 btcTransaction,
                 activeFederation,
-                UTXO_HEIGHT_BEFORE_CARDAMOM
+                expectedBtcTxHeight
             );
             assertUtxosAreEqual(expectedActiveFederationUtxosRegistered, activeFederationUtxos);
 
@@ -844,7 +846,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             List<UTXO> expectedRetiringFederationUtxosRegistered = buildExpectedUtxosRegistered(
                 btcTransaction,
                 retiringFederation,
-                UTXO_HEIGHT_BEFORE_CARDAMOM
+                expectedBtcTxHeight
             );
             assertUtxosAreEqual(expectedRetiringFederationUtxosRegistered, retiringFederationUtxos);
         }
@@ -945,6 +947,10 @@ class BridgeSupportRegisterBtcTransactionTest {
             assertTrue(retiringFederationUtxos.isEmpty());
         }
 
+        private int getExpectedUtxosHeight(ForBlock activations, int height) {
+            return activations.isActive(ConsensusRule.RSKIP643) ? height : UTXO_HEIGHT_BEFORE_CARDAMOM;
+        }
+
         private static Stream<Arguments> common_args() {
             // before RSKIP379 activation
             return Stream.of(
@@ -1032,6 +1038,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
+            int expectedUtxoHeight = getExpectedUtxosHeight(activations, height);
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1058,7 +1065,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
-            assertUtxosWereRegisteredInActiveFed(btcTransaction, 1);
+            assertUtxosWereRegisteredInActiveFed(
+                btcTransaction,
+                1,
+                expectedUtxoHeight
+            );
         }
 
         @ParameterizedTest
@@ -1070,6 +1081,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
+            int expectedUtxoHeight = getExpectedUtxosHeight(activations, height);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1097,7 +1109,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(10)), eq(0));
-            assertUtxosWereRegisteredInActiveFed(btcTransaction, 10);
+            assertUtxosWereRegisteredInActiveFed(
+                btcTransaction,
+                10,
+                expectedUtxoHeight
+            );
         }
 
         @ParameterizedTest
@@ -1109,6 +1125,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
+            int expectedUtxoHeight = getExpectedUtxosHeight(activations, height);
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1136,7 +1153,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
-            assertUtxosWereRegisteredInActiveFed(btcTransaction, 1);
+            assertUtxosWereRegisteredInActiveFed(
+                btcTransaction,
+                1,
+                expectedUtxoHeight
+            );
         }
 
         @ParameterizedTest
@@ -1148,6 +1169,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
+            int expectedUtxoHeight = getExpectedUtxosHeight(activations, height);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1175,7 +1197,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue), eq(0));
-            assertUtxosWereRegisteredInActiveFed(btcTransaction, 1);
+            assertUtxosWereRegisteredInActiveFed(
+                btcTransaction,
+                1,
+                expectedUtxoHeight
+            );
         }
 
         @ParameterizedTest
@@ -1303,6 +1329,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
+            int expectedUtxoHeight = getExpectedUtxosHeight(activations, height);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1327,9 +1354,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(2)), eq(0));
-            assertUtxosWereRegisteredInActiveAndRetiringFed(
-                btcTransaction
-            );
+            assertUtxosWereRegisteredInActiveAndRetiringFed(btcTransaction, expectedUtxoHeight);
         }
 
         @ParameterizedTest
@@ -1376,6 +1401,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
+            int expectedUtxoHeight = getExpectedUtxosHeight(activations, height);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1401,9 +1427,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(2)), eq(0));
-            assertUtxosWereRegisteredInActiveAndRetiringFed(
-                btcTransaction
-            );
+            assertUtxosWereRegisteredInActiveAndRetiringFed(btcTransaction, expectedUtxoHeight);
         }
 
         @ParameterizedTest
@@ -1553,6 +1577,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
+            int expectedUtxoHeight = getExpectedUtxosHeight(activations, height);
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1583,7 +1608,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
-            assertUtxosWereRegisteredInActiveFed(btcTransaction, 1);
+            assertUtxosWereRegisteredInActiveFed(
+                btcTransaction,
+                1,
+                expectedUtxoHeight
+            );
         }
 
         @ParameterizedTest
@@ -2579,6 +2608,88 @@ class BridgeSupportRegisterBtcTransactionTest {
                 assertTransactionWasProcessed(testnetRealPegin.getHash());
                 assertRefundWasCreated();
                 assertUtxosSize(0);
+            }
+        }
+
+        @Nested
+        class NewUtxoHeight {
+            @Test
+            void registerBtcTransaction_forLegacyPeginToActiveAndRetiringFeds_forVetiver_shouldRegisterUtxosWithZeroHeight() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                BtcTransaction pegin = buildLegacyPeginToActiveAndRetiringFeds();
+
+                // act
+                registerPeginToActiveAndRetiringFeds(vetiver900Activations, pegin);
+
+                // assert
+                verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(pegin), eq(minimumPeginTxValue.multiply(2)), eq(0));
+                assertUtxosWereRegisteredInActiveAndRetiringFed(pegin, UTXO_HEIGHT_BEFORE_CARDAMOM);
+            }
+
+            @Test
+            void registerBtcTransaction_forLegacyPeginToActiveAndRetiringFeds_shouldRegisterUtxosWithBtcTxHeight() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                BtcTransaction pegin = buildLegacyPeginToActiveAndRetiringFeds();
+
+                // act
+                registerPeginToActiveAndRetiringFeds(allActivations, pegin);
+
+                // assert
+                verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(pegin), eq(minimumPeginTxValue.multiply(2)), eq(0));
+                assertUtxosWereRegisteredInActiveAndRetiringFed(pegin, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
+            }
+
+            @Test
+            void registerBtcTransaction_forPeginV1ToActiveAndRetiringFeds_forVetiver_shouldRegisterUtxosWithZeroHeight() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                BtcTransaction pegin = buildPeginV1ToActiveAndRetiringFeds();
+
+                // act
+                registerPeginToActiveAndRetiringFeds(vetiver900Activations, pegin);
+
+                // assert
+                verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(pegin), eq(minimumPeginTxValue.multiply(2)), eq(1));
+                assertUtxosWereRegisteredInActiveAndRetiringFed(pegin, UTXO_HEIGHT_BEFORE_CARDAMOM);
+            }
+
+            @Test
+            void registerBtcTransaction_forPeginV1ToActiveAndRetiringFeds_shouldRegisterUtxosWithBtcTxHeight() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                BtcTransaction pegin = buildPeginV1ToActiveAndRetiringFeds();
+
+                // act
+                registerPeginToActiveAndRetiringFeds(allActivations, pegin);
+
+                // assert
+                verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(pegin), eq(minimumPeginTxValue.multiply(2)), eq(1));
+                assertUtxosWereRegisteredInActiveAndRetiringFed(pegin, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
+            }
+
+            private BtcTransaction buildLegacyPeginToActiveAndRetiringFeds() {
+                BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
+                pegin.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+                pegin.addOutput(minimumPeginTxValue, activeFederation.getAddress());
+                pegin.addOutput(minimumPeginTxValue, retiringFederation.getAddress());
+                return pegin;
+            }
+
+            private BtcTransaction buildPeginV1ToActiveAndRetiringFeds() {
+                BtcTransaction pegin = buildLegacyPeginToActiveAndRetiringFeds();
+                pegin.addOutput(Coin.ZERO, opReturnScript);
+                return pegin;
+            }
+
+            private void registerPeginToActiveAndRetiringFeds(ActivationConfig.ForBlock activations, BtcTransaction pegin) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                PartialMerkleTree pmt = createPmtAndMockBlockStore(pegin, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
+                when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
+
+                BridgeSupport bridgeSupport = buildBridgeSupport(activations);
+                bridgeSupport.registerBtcTransaction(
+                    rskTx,
+                    pegin.bitcoinSerialize(),
+                    HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX,
+                    pmt.bitcoinSerialize()
+                );
             }
         }
     }
