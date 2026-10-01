@@ -56,14 +56,19 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
         byte[] gasLimit = CommonParsingUtils.nullToEmpty(txFields.get(GAS_LIMIT_INDEX).getRLPData());
 
         RskAddress receiveAddress = CommonParsingUtils.defaultAddress(RLP.parseRskAddress(txFields.get(TO_INDEX).getRLPData()));
-        Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(txFields.get(VALUE_INDEX).getRLPData()));
+        byte[] valueData = txFields.get(VALUE_INDEX).getRLPData();
+        Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(valueData));
         byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
-        byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(txFields.get(ACCESS_LIST_INDEX).getRLPRawData());
-        Coin maxPriorityFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData()));
-        Coin maxFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData()));
+        CommonParsingUtils.requireByteStringFields(txFields, ACCESS_LIST_INDEX);
+        byte[] accessListBytes = AccessListCodec.requireRawAccessListBytes(txFields.get(ACCESS_LIST_INDEX));
+        byte[] maxPriorityFeeData = txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData();
+        byte[] maxFeeData = txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData();
+        Coin maxPriorityFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(maxPriorityFeeData));
+        Coin maxFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(maxFeeData));
 
         Rskip546FeeValidation.requireFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
         CommonParsingUtils.requireTypedScalarFields(nonce, gasLimit, value, maxPriorityFeePerGas, maxFeePerGas);
+        CommonParsingUtils.requireCanonicalTypedScalarFields(nonce, gasLimit, valueData, maxPriorityFeeData, maxFeeData);
 
         return new ParsedType2Transaction(
                 typePrefix,

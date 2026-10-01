@@ -30,6 +30,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 
+import static org.ethereum.core.Rskip546TestSupport.signatureWord;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -110,7 +111,7 @@ class TypedTransactionSecurityTest {
         assertDecodeRejects(buildRawType1WithFieldOverrides(
                 fieldOverride(8, RLP.encodeByte((byte) 0)),
                 fieldOverride(9, RLP.encodeElement(OVERSIZE_WORD)),
-                fieldOverride(10, RLP.encodeElement(new byte[32]))
+                fieldOverride(10, RLP.encodeElement(signatureWord()))
         ), "Signature R is not valid");
     }
 
@@ -153,9 +154,7 @@ class TypedTransactionSecurityTest {
     void type1_rejectsChainIdExceeding255(int chainIdValue) {
         byte[] rawTx = buildRawType1WithRawChainId(BigInteger.valueOf(chainIdValue));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> new ImmutableTransaction(rawTx),
-                "Type 1 with chainId=" + chainIdValue + " must be rejected (exceeds 255)");
+        assertDecodeRejects(rawTx, "Typed transaction chainId must be between 1 and 255, got: " + chainIdValue);
     }
 
     @ParameterizedTest(name = "Type2 rejects oversize chainId={0}")
@@ -163,9 +162,7 @@ class TypedTransactionSecurityTest {
     void type2_rejectsChainIdExceeding255(int chainIdValue) {
         byte[] rawTx = buildRawType2WithRawChainId(BigInteger.valueOf(chainIdValue));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> new ImmutableTransaction(rawTx),
-                "Type 2 with chainId=" + chainIdValue + " must be rejected (exceeds 255)");
+        assertDecodeRejects(rawTx, "Typed transaction chainId must be between 1 and 255, got: " + chainIdValue);
     }
 
     /**
@@ -192,9 +189,7 @@ class TypedTransactionSecurityTest {
     void type1_rejectsInvalidYParity(byte yParity) {
         byte[] rawTx = buildRawType1WithYParity(RSK_REGTEST_CHAIN_ID, yParity);
 
-        assertThrows(IllegalArgumentException.class,
-                () -> new ImmutableTransaction(rawTx),
-                "Type 1 with yParity=" + yParity + " must be rejected");
+        assertDecodeRejects(rawTx, "yParity must be 0 or 1, got: " + yParity);
     }
 
     @ParameterizedTest(name = "Type2 rejects yParity={0}")
@@ -202,9 +197,7 @@ class TypedTransactionSecurityTest {
     void type2_rejectsInvalidYParity(byte yParity) {
         byte[] rawTx = buildRawType2WithYParity(RSK_REGTEST_CHAIN_ID, yParity);
 
-        assertThrows(IllegalArgumentException.class,
-                () -> new ImmutableTransaction(rawTx),
-                "Type 2 with yParity=" + yParity + " must be rejected");
+        assertDecodeRejects(rawTx, "yParity must be 0 or 1, got: " + yParity);
     }
 
     @Test
@@ -288,18 +281,14 @@ class TypedTransactionSecurityTest {
     void type1_rejectsChainIdZeroInRlp() {
         byte[] rawTx = buildRawType1WithRawChainId(BigInteger.ZERO);
 
-        assertThrows(IllegalArgumentException.class,
-                () -> new ImmutableTransaction(rawTx),
-                "Type 1 with chainId=0 must be rejected (RSKIP546 / EIP-2930 requires chain ID)");
+        assertDecodeRejects(rawTx, "Typed transaction chainId must not be zero or absent");
     }
 
     @Test
     void type2_rejectsChainIdZeroInRlp() {
         byte[] rawTx = buildRawType2WithRawChainId(BigInteger.ZERO);
 
-        assertThrows(IllegalArgumentException.class,
-                () -> new ImmutableTransaction(rawTx),
-                "Type 2 with chainId=0 must be rejected (RSKIP546 / EIP-1559 requires chain ID)");
+        assertDecodeRejects(rawTx, "Typed transaction chainId must not be zero or absent");
     }
 
     @Test
@@ -320,9 +309,7 @@ class TypedTransactionSecurityTest {
         // Hand-craft an RLP-encoded Type 2 tx where maxPriority > maxFee
         byte[] rawTx = buildRawType2WithFees(RSK_REGTEST_CHAIN_ID, 200, 100);
 
-        assertThrows(IllegalArgumentException.class,
-                () -> new ImmutableTransaction(rawTx),
-                "Decoding a Type 2 tx with maxPriority > maxFee must throw");
+        assertDecodeRejects(rawTx, "must not exceed maxFeePerGas");
     }
 
     // =========================================================================
@@ -410,8 +397,8 @@ class TypedTransactionSecurityTest {
                 RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
                 EMPTY_ACCESS_LIST,
                 RLP.encodeByte((byte) 0),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(signatureWord()),
+                RLP.encodeElement(signatureWord())
         };
     }
 
@@ -427,8 +414,8 @@ class TypedTransactionSecurityTest {
                 RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
                 EMPTY_ACCESS_LIST,
                 RLP.encodeByte((byte) 0),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(signatureWord()),
+                RLP.encodeElement(signatureWord())
         };
     }
 
@@ -467,8 +454,8 @@ class TypedTransactionSecurityTest {
                 RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY), // data=empty
                 EMPTY_ACCESS_LIST,
                 RLP.encodeByte((byte) 0),  // yParity=0
-                RLP.encodeElement(new byte[32]), // r
-                RLP.encodeElement(new byte[32])  // s
+                RLP.encodeElement(signatureWord()), // r
+                RLP.encodeElement(signatureWord())  // s
         );
     }
 
@@ -484,8 +471,8 @@ class TypedTransactionSecurityTest {
                 RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY), // data=empty
                 EMPTY_ACCESS_LIST,
                 RLP.encodeByte((byte) 0),  // yParity=0
-                RLP.encodeElement(new byte[32]), // r
-                RLP.encodeElement(new byte[32])  // s
+                RLP.encodeElement(signatureWord()), // r
+                RLP.encodeElement(signatureWord())  // s
         );
     }
 
@@ -500,8 +487,8 @@ class TypedTransactionSecurityTest {
                 RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
                 EMPTY_ACCESS_LIST,
                 RLP.encodeByte(yParity),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(signatureWord()),
+                RLP.encodeElement(signatureWord())
         );
     }
 
@@ -517,8 +504,8 @@ class TypedTransactionSecurityTest {
                 RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
                 EMPTY_ACCESS_LIST,
                 RLP.encodeByte(yParity),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(signatureWord()),
+                RLP.encodeElement(signatureWord())
         );
     }
 
@@ -537,8 +524,8 @@ class TypedTransactionSecurityTest {
                 RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
                 rawAccessListRlp,
                 RLP.encodeByte((byte) 0),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(signatureWord()),
+                RLP.encodeElement(signatureWord())
         );
         // 0xF8 = long list, length in next 1 byte
         byte[] payload = ByteUtil.merge(new byte[]{(byte) 0xF8, (byte) fields.length}, fields);
@@ -557,8 +544,8 @@ class TypedTransactionSecurityTest {
                 RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
                 rawAccessListRlp,
                 RLP.encodeByte((byte) 0),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(signatureWord()),
+                RLP.encodeElement(signatureWord())
         );
         byte[] payload = ByteUtil.merge(new byte[]{(byte) 0xF8, (byte) fields.length}, fields);
         return ByteUtil.merge(new byte[]{0x02}, payload);
@@ -576,8 +563,8 @@ class TypedTransactionSecurityTest {
                 RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
                 EMPTY_ACCESS_LIST,
                 RLP.encodeByte((byte) 0),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(signatureWord()),
+                RLP.encodeElement(signatureWord())
         );
     }
 

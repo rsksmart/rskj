@@ -43,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.ethereum.core.Rskip546TestSupport.signatureWord;
 
 /**
  * Unit tests for RSKIP-545 Type 4 (EIP-7702 set-code) transaction encoding and decoding.
@@ -281,7 +282,7 @@ class Rskip545TypedTransactionTest {
         assertDecodeRejects(rawType4(
                 field(10, RLP.encodeByte((byte) 0)),
                 field(11, RLP.encodeElement(OVERSIZE_WORD)),
-                field(12, RLP.encodeElement(new byte[32]))
+                field(12, RLP.encodeElement(signatureWord()))
         ), "Signature R is not valid");
     }
 
@@ -289,7 +290,7 @@ class Rskip545TypedTransactionTest {
     void decode_rejectsOversizeSignatureS() {
         assertDecodeRejects(rawType4(
                 field(10, RLP.encodeByte((byte) 0)),
-                field(11, RLP.encodeElement(new byte[32])),
+                field(11, RLP.encodeElement(signatureWord())),
                 field(12, RLP.encodeElement(OVERSIZE_WORD))
         ), "Signature S is not valid");
     }

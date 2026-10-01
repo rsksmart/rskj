@@ -51,13 +51,17 @@ public class Type1RawTransactionParser implements RawTransactionTypeParser<Parse
         CommonParsingUtils.requireFieldCount(txFields, FIELD_COUNT, TransactionType.TYPE_1.getTypeName());
 
         byte[] nonce = CommonParsingUtils.nullToEmpty(txFields.get(NONCE_INDEX).getRLPData());
-        Coin gasPrice = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(GAS_PRICE_INDEX).getRLPData()));
+        byte[] gasPriceData = txFields.get(GAS_PRICE_INDEX).getRLPData();
+        Coin gasPrice = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(gasPriceData));
         byte[] gasLimit = CommonParsingUtils.nullToEmpty(txFields.get(GAS_LIMIT_INDEX).getRLPData());
         RskAddress receiveAddress = CommonParsingUtils.defaultAddress(RLP.parseRskAddress(txFields.get(TO_INDEX).getRLPData()));
-        Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(txFields.get(VALUE_INDEX).getRLPData()));
+        byte[] valueData = txFields.get(VALUE_INDEX).getRLPData();
+        Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(valueData));
         byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
-        byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(txFields.get(ACCESS_LIST_INDEX).getRLPRawData());
+        CommonParsingUtils.requireByteStringFields(txFields, ACCESS_LIST_INDEX);
+        byte[] accessListBytes = AccessListCodec.requireRawAccessListBytes(txFields.get(ACCESS_LIST_INDEX));
         CommonParsingUtils.requireLegacyScalarFields(nonce, gasPrice, gasLimit, value);
+        CommonParsingUtils.requireCanonicalGasPriceScalarFields(nonce, gasPriceData, gasLimit, valueData);
 
         return new ParsedType1Transaction(
                 typePrefix,
