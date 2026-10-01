@@ -1861,7 +1861,6 @@ class BridgeSupportSvpTest {
     private void assertUtxosWereAddedToActiveFederation(List<UTXO> activeFederationUtxosBeforeRegisteringTx, List<UTXO> expectedUtxosRegistered) {
         List<UTXO> expectedActiveFederationUtxos = new ArrayList<>(activeFederationUtxosBeforeRegisteringTx);
         expectedActiveFederationUtxos.addAll(expectedUtxosRegistered);
-        assertActiveFederationUtxosSize(expectedActiveFederationUtxos.size());
         assertUtxosAreEqual(expectedActiveFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
     }
 
