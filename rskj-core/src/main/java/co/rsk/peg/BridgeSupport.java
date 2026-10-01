@@ -416,7 +416,7 @@ public class BridgeSupport {
             switch (pegTxType) {
                 case PEGIN -> registerPegIn(btcTx, rskTxHash, height);
                 case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx, getHeightForNewUtxos(height));
-                case SVP_FUND_TX -> registerSvpFundTx(btcTx);
+                case SVP_FUND_TX -> registerSvpFundTx(btcTx, height);
                 case SVP_SPEND_TX -> registerSvpSpendTx(btcTx);
                 case UNKNOWN -> logger.warn("[registerBtcTransaction] Unknown peg tx type won't be registered.");
             }
@@ -430,8 +430,8 @@ public class BridgeSupport {
         }
     }
 
-    private void registerSvpFundTx(BtcTransaction btcTx) throws IOException {
-        registerNewUtxos(btcTx, 0); // Need to register the change UTXO
+    private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
+        registerNewUtxos(btcTx, getHeightForNewUtxos(btcTxHeight)); // Need to register the change UTXO
 
         // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
         // In that case, the fundTx will be identified as a regular peg-out tx and processed via #registerPegoutOrMigration
