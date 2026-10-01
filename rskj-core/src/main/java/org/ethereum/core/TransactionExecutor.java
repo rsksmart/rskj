@@ -393,13 +393,16 @@ public class TransactionExecutor {
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
-            if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
+            if (!enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
                 execError(String.format( "Out of Gas calling precompiled contract at block %d " +
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, gasLeftover));
                 gasLeftover = 0;
-                if (activations.isActive(ConsensusRule.RSKIP692)) {
+                if (localCall) {
+                    // A simulated call reports the failure through its result, as a failing precompiled contract does
+                    result.setException(new Program.OutOfGasException("%s", executionError));
+                } else if (activations.isActive(ConsensusRule.RSKIP692)) {
                     // An exceptional halt consumes the gas limit, so the refunds that survive a halt apply to it
                     result.spendGas(txGasLimit);
                 }
