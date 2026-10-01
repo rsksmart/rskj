@@ -833,11 +833,49 @@ public class BridgeSupport {
     Finally, mark the btcTx as processed.
      */
     private void registerNewUtxos(BtcTransaction btcTx) throws IOException {
-        // Outputs to the active federation
+        registerNewUtxosToTheActiveFederation(btcTx);
+        registerNewUtxosToTheRetiringFederation(btcTx);
+
+        markTxAsProcessed(btcTx);
+        logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
+    }
+
+    private void registerNewUtxosToTheRetiringFederation(BtcTransaction btcTx) {
+        Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
+        if (retiringFederationWallet.isEmpty()) {
+            return;
+        }
+
+        List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet.get());
+        List<UTXO> utxosToTheRetiringFederation = new ArrayList<>();
+        for (TransactionOutput output : outputsToTheRetiringFederation) {
+            UTXO utxo = new UTXO(
+                btcTx.getHash(),
+                output.getIndex(),
+                output.getValue(),
+                0,
+                btcTx.isCoinBase(),
+                output.getScriptPubKey()
+            );
+            federationSupport.getRetiringFederationBtcUTXOs().add(utxo);
+            utxosToTheRetiringFederation.add(utxo);
+        }
+        federationSupport.getRetiringFederationAddress().ifPresent(retiringFederationAddress ->
+            logUtxosRegistered(
+                btcTx.getHash(),
+                utxosToTheRetiringFederation,
+                retiringFederationAddress
+            )
+        );
+        logger.debug("[registerNewUtxosToTheRetiringFederation] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
+    }
+
+    private void registerNewUtxosToTheActiveFederation(BtcTransaction btcTx) {
         Wallet activeFederationWallet = getActiveFederationWallet(false);
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
             activeFederationWallet
         );
+        List<UTXO> utxosToTheActiveFederation = new ArrayList<>();
         for (TransactionOutput output : outputsToTheActiveFederation) {
             UTXO utxo = new UTXO(
                 btcTx.getHash(),
@@ -848,29 +886,29 @@ public class BridgeSupport {
                 output.getScriptPubKey()
             );
             federationSupport.getActiveFederationBtcUTXOs().add(utxo);
+            utxosToTheActiveFederation.add(utxo);
         }
-        logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
+        logUtxosRegistered(
+            btcTx.getHash(),
+            utxosToTheActiveFederation,
+            federationSupport.getActiveFederationAddress()
+        );
+        logger.debug("[registerNewUtxosToTheActiveFederation] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
+    }
 
-        // Outputs to the retiring federation (if any)
-        Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
-        if (retiringFederationWallet.isPresent()) {
-            List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet.get());
-            for (TransactionOutput output : outputsToTheRetiringFederation) {
-                UTXO utxo = new UTXO(
-                    btcTx.getHash(),
-                    output.getIndex(),
-                    output.getValue(),
-                    0,
-                    btcTx.isCoinBase(),
-                    output.getScriptPubKey()
-                );
-                federationSupport.getRetiringFederationBtcUTXOs().add(utxo);
-            }
-            logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
+    private void logUtxosRegistered(Sha256Hash btcTxHash, List<UTXO> registeredUtxos, Address federationAddress) {
+        if (!activations.isActive(RSKIP643) || registeredUtxos.isEmpty()) {
+            return;
         }
 
-        markTxAsProcessed(btcTx);
-        logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
+        List<Coin> valuesInSatoshis = registeredUtxos.stream().map(UTXO::getValue).toList();
+        List<Long> outputIndexes = registeredUtxos.stream().map(UTXO::getIndex).toList();
+        eventLogger.logUtxosRegistered(
+            btcTxHash,
+            valuesInSatoshis,
+            outputIndexes,
+            federationAddress
+        );
     }
 
     /**
