@@ -39,10 +39,15 @@ import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
+import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
@@ -94,6 +99,41 @@ class EthModuleGasEstimationDSLTest {
         long estimateBelowIntrinsic = estimateGas(eth, args, BlockTag.LATEST.getTag());
         assertEquals(21000, estimateBelowIntrinsic,
                 "estimateGas must return the true minimum (21000) regardless of the caller's gas hint");
+    }
+
+    @ParameterizedTest
+    @MethodSource("directPrecompileCalls")
+    void testEstimateGas_directPrecompileCall(RskAddress precompile, long expectedGas) throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        Block block = world.getBlockChain().getBestBlock();
+
+        final CallArguments args = new CallArguments();
+        args.setTo("0x" + precompile.toHexString());
+        args.setValue(HexUtils.toQuantityJsonHex(0));
+        args.setNonce(HexUtils.toQuantityJsonHex(0));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setData("");
+
+        long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
+        assertEquals(expectedGas, estimatedGas);
+
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
+        assertTrue(runWithArgumentsAndBlock(eth, args, block));
+
+        // gas covers the intrinsic cost but not the precompile's own cost: the call runs and fails,
+        // as the same transaction would fail on chain
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
+        assertInstanceOf(Program.OutOfGasException.class, eth.callConstant(args, block).getException());
+        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+    }
+
+    private static Stream<Arguments> directPrecompileCalls() {
+        return Stream.of(
+                Arguments.of(PrecompiledContracts.ECRECOVER_ADDR, 24000L),   // intrinsic 21000 + ecrecover 3000
+                Arguments.of(PrecompiledContracts.IDENTITY_ADDR, 21015L)     // intrinsic 21000 + identity 15
+        );
     }
 
     /**
