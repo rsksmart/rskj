@@ -123,6 +123,11 @@ public final class EncoderTestSupport {
                 EMPTY_ACCESS_LIST, null, null, null, RECEIVER, EMPTY_DATA);
     }
 
+    public static Transaction unsignedType1ZeroGasPrice() {
+        return new Transaction(NONCE, Coin.ZERO, GAS_LIMIT, RECEIVER, VALUE, EMPTY_DATA, CHAIN_ID, false,
+                TransactionTypePrefix.typed(TransactionType.TYPE_1), EMPTY_ACCESS_LIST, null, null, null);
+    }
+
     /** Type-1 with one address and one storage key in the access list. */
     public static Transaction unsignedType1WithAccessList() {
         return unsignedType1(NON_EMPTY_ACCESS_LIST);

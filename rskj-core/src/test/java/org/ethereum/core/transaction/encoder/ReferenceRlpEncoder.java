@@ -80,6 +80,7 @@ final class ReferenceRlpEncoder {
         vectors.put("type1-chain33", type1(CHAIN_ID));
         vectors.put("type1-chain200", type1(HIGH_CHAIN_ID));
         vectors.put("type1-access-list", type1(CHAIN_ID, NON_EMPTY_ACCESS_LIST));
+        vectors.put("type1-zero-gas-price", type1ZeroGasPrice(CHAIN_ID));
         vectors.put("type2-chain33", type2(CHAIN_ID));
         vectors.put("type2-chain33-yParity0", type2(CHAIN_ID, Y_PARITY_0));
         vectors.put("type2-chain200", type2(HIGH_CHAIN_ID));
@@ -115,6 +116,14 @@ final class ReferenceRlpEncoder {
         byte[][] body = {
                 integer(chainId), bytes(NONCE), integer(GAS_PRICE), integer(GAS_LIMIT),
                 bytes(TO), integer(VALUE), bytes(DATA), accessList
+        };
+        return typed(0x01, body);
+    }
+
+    private static String[] type1ZeroGasPrice(int chainId) {
+        byte[][] body = {
+                integer(chainId), bytes(NONCE), integer(0), integer(GAS_LIMIT),
+                bytes(TO), integer(VALUE), bytes(DATA), EMPTY_ACCESS_LIST
         };
         return typed(0x01, body);
     }

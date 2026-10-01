@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Map;
 import java.util.Objects;
@@ -35,6 +36,7 @@ import static org.ethereum.core.transaction.encoder.EncoderTestSupport.FIXED_V_Y
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.HIGH_CHAIN_ID;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.unsignedLegacy;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.withFixedSignature;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -68,6 +70,8 @@ class GoldenTransactionEncoderTest {
                 Arguments.of("type1-chain200", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType1(HIGH_CHAIN_ID), FIXED_V),
                 Arguments.of("type1-access-list",
                         (Supplier<Transaction>) EncoderTestSupport::unsignedType1WithAccessList, FIXED_V),
+                Arguments.of("type1-zero-gas-price",
+                        (Supplier<Transaction>) EncoderTestSupport::unsignedType1ZeroGasPrice, FIXED_V),
                 Arguments.of("type2-chain33", (Supplier<Transaction>) EncoderTestSupport::unsignedType2, FIXED_V),
                 Arguments.of("type2-chain33-yParity0", (Supplier<Transaction>) EncoderTestSupport::unsignedType2, FIXED_V_Y_PARITY_0),
                 Arguments.of("type2-chain200", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType2(HIGH_CHAIN_ID), FIXED_V),
@@ -115,6 +119,14 @@ class GoldenTransactionEncoderTest {
     void typedTransactions_refuseChainIdZero(String id, Supplier<Transaction> transactionSupplier) {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, transactionSupplier::get);
         assertTrue(e.getMessage().contains("chainId"), e.getMessage());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"type1-zero-gas-price", "type2-zero-fees"})
+    void zeroFeeVectors_reparseToTheSameBytes(String id) {
+        byte[] signed = Hex.decode(vector(id)[1]);
+
+        assertArrayEquals(signed, Transaction.fromRaw(signed).getEncoded());
     }
 
     @Test
