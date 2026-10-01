@@ -506,7 +506,12 @@ public class BridgeSupport {
         switch (peginProcessAction) {
             case REGISTER -> {
                 logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
-                executePegIn(btcTx, peginInformation, totalAmount);
+                executePegIn(
+                    btcTx,
+                    peginInformation,
+                    totalAmount,
+                    getHeightForNewUtxos(height)
+                );
             }
             case REFUND -> handleRefundablePegin(btcTx, rskTxHash, peginEvaluationResult, peginInformation.getBtcRefundAddress());
             case NO_REFUND -> handleNonRefundablePegin(btcTx, peginInformation.getProtocolVersion(), peginEvaluationResult);
@@ -664,7 +669,12 @@ public class BridgeSupport {
 
         // Confirm we should process this lock
         if (shouldProcessPegInVersionLegacy(senderBtcAddressType, btcTx, senderBtcAddress, totalAmount, height)) {
-            executePegIn(btcTx, peginInformation, totalAmount);
+            executePegIn(
+                btcTx,
+                peginInformation,
+                totalAmount,
+                0
+            );
         } else {
             if (activations.isActive(ConsensusRule.RSKIP181)) {
                 if (!isTxLockableForLegacyVersion(senderBtcAddressType, btcTx, senderBtcAddress)) {
@@ -691,7 +701,12 @@ public class BridgeSupport {
 
         // Confirm we should process this lock
         if (verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {
-            executePegIn(btcTx, peginInformation, totalAmount);
+            executePegIn(
+                btcTx,
+                peginInformation,
+                totalAmount,
+                0
+            );
         } else {
             logger.debug("[processPegInVersion1] Peg-in attempt surpasses locking cap. Amount attempted to lock: {}", totalAmount);
 
@@ -704,7 +719,7 @@ public class BridgeSupport {
         }
     }
 
-    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) throws IOException {
+    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount, int btcTxHeight) throws IOException {
         RskAddress rskDestinationAddress = peginInformation.getRskDestinationAddress();
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
@@ -729,7 +744,7 @@ public class BridgeSupport {
         }
 
         // Save UTXOs from the federation(s) only if we actually locked the funds
-        registerNewUtxos(btcTx, 0);
+        registerNewUtxos(btcTx, btcTxHeight);
     }
 
     private void refundTxSender(
