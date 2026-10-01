@@ -110,6 +110,24 @@ class EthModuleDSLTest {
     }
 
     @Test
+    void testCall_directCallToBridgeWithInsufficientGas_returnsExecutionError() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+
+        // Covers the intrinsic cost of 21,064 but not the 23,000 the Bridge declares for this data
+        CallArguments args = failingBridgeCallArguments();
+        args.setGas("0x7530"); // 30,000
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class,
+                () -> eth.call(callArgumentsParam, latest));
+        assertEquals(-32015, exception.getCode());
+        assertEquals("VM Exception while processing transaction: execution failed", exception.getMessage());
+        assertNull(exception.getRevertData());
+    }
+
+    @Test
     void testCall_directCallToLocalOnlyBridgeMethod_returnsValue() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
         EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
