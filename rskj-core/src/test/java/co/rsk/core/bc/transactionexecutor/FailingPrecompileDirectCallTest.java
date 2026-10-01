@@ -41,6 +41,8 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.ethereum.vm.trace.ProgramTraceProcessor;
+import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -252,6 +254,37 @@ class FailingPrecompileDirectCallTest {
         assertEquals("test precompile error", thrown.getMessage());
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void failedCallReportsErrorInTraceOnlyAfterActivation(boolean rskip692Active) {
+        setUp(rskip692Active);
+        Transaction tx = legacyCall(new byte[]{WRITE_STORAGE | EMIT_LOG});
+
+        SummarizedProgramTrace trace = traceOf(execute(tx), tx);
+
+        if (rskip692Active) {
+            assertEquals("class org.ethereum.vm.exception.VMException: test precompile failure", trace.getError());
+        } else {
+            assertNull(trace.getError());
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void callWithInsufficientGasReportsOutOfGasInTrace(boolean rskip692Active) {
+        setUp(rskip692Active);
+        // Intrinsic cost 21_000 + 16 for the one non-zero data byte, plus the 1_000 the contract declares: 22_016.
+        Transaction tx = legacyCall(new byte[]{EMIT_LOG}, 22_015L);
+
+        TransactionExecutor executor = execute(tx);
+        SummarizedProgramTrace trace = traceOf(executor, tx);
+
+        assertFalse(executor.getReceipt().isSuccessful());
+        assertTrue(trace.getError().startsWith(
+                "class org.ethereum.vm.program.Program$OutOfGasException: Out of Gas calling precompiled contract"),
+                trace.getError());
+    }
+
     private void assertLogRecordedOnlyBeforeActivation(TransactionExecutor executor, boolean rskip692Active) {
         assertNotNull(executor.getResult().getException());
         TransactionReceipt receipt = executor.getReceipt();
@@ -268,11 +301,21 @@ class FailingPrecompileDirectCallTest {
         }
     }
 
+    private static SummarizedProgramTrace traceOf(TransactionExecutor executor, Transaction tx) {
+        ProgramTraceProcessor traceProcessor = new ProgramTraceProcessor();
+        executor.extractTrace(traceProcessor);
+        return (SummarizedProgramTrace) traceProcessor.getProgramTrace(tx.getHash());
+    }
+
     private Transaction legacyCall(byte[] data) {
+        return legacyCall(data, GAS_LIMIT);
+    }
+
+    private Transaction legacyCall(byte[] data, long gasLimit) {
         Transaction tx = Transaction.builder()
                 .nonce(track.getNonce(sender.getAddress()))
                 .gasPrice(BigInteger.valueOf(GAS_PRICE))
-                .gasLimit(BigInteger.valueOf(GAS_LIMIT))
+                .gasLimit(BigInteger.valueOf(gasLimit))
                 .receiveAddress(FAILING_PRECOMPILE_ADDR)
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(Coin.valueOf(VALUE))
