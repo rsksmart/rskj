@@ -842,20 +842,13 @@ public class BridgeSupport {
         this.subtraces.add(subtrace);
     }
 
-    private int getHeightForNewUtxos(int btcTxHeight) {
-        if (!activations.isActive(ConsensusRule.RSKIP643)) {
-            return 0;
-        }
-        return btcTxHeight;
-    }
-
     /*
     Add the btcTx outputs that send btc to the federation(s) to the UTXO list,
     so they can be used as inputs in future peg-out transactions.
     Finally, mark the btcTx as processed.
      */
     private void registerNewUtxos(BtcTransaction btcTx, int btcTxHeight) throws IOException {
-        int heightForNewUtxos = getHeightForNewUtxos(btcTxHeight);
+        int heightForNewUtxos = getHeightForNewUtxos(activations, btcTxHeight);
 
         // Outputs to the active federation
         Wallet activeFederationWallet = getActiveFederationWallet(false);
@@ -2947,7 +2940,7 @@ public class BridgeSupport {
             List<FlyoverFederationInformation> fbFederations = flyoverRetiringFederationInformation
                 .map(flyoverFederationInformation -> Arrays.asList(flyoverActiveFederationInformation, flyoverFederationInformation))
                 .orElseGet(() -> Collections.singletonList(flyoverActiveFederationInformation));
-            WalletProvider walletProvider = createFlyoverWalletProvider(fbFederations);
+            WalletProvider walletProvider = createFlyoverWalletProvider(fbFederations, height);
 
             provider.markFlyoverDerivationHashAsUsed(btcTxHashWithoutWitness, flyoverDerivationHash);
 
@@ -2970,6 +2963,7 @@ public class BridgeSupport {
             networkParameters,
             btcContext,
             btcTx,
+            height,
             Collections.singletonList(flyoverActiveFederationAddress)
         );
         logger.info(
@@ -2990,6 +2984,7 @@ public class BridgeSupport {
                 networkParameters,
                 btcContext,
                 btcTx,
+                height,
                 Collections.singletonList(
                     flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(networkParameters)
                 )
@@ -3108,13 +3103,15 @@ public class BridgeSupport {
     }
 
     private WalletProvider createFlyoverWalletProvider(
-        List<FlyoverFederationInformation> fbFederations) {
+        List<FlyoverFederationInformation> fbFederations,
+        int btcTxHeight) {
         return (BtcTransaction btcTx, List<Address> addresses) -> {
             List<UTXO> utxosList = getUTXOsSentToAddresses(
                 activations,
                 networkParameters,
                 btcContext,
                 btcTx,
+                btcTxHeight,
                 addresses
             );
             return getFlyoverWallet(btcContext, utxosList, fbFederations);

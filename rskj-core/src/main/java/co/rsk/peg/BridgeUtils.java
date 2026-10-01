@@ -313,11 +313,18 @@ public final class BridgeUtils {
         NetworkParameters networkParameters,
         Context context,
         BtcTransaction btcTx,
+        int btcTxHeight,
         List<Address> addresses
 
     ) {
         if (activations.isActive(RSKIP293)){
-            return getUTXOsSentToAddresses(context, btcTx, addresses);
+            int utxosHeight = getHeightForNewUtxos(activations, btcTxHeight);
+            return getUTXOsSentToAddresses(
+                context,
+                btcTx,
+                utxosHeight,
+                addresses
+            );
         } else {
             return BridgeUtilsLegacy.getUTXOsSentToAddress(
                 activations,
@@ -328,20 +335,28 @@ public final class BridgeUtils {
         }
     }
 
+    public static int getHeightForNewUtxos(ActivationConfig.ForBlock activations, int btcTxHeight) {
+        if (!activations.isActive(RSKIP643)) {
+            return 0;
+        }
+        return btcTxHeight;
+    }
+
     /**
      * @param context
      * @param btcTx
+     * @param utxosHeight
      * @param addresses
      * @return the list of UTXOs in the given btcTx sent to the given list of address
      */
-    private static List<UTXO> getUTXOsSentToAddresses(Context context, BtcTransaction btcTx, List<Address> addresses) {
+    private static List<UTXO> getUTXOsSentToAddresses(Context context, BtcTransaction btcTx, int utxosHeight, List<Address> addresses) {
         Wallet wallet = BridgeUtils.createWatchedBtcWalletFromAddresses(context, addresses);
         return btcTx.getWalletOutputs(wallet).stream().map(
             txOutput -> new UTXO(
                 btcTx.getHash(),
                 txOutput.getIndex(),
                 txOutput.getValue(),
-                0,
+                utxosHeight,
                 btcTx.isCoinBase(),
                 txOutput.getScriptPubKey()
             )
