@@ -121,6 +121,7 @@ public enum ConsensusRule {
     RSKIP551("rskip551"), // Disable RSKIP459
     RSKIP552("rskip552"), // Blake2F improvements in data handling
     RSKIP559("rskip559"), // Pegouts deterministic sorting
+    RSKIP560("rskip560"), // Precompiled contract exception handling on direct-call path -- number provisional pending RSKIP acceptance
     ;
 
     private final String configKey;

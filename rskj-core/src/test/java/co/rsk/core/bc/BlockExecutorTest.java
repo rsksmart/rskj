@@ -110,6 +110,7 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -3570,10 +3571,11 @@ public class BlockExecutorTest {
             byte chainId,
             ECKey authorityKey
     ) {
+        byte[] nonceBytes = CommonParsingUtils.unsignedBytes(nonce);
         byte[] rlpEncoded = RLP.encodeList(
                 RLP.encodeBigInteger(BigInteger.valueOf(chainId)),
                 RLP.encodeElement(delegatedAddress.getBytes()),
-                RLP.encodeElement(nonce.toByteArray())
+                RLP.encodeElement(nonceBytes)
         );
 
         byte[] payload = new byte[1 + rlpEncoded.length];
@@ -3587,7 +3589,7 @@ public class BlockExecutorTest {
         return new SetCodeAuthorization(
                 BigInteger.valueOf(chainId),
                 delegatedAddress,
-                nonce.toByteArray(),
+                nonceBytes,
                 signature
         );
     }

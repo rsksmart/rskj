@@ -57,6 +57,8 @@ class TxQuotaCheckerIntegrationTest {
     private Account accountF;
     private Account contractA;
     private Account contractB;
+    private Account delegatedActiveAccount;
+    private Account delegatedClearedAccount;
 
     private TimeProvider timeProvider;
 
@@ -70,6 +72,8 @@ class TxQuotaCheckerIntegrationTest {
         accountF = new AccountBuilder().name("accountF").build();
         contractA = new AccountBuilder().name("contractA").build();
         contractB = new AccountBuilder().name("contractB").build();
+        delegatedActiveAccount = new AccountBuilder().name("delegatedActiveAccount").build();
+        delegatedClearedAccount = new AccountBuilder().name("delegatedClearedAccount").build();
 
         Block mockedBlock = mock(Block.class);
         when(mockedBlock.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(BLOCK_GAS_LIMIT));
@@ -84,6 +88,8 @@ class TxQuotaCheckerIntegrationTest {
         when(state.getNonce(accountF.getAddress())).thenReturn(BigInteger.ZERO);
         when(state.getNonce(contractA.getAddress())).thenReturn(BigInteger.ZERO);
         when(state.getNonce(contractB.getAddress())).thenReturn(BigInteger.ZERO);
+        when(state.getNonce(delegatedActiveAccount.getAddress())).thenReturn(BigInteger.ZERO);
+        when(state.getNonce(delegatedClearedAccount.getAddress())).thenReturn(BigInteger.ZERO);
 
         Repository repository = mock(Repository.class);
         when(repository.isExist(accountA.getAddress())).thenReturn(true);
@@ -94,15 +100,17 @@ class TxQuotaCheckerIntegrationTest {
         when(repository.isExist(accountF.getAddress())).thenReturn(true);
         when(repository.isExist(contractA.getAddress())).thenReturn(false);
         when(repository.isExist(contractB.getAddress())).thenReturn(true);
+        when(repository.isExist(delegatedActiveAccount.getAddress())).thenReturn(true);
+        when(repository.isExist(delegatedClearedAccount.getAddress())).thenReturn(true);
 
-        when(repository.isContract(accountA.getAddress())).thenReturn(false);
-        when(repository.isContract(accountB.getAddress())).thenReturn(false);
-        when(repository.isContract(accountC.getAddress())).thenReturn(false);
-        when(repository.isContract(accountD.getAddress())).thenReturn(false);
-        when(repository.isContract(accountE.getAddress())).thenReturn(false);
-        when(repository.isContract(accountF.getAddress())).thenReturn(false);
-        when(repository.isContract(contractA.getAddress())).thenReturn(true);
-        when(repository.isContract(contractB.getAddress())).thenReturn(true);
+        when(repository.isRegularContract(contractA.getAddress())).thenReturn(true);
+        when(repository.isRegularContract(contractB.getAddress())).thenReturn(true);
+
+
+        when(repository.hasDelegationAuthority(delegatedActiveAccount.getAddress())).thenReturn(true);
+        when(repository.getCode(delegatedActiveAccount.getAddress())).thenReturn(DelegationCodeResolver.createDelegatedCode(TestUtils.generateAddress("delegate")));
+        when(repository.hasDelegationAuthority(delegatedClearedAccount.getAddress())).thenReturn(true);
+        when(repository.getCode(delegatedClearedAccount.getAddress())).thenReturn(new byte[0]);
 
         gasPriceTracker = mock(GasPriceTracker.class);
         when(gasPriceTracker.getGasPrice()).thenReturn(Coin.valueOf(BLOCK_AVG_GAS_PRICE));
@@ -225,6 +233,21 @@ class TxQuotaCheckerIntegrationTest {
 
         Transaction secondTxFromAccountFToAccountA = txFromAccountFToAccountA(1, 650_000, BLOCK_AVG_GAS_PRICE - 100_000, 50_000);
         assertFalse(quotaChecker.acceptTx(secondTxFromAccountFToAccountA, null, currentContext), "secondTxFromAccountFToAccountA should not benefit from first tx being allowed");
+    }
+
+    @Test
+    void activeDelegatedEOA_asReceiver_getsQuotaHeadStartLikeAnyEOA() {
+        Transaction txToDelegatedActive = txFrom(accountC, delegatedActiveAccount, 0, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
+        assertTrue(quotaChecker.acceptTx(txToDelegatedActive, null, currentContext));
+        assertNotNull(quotaChecker.getTxQuota(delegatedActiveAccount.getAddress()), "An active delegated EOA must get the same early quota head-start as any other EOA receiver");
+    }
+
+    @Test
+    void clearedDelegatedEOA_asReceiver_getsQuotaHeadStartLikeAnyEOA() {
+        Transaction txToDelegatedCleared = txFrom(accountC, delegatedClearedAccount, 0, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
+
+        assertTrue(quotaChecker.acceptTx(txToDelegatedCleared, null, currentContext));
+        assertNotNull(quotaChecker.getTxQuota(delegatedClearedAccount.getAddress()), "A cleared delegated EOA must get the same early quota head-start as any other EOA receiver");
     }
 
     @Test

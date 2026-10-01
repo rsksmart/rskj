@@ -36,8 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Unit tests for {@link TransactionTypePrefix}, focused on the RSK-namespace subtype
- * hex-parsing logic used at the JSON-RPC ingress.
+ * Unit tests for {@link TransactionTypePrefix}, including reserved RSK-namespace prefix
+ * recognition and subtype hex-parsing at the JSON-RPC ingress.
  */
 class TransactionTypePrefixTest {
 

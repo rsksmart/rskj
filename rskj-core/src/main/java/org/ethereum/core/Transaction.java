@@ -39,10 +39,10 @@ import org.ethereum.core.transaction.parser.ParsedRawTransaction;
 import org.ethereum.core.transaction.parser.ParsedRawTransactionVisitor;
 import org.ethereum.core.transaction.parser.ParsedType0Transaction;
 import org.ethereum.core.transaction.parser.ParsedType1Transaction;
-import org.ethereum.core.transaction.parser.ParsedType2RSKTransaction;
 import org.ethereum.core.transaction.parser.ParsedType2Transaction;
 import org.ethereum.core.transaction.parser.ParsedType4Transaction;
 import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
+import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.Type4TransactionValidation;
 import org.ethereum.cost.InitcodeCostCalculator;
@@ -92,6 +92,7 @@ public class Transaction {
     public static final byte CHAIN_ID_INC = 35;
     public static final byte LOWER_REAL_V = 27;
     private static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
+    private static final String ERR_INVALID_SIGNATURE = "Invalid transaction signature";
     private final TransactionTypePrefix typePrefix;
 
     protected RskAddress sender;
@@ -130,7 +131,7 @@ public class Transaction {
 
     /**
      * RSKIP-546 / RSKIP-545: EIP-1559 fee fields for standard Type 2 and Type 4 ({@code null} for legacy, Type 1,
-     * Type 3, and RSK-namespace Type 2). Effective gas price is {@code min(maxPriorityFeePerGas, maxFeePerGas)}.
+     * Type 3). Effective gas price is {@code min(maxPriorityFeePerGas, maxFeePerGas)}.
      */
     private final Coin maxPriorityFeePerGas;
     private final Coin maxFeePerGas;
@@ -183,7 +184,8 @@ public class Transaction {
                 tx.accessListBytes,
                 tx.maxPriorityFeePerGas,
                 tx.maxFeePerGas,
-                tx.authorizationList
+                tx.authorizationList,
+                false
         );
 
         this.signature = tx.signature;
@@ -193,6 +195,9 @@ public class Transaction {
         return parsed.accept(new ParsedRawTransactionToTransaction(isLocalCall));
     }
 
+    // Rootstock has no EIP-1559 base fee. The effective gas price is therefore
+    // min(maxPriorityFeePerGas, maxFeePerGas). For valid transactions,
+    // maxPriorityFeePerGas <= maxFeePerGas, so this resolves to the priority fee.
     private static Coin effectiveGasPrice(Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
         return maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
     }
@@ -228,11 +233,6 @@ public class Transaction {
                     parsed.chainId(),
                     null
             );
-        }
-
-        @Override
-        public Transaction visitType2Rsk(ParsedType2RSKTransaction parsed) {
-            return assemble(parsed, parsed.gasPrice(), null, null, null, parsed.chainId(), null);
         }
 
         @Override
@@ -272,7 +272,8 @@ public class Transaction {
                     accessListBytes,
                     maxPriorityFeePerGas,
                     maxFeePerGas,
-                    authorizationList
+                    authorizationList,
+                    false
             );
             tx.signature = parsed.signature();
             return tx;
@@ -283,6 +284,22 @@ public class Transaction {
                           byte chainId, final boolean localCall, TransactionTypePrefix typePrefix, byte[] accessListBytes,
                           @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas,
                           @Nullable List<SetCodeAuthorization> authorizationList) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, localCall, typePrefix,
+                accessListBytes, maxPriorityFeePerGas, maxFeePerGas, authorizationList, true);
+    }
+
+    /** {@code checkTypedFields} is false only for fields a parser or an existing transaction already validated. */
+    private Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
+                        byte chainId, boolean localCall, TransactionTypePrefix typePrefix, byte[] accessListBytes,
+                        @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas,
+                        @Nullable List<SetCodeAuthorization> authorizationList, boolean checkTypedFields) {
+
+        if (typePrefix.isRskNamespace()) {
+            throw new IllegalArgumentException(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
+        }
+        if (checkTypedFields && typePrefix.isTyped()) {
+            requireCanonicalTypedFields(nonce, gasLimit, chainId, accessListBytes);
+        }
 
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = gasPriceRaw;
@@ -298,6 +315,18 @@ public class Transaction {
         this.maxFeePerGas = maxFeePerGas;
         this.authorizationList = authorizationList == null ? null : List.copyOf(authorizationList);
 
+    }
+
+    private static void requireCanonicalTypedFields(byte[] nonce, byte[] gasLimit, byte chainId, byte[] accessListBytes) {
+        CommonParsingUtils.requireCanonicalScalar(nonce, "Nonce");
+        CommonParsingUtils.requireCanonicalScalar(gasLimit, "Gas Limit");
+        CommonParsingUtils.requireValidTypedChainId(chainId);
+        if (accessListBytes != null) {
+            if (accessListBytes.length == 0) {
+                throw new IllegalArgumentException("Access list must be an RLP list");
+            }
+            AccessListCodec.defaultAccessListBytes(accessListBytes);
+        }
     }
 
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:
@@ -320,15 +349,15 @@ public class Transaction {
 
         long accessListGas = 0;
         if (activations.isActive(ConsensusRule.RSKIP546)
-                && isType1OrStandardType2()
+                && usesAccessListFields()
                 && accessListBytes != null && accessListBytes.length > 1) {
-            // RSKIP-546: 80 gas/byte of access-list RLP; only standard Type 1 / EIP-1559 Type 2 (not RSK-namespace 0x02||subtype).
+            // RSKIP-546: 80 gas/byte of access-list RLP.
             // length > 1: empty list (0xc0) is 1 byte and should not be charged.
             accessListGas = accessListBytes.length * GasCost.ACCESS_LIST_GAS_PER_BYTE;
         }
 
         long authorizationListGas = 0;
-        if (isType4()) {
+        if (isType4() && authorizationList != null) {
             authorizationListGas = Math.multiplyExact(GasCost.PER_EMPTY_ACCOUNT_COST, authorizationList.size());
         }
 
@@ -343,7 +372,9 @@ public class Transaction {
             return true;
         }
         TransactionType type = typePrefix.type();
-        if ((type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2)
+        // Type 1 / 2 / 4 all depend on RSKIP-546 fields (access_list, and for type 2/4 fee caps).
+        // Type 4 additionally requires RSKIP-545 (set-code / authorization_list).
+        if ((type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2 || type == TransactionType.TYPE_4)
                 && !activations.isActive(ConsensusRule.RSKIP546)) {
             return true;
         }
@@ -440,15 +471,23 @@ public class Transaction {
     }
 
     public Coin getGasPrice() {
-        // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
-        // give a different value than the original.
         if (usesRskip546FeeFields() && maxPriorityFeePerGas != null && maxFeePerGas != null) {
-            return maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
+            return effectiveGasPrice(maxPriorityFeePerGas, maxFeePerGas);
         }
         if (gasPrice == null) {
             return Coin.ZERO;
         }
 
+        return gasPrice;
+    }
+
+    /**
+     * The gasPrice field as decoded, for encoders: {@code null} when it was received as the RLP empty string
+     * ({@code 0x80}), as opposed to {@link Coin#ZERO} for a single zero byte ({@code 0x00}). Unlike
+     * {@link #getGasPrice()}, it keeps the two apart, so a legacy transaction re-encodes to the bytes that were signed.
+     */
+    @Nullable
+    public Coin getEncodableGasPrice() {
         return gasPrice;
     }
 
@@ -462,23 +501,21 @@ public class Transaction {
         return maxFeePerGas;
     }
 
-    /** Standard EIP-1559 Type 2 ({@code 0x02} + 12-field RLP), not RSK namespace ({@code 0x02} || subtype || legacy). */
-    private boolean isStandardType2() {
-        return typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace();
+    private boolean isType2() {
+        return typePrefix.type() == TransactionType.TYPE_2;
     }
 
     public boolean isType4() {
         return typePrefix.type() == TransactionType.TYPE_4;
     }
 
-    /** Type 2 (standard) and Type 4 carry RSKIP-546 fee caps in their payload. */
+    /** Type 2 and Type 4 carry RSKIP-546 fee caps in their payload. */
     private boolean usesRskip546FeeFields() {
-        return isStandardType2() || isType4();
+        return isType2() || isType4();
     }
 
-    /** Types that use RSKIP-546 access-list field and intrinsic gas for that field (excludes RSK-namespace Type 2). */
-    private boolean isType1OrStandardType2() {
-        return typePrefix.type() == TransactionType.TYPE_1 || isStandardType2() || isType4();
+    private boolean usesAccessListFields() {
+        return typePrefix.type() == TransactionType.TYPE_1 || isType2() || isType4();
     }
 
     public byte[] getGasLimit() {
@@ -494,11 +531,13 @@ public class Transaction {
     }
 
     public boolean acceptTransactionSignature(byte currentChainId) {
-        if (signature == null || !signature.validateComponents() || signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
+        if (!hasAcceptableSignatureComponents()) {
             return false;
         }
 
-        if (typePrefix.type() == TransactionType.TYPE_1 || isStandardType2() || isType4()) {
+        if (typePrefix.type() == TransactionType.TYPE_1
+                || isType2()
+                || isType4()) {
             return this.chainId != 0 && this.chainId == currentChainId;
         }
 
@@ -637,14 +676,6 @@ public class Transaction {
         return typePrefix.type();
     }
 
-    public boolean isRskNamespaceTransaction() {
-        return typePrefix.isRskNamespace();
-    }
-
-    public byte getRskSubtype() {
-        return typePrefix.subtype();
-    }
-
     public String getFullTypeString() {
         return typePrefix.toFullString();
     }
@@ -666,10 +697,18 @@ public class Transaction {
                 : (byte) (this.signature.getV() - LOWER_REAL_V + CHAIN_ID_INC + this.chainId * 2);
     }
 
-    public  void checkInvalidChain(Constants constants, String chainId) {
-        if (!acceptTransactionSignature(constants.getChainId())) {
-            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + chainId);
+    private boolean hasAcceptableSignatureComponents() {
+        return signature != null && signature.validateComponents() && signature.getS().compareTo(SECP256K1N_HALF) < 0;
+    }
+
+    public void checkInvalidChain(Constants constants) {
+        if (acceptTransactionSignature(constants.getChainId())) {
+            return;
         }
+        if (!hasAcceptableSignatureComponents()) {
+            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_SIGNATURE);
+        }
+        throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + Byte.toUnsignedInt(getChainId()));
     }
 
     @Override
@@ -734,7 +773,7 @@ public class Transaction {
     }
 
     private static byte[] nullToZeroArray(byte[] data) {
-        return data == null ? ZERO_BYTE_ARRAY.clone() : data;
+        return data == null ? ZERO_BYTE_ARRAY.clone() : data.clone();
     }
 
     public boolean isLocalCallTransaction() {

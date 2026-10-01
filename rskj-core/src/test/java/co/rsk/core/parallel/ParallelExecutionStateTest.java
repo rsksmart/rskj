@@ -956,7 +956,8 @@ class ParallelExecutionStateTest {
 
     @Test
     void whenATxCallsAPrecompiledThatThrowsAnExceptionShouldGoToSequentialIfDisabled() throws DslProcessorException {
-        // TX01 throws an exception, though, there is no way to check from out of the execution if the precompiled contract call has failed.
+        // TX01 throws an exception; now that the receipt/status fix is in place, this is
+        // observable from outside the execution via the receipt status.
         World parallel = this.createWorldAndProcess(
                 "account_new acc1 10000000\n" +
                         "transaction_build tx01\n" +
@@ -975,16 +976,17 @@ class ParallelExecutionStateTest {
                         "block_connect b01\n" +
                         "\n" +
                         "assert_best b01\n" +
-                        "assert_tx_success tx01\n" +
                         "\n", 0, Collections.singleton(PrecompiledContracts.BRIDGE_ADDR));
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(FAILED_STATUS, parallel.getTransactionReceiptByName("tx01").getStatus());
         Assertions.assertArrayEquals(new short[]{}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
     @Test
     void whenATxCallsAPrecompiledThatThrowsAnExceptionShouldGoToParallelIfEnabled() throws DslProcessorException {
-        // TX01 throws an exception, though, there is no way to check from out of the execution if the precompiled contract call has failed.
+        // TX01 throws an exception; now that the receipt/status fix is in place, this is
+        // observable from outside the execution via the receipt status.
         World parallel = this.createWorldAndProcess(
                 "account_new acc1 10000000\n" +
                         "transaction_build tx01\n" +
@@ -1003,10 +1005,10 @@ class ParallelExecutionStateTest {
                         "block_connect b01\n" +
                         "\n" +
                         "assert_best b01\n" +
-                        "assert_tx_success tx01\n" +
                         "\n", 0, Collections.emptySet());
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(FAILED_STATUS, parallel.getTransactionReceiptByName("tx01").getStatus());
         Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 

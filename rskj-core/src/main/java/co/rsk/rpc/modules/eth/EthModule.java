@@ -21,6 +21,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
+import co.rsk.core.exception.TransactionExecutionRejectedException;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
@@ -41,6 +42,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
@@ -169,16 +171,31 @@ public class EthModule
 
         String hReturn = null;
         try {
-            ProgramResult programResult = mutableRepository != null ?
-                    callConstant(callArgs, block, mutableRepository, overrideablePrecompiledContracts) :
-                    callConstant(callArgs, block);
-
+            ProgramResult programResult = mutableRepository != null
+                    ? callConstant(callArgs, block, mutableRepository, overrideablePrecompiledContracts)
+                    : callConstant(callArgs, block);
             handleTransactionRevertIfHappens(programResult);
             hReturn = HexUtils.toUnformattedJsonHex(programResult.getHReturn());
             return hReturn;
+        } catch (TransactionExecutionRejectedException e) {
+            throw RskJsonRpcRequestException.transactionError(e.getMessage());
         } finally {
             LOGGER.debug("eth_call(): {}", hReturn);
         }
+    }
+
+    @VisibleForTesting
+    public ProgramResult callConstant(CallArguments args, Block executionBlock) {
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = buildParams(hexArgs, hexArgs.gasLimitForCall(this.gasCallCap), this.chainId);
+        return reversibleTransactionExecutor.executeTransactionAtBlock(executionBlock, executionBlock.getCoinbase(), params);
+    }
+
+    public ProgramResult callConstant(CallArguments args, Block executionBlock,
+                                       MutableRepository snapshot, OverrideablePrecompiledContracts precompiledContracts) {
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = buildParams(hexArgs, hexArgs.gasLimitForCall(this.gasCallCap), this.chainId);
+        return reversibleTransactionExecutor.executeTransactionOnSnapshot(snapshot, executionBlock, executionBlock.getCoinbase(), precompiledContracts, params);
     }
 
     private void validateStateOverrideAllowance(boolean shouldPerformStateOverride) {
@@ -238,17 +255,13 @@ public class EthModule
         String estimation = null;
         try {
             CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args.toCallArguments());
+            ReversibleTransactionExecutor.ReversibleTransactionParams params = buildParams(hexArgs, ByteUtil.longToBytes(gasEstimationCap), this.chainId);
 
             TransactionExecutor executor = reversibleTransactionExecutor.estimateGas(
                     block,
                     block.getCoinbase(),
-                    hexArgs.getGasPrice(),
-                    ByteUtil.longToBytes(gasEstimationCap),
-                    hexArgs.getToAddress(),
-                    hexArgs.getValue(),
-                    hexArgs.getData(),
-                    hexArgs.getFromAddress(),
-                    snapshot
+                    snapshot,
+                    params
             );
 
             ProgramResult res = executor.getResult();
@@ -257,6 +270,8 @@ public class EthModule
             estimation = internalEstimateGas(executor.getResult());
 
             return estimation;
+        } catch (TransactionExecutionRejectedException e) {
+            throw RskJsonRpcRequestException.transactionError(e.getMessage());
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", estimation);
         }
@@ -355,34 +370,21 @@ public class EthModule
         }
     }
 
-    @VisibleForTesting
-    public ProgramResult callConstant(CallArguments args, Block executionBlock) {
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-        return reversibleTransactionExecutor.executeTransaction(
-                executionBlock,
-                executionBlock.getCoinbase(),
+    private static ReversibleTransactionExecutor.ReversibleTransactionParams buildParams(CallArgumentsToByteArray hexArgs, byte[] gasLimit, byte defaultChainId) {
+        TransactionType type = hexArgs.resolveType();
+        return new ReversibleTransactionExecutor.ReversibleTransactionParams(
                 hexArgs.getGasPrice(),
-                hexArgs.gasLimitForCall(this.gasCallCap),
-                hexArgs.getToAddress(),
-                hexArgs.getValue(),
-                hexArgs.getData(),
-                hexArgs.getFromAddress()
-        );
-    }
-
-    public ProgramResult callConstant(CallArguments args, Block executionBlock, RepositorySnapshot snapshot, PrecompiledContracts precompiledContracts) {
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-        return reversibleTransactionExecutor.executeTransaction(
-                snapshot,
-                executionBlock,
-                executionBlock.getCoinbase(),
-                hexArgs.getGasPrice(),
-                hexArgs.gasLimitForCall(this.gasCallCap),
+                gasLimit,
                 hexArgs.getToAddress(),
                 hexArgs.getValue(),
                 hexArgs.getData(),
                 hexArgs.getFromAddress(),
-                precompiledContracts
+                hexArgs.getAuthorizationList(),
+                hexArgs.getChainId(type, defaultChainId),
+                type,
+                hexArgs.getAccessListBytes(),
+                hexArgs.getMaxPriorityFeePerGasBytes(),
+                hexArgs.getMaxFeePerGasBytes()
         );
     }
 

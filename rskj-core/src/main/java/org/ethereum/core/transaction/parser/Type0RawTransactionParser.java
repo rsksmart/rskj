@@ -19,8 +19,6 @@ package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.Type0SignatureUtils;
@@ -48,7 +46,8 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
         CommonParsingUtils.requireFieldCount(txFields, LEGACY_FIELD_COUNT, "Legacy-format");
 
         byte[] nonce = CommonParsingUtils.nullToEmpty(txFields.get(NONCE_INDEX).getRLPData());
-        Coin gasPrice = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(GAS_PRICE_INDEX).getRLPData()));
+        // Not defaulted: an empty (0x80) gasPrice stays null so that it re-encodes as 0x80, not as 0x00.
+        Coin gasPrice = RLP.parseCoinNonNullZero(txFields.get(GAS_PRICE_INDEX).getRLPData());
         byte[] gasLimit = CommonParsingUtils.nullToEmpty(txFields.get(GAS_LIMIT_INDEX).getRLPData());
         RskAddress receiveAddress = CommonParsingUtils.defaultAddress(
                 RLP.parseRskAddress(txFields.get(RECEIVE_ADDRESS_INDEX).getRLPData()));
@@ -69,14 +68,8 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
     }
 
     @Override
-    public void validate(long bestBlock, ActivationConfig activationConfig, Constants constants) {
-
-
-    }
-
-    @Override
     public ParsedType0Transaction parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId) {
-        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce(), false);
+        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce());
         BigInteger gasLimit = TransactionInput.resolveGasLimit(input.gasLimit());
         Coin gasPrice = CommonParsingUtils.defaultValue(input.gasPrice());
         Coin value = CommonParsingUtils.defaultValue(input.value());
