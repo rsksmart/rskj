@@ -64,7 +64,7 @@ class BridgeSupportSvpTest {
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
     private static final ActivationConfig.ForBlock vetiver900Activations = ActivationConfigsForTest.vetiver900().forBlock(0);
     // before RSKIP643 the btc tx height is not stored in the registered UTXOs
-    private static final int UTXO_HEIGHT_BEFORE_RSKIP643 = 0;
+    private static final int UTXO_HEIGHT_BEFORE_CARDAMOM = 0;
     private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainNetConstants.getBtcParams();
@@ -761,7 +761,7 @@ class BridgeSupportSvpTest {
             List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
                 svpFundTransaction,
                 activeFederation,
-                UTXO_HEIGHT_BEFORE_RSKIP643
+                UTXO_HEIGHT_BEFORE_CARDAMOM
             );
             assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
             assertTransactionWasProcessed(svpFundTransaction.getHash());
@@ -1529,7 +1529,7 @@ class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
-            assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, UTXO_HEIGHT_BEFORE_RSKIP643);
+            assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, UTXO_HEIGHT_BEFORE_CARDAMOM);
         }
 
         @Test
