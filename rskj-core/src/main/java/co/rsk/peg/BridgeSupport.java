@@ -415,7 +415,7 @@ public class BridgeSupport {
             logger.info("[registerBtcTransaction][btctx: {}] This is a {} transaction type", btcTx.getHash(), pegTxType);
             switch (pegTxType) {
                 case PEGIN -> registerPegIn(btcTx, rskTxHash, height);
-                case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx, getHeightForNewUtxos(height));
+                case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx, height);
                 case SVP_FUND_TX -> registerSvpFundTx(btcTx, height);
                 case SVP_SPEND_TX -> registerSvpSpendTx(btcTx, height);
                 case UNKNOWN -> logger.warn("[registerBtcTransaction] Unknown peg tx type won't be registered.");
@@ -431,7 +431,7 @@ public class BridgeSupport {
     }
 
     private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
-        registerNewUtxos(btcTx, getHeightForNewUtxos(btcTxHeight)); // Need to register the change UTXO
+        registerNewUtxos(btcTx, btcTxHeight); // Need to register the change UTXO
 
         // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
         // In that case, the fundTx will be identified as a regular peg-out tx and processed via #registerPegoutOrMigration
@@ -442,7 +442,7 @@ public class BridgeSupport {
     }
 
     private void registerSvpSpendTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
-        registerNewUtxos(btcTx, getHeightForNewUtxos(btcTxHeight));
+        registerNewUtxos(btcTx, btcTxHeight);
         provider.clearSvpSpendTxHashUnsigned();
 
         logger.info("[registerSvpSpendTx] Going to commit the proposed federation.");
@@ -510,7 +510,7 @@ public class BridgeSupport {
                     btcTx,
                     peginInformation,
                     totalAmount,
-                    getHeightForNewUtxos(height)
+                    height
                 );
             }
             case REFUND -> handleRefundablePegin(btcTx, rskTxHash, peginEvaluationResult, peginInformation.getBtcRefundAddress());
@@ -855,6 +855,8 @@ public class BridgeSupport {
     Finally, mark the btcTx as processed.
      */
     private void registerNewUtxos(BtcTransaction btcTx, int btcTxHeight) throws IOException {
+        int heightForNewUtxos = getHeightForNewUtxos(btcTxHeight);
+
         // Outputs to the active federation
         Wallet activeFederationWallet = getActiveFederationWallet(false);
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
@@ -865,7 +867,7 @@ public class BridgeSupport {
                 btcTx.getHash(),
                 output.getIndex(),
                 output.getValue(),
-                btcTxHeight,
+                heightForNewUtxos,
                 btcTx.isCoinBase(),
                 output.getScriptPubKey()
             );
@@ -882,7 +884,7 @@ public class BridgeSupport {
                     btcTx.getHash(),
                     output.getIndex(),
                     output.getValue(),
-                    btcTxHeight,
+                    heightForNewUtxos,
                     btcTx.isCoinBase(),
                     output.getScriptPubKey()
                 );
