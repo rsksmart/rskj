@@ -417,7 +417,7 @@ public class BridgeSupport {
                 case PEGIN -> registerPegIn(btcTx, rskTxHash, height);
                 case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx, getHeightForNewUtxos(height));
                 case SVP_FUND_TX -> registerSvpFundTx(btcTx, height);
-                case SVP_SPEND_TX -> registerSvpSpendTx(btcTx);
+                case SVP_SPEND_TX -> registerSvpSpendTx(btcTx, height);
                 case UNKNOWN -> logger.warn("[registerBtcTransaction] Unknown peg tx type won't be registered.");
             }
         } catch (RegisterBtcTransactionException e) {
@@ -441,8 +441,8 @@ public class BridgeSupport {
         }
     }
 
-    private void registerSvpSpendTx(BtcTransaction btcTx) throws IOException {
-        registerNewUtxos(btcTx, 0);
+    private void registerSvpSpendTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
+        registerNewUtxos(btcTx, getHeightForNewUtxos(btcTxHeight));
         provider.clearSvpSpendTxHashUnsigned();
 
         logger.info("[registerSvpSpendTx] Going to commit the proposed federation.");
