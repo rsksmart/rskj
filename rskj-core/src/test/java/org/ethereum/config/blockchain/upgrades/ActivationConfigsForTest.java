@@ -221,7 +221,8 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP378,
             ConsensusRule.RSKIP455,
             ConsensusRule.RSKIP559,
-            ConsensusRule.RSKIP643
+            ConsensusRule.RSKIP643,
+            ConsensusRule.RSKIP692
         ));
     }
 
