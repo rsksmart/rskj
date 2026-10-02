@@ -321,6 +321,11 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
+    public void saveNewFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos) {
+        provider.setFederationsPendingBtcUTXOs(btcTxId, utxos);
+    }
+
+    @Override
     public boolean hasFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
         return provider.getFederationsPendingBtcUTXOs(btcTxId).isPresent();
     }
