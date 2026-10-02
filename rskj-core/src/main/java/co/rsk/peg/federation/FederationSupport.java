@@ -166,7 +166,7 @@ public interface FederationSupport {
      * @throws IllegalArgumentException if btcTxId is null or utxos is null or empty
      * @throws IllegalStateException if btcTxId already has pending UTXOs
      */
-    void saveNewFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos);
+    void storeFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos);
 
     /**
      * Tells whether the given BTC tx id has pending UTXOs that have not been moved to the
