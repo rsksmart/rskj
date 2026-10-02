@@ -30,13 +30,14 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.Assertions;
@@ -268,10 +269,10 @@ class EthModuleGasEstimationDSLTest {
     }
 
     /**
-     * Test if a user can estimate a transaction that exceeds the block limit
+     * A call that runs out of gas even at the gas estimation cap gets an error, not the cap as an estimate
      */
     @Test
-    void estimateGas_gasCap() throws FileNotFoundException, DslProcessorException {
+    void estimateGas_outOfGasAtCap_returnsExecutionError() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/gasCap.txt");
 
         TransactionReceipt deployTransactionReceipt = world.getTransactionReceiptByName("tx01");
@@ -292,10 +293,14 @@ class EthModuleGasEstimationDSLTest {
         callArguments.setGas(HexUtils.toQuantityJsonHex(gasEstimationCap + 1_000_000_000)); // exceeding the gas cap
         callArguments.setData("0x31fe52e8"); // call outOfGas()
 
-        String estimatedGas = eth.estimateGas(TransactionFactoryHelper.toCallArgumentsParam(callArguments), new BlockIdentifierParam(BlockTag.LATEST.getTag()));
-        assertEquals("0x67c280", estimatedGas);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(callArguments);
+        BlockIdentifierParam latest = new BlockIdentifierParam(BlockTag.LATEST.getTag());
 
-        assertEquals(gasEstimationCap, Long.decode(estimatedGas).longValue());
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class,
+                () -> eth.estimateGas(callArgumentsParam, latest));
+        assertEquals(-32015, exception.getCode());
+        assertEquals("VM Exception while processing transaction: execution failed", exception.getMessage());
+        assertNull(eth.getEstimationResult());
     }
 
     /**
@@ -1079,26 +1084,55 @@ class EthModuleGasEstimationDSLTest {
     }
 
 
+    // RSKIP-692 test case 11
     @Test
-    void estimateGas_throwingPrecompileDoesNotInflateEstimateTowardGasCap()
+    void estimateGas_directCallToBridgeWithUnknownMethod_returnsExecutionError()
             throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
-
         EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
-        long gasEstimationCap = new TestSystemProperties().getGasEstimationCap();
 
-        final CallArguments args = new CallArguments();
-        args.setTo("0x" + PrecompiledContracts.BRIDGE_ADDR.toHexString());
-        args.setValue(HexUtils.toQuantityJsonHex(0));
-        args.setNonce(HexUtils.toQuantityJsonHex(0));
-        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
-        // Calls the Bridge precompile with ABI-encoded data that intentionally triggers an exception.
-        args.setData("0xe674f5e80000000000000000000000000000000000000000000000000000000001000006");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(EthModuleDSLTest.failingBridgeCallArguments());
+        BlockIdentifierParam latest = new BlockIdentifierParam(BlockTag.LATEST.getTag());
 
-        long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class,
+                () -> eth.estimateGas(callArgumentsParam, latest));
+        assertEquals(-32015, exception.getCode());
+        assertEquals("VM Exception while processing transaction: execution failed", exception.getMessage());
+        // No estimate is produced at all, so neither the gas estimation cap nor any other figure is returned
+        assertNull(eth.getEstimationResult());
+    }
 
-        assertNotNull(eth.getEstimationResult().getException(), "the simulated call must have actually thrown inside the precompile for this test to be meaningful");
-        assertNotEquals(gasEstimationCap, estimatedGas, "a throwing precompile must not make eth_estimateGas return the gas estimation cap");
+    // RSKIP-692 JSON-RPC interface: the estimate simulates a real transaction, which the Bridge
+    // rejects for a method that only allows local calls, so no estimate is returned for it
+    @Test
+    void estimateGas_directCallToLocalOnlyBridgeMethod_returnsExecutionError()
+            throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(EthModuleDSLTest.localOnlyBridgeGetterCallArguments());
+        BlockIdentifierParam latest = new BlockIdentifierParam(BlockTag.LATEST.getTag());
+
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class,
+                () -> eth.estimateGas(callArgumentsParam, latest));
+        assertEquals(-32015, exception.getCode());
+        assertEquals("VM Exception while processing transaction: execution failed", exception.getMessage());
+        assertNull(eth.getEstimationResult());
+    }
+
+    @Test
+    void estimateGas_directCallToBridgeMethodAllowingNonLocalCalls_returnsEstimate()
+            throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+
+        // getBtcBlockchainBestChainHeight() allows non-local calls once RSKIP220 is active
+        CallArguments args = EthModuleDSLTest.localOnlyBridgeGetterCallArguments();
+        args.setData("0x14c89c01");
+
+        // 21,000 base cost + 4 non-zero data bytes * 16 (EIP-2028), plus the Bridge's
+        // 19,000 method cost + 4 data bytes * 2
+        assertEquals(40_072L, estimateGas(eth, args, BlockTag.LATEST.getTag()));
     }
 
     /**

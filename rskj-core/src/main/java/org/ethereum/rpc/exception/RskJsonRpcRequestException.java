@@ -55,6 +55,14 @@ public class RskJsonRpcRequestException extends RuntimeException {
         );
     }
 
+    /**
+     * Error for a local execution that ended with an exception. The message is fixed on purpose:
+     * the exception raised during execution is internal and is never returned to the caller.
+     */
+    public static RskJsonRpcRequestException transactionExecutionFailedError() {
+        return executionError("execution failed", null);
+    }
+
     public static RskJsonRpcRequestException unknownError(String message) {
         return new RskJsonRpcRequestException(-32009, message);
     }
