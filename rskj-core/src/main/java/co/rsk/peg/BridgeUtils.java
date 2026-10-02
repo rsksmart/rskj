@@ -335,7 +335,12 @@ public final class BridgeUtils {
         }
     }
 
-    public static int getHeightForNewUtxos(ActivationConfig.ForBlock activations, int btcTxHeight) {
+
+    /**
+     * Before RSKIP643, new UTXOs are stored with height 0. From RSKIP643 on, they keep the
+     * height of the BTC block that includes the transaction creating them.
+     */
+    static int getHeightForNewUtxos(ActivationConfig.ForBlock activations, int btcTxHeight) {
         if (!activations.isActive(RSKIP643)) {
             return 0;
         }
