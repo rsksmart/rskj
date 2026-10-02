@@ -2565,6 +2565,85 @@ class FederationSupportImplTest {
     }
 
     @Nested
+    @Tag("federations pending btc utxos")
+    class FederationsPendingBtcUTXOs {
+        private static final Sha256Hash btcTxId = createHash(1);
+        private static final Script p2shP2wshErpFederationScript = P2shP2wshErpFederationBuilder.builder().build().getP2SHScript();
+        private static final List<UTXO> expectedOneUtxo = List.of(
+            UTXOBuilder.builder()
+                .withScriptPubKey(p2shP2wshErpFederationScript)
+                .withTransactionHash(btcTxId)
+                .build()
+        );
+        private static final List<UTXO> expectedThreeUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(p2shP2wshErpFederationScript)
+            .withTransactionHash(btcTxId)
+            .buildManyFromSameTx(3);
+        private static final List<UTXO> expectedLargeNumberOfUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(p2shP2wshErpFederationScript)
+            .withTransactionHash(btcTxId)
+            .buildManyFromSameTx(200);
+
+        @Test
+        void hasFederationsPendingBtcUTXOs_whenNeverSet_shouldReturnFalse() {
+            // act & assert
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
+        }
+
+        @Test
+        void hasFederationsPendingBtcUTXOs_whenOneUtxoSetInSameExecution_shouldReturnTrue() {
+            // arrange
+            storageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+
+            // act & assert
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
+        }
+
+        @Test
+        void hasFederationsPendingBtcUTXOs_whenThreeUtxosSetInSameExecution_shouldReturnTrue() {
+            // arrange
+            storageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos);
+
+            // act & assert
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
+        }
+
+        @Test
+        void hasFederationsPendingBtcUTXOs_whenLargeNumberOfUtxosSetInSameExecution_shouldReturnTrue() {
+            // arrange
+            storageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedLargeNumberOfUtxos);
+
+            // act & assert
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
+        }
+
+        @Test
+        void hasFederationsPendingBtcUTXOs_whenSavedInPreviousExecution_shouldReturnTrue() {
+            // arrange
+            storageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            storageProvider.save(federationMainnetConstants.getBtcParams(), allActivations);
+            FederationSupport federationSupportInNextExecution = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(new FederationStorageProviderImpl(storageAccessor))
+                .withActivations(allActivations)
+                .build();
+
+            // act & assert
+            assertTrue(federationSupportInNextExecution.hasFederationsPendingBtcUTXOs(btcTxId));
+        }
+
+        @Test
+        void hasFederationsPendingBtcUTXOs_whenRemoved_shouldReturnFalse() {
+            // arrange
+            storageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            storageProvider.removeFederationsPendingBtcUTXOs(btcTxId);
+
+            // act & assert
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
+        }
+    }
+
+    @Nested
     @Tag("Federation is in or past migration age")
     class FederationMigrationAge {
         private static final long NEW_FEDERATION_CREATION_BLOCK = 100L;
