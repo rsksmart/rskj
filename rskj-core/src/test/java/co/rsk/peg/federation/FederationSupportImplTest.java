@@ -2681,37 +2681,37 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void saveNewFederationsPendingBtcUTXOs_withOneUtxo_shouldBeRetrievable() {
+        void storeFederationsPendingBtcUTXOs_withOneUtxo_shouldBeRetrievable() {
             // act
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
 
             // assert
             assertUtxosWereSuccessfullyAdded(btcTxId, expectedOneUtxo);
         }
 
         @Test
-        void saveNewFederationsPendingBtcUTXOs_withThreeUtxos_shouldBeRetrievable() {
+        void storeFederationsPendingBtcUTXOs_withThreeUtxos_shouldBeRetrievable() {
             // act
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos);
 
             // assert
             assertUtxosWereSuccessfullyAdded(btcTxId, expectedThreeUtxos);
         }
 
         @Test
-        void saveNewFederationsPendingBtcUTXOs_withLargeNumberOfUtxos_shouldBeRetrievable() {
+        void storeFederationsPendingBtcUTXOs_withLargeNumberOfUtxos_shouldBeRetrievable() {
             // act
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedLargeNumberOfUtxos);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, expectedLargeNumberOfUtxos);
 
             // assert
             assertUtxosWereSuccessfullyAdded(btcTxId, expectedLargeNumberOfUtxos);
         }
 
         @Test
-        void saveNewFederationsPendingBtcUTXOs_whenCallerMutatesOriginalList_shouldNotAffectSavedEntry() {
+        void storeFederationsPendingBtcUTXOs_whenCallerMutatesOriginalList_shouldNotAffectSavedEntry() {
             // arrange
             List<UTXO> mutableUtxos = new ArrayList<>(expectedOneUtxo);
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, mutableUtxos);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, mutableUtxos);
 
             // act
             mutableUtxos.clear();
@@ -2721,51 +2721,51 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void saveNewFederationsPendingBtcUTXOs_withEmptyUtxoList_shouldThrowIllegalArgumentException() {
+        void storeFederationsPendingBtcUTXOs_withEmptyUtxoList_shouldThrowIllegalArgumentException() {
             // act & assert
             assertThrows(
                 IllegalArgumentException.class,
-                () -> federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, List.of())
+                () -> federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, List.of())
             );
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
         }
 
         @Test
-        void saveNewFederationsPendingBtcUTXOs_withNullUtxoList_shouldThrowIllegalArgumentException() {
+        void storeFederationsPendingBtcUTXOs_withNullUtxoList_shouldThrowIllegalArgumentException() {
             // act & assert
             assertThrows(
                 IllegalArgumentException.class,
-                () -> federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, null)
+                () -> federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, null)
             );
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
         }
 
         @Test
-        void saveNewFederationsPendingBtcUTXOs_withNullBtcTxId_shouldThrowIllegalArgumentException() {
+        void storeFederationsPendingBtcUTXOs_withNullBtcTxId_shouldThrowIllegalArgumentException() {
             // act & assert
             assertThrows(
                 IllegalArgumentException.class,
-                () -> federationSupport.saveNewFederationsPendingBtcUTXOs(null, expectedOneUtxo)
+                () -> federationSupport.storeFederationsPendingBtcUTXOs(null, expectedOneUtxo)
             );
         }
 
         @Test
-        void saveNewFederationsPendingBtcUTXOs_calledTwiceWithSameBtcTxId_shouldThrowIllegalStateException() {
+        void storeFederationsPendingBtcUTXOs_calledTwiceWithSameBtcTxId_shouldThrowIllegalStateException() {
             // arrange
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
 
             // act & assert
             assertThrows(
                 IllegalStateException.class,
-                () -> federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos)
+                () -> federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos)
             );
             assertUtxosWereSuccessfullyAdded(btcTxId, expectedOneUtxo);
         }
 
         @Test
-        void saveNewFederationsPendingBtcUTXOs_whenBtcTxIdWasSavedInPreviousExecution_shouldThrowIllegalStateException() {
+        void storeFederationsPendingBtcUTXOs_whenBtcTxIdWasSavedInPreviousExecution_shouldThrowIllegalStateException() {
             // arrange
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
             storageProvider.save(federationMainnetConstants.getBtcParams(), allActivations);
             FederationStorageProvider storageProviderInNextExecution = new FederationStorageProviderImpl(storageAccessor);
             FederationSupport federationSupportInNextExecution = federationSupportBuilder
@@ -2777,7 +2777,7 @@ class FederationSupportImplTest {
             // act & assert
             assertThrows(
                 IllegalStateException.class,
-                () -> federationSupportInNextExecution.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos)
+                () -> federationSupportInNextExecution.storeFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos)
             );
             Optional<List<UTXO>> actualUtxos = storageProviderInNextExecution.getFederationsPendingBtcUTXOs(btcTxId);
             assertTrue(actualUtxos.isPresent());
@@ -2785,10 +2785,10 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void saveNewFederationsPendingBtcUTXOs_withMultipleBtcTxIds_shouldKeepEachEntry() {
+        void storeFederationsPendingBtcUTXOs_withMultipleBtcTxIds_shouldKeepEachEntry() {
             // act
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
-            federationSupport.saveNewFederationsPendingBtcUTXOs(otherBtcTxId, expectedUtxosForOtherBtcTxId);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            federationSupport.storeFederationsPendingBtcUTXOs(otherBtcTxId, expectedUtxosForOtherBtcTxId);
 
             // assert
             assertUtxosWereSuccessfullyAdded(btcTxId, expectedOneUtxo);
@@ -2796,10 +2796,10 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void saveNewFederationsPendingBtcUTXOsFromBtcTxId_afterMovingPendingUtxosWithTheSameBtcTxId_shouldThrowIllegalStateException() {
+        void storeFederationsPendingBtcUTXOs_afterMovingPendingUtxosWithTheSameBtcTxId_shouldThrowIllegalStateException() {
             // arrange
             setUpActiveFederation();
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, utxosToActiveFederation);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveFederation);
             boolean isBtcTxIdPresentBeforeMoving = federationSupport.hasFederationsPendingBtcUTXOs(btcTxId);
             federationSupport.movePendingUtxosToFederations(btcTxId);
 
@@ -2807,7 +2807,7 @@ class FederationSupportImplTest {
             // moving the pending utxos marks btcTxId as removed, so it can't be stored twice
             assertThrows(
                 IllegalStateException.class,
-                () -> federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, utxosToActiveFederation)
+                () -> federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveFederation)
             );
             assertTrue(isBtcTxIdPresentBeforeMoving);
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
@@ -2817,7 +2817,7 @@ class FederationSupportImplTest {
         void movePendingUtxosToFederations_withActiveFed_withUtxosToActiveFed_shouldAddToActiveAndRemoveBtcTxId() {
             // arrange
             setUpActiveFederation();
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, utxosToActiveFederation);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveFederation);
 
             // act
             federationSupport.movePendingUtxosToFederations(btcTxId);
@@ -2831,7 +2831,7 @@ class FederationSupportImplTest {
         void movePendingUtxosToFederations_withActiveAndRetiringFeds_withUtxosToBothFeds_shouldAddToEachAndRemoveBtcTxId() {
             // arrange
             setUpActiveAndRetiringFederations();
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, utxosToActiveAndRetiringFederations);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveAndRetiringFederations);
 
             // act
             federationSupport.movePendingUtxosToFederations(btcTxId);
@@ -2846,7 +2846,7 @@ class FederationSupportImplTest {
         void movePendingUtxosToFederations_withActiveAndRetiringFeds_withUtxosOnlyToActiveFed_shouldAddOnlyToActiveAndRemoveBtcTxId() {
             // arrange
             setUpActiveAndRetiringFederations();
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, utxosToActiveFederation);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveFederation);
 
             // act
             federationSupport.movePendingUtxosToFederations(btcTxId);
@@ -2861,7 +2861,7 @@ class FederationSupportImplTest {
         void movePendingUtxosToFederations_withActiveAndRetiringFeds_withUtxosOnlyToRetiringFed_shouldAddOnlyToRetiringAndRemoveBtcTxId() {
             // arrange
             setUpActiveAndRetiringFederations();
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, List.of(utxoToRetiringFederation));
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, List.of(utxoToRetiringFederation));
 
             // act
             federationSupport.movePendingUtxosToFederations(btcTxId);
@@ -2878,7 +2878,7 @@ class FederationSupportImplTest {
             // this may happen after a migration: the pegout was created while the retiring federation was still active,
             // so its change went to that federation, and it is registered after the migration ended and that federation was retired
             setUpActiveFederation();
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, utxosToActiveAndRetiringFederations);
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveAndRetiringFederations);
 
             // act
             federationSupport.movePendingUtxosToFederations(btcTxId);
@@ -2898,7 +2898,7 @@ class FederationSupportImplTest {
             storageProvider.setOldFederation(retiringFederation);
             storageProvider.setNewFederation(activeFederation);
             federationSupport = buildFederationSupportAtBlock(activeFederationActivationBlockNumber - 1);
-            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, List.of(utxoToRetiringFederation));
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, List.of(utxoToRetiringFederation));
 
             // act
             federationSupport.movePendingUtxosToFederations(btcTxId);
