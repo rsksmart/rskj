@@ -2,6 +2,7 @@ package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.crypto.Keccak256;
@@ -154,6 +155,14 @@ public interface FederationSupport {
 
     List<UTXO> getNewFederationBtcUTXOs();
     List<UTXO> getRetiringFederationBtcUTXOs();
+
+    /**
+     * Tells whether the given BTC tx id has pending UTXOs that have not been moved to the
+     * federations yet.
+     * @param btcTxId the BTC tx id to look up
+     * @return whether pending UTXOs exist for btcTxId
+     */
+    boolean hasFederationsPendingBtcUTXOs(Sha256Hash btcTxId);
 
     /**
      * Returns the currently pending federation hash, or null if none exists
