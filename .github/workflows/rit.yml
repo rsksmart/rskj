@@ -229,7 +229,7 @@ jobs:
 
       - name: Send Slack Notification on Success
         if: success() && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart')) && steps.check-slack-token.outputs.has_token == 'true'
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
           method: chat.postMessage
@@ -263,7 +263,7 @@ jobs:
 
       - name: Send Slack Notification on Failure
         if: failure() && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart')) && steps.check-slack-token.outputs.has_token == 'true'
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
           method: chat.postMessage
