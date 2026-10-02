@@ -17,6 +17,7 @@
  */
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
@@ -2583,6 +2584,11 @@ class FederationSupportImplTest {
             .withScriptPubKey(p2shP2wshErpFederationScript)
             .withTransactionHash(btcTxId)
             .buildManyFromSameTx(200);
+        private static final Sha256Hash otherBtcTxId = createHash(99);
+        private static final List<UTXO> expectedUtxosForOtherBtcTxId = UTXOBuilder.builder()
+            .withScriptPubKey(p2shP2wshErpFederationScript)
+            .withTransactionHash(otherBtcTxId)
+            .buildManyFromSameTx(3);
 
         @Test
         void hasFederationsPendingBtcUTXOs_whenNeverSet_shouldReturnFalse() {
@@ -2640,6 +2646,127 @@ class FederationSupportImplTest {
 
             // act & assert
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
+        }
+
+        @Test
+        void saveNewFederationsPendingBtcUTXOs_withOneUtxo_shouldBeRetrievable() {
+            // act
+            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+
+            // assert
+            assertUtxosWereSuccessfullyAdded(btcTxId, expectedOneUtxo);
+        }
+
+        @Test
+        void saveNewFederationsPendingBtcUTXOs_withThreeUtxos_shouldBeRetrievable() {
+            // act
+            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos);
+
+            // assert
+            assertUtxosWereSuccessfullyAdded(btcTxId, expectedThreeUtxos);
+        }
+
+        @Test
+        void saveNewFederationsPendingBtcUTXOs_withLargeNumberOfUtxos_shouldBeRetrievable() {
+            // act
+            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedLargeNumberOfUtxos);
+
+            // assert
+            assertUtxosWereSuccessfullyAdded(btcTxId, expectedLargeNumberOfUtxos);
+        }
+
+        @Test
+        void saveNewFederationsPendingBtcUTXOs_whenCallerMutatesOriginalList_shouldNotAffectSavedEntry() {
+            // arrange
+            List<UTXO> mutableUtxos = new ArrayList<>(expectedOneUtxo);
+            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, mutableUtxos);
+
+            // act
+            mutableUtxos.clear();
+
+            // assert
+            assertUtxosWereSuccessfullyAdded(btcTxId, expectedOneUtxo);
+        }
+
+        @Test
+        void saveNewFederationsPendingBtcUTXOs_withEmptyUtxoList_shouldThrowIllegalArgumentException() {
+            // act & assert
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, List.of())
+            );
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
+        }
+
+        @Test
+        void saveNewFederationsPendingBtcUTXOs_withNullUtxoList_shouldThrowIllegalArgumentException() {
+            // act & assert
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, null)
+            );
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
+        }
+
+        @Test
+        void saveNewFederationsPendingBtcUTXOs_withNullBtcTxId_shouldThrowIllegalArgumentException() {
+            // act & assert
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> federationSupport.saveNewFederationsPendingBtcUTXOs(null, expectedOneUtxo)
+            );
+        }
+
+        @Test
+        void saveNewFederationsPendingBtcUTXOs_calledTwiceWithSameBtcTxId_shouldThrowIllegalStateException() {
+            // arrange
+            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+
+            // act & assert
+            assertThrows(
+                IllegalStateException.class,
+                () -> federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos)
+            );
+            assertUtxosWereSuccessfullyAdded(btcTxId, expectedOneUtxo);
+        }
+
+        @Test
+        void saveNewFederationsPendingBtcUTXOs_whenBtcTxIdWasSavedInPreviousExecution_shouldThrowIllegalStateException() {
+            // arrange
+            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            storageProvider.save(federationMainnetConstants.getBtcParams(), allActivations);
+            FederationStorageProvider storageProviderInNextExecution = new FederationStorageProviderImpl(storageAccessor);
+            FederationSupport federationSupportInNextExecution = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProviderInNextExecution)
+                .withActivations(allActivations)
+                .build();
+
+            // act & assert
+            assertThrows(
+                IllegalStateException.class,
+                () -> federationSupportInNextExecution.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos)
+            );
+            Optional<List<UTXO>> actualUtxos = storageProviderInNextExecution.getFederationsPendingBtcUTXOs(btcTxId);
+            assertTrue(actualUtxos.isPresent());
+            assertUtxosAreEqual(expectedOneUtxo, actualUtxos.get());
+        }
+
+        @Test
+        void saveNewFederationsPendingBtcUTXOs_withMultipleBtcTxIds_shouldKeepEachEntry() {
+            // act
+            federationSupport.saveNewFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
+            federationSupport.saveNewFederationsPendingBtcUTXOs(otherBtcTxId, expectedUtxosForOtherBtcTxId);
+
+            // assert
+            assertUtxosWereSuccessfullyAdded(btcTxId, expectedOneUtxo);
+            assertUtxosWereSuccessfullyAdded(otherBtcTxId, expectedUtxosForOtherBtcTxId);
+        }
+
+        private void assertUtxosWereSuccessfullyAdded(Sha256Hash btcTxId, List<UTXO> expectedUtxos) {
+            Optional<List<UTXO>> actualUtxos = storageProvider.getFederationsPendingBtcUTXOs(btcTxId);
+            assertTrue(actualUtxos.isPresent());
+            assertUtxosAreEqual(expectedUtxos, actualUtxos.get());
         }
     }
 

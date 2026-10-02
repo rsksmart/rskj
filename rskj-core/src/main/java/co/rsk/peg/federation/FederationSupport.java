@@ -157,6 +157,17 @@ public interface FederationSupport {
     List<UTXO> getRetiringFederationBtcUTXOs();
 
     /**
+     * Stores the federation UTXOs created by a release transaction (e.g. its change outputs)
+     * as pending, keyed by the release's BTC tx id. They are not spendable until the
+     * transaction is registered and they are moved to the federations.
+     * @param btcTxId the BTC tx id of the release transaction that creates the UTXOs
+     * @param utxos the UTXOs the release transaction sends to a federation
+     * @throws IllegalArgumentException if btcTxId is null or utxos is null or empty
+     * @throws IllegalStateException if btcTxId already has pending UTXOs
+     */
+    void saveNewFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos);
+
+    /**
      * Tells whether the given BTC tx id has pending UTXOs that have not been moved to the
      * federations yet.
      * @param btcTxId the BTC tx id to look up
