@@ -2910,6 +2910,32 @@ class FederationSupportImplTest {
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
         }
 
+        @Test
+        void movePendingUtxosToFederations_withActiveAndRetiringFeds_withUtxosToBothFedsSavedInPreviousExecution_shouldPersistUtxosAndRemoveBtcTxId() {
+            // arrange
+            // settlement execution: the pending utxos are stored and persisted
+            setUpActiveAndRetiringFederations();
+            federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveAndRetiringFederations);
+            storageProvider.save(federationMainnetConstants.getBtcParams(), allActivations);
+
+            // registration execution: federations and pending utxos are read from storage
+            FederationStorageProvider registrationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+            FederationSupport registrationFederationSupport = buildFederationSupportInNextExecution(registrationStorageProvider);
+            boolean isBtcTxIdPresentBeforeMoving = registrationFederationSupport.hasFederationsPendingBtcUTXOs(btcTxId);
+
+            // act
+            registrationFederationSupport.movePendingUtxosToFederations(btcTxId);
+            registrationStorageProvider.save(federationMainnetConstants.getBtcParams(), allActivations);
+
+            // assert
+            FederationStorageProvider storageProviderAfterRegistration = new FederationStorageProviderImpl(storageAccessor);
+            FederationSupport federationSupportAfterRegistration = buildFederationSupportInNextExecution(storageProviderAfterRegistration);
+            assertTrue(isBtcTxIdPresentBeforeMoving);
+            assertUtxosAreEqual(utxosToActiveFederation, federationSupportAfterRegistration.getActiveFederationBtcUTXOs());
+            assertUtxosAreEqual(List.of(utxoToRetiringFederation), federationSupportAfterRegistration.getRetiringFederationBtcUTXOs());
+            assertFalse(federationSupportAfterRegistration.hasFederationsPendingBtcUTXOs(btcTxId));
+        }
+
         private void setUpActiveAndRetiringFederations() {
             storageProvider.setOldFederation(retiringFederation);
             storageProvider.setNewFederation(activeFederation);
@@ -2919,6 +2945,15 @@ class FederationSupportImplTest {
         private void setUpActiveFederation() {
             storageProvider.setNewFederation(activeFederation);
             federationSupport = buildFederationSupportAtBlock(activeFederationActivationBlockNumber);
+        }
+
+        private FederationSupport buildFederationSupportInNextExecution(FederationStorageProvider storageProviderInNextExecution) {
+            return federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProviderInNextExecution)
+                .withRskExecutionBlock(RskTestUtils.createRskBlock(activeFederationActivationBlockNumber))
+                .withActivations(allActivations)
+                .build();
         }
 
         private FederationSupport buildFederationSupportAtBlock(long blockNumber) {
