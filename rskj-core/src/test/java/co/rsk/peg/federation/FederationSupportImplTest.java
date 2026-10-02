@@ -2568,6 +2568,11 @@ class FederationSupportImplTest {
     @Nested
     @Tag("federations pending btc utxos")
     class FederationsPendingBtcUTXOs {
+        private static final long RETIRING_FEDERATION_CREATION_BLOCK_NUMBER = 20L;
+        private static final long ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER = 65L;
+        private static final long ACTIVE_FEDERATION_ACTIVATION_BLOCK_NUMBER =
+            ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER + federationMainnetConstants.getFederationActivationAge(allActivations);
+        private static final long OUTPUT_INDEX_FOR_RETIRING_FEDERATION_UTXO = 2;
         private static final Sha256Hash btcTxId = createHash(1);
         private static final Script p2shP2wshErpFederationScript = P2shP2wshErpFederationBuilder.builder().build().getP2SHScript();
         private static final List<UTXO> expectedOneUtxo = List.of(
@@ -2589,31 +2594,25 @@ class FederationSupportImplTest {
             .withScriptPubKey(p2shP2wshErpFederationScript)
             .withTransactionHash(otherBtcTxId)
             .buildManyFromSameTx(3);
-
-        private static final long retiringFederationCreationBlockNumber = 20L;
-        private static final long activeFederationCreationBlockNumber = 65L;
-        private static final long activeFederationActivationBlockNumber =
-            activeFederationCreationBlockNumber + federationMainnetConstants.getFederationActivationAge(allActivations);
         private static final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
             "fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09", "fa10",
             "fa11", "fa12", "fa13", "fa14", "fa15", "fa16", "fa17", "fa18", "fa19", "fa20"
         }, true);
         private static final Federation retiringFederation = P2shP2wshErpFederationBuilder.builder()
-            .withCreationBlockNumber(retiringFederationCreationBlockNumber)
+            .withCreationBlockNumber(RETIRING_FEDERATION_CREATION_BLOCK_NUMBER)
             .build();
         private static final Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
             .withMembersBtcPublicKeys(activeFederationKeys)
-            .withCreationBlockNumber(activeFederationCreationBlockNumber)
+            .withCreationBlockNumber(ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER)
             .build();
         private static final List<UTXO> utxosToActiveFederation = UTXOBuilder.builder()
             .withScriptPubKey(activeFederation.getP2SHScript())
             .withTransactionHash(btcTxId)
             .buildManyFromSameTx(2);
-        private static final long outputIndexForRetiringFederationUtxo = 2;
         private static final UTXO utxoToRetiringFederation = UTXOBuilder.builder()
             .withScriptPubKey(retiringFederation.getP2SHScript())
             .withTransactionHash(btcTxId)
-            .withOutpointIndex(outputIndexForRetiringFederationUtxo)
+            .withOutpointIndex(OUTPUT_INDEX_FOR_RETIRING_FEDERATION_UTXO)
             .build();
         // outputs 0 and 1 of btcTxId are the ones in utxosToActiveFederation
         private static final List<UTXO> utxosToActiveAndRetiringFederations = List.of(
@@ -2897,7 +2896,7 @@ class FederationSupportImplTest {
             // and there is no retiring federation
             storageProvider.setOldFederation(retiringFederation);
             storageProvider.setNewFederation(activeFederation);
-            federationSupport = buildFederationSupportAtBlock(activeFederationActivationBlockNumber - 1);
+            federationSupport = buildFederationSupportAtBlock(ACTIVE_FEDERATION_ACTIVATION_BLOCK_NUMBER - 1);
             federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, List.of(utxoToRetiringFederation));
 
             // act
@@ -2939,19 +2938,19 @@ class FederationSupportImplTest {
         private void setUpActiveAndRetiringFederations() {
             storageProvider.setOldFederation(retiringFederation);
             storageProvider.setNewFederation(activeFederation);
-            federationSupport = buildFederationSupportAtBlock(activeFederationActivationBlockNumber);
+            federationSupport = buildFederationSupportAtBlock(ACTIVE_FEDERATION_ACTIVATION_BLOCK_NUMBER);
         }
 
         private void setUpActiveFederation() {
             storageProvider.setNewFederation(activeFederation);
-            federationSupport = buildFederationSupportAtBlock(activeFederationActivationBlockNumber);
+            federationSupport = buildFederationSupportAtBlock(ACTIVE_FEDERATION_ACTIVATION_BLOCK_NUMBER);
         }
 
         private FederationSupport buildFederationSupportInNextExecution(FederationStorageProvider storageProviderInNextExecution) {
             return federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProviderInNextExecution)
-                .withRskExecutionBlock(RskTestUtils.createRskBlock(activeFederationActivationBlockNumber))
+                .withRskExecutionBlock(RskTestUtils.createRskBlock(ACTIVE_FEDERATION_ACTIVATION_BLOCK_NUMBER))
                 .withActivations(allActivations)
                 .build();
         }
