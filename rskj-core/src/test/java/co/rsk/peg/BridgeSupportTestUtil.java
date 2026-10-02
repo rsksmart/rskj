@@ -46,6 +46,7 @@ import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.utils.NonRefundablePeginReason;
+import co.rsk.test.builders.UTXOBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -257,6 +258,21 @@ public final class BridgeSupportTestUtil {
         PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
 
         return pegoutEntry.getBtcTransaction();
+    }
+
+    public static List<UTXO> buildExpectedUtxosRegistered(BtcTransaction btcTx, Federation federation, int expectedBtcTxHeight) {
+        Script federationScript = federation.getP2SHScript();
+        return btcTx.getOutputs().stream()
+            .filter(output -> output.getScriptPubKey().equals(federationScript))
+            .map(output -> UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .withOutpointIndex(output.getIndex())
+                .withValue(output.getValue())
+                .withBlockHeight(expectedBtcTxHeight)
+                .withScriptPubKey(output.getScriptPubKey())
+                .build()
+            )
+            .toList();
     }
 
     public static boolean shouldMarkRejectedPeginAsProcessed(ActivationConfig.ForBlock activations) {
