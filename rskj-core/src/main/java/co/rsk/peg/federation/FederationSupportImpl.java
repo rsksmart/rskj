@@ -347,8 +347,12 @@ public class FederationSupportImpl implements FederationSupport {
             }
         }
 
-        getActiveFederationBtcUTXOs().addAll(utxosToActiveFederation);
-        getRetiringFederationBtcUTXOs().addAll(utxosToRetiringFederation);
+        if (!utxosToActiveFederation.isEmpty()) {
+            getActiveFederationBtcUTXOs().addAll(utxosToActiveFederation);
+        }
+        if (!utxosToRetiringFederation.isEmpty()) {
+            getRetiringFederationBtcUTXOs().addAll(utxosToRetiringFederation);
+        }
         provider.removeFederationsPendingBtcUTXOs(btcTxId);
 
         logger.info(
