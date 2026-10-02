@@ -57,6 +57,9 @@ import static org.awaitility.Awaitility.await;
  * Bridge throw, for any caller. With RSKIP-692 active, the receipt must report failure, the whole gas limit
  * must be consumed, and no logs may be emitted. The same call through {@code eth_call} must return a
  * JSON-RPC error.
+ *
+ * <p>With RSKIP-692 disabled, the receipt keeps the legacy success status and only the intrinsic gas plus the
+ * Bridge's declared cost is charged, while {@code eth_call} still returns the same error.
  */
 class BridgeRevertReceiptIntegrationTest {
 
@@ -66,6 +69,8 @@ class BridgeRevertReceiptIntegrationTest {
     private static final String GAS_PRICE = "0x1";
     private static final String VALUE_ZERO = "0x0";
     private static final String ZERO_LOGS_BLOOM = "0x" + "0".repeat(512);
+    // A negative activation height disables a consensus rule
+    private static final String RSKIP692_DISABLED_ARG = "-Xblockchain.config.consensusRules.rskip692=-1";
 
     private static final String ETH_CALL_TO_BRIDGE = """
             {
@@ -130,52 +135,88 @@ class BridgeRevertReceiptIntegrationTest {
     void failingDirectCallToBridge_reportsFailedReceiptAndConsumesGasLimit() throws Exception {
         assertRskip692ActiveFromGenesisOnRegtest();
 
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s",
-                baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-
-        Process proc = startNode(cmd);
+        Process proc = startNode(buildNodeCommand());
         try {
             waitForNodeReady(rpcPort, 60_000);
 
-            ContractCaller bridge = new ContractCaller(rpcPort, BRIDGE_ADDRESS);
-            String txHash = bridge.call(
-                    PRE_FUNDED_ACCOUNTS.get(0),
-                    UNKNOWN_SELECTOR,
-                    GAS_1M,
-                    GAS_PRICE,
-                    VALUE_ZERO,
-                    true
-            ).orElseThrow(() -> new AssertionError("Expected the transaction to be accepted into the pool"));
-
-            RpcTransactionAssertions.assertMined(rpcPort, 50, 200, txHash);
-
-            JsonNode receipt = OkHttpClientTestFixture
-                    .getJsonResponseForGetTransactionReceipt(rpcPort, txHash)
-                    .get("result");
+            JsonNode receipt = sendFailingDirectCallToBridgeAndGetReceipt();
 
             Assertions.assertEquals("0x0", receipt.get("status").asText(), "receipt status");
             Assertions.assertEquals(GAS_1M, receipt.get("gasUsed").asText(), "receipt gasUsed must equal the gas limit");
-            JsonNode logs = receipt.get("logs");
-            Assertions.assertTrue(logs != null && logs.isArray() && logs.isEmpty(), "Expected no logs, got " + logs);
-            Assertions.assertEquals(ZERO_LOGS_BLOOM, receipt.get("logsBloom").asText(), "receipt logsBloom");
+            assertNoLogs(receipt);
 
-            String ethCallPayload = ETH_CALL_TO_BRIDGE
-                    .replace("<FROM>", PRE_FUNDED_ACCOUNTS.get(0))
-                    .replace("<TO>", BRIDGE_ADDRESS)
-                    .replace("<DATA>", UNKNOWN_SELECTOR)
-                    .replace("<GAS>", GAS_1M);
-            String ethCallBody = sendJsonRpcMessage(ethCallPayload, rpcPort).body().string();
-            JsonNode ethCallResponse = objectMapper.readTree(ethCallBody);
-
-            Assertions.assertFalse(ethCallResponse.has("result"), "Expected no eth_call result, got: " + ethCallBody);
-            Assertions.assertTrue(ethCallResponse.has("error"), "Expected an eth_call error, got: " + ethCallBody);
-            String errorMessage = ethCallResponse.get("error").get("message").asText();
-            Assertions.assertTrue(errorMessage.endsWith("execution failed"), "eth_call error message: " + errorMessage);
-            // The exception raised by the Bridge is logged by the node, never returned to the caller
-            Assertions.assertFalse(errorMessage.contains("Invalid data given"), "eth_call error message: " + errorMessage);
+            assertEthCallToBridgeReturnsExecutionFailedError();
         } finally {
             destroyNode(proc);
         }
+    }
+
+    @Test
+    void failingDirectCallToBridge_beforeRskip692_reportsLegacySuccessReceipt() throws Exception {
+        assertRskip692InactiveOnRegtestWith(RSKIP692_DISABLED_ARG);
+
+        Process proc = startNode(buildNodeCommand(RSKIP692_DISABLED_ARG));
+        try {
+            waitForNodeReady(rpcPort, 60_000);
+
+            JsonNode receipt = sendFailingDirectCallToBridgeAndGetReceipt();
+
+            Assertions.assertEquals("0x1", receipt.get("status").asText(), "receipt status");
+            // 21_000 base + 4 * 16 for the non-zero data bytes + 23_000 declared Bridge cost
+            Assertions.assertEquals("0xac20", receipt.get("gasUsed").asText(), "receipt gasUsed");
+            assertNoLogs(receipt);
+
+            // eth_call reports the failure whether or not RSKIP-692 is active
+            assertEthCallToBridgeReturnsExecutionFailedError();
+        } finally {
+            destroyNode(proc);
+        }
+    }
+
+    private String buildNodeCommand(String... extraArgs) {
+        String args = extraArgs.length == 0 ? strBaseArgs : strBaseArgs + " " + String.join(" ", extraArgs);
+        return String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, args);
+    }
+
+    private JsonNode sendFailingDirectCallToBridgeAndGetReceipt() throws Exception {
+        ContractCaller bridge = new ContractCaller(rpcPort, BRIDGE_ADDRESS);
+        String txHash = bridge.call(
+                PRE_FUNDED_ACCOUNTS.get(0),
+                UNKNOWN_SELECTOR,
+                GAS_1M,
+                GAS_PRICE,
+                VALUE_ZERO,
+                true
+        ).orElseThrow(() -> new AssertionError("Expected the transaction to be accepted into the pool"));
+
+        RpcTransactionAssertions.assertMined(rpcPort, 50, 200, txHash);
+
+        return OkHttpClientTestFixture
+                .getJsonResponseForGetTransactionReceipt(rpcPort, txHash)
+                .get("result");
+    }
+
+    private static void assertNoLogs(JsonNode receipt) {
+        JsonNode logs = receipt.get("logs");
+        Assertions.assertTrue(logs != null && logs.isArray() && logs.isEmpty(), "Expected no logs, got " + logs);
+        Assertions.assertEquals(ZERO_LOGS_BLOOM, receipt.get("logsBloom").asText(), "receipt logsBloom");
+    }
+
+    private void assertEthCallToBridgeReturnsExecutionFailedError() throws IOException {
+        String ethCallPayload = ETH_CALL_TO_BRIDGE
+                .replace("<FROM>", PRE_FUNDED_ACCOUNTS.get(0))
+                .replace("<TO>", BRIDGE_ADDRESS)
+                .replace("<DATA>", UNKNOWN_SELECTOR)
+                .replace("<GAS>", GAS_1M);
+        String ethCallBody = sendJsonRpcMessage(ethCallPayload, rpcPort).body().string();
+        JsonNode ethCallResponse = objectMapper.readTree(ethCallBody);
+
+        Assertions.assertFalse(ethCallResponse.has("result"), "Expected no eth_call result, got: " + ethCallBody);
+        Assertions.assertTrue(ethCallResponse.has("error"), "Expected an eth_call error, got: " + ethCallBody);
+        String errorMessage = ethCallResponse.get("error").get("message").asText();
+        Assertions.assertTrue(errorMessage.endsWith("execution failed"), "eth_call error message: " + errorMessage);
+        // The exception raised by the Bridge is logged by the node, never returned to the caller
+        Assertions.assertFalse(errorMessage.contains("Invalid data given"), "eth_call error message: " + errorMessage);
     }
 
     /**
@@ -183,13 +224,31 @@ class BridgeRevertReceiptIntegrationTest {
      * checks that RSKIP-692 is active from the first block, so the assertions above exercise the activated rule.
      */
     private static void assertRskip692ActiveFromGenesisOnRegtest() {
-        RskCli rskCli = new RskCli();
-        rskCli.load(new String[]{"--regtest"});
-        RskSystemProperties regtestProperties = new RskSystemProperties(new ConfigLoader(rskCli.getCliArgs()));
-        ActivationConfig activationConfig = regtestProperties.getActivationConfig();
+        ActivationConfig activationConfig = loadRegtestActivationConfig();
 
         Assertions.assertTrue(activationConfig.isActive(ConsensusRule.RSKIP692, 0),
                 "This test requires RSKIP692 to be active from genesis on regtest");
+    }
+
+    /**
+     * Reads the regtest configuration in-process with the same override passed to the node, and checks that
+     * RSKIP-692 is inactive at every height, so the assertions above exercise the pre-activation behavior.
+     */
+    private static void assertRskip692InactiveOnRegtestWith(String overrideArg) {
+        ActivationConfig activationConfig = loadRegtestActivationConfig(overrideArg);
+
+        Assertions.assertFalse(activationConfig.isActive(ConsensusRule.RSKIP692, 0),
+                "This test requires RSKIP692 to be inactive at genesis");
+        Assertions.assertFalse(activationConfig.isActive(ConsensusRule.RSKIP692, Long.MAX_VALUE),
+                "This test requires RSKIP692 to be inactive at every height");
+    }
+
+    private static ActivationConfig loadRegtestActivationConfig(String... extraArgs) {
+        String[] args = Stream.concat(Stream.of("--regtest"), Stream.of(extraArgs)).toArray(String[]::new);
+        RskCli rskCli = new RskCli();
+        rskCli.load(args);
+        RskSystemProperties regtestProperties = new RskSystemProperties(new ConfigLoader(rskCli.getCliArgs()));
+        return regtestProperties.getActivationConfig();
     }
 
     private Process startNode(String cmd) throws IOException {
