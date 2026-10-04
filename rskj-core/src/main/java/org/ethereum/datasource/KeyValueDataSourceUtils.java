@@ -20,16 +20,30 @@ public class KeyValueDataSourceUtils {
 
     @Nonnull
     public static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+        return makeDataSource(datasourcePath, kind, false);
+    }
+
+    /**
+     * @param readOnly open without altering the database in any way, and refuse every write. Only
+     *                 RocksDB supports this; asking for it on another kind is an error rather than
+     *                 a silently writable database.
+     */
+    @Nonnull
+    public static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind, boolean readOnly) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
 
         KeyValueDataSource ds;
         switch (kind) {
             case LEVEL_DB:
+                if (readOnly) {
+                    throw new IllegalArgumentException(
+                            "Read-only access is not supported for LevelDB databases: " + datasourcePath);
+                }
                 ds = new LevelDbDataSource(name, databaseDir);
                 break;
             case ROCKS_DB:
-                ds = new RocksDbDataSource(name, databaseDir);
+                ds = new RocksDbDataSource(name, databaseDir, readOnly);
                 break;
             default:
                 throw new IllegalArgumentException("kind");
