@@ -7638,7 +7638,7 @@ class BridgeSupportTest {
             Keccak256 releaseCreationTxHash = tx.getHash();
 
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber());
+            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber(), lovellActivations);
             assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
             assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
             assertLogPegoutTransactionCreated(logs, releaseTransaction, outpointValues);
@@ -7670,7 +7670,8 @@ class BridgeSupportTest {
                 tx.getHash(),
                 releaseTransaction,
                 outpointValues,
-                totalAmountRequested
+                totalAmountRequested,
+                allActivations
             );
         }
 
@@ -7707,7 +7708,8 @@ class BridgeSupportTest {
                 tx.getHash(),
                 releaseTransaction,
                 outpointValues,
-                totalAmountRequested
+                totalAmountRequested,
+                allActivations
             );
         }
 
@@ -7743,7 +7745,8 @@ class BridgeSupportTest {
                 tx.getHash(),
                 releaseTransaction,
                 outpointValues,
-                totalAmountRequested
+                totalAmountRequested,
+                allActivations
             );
             assertWitnessAndScriptSigHaveExpectedInputRedeemData(
                 releaseTransaction.getWitness(0),
@@ -7839,7 +7842,7 @@ class BridgeSupportTest {
             Keccak256 releaseCreationTxHash = tx.getHash();
 
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber());
+            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber(), lovellActivations);
             assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, amountToSend);
             assertLogPegoutTransactionCreated(logs, releaseTransaction, List.of(amountToSend));
             assertReleaseOutpointsValuesWereNotSavedInStorage(releaseTransaction);
@@ -7980,7 +7983,7 @@ class BridgeSupportTest {
 
         @ParameterizedTest
         @MethodSource("federationArgs")
-        void migration_fromLegacyRetiring_toLegacyActiveFed(Federation retiringFederation, Federation activeFederation) throws IOException {
+        void migration_fromRetiring_toActiveFed(Federation retiringFederation, Federation activeFederation) throws IOException {
             // arrange
             setUp(retiringFederation, activeFederation);
 
@@ -7996,7 +7999,8 @@ class BridgeSupportTest {
                 tx.getHash(),
                 migrationTransaction,
                 utxos,
-                totalAmountRequested
+                totalAmountRequested,
+                allActivations
             );
         }
 

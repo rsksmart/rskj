@@ -8,13 +8,13 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.PegTestUtils;
 import java.util.Optional;
 
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -80,7 +80,7 @@ class PeginInstructionsProviderTest {
         // Arrange
         int protocolVersion = 1;
         BtcECKey key = new BtcECKey();
-        RskAddress rskDestinationAddress = new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress());
+        RskAddress rskDestinationAddress = BitcoinTestUtils.getRskAddressFromBtcPublicKey(key);
 
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(protocolVersion, rskDestinationAddress, Optional.empty());
         BtcTransaction btcTransaction = new BtcTransaction(params);
@@ -101,7 +101,7 @@ class PeginInstructionsProviderTest {
         // Arrange
         int protocolVersion = 1;
         BtcECKey key = new BtcECKey();
-        RskAddress rskDestinationAddress = new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress());
+        RskAddress rskDestinationAddress = BitcoinTestUtils.getRskAddressFromBtcPublicKey(key);
         Address btcRefundAddress = key.toAddress(params);
 
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(protocolVersion, rskDestinationAddress, Optional.of(btcRefundAddress));
