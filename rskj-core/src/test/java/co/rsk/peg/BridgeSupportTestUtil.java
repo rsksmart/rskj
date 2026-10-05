@@ -71,6 +71,7 @@ import org.ethereum.vm.PrecompiledContracts;
 public final class BridgeSupportTestUtil {
 
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
+    private static final ActivationConfig.ForBlock ACTIVATIONS_VETIVER = ActivationConfigsForTest.vetiver900().forBlock(0L);
 
     private BridgeSupportTestUtil() {}
 
@@ -403,6 +404,23 @@ public final class BridgeSupportTestUtil {
     ) throws IOException {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
         assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock, activations);
+        assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
+        assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransaction.getHash(), totalAmountRequested);
+        assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
+    }
+
+    public static void assertReleaseWasSettledForVetiver(
+        Repository repository,
+        BridgeStorageProvider bridgeStorageProvider,
+        List<LogInfo> logs,
+        long executionBlock,
+        Keccak256 releaseCreationTxHash,
+        BtcTransaction releaseTransaction,
+        List<Coin> expectedOutpointsValues,
+        Coin totalAmountRequested
+    ) throws IOException {
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock, ACTIVATIONS_VETIVER);
         assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
         assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransaction.getHash(), totalAmountRequested);
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);

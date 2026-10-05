@@ -32,6 +32,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutTxSigHashWasSaved;
 import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutWasAddedToPegoutsWaitingForConfirmations;
 import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseRejectionWasSettled;
 import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasSettled;
+import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasSettledForVetiver;
 import static co.rsk.peg.BridgeSupportTestUtil.assertScriptSigHasExpectedInputRedeemData;
 import static co.rsk.peg.BridgeSupportTestUtil.assertTransactionWasProcessed;
 import static co.rsk.peg.BridgeSupportTestUtil.assertWitnessAndScriptSigHaveExpectedInputRedeemData;
@@ -8237,10 +8238,12 @@ class BridgeSupportTest {
         }
 
         @Test
-        void updateCollections_whenReleasesInQueueAndLegacyFed_afterRSKIP305_shouldSetRedeemDataInScriptSigAndProcessReleaseTransactionInfo() throws IOException {
+        void updateCollections_whenReleasesInQueueAndLegacyFed_forVetiver_shouldSetRedeemDataInScriptSigAndProcessReleaseTransactionInfo() throws IOException {
             // Arrange
             setUpReleaseRequests();
-            setUpWithActivations(allActivations);
+
+            ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0L);
+            setUpWithActivations(vetiverActivations);
 
             // Act
             bridgeSupport.updateCollections(tx);
@@ -8252,7 +8255,7 @@ class BridgeSupportTest {
             // check the active fed redeem script data is in input script sig
             assertScriptSigHasExpectedInputRedeemData(releaseTransaction.getInput(0), activeFederation.getRedeemScript());
 
-            assertReleaseWasSettled(
+            assertReleaseWasSettledForVetiver(
                 repository,
                 bridgeStorageProvider,
                 logs,
@@ -8260,8 +8263,7 @@ class BridgeSupportTest {
                 tx.getHash(),
                 releaseTransaction,
                 outpointValues,
-                totalAmountRequested,
-                allActivations
+                totalAmountRequested
             );
         }
 
