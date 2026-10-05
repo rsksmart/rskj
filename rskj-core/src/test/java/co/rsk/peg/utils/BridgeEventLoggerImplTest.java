@@ -751,6 +751,21 @@ class BridgeEventLoggerImplTest {
         }
 
         @Test
+        void logUtxosRegistered_whenDuplicateOutputIndexes_shouldThrowIllegalArgumentException() {
+            // arrange
+            List<Long> outputIndexesWithDuplicate = List.of(0L, 2L, 0L);
+
+            // act & assert
+            assertThrows(IllegalArgumentException.class, () -> eventLogger.logUtxosRegistered(
+                BTC_TX_HASH,
+                MULTIPLE_VALUES,
+                outputIndexesWithDuplicate,
+                FEDERATION_BTC_ADDRESS
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
         void logUtxosRegistered_whenNullValues_shouldThrowNullPointerException() {
             // act & assert
             assertThrows(NullPointerException.class, () -> eventLogger.logUtxosRegistered(
@@ -1016,6 +1031,22 @@ class BridgeEventLoggerImplTest {
                 BTC_TX_HASH,
                 SINGLE_VALUE,
                 outputIndexes,
+                FEDERATION_BTC_ADDRESS,
+                flyoverDerivationHash
+            ));
+            assertTrue(eventLogs.isEmpty());
+        }
+
+        @Test
+        void logFlyoverUtxosRegistered_whenDuplicateOutputIndexes_shouldThrowIllegalArgumentException() {
+            // arrange
+            List<Long> outputIndexesWithDuplicate = List.of(0L, 2L, 0L);
+
+            // act & assert
+            assertThrows(IllegalArgumentException.class, () -> eventLogger.logFlyoverUtxosRegistered(
+                BTC_TX_HASH,
+                MULTIPLE_VALUES,
+                outputIndexesWithDuplicate,
                 FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
             ));

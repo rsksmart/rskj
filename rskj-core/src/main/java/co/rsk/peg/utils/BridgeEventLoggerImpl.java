@@ -29,6 +29,7 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -429,8 +430,19 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         requireNonNull(federationBtcAddress);
         requireNonNull(valuesInSatoshis);
         requireNonNull(outputIndexes);
+        validateArgumentsSizeAreEqual(valuesInSatoshis, outputIndexes);
+        validateUniqueOutputIndexes(outputIndexes);
+    }
+
+    private static void validateArgumentsSizeAreEqual(List<Coin> valuesInSatoshis, List<Long> outputIndexes) {
         if (valuesInSatoshis.size() != outputIndexes.size()) {
             throw new IllegalArgumentException("valuesInSatoshis and outputIndexes must have the same size");
+        }
+    }
+
+    private void validateUniqueOutputIndexes(List<Long> outputIndexes) {
+        if (new HashSet<>(outputIndexes).size() != outputIndexes.size()) {
+            throw new IllegalArgumentException("outputIndexes must not contain duplicates");
         }
     }
 
