@@ -2232,6 +2232,55 @@ class BridgeUtilsTest {
         Assertions.assertTrue(foundUTXOs.isEmpty());
     }
 
+    @Test
+    void getUtxosSentToWallet_whenOutputsAreSentToTheWalletAndToOtherAddresses_shouldReturnOnlyTheWalletUtxos() {
+        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+        Wallet federationWallet = BridgeUtils.getFederationNoSpendWallet(new Context(networkParameters), federation, false, null);
+        Address federationAddress = federation.getAddress();
+        Address userAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        btcTx.addOutput(Coin.COIN, userAddress);
+        btcTx.addOutput(Coin.COIN, federationAddress);
+        btcTx.addOutput(Coin.CENT, userAddress);
+        btcTx.addOutput(Coin.FIFTY_COINS, federationAddress);
+
+        List<UTXO> foundUtxos = BridgeUtils.getUtxosSentToWallet(btcTx, federationWallet);
+
+        Script federationOutputScript = federation.getP2SHScript();
+        List<UTXO> expectedUtxos = List.of(
+            UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .withOutpointIndex(1)
+                .withValue(Coin.COIN)
+                .withBlockHeight(0)
+                .withScriptPubKey(federationOutputScript)
+                .build(),
+            UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .withOutpointIndex(3)
+                .withValue(Coin.FIFTY_COINS)
+                .withBlockHeight(0)
+                .withScriptPubKey(federationOutputScript)
+                .build()
+        );
+        assertEquals(expectedUtxos, foundUtxos);
+    }
+
+    @Test
+    void getUtxosSentToWallet_whenNoOutputIsSentToTheWallet_shouldReturnAnEmptyList() {
+        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+        Wallet federationWallet = BridgeUtils.getFederationNoSpendWallet(new Context(networkParameters), federation, false, null);
+
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
+        btcTx.addOutput(Coin.CENT, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
+
+        List<UTXO> foundUtxos = BridgeUtils.getUtxosSentToWallet(btcTx, federationWallet);
+
+        assertTrue(foundUtxos.isEmpty());
+    }
+
     @Nested
     class CalculateMigrationTransactionOutputsValuesTest {
 
