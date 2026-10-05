@@ -29,6 +29,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeTestNet2Constants;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.math.BigInteger;
@@ -349,6 +350,33 @@ class RepositoryBtcBlockStoreWithCacheTest {
         int maxDepth = blockHeight - maxDepthToSearchBlocksBelowIndexActivation; // Since the chain height is below btcHeightWhenBlockIndexActivates + maxDepthToSearchBlocksBelowIndexActivation
 
         Assertions.assertThrows(BlockStoreException.class, () -> btcBlockStore.getStoredBlockAtMainChainHeight(maxDepth - 1));
+    }
+
+    @Test
+    void getStoredBlockAtMainChainHeight_testnet2_heightBelowBlockIndexActivation_throwsWithoutSearching() throws BlockStoreException {
+        BridgeConstants bridgeTestNet2Constants = BridgeTestNet2Constants.getInstance();
+        Repository repository = createRepository();
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeTestNet2Constants.getBtcParams());
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP199)).thenReturn(true);
+
+        BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(
+            repository,
+            bridgeTestNet2Constants,
+            mock(BridgeStorageProvider.class),
+            activations
+        );
+
+        // The store's first block on testnet2 is the block index activation height, so lower heights are not in the store
+        int btcHeightWhenBlockIndexActivates = bridgeTestNet2Constants.getBtcHeightWhenBlockIndexActivates();
+        StoredBlock chainHead = createStoredBlock(networkParameters.getGenesisBlock(), btcHeightWhenBlockIndexActivates + 1_000, 0);
+        btcBlockStore.put(chainHead);
+        btcBlockStore.setChainHead(chainHead);
+
+        // Should be rejected by the depth limit instead of walking back from the chain head
+        Assertions.assertThrows(BlockStoreException.class, () -> btcBlockStore.getStoredBlockAtMainChainHeight(btcHeightWhenBlockIndexActivates - 1));
+        Assertions.assertThrows(BlockStoreException.class, () -> btcBlockStore.getStoredBlockAtMainChainHeight(0));
     }
 
     @Test
