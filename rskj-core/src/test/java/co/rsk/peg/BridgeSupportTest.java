@@ -234,6 +234,7 @@ class BridgeSupportTest {
 
     private static final ActivationConfig.ForBlock genesisActivations = ActivationConfigsForTest.genesis().forBlock(0);
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+    private static final ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0);
     private static Federation activeFederation = P2shErpFederationBuilder.builder().build();
 
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
@@ -8238,8 +8239,6 @@ class BridgeSupportTest {
         void updateCollections_whenReleasesInQueueAndLegacyFed_forVetiver_shouldSetRedeemDataInScriptSigAndProcessReleaseTransactionInfo() throws IOException {
             // Arrange
             setUpReleaseRequests();
-
-            ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0L);
             setUpWithActivations(vetiverActivations);
 
             // Act
@@ -8305,8 +8304,10 @@ class BridgeSupportTest {
             );
         }
 
+        // TODO(juli): once registerPegoutTransaction is implemented, add a version of this test with allActivations
+        //  that registers the pegout change through registerPegoutTransaction
         @Test
-        void pegoutsFlow_fromAReleaseRequest_toThePegoutChangeBeingCorrectlyRegistered_whenSegwitFed() throws Exception {
+        void pegoutsFlow_fromAReleaseRequest_toThePegoutChangeBeingCorrectlyRegistered_whenSegwitFed_forVetiver() throws Exception {
             // arrange
             // we need to recreate the federators keys to have the priv keys for signing
             List<BtcECKey> membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
@@ -8320,7 +8321,7 @@ class BridgeSupportTest {
             setUpReleaseRequests();
 
             currentBlock = createRskBlock(pegoutTxIndexActivationHeight);
-            setUpWithActivations(allActivations);
+            setUpWithActivations(vetiverActivations);
 
             // call update collections so release requests are moved to pegouts wfc structure
             bridgeSupport.updateCollections(tx);
@@ -8329,18 +8330,16 @@ class BridgeSupportTest {
             // get release from pegouts wfc
             BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
             // assert release transaction was created as expected
-            assertReleaseWasSettled(
+            assertReleaseWasSettledForVetiver(
                 repository,
                 bridgeStorageProvider,
-                federationStorageProvider,
                 federationSupport,
                 logs,
                 currentBlock.getNumber(),
                 tx.getHash(),
                 releaseTransaction,
                 outpointValues,
-                totalAmountRequested,
-                allActivations
+                totalAmountRequested
             );
             assertWitnessAndScriptSigHaveExpectedInputRedeemData(
                 releaseTransaction.getWitness(0),
@@ -8351,7 +8350,7 @@ class BridgeSupportTest {
             // advance blockchain so pegouts have enough confirmations
             var blockNumber = currentBlock.getNumber() + bridgeMainNetConstants.getRsk2BtcMinimumAcceptableConfirmations();
             currentBlock = createRskBlock(blockNumber);
-            updateBridgeSupport();
+            updateBridgeSupport(vetiverActivations);
 
             // call update collections so pegouts are moved from wfc to wfs
             bridgeSupport.updateCollections(tx);
@@ -8366,7 +8365,7 @@ class BridgeSupportTest {
             // advance blockchain to start signing pegout
             var newBlockNumber = currentBlock.getNumber() + 1;
             currentBlock = createRskBlock(newBlockNumber);
-            updateBridgeSupport();
+            updateBridgeSupport(vetiverActivations);
 
             List<BtcECKey> signers = membersBtcPublicKeys.subList(0, activeFederation.getNumberOfSignaturesRequired());
             // sign with federators
@@ -8385,7 +8384,7 @@ class BridgeSupportTest {
             int activeFedUtxosSizeBeforeRegisteringChange = federationSupport.getActiveFederationBtcUTXOs().size();
             // register release change utxo
             int releaseTxBlockNumber = (int) currentBlock.getNumber();
-            setUpForTransactionRegistration(pegoutWFS, releaseTxBlockNumber, allActivations);
+            setUpForTransactionRegistration(pegoutWFS, releaseTxBlockNumber, vetiverActivations);
 
             bridgeSupport.registerBtcTransaction(
                 tx,
@@ -8400,9 +8399,9 @@ class BridgeSupportTest {
             assertTransactionWasProcessed(bridgeStorageProvider, pegoutWFS.getHash(), releaseTxBlockNumber);
         }
 
-        private void updateBridgeSupport() {
+        private void updateBridgeSupport(ActivationConfig.ForBlock activations) {
             bridgeSupport = bridgeSupportBuilder
-                .withActivations(allActivations)
+                .withActivations(activations)
                 .withBridgeConstants(bridgeMainNetConstants)
                 .withRepository(repository)
                 .withProvider(bridgeStorageProvider)
@@ -8546,24 +8545,24 @@ class BridgeSupportTest {
 
             federationStorageProvider.setNewFederation(activeFederation);
 
-            blockNumber = federationConstantsMainnet.getFederationActivationAge(allActivations) + federationConstantsMainnet.getFundsMigrationAgeSinceActivationBegin() + activeFederation.getCreationBlockNumber() + 1;
+            blockNumber = federationConstantsMainnet.getFederationActivationAge(vetiverActivations) + federationConstantsMainnet.getFundsMigrationAgeSinceActivationBegin() + activeFederation.getCreationBlockNumber() + 1;
             Block currentBlock = createRskBlock(blockNumber);
             federationSupport = FederationSupportBuilder.builder()
                 .withFederationConstants(federationConstantsMainnet)
                 .withFederationStorageProvider(federationStorageProvider)
                 .withRskExecutionBlock(currentBlock)
-                .withActivations(allActivations)
+                .withActivations(vetiverActivations)
                 .build();
 
             logs = new ArrayList<>();
             BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainNetConstants,
-                allActivations,
+                vetiverActivations,
                 logs
             );
 
             bridgeSupport = bridgeSupportBuilder
-                .withActivations(allActivations)
+                .withActivations(vetiverActivations)
                 .withBridgeConstants(bridgeMainNetConstants)
                 .withRepository(repository)
                 .withProvider(bridgeStorageProvider)
@@ -8575,9 +8574,10 @@ class BridgeSupportTest {
                 .build();
         }
 
+        // TODO(juli): add a version of this test with allActivations
         @ParameterizedTest
         @MethodSource("federationArgs")
-        void migration_fromRetiring_toActiveFed(Federation retiringFederation, Federation activeFederation) throws IOException {
+        void migration_fromRetiring_toActiveFed_forVetiver(Federation retiringFederation, Federation activeFederation) throws IOException {
             // arrange
             setUp(retiringFederation, activeFederation);
 
@@ -8585,18 +8585,16 @@ class BridgeSupportTest {
             bridgeSupport.save();
 
             BtcTransaction migrationTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
-            assertReleaseWasSettled(
+            assertReleaseWasSettledForVetiver(
                 repository,
                 bridgeStorageProvider,
-                federationStorageProvider,
                 federationSupport,
                 logs,
                 blockNumber,
                 tx.getHash(),
                 migrationTransaction,
                 utxos,
-                totalAmountRequested,
-                allActivations
+                totalAmountRequested
             );
         }
 
