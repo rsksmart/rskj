@@ -901,6 +901,27 @@ public class BridgeSupport {
         );
     }
 
+    private void logFlyoverUtxosRegistered(
+        Sha256Hash btcTxHash,
+        List<UTXO> registeredUtxos,
+        Address federationAddress,
+        Keccak256 flyoverDerivationHash
+    ) {
+        if (!activations.isActive(RSKIP643) || registeredUtxos.isEmpty()) {
+            return;
+        }
+
+        List<Coin> valuesInSatoshis = registeredUtxos.stream().map(UTXO::getValue).toList();
+        List<Long> outputIndexes = registeredUtxos.stream().map(UTXO::getIndex).toList();
+        eventLogger.logFlyoverUtxosRegistered(
+            btcTxHash,
+            valuesInSatoshis,
+            outputIndexes,
+            federationAddress,
+            flyoverDerivationHash
+        );
+    }
+
     /**
      * Initiates the process of sending coins back to BTC.
      * This is the default contract method.
@@ -3153,6 +3174,12 @@ public class BridgeSupport {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
         federationSupport.getActiveFederationBtcUTXOs().addAll(utxosList);
+        logFlyoverUtxosRegistered(
+            btcTxHash,
+            utxosList,
+            federationSupport.getActiveFederationAddress(),
+            derivationHash
+        );
     }
 
     protected void saveFlyoverRetiringFederationDataInStorage(
@@ -3164,6 +3191,14 @@ public class BridgeSupport {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverRetiringFederationInformation(flyoverRetiringFederationInformation);
         federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosList);
+        federationSupport.getRetiringFederationAddress().ifPresent(retiringFederationAddress ->
+            logFlyoverUtxosRegistered(
+                btcTxHash,
+                utxosList,
+                retiringFederationAddress,
+                derivationHash
+            )
+        );
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {

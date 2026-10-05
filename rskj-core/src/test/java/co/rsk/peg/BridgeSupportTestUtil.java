@@ -500,6 +500,37 @@ public final class BridgeSupportTestUtil {
         assertEquals(1, matchingLogs.size());
     }
 
+    public static void assertLogFlyoverUtxosRegistered(
+        List<LogInfo> logs,
+        Sha256Hash btcTxHash,
+        List<Coin> expectedValuesInSatoshis,
+        List<Long> expectedOutputIndexes,
+        Address expectedFederationAddress,
+        Keccak256 expectedFlyoverDerivationHash
+    ) {
+        CallTransaction.Function flyoverUtxosRegisteredEvent = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
+        byte[] btcTxHashSerialized = btcTxHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(flyoverUtxosRegisteredEvent, btcTxHashSerialized);
+
+        byte[] serializedValuesInSatoshis = UtxoUtils.encodeOutpointValues(expectedValuesInSatoshis);
+        byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(expectedOutputIndexes);
+        byte[] encodedData = getEncodedData(
+            flyoverUtxosRegisteredEvent,
+            serializedValuesInSatoshis,
+            serializedOutputIndexes,
+            expectedFederationAddress.toString(),
+            expectedFlyoverDerivationHash.getBytes()
+        );
+
+        // topics and data must match on the same log; checked separately, they could
+        // come from different flyover_utxos_registered logs, since equal registrations share data
+        List<LogInfo> matchingLogs = logs.stream()
+            .filter(log -> log.getTopics().equals(encodedTopics))
+            .filter(log -> Arrays.equals(log.getData(), encodedData))
+            .toList();
+        assertEquals(1, matchingLogs.size());
+    }
+
     private static void assertReleaseOutpointsValuesWereSaved(Repository repository, BridgeStorageProvider bridgeStorageProvider, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
         RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
