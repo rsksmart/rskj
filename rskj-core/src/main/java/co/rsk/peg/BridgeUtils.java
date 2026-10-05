@@ -32,7 +32,7 @@ import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
-import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCode;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
@@ -170,11 +170,11 @@ public final class BridgeUtils {
      * @param bridgeConstants
      * @param btcTx
      * @param addresses
-     * @return {@link FlyoverTxResponseCodes#VALID_TX} if each UTXOs sent to federation isn't less than the minimum,
+     * @return {@link FlyoverTxResponseCode#VALID_TX} if each UTXOs sent to federation isn't less than the minimum,
      * in case any of UTXO is less than the minimum then it returns
-     * {@link FlyoverTxResponseCodes#UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR}.
+     * {@link FlyoverTxResponseCode#UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR}.
      */
-    public static FlyoverTxResponseCodes validateFlyoverPeginValue(
+    public static FlyoverTxResponseCode validateFlyoverPeginValue(
         ActivationConfig.ForBlock activations,
         BridgeConstants bridgeConstants,
         Context context,
@@ -191,7 +191,7 @@ public final class BridgeUtils {
 
         if (totalAmount.equals(Coin.ZERO)) {
             logger.debug("[validateFlyoverPeginValue] Amount sent can't be 0");
-            return FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
+            return FlyoverTxResponseCode.UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
         }
 
         if (activations.isActive(RSKIP293)){
@@ -206,10 +206,10 @@ public final class BridgeUtils {
                     "[validateFlyoverPeginValue] UTXOs amount sent to federation can't be below the minimum {}.",
                     minimumPegInTxValue
                 );
-                return FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
+                return FlyoverTxResponseCode.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
             }
         }
-        return FlyoverTxResponseCodes.VALID_TX;
+        return FlyoverTxResponseCode.VALID_TX;
     }
 
     /**

@@ -21,7 +21,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
-import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCode;
 import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
@@ -553,7 +553,7 @@ class BridgeTest {
         BigInteger decodedResult = (BigInteger) Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0];
 
         //Assert
-        assertEquals(FlyoverTxResponseCodes.GENERIC_ERROR.value(), decodedResult.longValue());
+        assertEquals(FlyoverTxResponseCode.GENERIC_ERROR.getCode(), decodedResult.longValue());
         verify(bridgeSupportMock, times(0)).registerFlyoverBtcTransaction(
             any(Transaction.class),
             eq(value),
@@ -656,7 +656,7 @@ class BridgeTest {
             any(RskAddress.class),
             any(Address.class),
             anyBoolean()
-        )).thenReturn(BigInteger.valueOf(FlyoverTxResponseCodes.GENERIC_ERROR.value()));
+        )).thenReturn(BigInteger.valueOf(FlyoverTxResponseCode.GENERIC_ERROR.getCode()));
 
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -684,7 +684,7 @@ class BridgeTest {
         byte[] result = bridge.execute(data);
         BigInteger decodedResult = (BigInteger)Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0];
 
-        assertEquals(FlyoverTxResponseCodes.GENERIC_ERROR.value(), decodedResult.longValue());
+        assertEquals(FlyoverTxResponseCode.GENERIC_ERROR.getCode(), decodedResult.longValue());
     }
 
     @Test
@@ -839,7 +839,7 @@ class BridgeTest {
 
         byte[] result = bridge.execute(data);
         BigInteger decodedResult = (BigInteger) Bridge.RECEIVE_HEADER.decodeResult(result)[0];
-        assertEquals(BigInteger.valueOf(-20), decodedResult);
+        assertEquals(BigInteger.valueOf(ReceiveHeaderResponseCode.HEADER_SIZE_MISMATCH.getCode()), decodedResult);
     }
 
     @Test

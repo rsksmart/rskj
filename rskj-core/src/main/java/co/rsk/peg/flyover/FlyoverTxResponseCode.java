@@ -1,6 +1,6 @@
 package co.rsk.peg.flyover;
 
-public enum FlyoverTxResponseCodes {
+public enum FlyoverTxResponseCode {
     REFUNDED_USER_ERROR(-100),
     REFUNDED_LP_ERROR(-200),
     UNPROCESSABLE_TX_NOT_CONTRACT_ERROR(-300),
@@ -12,13 +12,13 @@ public enum FlyoverTxResponseCodes {
     GENERIC_ERROR(-900),
     VALID_TX(0);
 
-    private final long value;
+    private final int code;
 
-    FlyoverTxResponseCodes(long value) {
-        this.value = value;
+    FlyoverTxResponseCode(int code) {
+        this.code = code;
     }
 
-    public long value() {
-        return value;
+    public int getCode() {
+        return code;
     }
 }
