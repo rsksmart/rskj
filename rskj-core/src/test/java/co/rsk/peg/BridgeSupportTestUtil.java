@@ -7,6 +7,7 @@ import static co.rsk.peg.BridgeEventsTestUtils.getLogsBySignature;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsData;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASES_OUTPOINTS_VALUES;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,6 +44,8 @@ import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.utils.NonRefundablePeginReason;
@@ -394,6 +397,8 @@ public final class BridgeSupportTestUtil {
     public static void assertReleaseWasSettled(
         Repository repository,
         BridgeStorageProvider bridgeStorageProvider,
+        FederationStorageProvider federationStorageProvider,
+        FederationSupport federationSupport,
         List<LogInfo> logs,
         long executionBlock,
         Keccak256 releaseCreationTxHash,
@@ -404,7 +409,8 @@ public final class BridgeSupportTestUtil {
     ) throws IOException {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
         assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock, activations);
-        assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
+        assertPegoutTxSigHashWasNotSaved(bridgeStorageProvider, releaseTransaction);
+        assertFederationsPendingBtcUTXOsWereSaved(federationStorageProvider, federationSupport, releaseTransaction);
         assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransaction.getHash(), totalAmountRequested);
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
@@ -412,6 +418,7 @@ public final class BridgeSupportTestUtil {
     public static void assertReleaseWasSettledForVetiver(
         Repository repository,
         BridgeStorageProvider bridgeStorageProvider,
+        FederationSupport federationSupport,
         List<LogInfo> logs,
         long executionBlock,
         Keccak256 releaseCreationTxHash,
@@ -422,6 +429,7 @@ public final class BridgeSupportTestUtil {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
         assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock, ACTIVATIONS_VETIVER);
         assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
+        assertFederationsPendingBtcUTXOsWereNotSaved(federationSupport, releaseTransaction);
         assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransaction.getHash(), totalAmountRequested);
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
@@ -434,6 +442,36 @@ public final class BridgeSupportTestUtil {
                 entry.getPegoutCreationRskTxHash().equals(releaseCreationTxHash))
             .findFirst();
         assertTrue(pegoutEntry.isPresent());
+    }
+
+    public static void assertFederationsPendingBtcUTXOsWereSaved(
+        FederationStorageProvider federationStorageProvider,
+        FederationSupport federationSupport,
+        BtcTransaction releaseTransaction
+    ) {
+        Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
+        List<Script> liveFederationsOutputScripts = federationSupport.getLiveFederations().stream()
+            .map(Federation::getP2SHScript)
+            .toList();
+        List<UTXO> expectedPendingUtxos = releaseTransaction.getOutputs().stream()
+            .filter(output -> liveFederationsOutputScripts.contains(output.getScriptPubKey()))
+            .map(output -> new UTXO(
+                releaseTransactionHash,
+                output.getIndex(),
+                output.getValue(),
+                0,
+                false,
+                output.getScriptPubKey()
+            ))
+            .toList();
+
+        Optional<List<UTXO>> pendingUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(releaseTransactionHash);
+        assertTrue(pendingUtxos.isPresent());
+        assertUtxosAreEqual(expectedPendingUtxos, pendingUtxos.get());
+    }
+
+    public static void assertFederationsPendingBtcUTXOsWereNotSaved(FederationSupport federationSupport, BtcTransaction releaseTransaction) {
+        assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(releaseTransaction.getHash()));
     }
 
     public static void assertPegoutTxSigHashWasSaved(BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTransaction) {

@@ -1625,6 +1625,8 @@ class BridgeSupportProcessFundsMigrationTest {
             assertReleaseWasSettled(
                 repository,
                 bridgeStorageProvider,
+                federationStorageProvider,
+                federationSupport,
                 logs,
                 migrationEntry.getPegoutCreationRskBlockNumber(),
                 migrationEntry.getPegoutCreationRskTxHash(),
@@ -1663,6 +1665,7 @@ class BridgeSupportProcessFundsMigrationTest {
             assertReleaseWasSettledForVetiver(
                 repository,
                 bridgeStorageProvider,
+                federationSupport,
                 logs,
                 migrationEntry.getPegoutCreationRskBlockNumber(),
                 migrationEntry.getPegoutCreationRskTxHash(),
@@ -1701,6 +1704,8 @@ class BridgeSupportProcessFundsMigrationTest {
             assertReleaseWasSettled(
                 repository,
                 bridgeStorageProvider,
+                federationStorageProvider,
+                federationSupport,
                 logs,
                 migrationEntry.getPegoutCreationRskBlockNumber(),
                 migrationEntry.getPegoutCreationRskTxHash(),
@@ -2101,6 +2106,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertReleaseWasSettledForVetiver(
                     repository,
                     bridgeStorageProvider,
+                    federationSupport,
                     logs,
                     migrationEntry.getPegoutCreationRskBlockNumber(),
                     migrationEntry.getPegoutCreationRskTxHash(),
@@ -2534,6 +2540,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertReleaseWasSettledForVetiver(
                     repository,
                     bridgeStorageProvider,
+                    federationSupport,
                     logs,
                     migrationEntry.getPegoutCreationRskBlockNumber(),
                     migrationEntry.getPegoutCreationRskTxHash(),

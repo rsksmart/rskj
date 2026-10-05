@@ -8258,6 +8258,7 @@ class BridgeSupportTest {
             assertReleaseWasSettledForVetiver(
                 repository,
                 bridgeStorageProvider,
+                federationSupport,
                 logs,
                 currentBlock.getNumber(),
                 tx.getHash(),
@@ -8295,6 +8296,8 @@ class BridgeSupportTest {
             assertReleaseWasSettled(
                 repository,
                 bridgeStorageProvider,
+                federationStorageProvider,
+                federationSupport,
                 logs,
                 currentBlock.getNumber(),
                 tx.getHash(),
@@ -8332,6 +8335,8 @@ class BridgeSupportTest {
             assertReleaseWasSettled(
                 repository,
                 bridgeStorageProvider,
+                federationStorageProvider,
+                federationSupport,
                 logs,
                 currentBlock.getNumber(),
                 tx.getHash(),
@@ -8612,6 +8617,8 @@ class BridgeSupportTest {
             assertReleaseWasSettled(
                 repository,
                 bridgeStorageProvider,
+                federationStorageProvider,
+                federationSupport,
                 logs,
                 blockNumber,
                 tx.getHash(),

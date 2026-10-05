@@ -1494,9 +1494,35 @@ public class BridgeSupport {
     private void settleReleaseRequest(List<UTXO> utxosToUse, PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
         removeSpentUtxos(utxosToUse, releaseTransaction);
         addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction, releaseCreationTxHash);
-        savePegoutTxSigHash(releaseTransaction);
+        savePegoutTxInfo(releaseTransaction);
         logReleaseRequested(releaseCreationTxHash, releaseTransaction, requestedAmount);
         processReleaseTransactionInfo(releaseTransaction);
+    }
+
+    private void savePegoutTxInfo(BtcTransaction releaseTransaction) {
+        if (!activations.isActive(RSKIP643)) {
+            savePegoutTxSigHash(releaseTransaction);
+            return;
+        }
+
+        List<UTXO> utxosSentToLiveFederations = getUtxosSentToLiveFederations(releaseTransaction);
+        federationSupport.storeFederationsPendingBtcUTXOs(releaseTransaction.getHash(), utxosSentToLiveFederations);
+    }
+
+    private List<UTXO> getUtxosSentToLiveFederations(BtcTransaction btcTx) {
+        return btcTx.getWalletOutputs(getNoSpendWalletForLiveFederations(false))
+            .stream()
+            .map(output ->
+                new UTXO(
+                    btcTx.getHash(),
+                    output.getIndex(),
+                    output.getValue(),
+                    0,
+                    btcTx.isCoinBase(),
+                    output.getScriptPubKey()
+                )
+            )
+            .toList();
     }
 
     private void removeSpentUtxos(List<UTXO> utxosToUse, BtcTransaction releaseTx) {
