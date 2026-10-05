@@ -160,7 +160,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
             Transaction tx = Transaction.builder()
                     .gasPrice(gasPrice)
                     .gasLimit(gasLimit)
-                    .destination(sender.getAddress())
+                    .receiveAddress(sender.getAddress())
                     .value(value)
                     .build();
             tx.sign(sender.getPrivKeyBytes());

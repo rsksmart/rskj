@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
@@ -28,6 +29,7 @@ import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.junit.jupiter.api.BeforeEach;
@@ -193,10 +195,26 @@ class BlockTxsFieldsValidationRuleTest {
     @Test
     void transactionWithMalformedFieldsIsRejected() {
         // field validation itself is unchanged: an over-long nonce still fails, now after the
-        // acceptance check rather than as the first thing the rule does
+        // acceptance check rather than as the first thing the rule does.
+        // Transaction.builder() rejects an over-long nonce at build time, so the malformed
+        // transaction is assembled through the raw constructor to reach the rule.
         byte[] oversizedNonce = new byte[33];
         Arrays.fill(oversizedNonce, (byte) 0x01);
-        Transaction tx = signedTransaction(CHAIN_ID, "sender", oversizedNonce);
+        Transaction tx = new Transaction(
+                oversizedNonce,
+                Coin.valueOf(1L),
+                BigInteger.valueOf(21000).toByteArray(),
+                TestUtils.generateAddress("receiver"),
+                Coin.valueOf(10L),
+                null,
+                CHAIN_ID,
+                false,
+                TransactionTypePrefix.legacy(),
+                null,
+                null,
+                null,
+                null);
+        tx.sign(TestUtils.generateECKey("sender").getPrivKeyBytes());
 
         assertFalse(rule.isValid(block(tx), parent));
     }
@@ -208,12 +226,8 @@ class BlockTxsFieldsValidationRuleTest {
     }
 
     private Transaction signedTransaction(byte chainId, String senderDiscriminator) {
-        return signedTransaction(chainId, senderDiscriminator, BigInteger.ONE.toByteArray());
-    }
-
-    private Transaction signedTransaction(byte chainId, String senderDiscriminator, byte[] nonce) {
         ECKey senderKey = TestUtils.generateECKey(senderDiscriminator);
-        Transaction tx = transaction(chainId, nonce);
+        Transaction tx = transaction(chainId, BigInteger.ONE.toByteArray());
         tx.sign(senderKey.getPrivKeyBytes());
         return tx;
     }
@@ -227,7 +241,7 @@ class BlockTxsFieldsValidationRuleTest {
                 .nonce(nonce)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(TestUtils.generateAddress("receiver"))
+                .receiveAddress(TestUtils.generateAddress("receiver"))
                 .chainId(chainId)
                 .value(BigInteger.TEN)
                 .build();

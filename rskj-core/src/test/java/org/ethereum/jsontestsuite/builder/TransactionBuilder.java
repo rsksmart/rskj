@@ -36,7 +36,7 @@ public class TransactionBuilder {
                     .nonce(parseVarData(transactionTck.getNonce()))
                     .gasPrice(parseVarData(transactionTck.getGasPrice()))
                     .gasLimit(parseVarData(transactionTck.getGasLimit()))
-                    .destination(parseData(transactionTck.getTo()))
+                    .receiveAddress(parseData(transactionTck.getTo()))
                     .value(parseVarData(transactionTck.getValue()))
                     .data(parseData(transactionTck.getData()))
                     .build();
@@ -49,7 +49,7 @@ public class TransactionBuilder {
                     .nonce(parseNumericData(transactionTck.getNonce()))
                     .gasPrice(parseNumericData(transactionTck.getGasPrice()))
                     .gasLimit(parseVarData(transactionTck.getGasLimit()))
-                    .destination(parseData(transactionTck.getTo()))
+                    .receiveAddress(parseData(transactionTck.getTo()))
                     .data(parseData(transactionTck.getData()))
                     .value(parseNumericData(transactionTck.getValue()))
                     .build();

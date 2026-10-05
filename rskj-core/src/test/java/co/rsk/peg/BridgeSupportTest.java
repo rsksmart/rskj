@@ -225,7 +225,7 @@ class BridgeSupportTest {
         .nonce(NONCE)
         .gasPrice(GAS_PRICE)
         .gasLimit(GAS_LIMIT)
-        .destination(Hex.decode(TO_ADDRESS))
+        .receiveAddress(Hex.decode(TO_ADDRESS))
         .data(Hex.decode(DATA))
         .chainId(Constants.MAINNET_CHAIN_ID)
         .value(DUST_AMOUNT)

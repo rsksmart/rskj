@@ -77,7 +77,7 @@ class BlockchainVMTest {
                 .builder()
                 .gasPrice(transactionGasPrice)
                 .gasLimit(transactionGasLimit)
-                .destination(dstAddress)
+                .receiveAddress(dstAddress)
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(transferAmount)
                 .build();

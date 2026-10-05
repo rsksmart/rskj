@@ -1992,7 +1992,7 @@ class BridgeSupportReleaseBtcTest {
             .nonce(NONCE)
             .gasPrice(GAS_PRICE)
             .gasLimit(GAS_LIMIT)
-            .destination(BRIDGE_ADDRESS)
+            .receiveAddress(BRIDGE_ADDRESS)
             .data(Hex.decode(DATA))
             .chainId(Constants.MAINNET_CHAIN_ID)
             .value(value)

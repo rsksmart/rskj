@@ -25,13 +25,21 @@ import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Rskip545TestSupport;
+import org.ethereum.core.Rskip546TestSupport;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionTypePrefix;
+import org.ethereum.core.transaction.SetCodeAuthorization;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -53,6 +61,9 @@ public class TransactionBuilder {
     private boolean immutable;
     private Byte transactionType = null;
     private Byte rskSubtype = null;
+    private BigInteger maxFeePerGas = null;
+    private BigInteger maxPriorityFeePerGas = null;
+    private final List<SetCodeAuthorization> authorizations = new ArrayList<>();
 
     public TransactionBuilder sender(Account sender) {
         this.sender = sender;
@@ -119,6 +130,28 @@ public class TransactionBuilder {
         return this;
     }
 
+    public TransactionBuilder maxFeePerGas(BigInteger maxFeePerGas) {
+        this.maxFeePerGas = maxFeePerGas;
+        return this;
+    }
+
+    public TransactionBuilder maxPriorityFeePerGas(BigInteger maxPriorityFeePerGas) {
+        this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+        return this;
+    }
+
+    public TransactionBuilder authorization(
+            Account authority,
+            RskAddress delegate,
+            BigInteger authNonce,
+            byte authChainId
+    ) {
+        this.authorizations.add(
+                Rskip545TestSupport.createSignedAuthorization(
+                        authority.getEcKey(), delegate, authNonce, authChainId));
+        return this;
+    }
+
     public Transaction build() {
         byte chainId = Optional.ofNullable(this.chainId).orElse(Constants.REGTEST_CHAIN_ID);
 
@@ -126,41 +159,51 @@ public class TransactionBuilder {
     }
 
     public Transaction build(byte chainId) {
-        final String to = receiver != null ? ByteUtil.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? ByteUtil.toHexString(receiverAddress) : null);
+        RskAddress toAddress = resolveReceiveAddress();
         BigInteger nonce = this.nonce;
         BigInteger gasLimit = this.gasLimit;
         BigInteger gasPrice = this.gasPrice;
         byte[] data = this.data;
         BigInteger value = this.value;
 
-        return createSignedTransaction(to, nonce, gasLimit, gasPrice, chainId, data, value, sender.getEcKey().getPrivKeyBytes(), this.immutable);
+        return createSignedTransaction(toAddress, nonce, gasLimit, gasPrice, chainId, data, value,
+                sender.getEcKey().getPrivKeyBytes(), this.immutable);
     }
 
-    private Transaction createSignedTransaction(String to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice, byte chainId, byte[] data, BigInteger value, byte[] privKeyBytes, boolean immutable) {
-        org.ethereum.core.TransactionBuilder txBuilder = org.ethereum.core.Transaction.builder()
-                .destination(to)
-                .nonce(nonce)
-                .gasLimit(gasLimit)
-                .gasPrice(gasPrice)
-                .chainId(chainId)
-                .data(data)
-                .value(value);
-        
-        if (this.transactionType != null) {
-            org.ethereum.core.TransactionType txType = org.ethereum.core.TransactionType.fromByte(this.transactionType);
+    private RskAddress resolveReceiveAddress() {
+        if (receiver != null) {
+            return receiver.getAddress();
+        }
+        if (receiverAddress != null && receiverAddress.length > 0) {
+            return new RskAddress(receiverAddress);
+        }
+        return RskAddress.nullAddress();
+    }
+
+    private Transaction createSignedTransaction(RskAddress to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice,
+                                                byte chainId, byte[] data, BigInteger value, byte[] privKeyBytes,
+                                                boolean immutable) {
+        Transaction tx;
+        if (this.rskSubtype != null) {
+            tx = buildViaLegacyBuilder(to, nonce, gasLimit, gasPrice, chainId, data, value, true);
+        } else if (this.transactionType != null) {
+            TransactionType txType = TransactionType.fromByte(this.transactionType);
             if (txType == null || txType.isLegacy()) {
                 throw new IllegalArgumentException(String.format(
                         "transaction type not supported: 0x%02x",
                         this.transactionType & 0xFF));
             }
-            txBuilder.type(txType);
+            tx = switch (txType) {
+                case TYPE_1 -> buildType1FromCallArguments(to, nonce, gasLimit, gasPrice, chainId, data, value);
+                case TYPE_2 -> buildType2FromCallArguments(to, nonce, gasLimit, chainId, data, value);
+                case TYPE_4 -> buildType4FromBuilder(to, nonce, gasLimit, chainId, data, value);
+                default -> throw new IllegalArgumentException(
+                        "transaction type not supported: 0x" + Integer.toHexString(this.transactionType & 0xFF));
+            };
+        } else {
+            tx = buildViaLegacyBuilder(to, nonce, gasLimit, gasPrice, chainId, data, value, false);
         }
-        
-        if (this.rskSubtype != null) {
-            txBuilder.rskSubtype(this.rskSubtype);
-        }
-        
-        Transaction tx = txBuilder.build();
+
         tx.sign(privKeyBytes);
 
         if (immutable) {
@@ -168,6 +211,79 @@ public class TransactionBuilder {
         }
 
         return tx;
+    }
+
+    private Transaction buildViaLegacyBuilder(RskAddress to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice,
+                                               byte chainId, byte[] data, BigInteger value, boolean rskNamespace) {
+        org.ethereum.core.TransactionBuilder txBuilder = org.ethereum.core.Transaction.builder()
+                .receiveAddress(to)
+                .nonce(nonce)
+                .gasLimit(gasLimit)
+                .gasPrice(gasPrice)
+                .chainId(chainId)
+                .data(data)
+                .value(value);
+
+        if (this.maxFeePerGas != null) {
+            txBuilder.maxFeePerGas(new Coin(this.maxFeePerGas));
+        }
+        if (this.maxPriorityFeePerGas != null) {
+            txBuilder.maxPriorityFeePerGas(new Coin(this.maxPriorityFeePerGas));
+        }
+        if (rskNamespace) {
+            txBuilder.type(TransactionType.TYPE_2, this.rskSubtype);
+        }
+        return txBuilder.build();
+    }
+
+    private Transaction buildType1FromCallArguments(RskAddress to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice,
+                                                   byte chainId, byte[] data, BigInteger value) {
+        return Rskip546TestSupport.unsignedType1(
+                chainId,
+                to,
+                new Coin(gasPrice),
+                new Coin(value),
+                gasLimit,
+                nonce.toByteArray(),
+                data != null ? data : new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
+    }
+
+    private Transaction buildType4FromBuilder(RskAddress to, BigInteger nonce, BigInteger gasLimit, byte chainId,
+                                            byte[] data, BigInteger value) {
+        if (authorizations.isEmpty()) {
+            throw new IllegalArgumentException("Type 4 transaction requires at least one authorization");
+        }
+        BigInteger maxP = this.maxPriorityFeePerGas != null ? this.maxPriorityFeePerGas : this.gasPrice;
+        BigInteger maxF = this.maxFeePerGas != null ? this.maxFeePerGas : this.gasPrice;
+        return Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(chainId)
+                .nonce(nonce)
+                .gasLimit(gasLimit)
+                .maxPriorityFeePerGas(new Coin(maxP))
+                .maxFeePerGas(new Coin(maxF))
+                .receiveAddress(to)
+                .value(new Coin(value))
+                .data(data != null ? data : new byte[0])
+                .authorizationList(authorizations)
+                .build();
+    }
+
+    private Transaction buildType2FromCallArguments(RskAddress to, BigInteger nonce, BigInteger gasLimit, byte chainId,
+                                                    byte[] data, BigInteger value) {
+        BigInteger maxP = this.maxPriorityFeePerGas != null ? this.maxPriorityFeePerGas : this.gasPrice;
+        BigInteger maxF = this.maxFeePerGas != null ? this.maxFeePerGas : this.gasPrice;
+        return Rskip546TestSupport.unsignedType2(
+                chainId,
+                to,
+                new Coin(maxP),
+                new Coin(maxF),
+                new Coin(value),
+                gasLimit,
+                nonce.toByteArray(),
+                data != null ? data : new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
     }
 
     /**
@@ -185,7 +301,6 @@ public class TransactionBuilder {
 
         Account receiver = new AccountBuilder().name("account" + randomPositiveVal).build();
 
-        String to = receiver.getAddress().toHexString();
         BigInteger nonce = randomPositiveVal;
         BigInteger gasLimit = randomPositiveVal;
         BigInteger gasPrice = randomPositiveVal;
@@ -194,7 +309,8 @@ public class TransactionBuilder {
         BigInteger value = randomPositiveVal;
         byte[] privateKey = ECKey.fromPrivate(randomPositiveVal).getPrivKeyBytes();
 
-        return createSignedTransaction(to, nonce, gasLimit, gasPrice, chainId, data, value, privateKey, false);
+        return createSignedTransaction(receiver.getAddress(), nonce, gasLimit, gasPrice, chainId, data, value,
+                privateKey, false);
     }
 
     public static Transaction createMockTransaction(

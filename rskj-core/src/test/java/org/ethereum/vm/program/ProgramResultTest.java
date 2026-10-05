@@ -122,7 +122,7 @@ class ProgramResultTest {
             .nonce(BigInteger.ONE.toByteArray())
             .gasPrice(BigInteger.ONE)
             .gasLimit(BigInteger.valueOf(21000))
-            .destination(PrecompiledContracts.BRIDGE_ADDR)
+            .receiveAddress(PrecompiledContracts.BRIDGE_ADDR)
             .chainId(config.getNetworkConstants().getChainId())
             .value(BigInteger.TEN)
             .build();

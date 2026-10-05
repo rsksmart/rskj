@@ -377,7 +377,7 @@ NEGATIVE CASES, IF A REGULAR CONTRACT IS CALLED, FLAG SHOULD BE FALSE, SAME FOR 
                 .nonce(nonce)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(2000000))
-                .destination(destination)
+                .receiveAddress(destination)
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(Coin.valueOf(value))
                 .data(data)

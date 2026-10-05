@@ -198,7 +198,7 @@ public final class BridgeSupportTestUtil {
         Transaction tx = Transaction
             .builder()
             .nonce(BigInteger.valueOf(nonce))
-            .destination(PrecompiledContracts.BRIDGE_ADDR)
+            .receiveAddress(PrecompiledContracts.BRIDGE_ADDR)
             .data(Bridge.UPDATE_COLLECTIONS.encode())
             .chainId(Constants.MAINNET_CHAIN_ID)
             .build();
@@ -214,7 +214,7 @@ public final class BridgeSupportTestUtil {
             .nonce(BigInteger.valueOf(nonce))
             .gasPrice(BigInteger.valueOf(100))
             .gasLimit(BigInteger.valueOf(1_000))
-            .destination(PrecompiledContracts.BRIDGE_ADDR)
+            .receiveAddress(PrecompiledContracts.BRIDGE_ADDR)
             .data(Bridge.RELEASE_BTC.encode())
             .chainId(Constants.MAINNET_CHAIN_ID)
             .value(pegoutRequestValue)
