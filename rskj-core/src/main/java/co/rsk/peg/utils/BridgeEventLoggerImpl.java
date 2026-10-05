@@ -430,13 +430,16 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         requireNonNull(federationBtcAddress);
         requireNonNull(valuesInSatoshis);
         requireNonNull(outputIndexes);
-        validateArgumentsSizeAreEqual(valuesInSatoshis, outputIndexes);
+        validateArgumentsSize(valuesInSatoshis, outputIndexes);
         validateUniqueOutputIndexes(outputIndexes);
     }
 
-    private static void validateArgumentsSizeAreEqual(List<Coin> valuesInSatoshis, List<Long> outputIndexes) {
+    private static void validateArgumentsSize(List<Coin> valuesInSatoshis, List<Long> outputIndexes) {
         if (valuesInSatoshis.size() != outputIndexes.size()) {
             throw new IllegalArgumentException("valuesInSatoshis and outputIndexes must have the same size");
+        }
+        if (valuesInSatoshis.isEmpty()) {
+            throw new IllegalArgumentException("valuesInSatoshis and outputIndexes must not be empty");
         }
     }
 

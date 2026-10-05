@@ -79,7 +79,6 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.coinListOf;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -911,24 +910,19 @@ class BridgeEventLoggerImplTest {
         }
 
         @Test
-        void logUtxosRegistered_whenEmptyLists_shouldEmitEventWithEmptyValuesAndIndexes() {
+        void logUtxosRegistered_whenEmptyLists_shouldThrowIllegalArgumentException() {
             // arrange
             List<Coin> values = Collections.emptyList();
             List<Long> outputIndexes = Collections.emptyList();
 
-            // act
-            eventLogger.logUtxosRegistered(
+            // act & assert
+            assertThrows(IllegalArgumentException.class, () -> eventLogger.logUtxosRegistered(
                 BTC_TX_HASH,
                 values,
                 outputIndexes,
                 FEDERATION_BTC_ADDRESS
-            );
-
-            // assert
-            assertLogUtxoRegisteredWasEmittedCorrectly(
-                EMPTY_BYTE_ARRAY,
-                EMPTY_BYTE_ARRAY
-            );
+            ));
+            assertTrue(eventLogs.isEmpty());
         }
 
         private void assertLogUtxoRegisteredWasEmittedCorrectly(
@@ -1208,25 +1202,20 @@ class BridgeEventLoggerImplTest {
         }
 
         @Test
-        void logFlyoverUtxosRegistered_whenEmptyLists_shouldEmitEventWithEmptyValuesAndIndexes() {
+        void logFlyoverUtxosRegistered_whenEmptyLists_shouldThrowIllegalArgumentException() {
             // arrange
             List<Coin> values = Collections.emptyList();
             List<Long> outputIndexes = Collections.emptyList();
 
-            // act
-            eventLogger.logFlyoverUtxosRegistered(
+            // act & assert
+            assertThrows(IllegalArgumentException.class, () -> eventLogger.logFlyoverUtxosRegistered(
                 BTC_TX_HASH,
                 values,
                 outputIndexes,
                 FEDERATION_BTC_ADDRESS,
                 flyoverDerivationHash
-            );
-
-            // assert
-            assertLogFlyoverUtxoRegisteredWasEmittedCorrectly(
-                EMPTY_BYTE_ARRAY,
-                EMPTY_BYTE_ARRAY
-            );
+            ));
+            assertTrue(eventLogs.isEmpty());
         }
 
         private void assertLogFlyoverUtxoRegisteredWasEmittedCorrectly(
