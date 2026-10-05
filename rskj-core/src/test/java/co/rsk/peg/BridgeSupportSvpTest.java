@@ -61,6 +61,7 @@ import org.junit.jupiter.api.*;
 
 class BridgeSupportSvpTest {
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+    private static final ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0);
     private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainNetConstants.getBtcParams();
@@ -401,8 +402,9 @@ class BridgeSupportSvpTest {
         }
 
         @Test
-        void updateCollections_whenFundTxCanBeCreated_whenActiveFedIsLegacy_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
+        void updateCollections_whenFundTxCanBeCreated_whenActiveFedIsLegacy_forVetiver_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
             // arrange
+            setUpBridgeSupportForVetiver();
             int activeFederationUtxosSizeBeforeCreatingFundTx = federationSupport.getActiveFederationBtcUTXOs().size();
 
             // act
@@ -414,7 +416,7 @@ class BridgeSupportSvpTest {
             assertTrue(svpFundTxHashUnsigned.isPresent());
 
             svpFundTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
-            assertReleaseWasSettled(
+            assertReleaseWasSettledForVetiver(
                 repository,
                 bridgeStorageProvider,
                 logs,
@@ -422,8 +424,7 @@ class BridgeSupportSvpTest {
                 rskTx.getHash(),
                 svpFundTransaction,
                 svpFundTxOutpointsValues,
-                totalValueSentToProposedFederation,
-                allActivations
+                totalValueSentToProposedFederation
             );
 
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints
@@ -458,6 +459,33 @@ class BridgeSupportSvpTest {
             for (TransactionInput input : inputs) {
                 assertEquals(activeFederationScriptSig, input.getScriptSig());
             }
+        }
+
+        private void setUpBridgeSupportForVetiver() {
+            federationSupport = FederationSupportBuilder.builder()
+                .withFederationConstants(federationMainNetConstants)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withActivations(vetiverActivations)
+                .build();
+            bridgeStorageProvider = new BridgeStorageProvider(
+                repository,
+                btcMainnetParams,
+                vetiverActivations
+            );
+            bridgeEventLogger = new BridgeEventLoggerImpl(
+                bridgeMainNetConstants,
+                vetiverActivations,
+                logs
+            );
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withEventLogger(bridgeEventLogger)
+                .withActivations(vetiverActivations)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(rskExecutionBlock)
+                .build();
         }
 
         @Test
