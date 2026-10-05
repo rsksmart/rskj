@@ -33,7 +33,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.*;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
@@ -114,6 +113,7 @@ public class TransactionExecutor {
     private final boolean postponeFeePayment;
 
     private long authorizationRefund = 0;
+    private boolean precompileExecutionFailed = false;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -168,33 +168,14 @@ public class TransactionExecutor {
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
-        if (localCall) {
-            return true;
-        }
-
-        if (tx.isTypedTransactionNotAllowed(activations)) {
-            logger.warn("Transaction type {} is not supported before its activation, tx {}", tx.getTypePrefix(), tx.getHash());
-            execError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
+        if (!transactionTypeIsValid()) {
             return false;
         }
-        if(tx.isType4()){
-            if(tx.isContractCreation()){
-                logger.warn("Transaction type {} can not execute a contract, tx {}", tx.getTypePrefix(), tx.getHash());
-                execError("transaction type " + tx.getTypePrefix() + " can not execute a contract");
-                return false;
-            }
-            if (!isSenderCodeValid()) {
-                return false;
-            }
 
-        }else{
-            if (tx.isInitCodeSizeInvalidForTx(activations)) {
-                String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
-                logger.warn(errorMessage);
-                execError(errorMessage);
-                return false;
-            }
+        if (localCall) {
+            return localCallGasIsValid();
         }
+
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
         long gasLimit = (activations.isActive(RSKIP351) && activations.isActive(RSKIP144)) ? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
@@ -229,6 +210,47 @@ public class TransactionExecutor {
         }
 
         return transactionAddressesAreValid();
+    }
+
+    private boolean transactionTypeIsValid() {
+        if (tx.isTypedTransactionNotAllowed(activations)) {
+            logger.warn("Transaction type {} is not supported before its activation, tx {}", tx.getTypePrefix(), tx.getHash());
+            execError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
+            return false;
+        }
+        if(tx.isType4()){
+            if(tx.isContractCreation()){
+                logger.warn("Transaction type {} can not execute a contract, tx {}", tx.getTypePrefix(), tx.getHash());
+                execError("transaction type " + tx.getTypePrefix() + " can not execute a contract");
+                return false;
+            }
+            if (!isSenderCodeValid()) {
+                logger.warn("Transaction type {} sender has non-delegated code, tx {}", tx.getTypePrefix(), tx.getHash());
+                execError("transaction type " + tx.getTypePrefix() + " sender must be an EOA or an already-delegated account");
+                return false;
+            }
+
+        }else{
+            if (tx.isInitCodeSizeInvalidForTx(activations)) {
+                String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
+                logger.warn(errorMessage);
+                execError(errorMessage);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean localCallGasIsValid() {
+        // eth_call / eth_estimateGas skip the block-level checks in init(), but the intrinsic-cost
+        // check must still run: otherwise GasCost.subtract() throws later and leaks as -32603.
+        // Read unsigned: GasCost.toGas throws for 8-byte limits of 2^63 or more, which eth_call can send
+        BigInteger localCallGasLimit = new BigInteger(1, tx.getGasLimit());
+        if (localCallGasLimit.compareTo(BigInteger.valueOf(basicTxCost)) < 0) {
+            execError(String.format("Not enough gas for transaction execution: tx needs: %s tx sent: %s", basicTxCost, localCallGasLimit));
+            return false;
+        }
+        return true;
     }
 
     private boolean isSenderCodeValid() {
@@ -309,10 +331,9 @@ public class TransactionExecutor {
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
+        track.increaseNonce(tx.getSender(signatureCache));
+
         if (!localCall) {
-
-            track.increaseNonce(tx.getSender(signatureCache));
-
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
             track.addBalance(tx.getSender(signatureCache), txGasCost.negate());
@@ -334,7 +355,7 @@ public class TransactionExecutor {
 
     private long processAuthorizationList(List<SetCodeAuthorization> authorizationList, Repository repository, Transaction tx) {
         SetCodeAuthorizationTransactionExecutor authorizationTransactionExecutor = new SetCodeAuthorizationTransactionExecutor();
-        BigInteger outerTransactionChainId = BigInteger.valueOf(tx.getChainId());
+        BigInteger outerTransactionChainId = BigInteger.valueOf(Byte.toUnsignedInt(tx.getChainId()));
         long totalRefund = 0;
 
         for (SetCodeAuthorization authorization : authorizationList) {
@@ -391,12 +412,19 @@ public class TransactionExecutor {
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
-            if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
+            if (!enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
                 execError(String.format( "Out of Gas calling precompiled contract at block %d " +
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, gasLeftover));
                 gasLeftover = 0;
+                if (localCall) {
+                    // A simulated call reports the failure through its result, as a failing precompiled contract does
+                    result.setException(new Program.OutOfGasException("%s", executionError));
+                } else if (activations.isActive(ConsensusRule.RSKIP692)) {
+                    // An exceptional halt consumes the gas limit, so the refunds that survive a halt apply to it
+                    result.spendGas(txGasLimit);
+                }
                 profiler.stop(metric);
                 return;
             }
@@ -412,18 +440,30 @@ public class TransactionExecutor {
                 result.setHReturn(out);
                 if (!track.isExist(targetAddress)) {
                     track.createAccount(targetAddress);
-                    track.setupContract(targetAddress);
-                } else if (!track.isContract(targetAddress)) {
-                    track.setupContract(targetAddress);
+                    track.initializeStorage(targetAddress);
+                } else if (!track.hasInitializedStorage(targetAddress)) {
+                    track.initializeStorage(targetAddress);
                 }
             } catch (VMException | RuntimeException e) {
+                precompileExecutionFailed = true;
+                if (!localCall && activations.isActive(ConsensusRule.RSKIP692)) {
+                    gasLeftover = 0;
+                    gasUsed = txGasLimit;
+                    // Discard what the precompiled contract did before failing. The nonce increase, the fee
+                    // and the authorization list were applied on track, so they are not rolled back.
+                    // A precompiled contract cannot add internal transactions to the result, and its
+                    // subtraces are only read on success, so there are none to reject.
+                    result.clearFieldsOnException();
+                    cacheTrack.rollback();
+                    execError(e);
+                }
                 result.setException(e);
             }
             result.spendGas(gasUsed);
             profiler.stop(metric);
         } else {
-            byte[] code = getExecutionCode(track, targetAddress);
-            // Code can be null
+            byte[] code = DelegationCodeResolver.getExecutionCode(track, targetAddress, this::isPrecompile, this.activations);
+            // Code is never null; empty array means no executable code
             if (isEmpty(code)) {
                 gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
@@ -445,9 +485,9 @@ public class TransactionExecutor {
         if (isEmpty(tx.getData())) {
             gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
             // If there is no data, then the account is created, but without code nor
-            // storage. It doesn't even call setupContract() to setup a storage root
+            // storage. It doesn't even call initializeStorage() to setup a storage root
         } else {
-            cacheTrack.setupContract(newContractAddress);
+            cacheTrack.initializeStorage(newContractAddress);
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
 
             this.vm = new VM(vmConfig, precompiledContracts);
@@ -469,7 +509,8 @@ public class TransactionExecutor {
 
     private void execError(Throwable err) {
         logger.error("execError: ", err);
-        executionError = err.getMessage();
+        String message = err.getMessage();
+        executionError = message != null && !message.isEmpty() ? message : err.getClass().getSimpleName();
     }
 
     private void execError(String err) {
@@ -622,40 +663,31 @@ public class TransactionExecutor {
         //Transaction sender is stored in cache
         signatureCache.storeSender(tx);
 
-        // Should include only LogInfo's that was added during not rejected transactions
-        List<LogInfo> logsFromNonRejectedTransactions = result.logsFromNonRejectedTransactions();
+        refundGas();
 
-        TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
-                .gasLeftover(BigInteger.valueOf(gasLeftover))
-                .logs(logsFromNonRejectedTransactions)
-                .result(result.getHReturn());
+        Coin refund = calculateRefund();
+        Coin fee = calculateFee();
 
-        long gasRefund = refundGas();
-
-        TransactionExecutionSummary summary = buildTransactionExecutionSummary(summaryBuilder, gasRefund);
-
-        // Refund for gas leftover
+        // Refund unused/refunded gas to sender
         RskAddress txSender = tx.getSender(signatureCache);
-        track.addBalance(txSender, summary.getLeftover().add(summary.getRefund()));
-        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", txSender, summary.getRefund());
-
-        // Transfer fees to miner
-        Coin summaryFee = summary.getFee();
+        track.addBalance(txSender, refund);
+        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", txSender, refund);
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
         if (!postponeFeePayment) {
             if (enableRemasc) {
                 logger.trace("Adding fee to remasc contract account");
-                track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
+                track.addBalance(PrecompiledContracts.REMASC_ADDR, fee);
             } else {
-                track.addBalance(coinbase, summaryFee);
+                track.addBalance(coinbase, fee);
             }
         }
 
-        this.paidFees = summaryFee;
+        this.paidFees = fee;
 
         logger.trace("Processing result");
-        logs = logsFromNonRejectedTransactions;
+        // Should include only LogInfo's that was added during not rejected transactions
+        logs =  result.logsFromNonRejectedTransactions();
 
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
         // Traverse list of suicides
@@ -675,74 +707,66 @@ public class TransactionExecutor {
         }
 
         if(result.getException() != null) {
-            logger.warn("Local call produced an execution error: {}",
-                    executionError != null ? executionError : "unexpected");
+            logger.warn("Local call produced an execution error: {}", executionError != null ? executionError : "unexpected");
             return;
         }
 
         logger.trace("Finalize transaction gas estimation, txHash: {}, nonce:{},", tx.getHash(), toBI(tx.getNonce()));
 
-        // Should include only LogInfo's that was added during not rejected transactions
-        List<LogInfo> logsFromNonRejectedTransactions = result.logsFromNonRejectedTransactions();
-
-        TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
-                .gasLeftover(BigInteger.valueOf(gasLeftover))
-                .logs(logsFromNonRejectedTransactions)
-                .result(result.getHReturn());
-
-        long gasRefund = refundGas();
-
+        refundGas();
         result.setGasUsed(getGasConsumed());
 
-        TransactionExecutionSummary summary = buildTransactionExecutionSummary(summaryBuilder, gasRefund);
-
         if (logger.isTraceEnabled()) {
-            logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(signatureCache), summary.getRefund());
+            logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(signatureCache), calculateRefund());
         }
 
-        // Transfer fees to miner
-        this.paidFees = summary.getFee();
+        this.paidFees = calculateFee();   // Transfer fees to miner
 
         logger.trace("Processing result for gas estimation");
 
-        logs = logsFromNonRejectedTransactions;
+        logs =  result.logsFromNonRejectedTransactions();
 
         logger.trace("tx listener for gas estimation done");
-
         logger.trace("tx finalization for gas estimation done");
     }
 
-    private TransactionExecutionSummary buildTransactionExecutionSummary(TransactionExecutionSummary.Builder summaryBuilder, long gasRefund) {
-        summaryBuilder
-                .gasUsed(toBI(result.getGasUsed()))
-                .gasRefund(toBI(gasRefund))
-                .deletedAccounts(result.getDeleteAccounts())
-                .internalTransactions(result.getInternalTransactions());
-
-        if (result.getException() != null) {
-            summaryBuilder.markAsFailed();
-        }
-
-        logger.trace("Building transaction execution summary");
-
-        return summaryBuilder.build();
+    /**
+     * Before RSKIP692 a failing direct call to a precompiled contract is charged the full gas limit even though
+     * gasLeftover is not zero. Every other outcome is charged by gasLeftover. After an EVM exceptional halt
+     * gasLeftover holds only the capped authorization refund, because the halt clears the future refund and the
+     * deleted accounts, so a transaction without an authorization list is still charged the full gas limit.
+     */
+    private boolean chargesFullGasLimit() {
+        return precompileExecutionFailed && !activations.isActive(ConsensusRule.RSKIP692);
     }
 
-    private long refundGas() {
-        // Accumulate refunds for suicides
-        result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
+    private Coin calculateFee() {
+        if (chargesFullGasLimit()) {
+            return tx.getGasPrice().multiply(toBI(tx.getGasLimit()));
+        }
+        BigInteger chargedGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(gasLeftover));
+        return tx.getGasPrice().multiply(chargedGas);
+    }
 
-        // The actual gas subtracted is equal to half of the future refund
+    private Coin calculateRefund() {
+        if (chargesFullGasLimit()) {
+            return Coin.ZERO;
+        }
+        return tx.getGasPrice().multiply(BigInteger.valueOf(gasLeftover));
+    }
+
+    private void refundGas() {
+        // Accumulate refunds for deleted accounts and authorizations before applying the refund cap
+        result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
+        result.addFutureRefund(authorizationRefund);
+
+        // The actual refund is capped to half of the gas used
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-        gasRefund = GasCost.add(gasRefund, authorizationRefund);
+
         result.addDeductedRefund(gasRefund);
         result.setGasUsedBeforeRefunds(result.getGasUsed());
 
-        gasLeftover = activations.isActive(ConsensusRule.RSKIP136) ?
-                GasCost.add(gasLeftover, gasRefund) :
-                gasLeftover + gasRefund;
-
-        return gasRefund;
+        gasLeftover = activations.isActive(ConsensusRule.RSKIP136) ? GasCost.add(gasLeftover, gasRefund) : gasLeftover + gasRefund;
     }
 
 
@@ -767,6 +791,15 @@ public class TransactionExecutor {
                 }
             }
 
+            // A failing direct call to a precompiled contract must not trace as a success, and its trace
+            // reports the error as the trace of a failing contract call does
+            if (precompiledContract != null && !executionError.isEmpty()) {
+                Exception error = result.getException() != null
+                        ? result.getException()
+                        : new Program.OutOfGasException("%s", executionError);
+                trace.error(error);
+            }
+
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
     }
@@ -785,6 +818,10 @@ public class TransactionExecutor {
         return result;
     }
 
+    public String getExecutionError() {
+        return executionError;
+    }
+
     public long getGasConsumed() {
         if (activations.isActive(ConsensusRule.RSKIP136)) {
             return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), gasLeftover);
@@ -797,23 +834,6 @@ public class TransactionExecutor {
     @Nonnull
     public Set<RskAddress> precompiledContractsCalled() {
         return this.precompiledContractsCalled.isEmpty() ? Collections.emptySet() : new HashSet<>(this.precompiledContractsCalled);
-    }
-
-    private byte[] getExecutionCode(Repository track, RskAddress targetAddress) {
-        byte[] code = track.getCode(targetAddress);
-
-        if (!isDelegatedCode(code)) {
-            return code;
-        }
-
-        RskAddress delegatedAddress = DelegationCodeResolver
-                .extractDelegatedAddress(code);
-
-        if (isPrecompile(delegatedAddress)) {
-            return ByteUtil.EMPTY_BYTE_ARRAY;
-        }
-
-        return track.getCode(delegatedAddress);
     }
 
     private boolean isPrecompile(RskAddress address) {

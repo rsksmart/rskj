@@ -57,6 +57,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static org.ethereum.util.BIUtil.toBI;
 
@@ -264,16 +265,18 @@ public class TransactionPoolImpl implements TransactionPool {
         }
         PendingState pendingState = getPendingState(currentRepository);
 
-        Optional<TransactionPoolAddResult> delegatedAccountResult = rejectIfDelegatedAccountCannotBeAccepted(tx, tx.getSender(signatureCache), currentRepository, pendingState);
+        Keccak256 hash = tx.getHash();
+        logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+
+        Optional<Transaction> replacedTx = pendingTransactions.getTransactionsWithSender(tx.getSender(signatureCache)).stream().filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger())).findFirst();
+
+        Optional<TransactionPoolAddResult> delegatedAccountResult = rejectIfDelegatedAccountCannotBeAccepted
+                (tx, tx.getSender(signatureCache), currentRepository, pendingState, replacedTx.isPresent());
 
         if (delegatedAccountResult.isPresent()) {
             return delegatedAccountResult.get();
         }
 
-        Keccak256 hash = tx.getHash();
-        logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
-
-        Optional<Transaction> replacedTx = pendingTransactions.getTransactionsWithSender(tx.getSender(signatureCache)).stream().filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger())).findFirst();
         if (replacedTx.isPresent() && !isBumpingGasPriceForSameNonceTx(tx, replacedTx.get())) {
             return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
         }
@@ -500,19 +503,23 @@ public class TransactionPoolImpl implements TransactionPool {
      * @return whether the sender balance is enough to pay for all pending transactions + newTx
      */
     private boolean senderCanPayPendingTransactionsAndNewTx(Transaction newTx, RepositorySnapshot currentRepository) {
-        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender(signatureCache));
+        RskAddress sender = newTx.getSender(signatureCache);
+        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(sender);
+        BigInteger stateNonce = currentRepository.getNonce(sender);
 
         Coin accumTxCost = Coin.ZERO;
         for (Transaction t : transactions) {
             boolean isReplacedTx = Arrays.equals(t.getNonce(), newTx.getNonce());
-            // do not consider replaced transaction for the calculations
-            if (!isReplacedTx) {
+            // a stale tx (nonce already consumed in state) can never be mined, so its cost can never be spent
+            boolean isStaleTx = t.getNonceAsInteger().compareTo(stateNonce) < 0;
+            // do not consider replaced or stale transactions for the calculations
+            if (!isReplacedTx && !isStaleTx) {
                 accumTxCost = accumTxCost.add(getTxBaseCost(t));
             }
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
-        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0;
+        return costWithNewTx.compareTo(currentRepository.getBalance(sender)) <= 0;
     }
 
     private Coin getTxBaseCost(Transaction tx) {
@@ -533,7 +540,8 @@ public class TransactionPoolImpl implements TransactionPool {
             Transaction tx,
             RskAddress sender,
             RepositorySnapshot repository,
-            PendingState pendingState
+            PendingState pendingState,
+            boolean isSameNonceReplacement
     ) {
         byte[] code = repository.getCode(sender);
 
@@ -541,7 +549,20 @@ public class TransactionPoolImpl implements TransactionPool {
             return Optional.empty();
         }
 
-        boolean alreadyHasTransaction = !pendingTransactions.getTransactionsWithSender(sender).isEmpty() || !queuedTransactions.getTransactionsWithSender(sender).isEmpty();
+        // EIP-7702 delegated accounts are intentionally limited to one transaction
+        // in the pool. Same-nonce replacements are allowed to preserve the normal
+        // replace-by-fee flow without increasing the number of occupied txpool slots.
+        if (isSameNonceReplacement) {
+            return Optional.empty();
+        }
+
+        // Stale entries (nonce already consumed in mined state, e.g. by a sponsor's
+        // authorization tuple) can never be mined, so they must not occupy the slot.
+        BigInteger stateNonce = repository.getNonce(sender);
+        boolean alreadyHasTransaction = Stream.concat(
+                        pendingTransactions.getTransactionsWithSender(sender).stream(),
+                        queuedTransactions.getTransactionsWithSender(sender).stream())
+                .anyMatch(t -> t.getNonceAsInteger().compareTo(stateNonce) >= 0);
 
         if (alreadyHasTransaction) {
             return Optional.of(TransactionPoolAddResult.withError("delegated account already has a transaction in the pool"));

@@ -54,7 +54,7 @@ public class EthModuleTestUtils {
                 Constants.REGTEST_CHAIN_ID,
                 world.getBlockChain(),
                 null,
-                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
+                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor, null),
                 new ExecutionBlockRetriever(world.getBlockChain(), null, null),
                 world.getRepositoryLocator(),
                 null,
@@ -77,7 +77,7 @@ public class EthModuleTestUtils {
                 Constants.REGTEST_CHAIN_ID,
                 world.getBlockChain(),
                 null,
-                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
+                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor, null),
                 new ExecutionBlockRetriever(world.getBlockChain(), null, null),
                 world.getRepositoryLocator(),
                 null,
@@ -111,6 +111,7 @@ public class EthModuleTestUtils {
     }
 
     public static class EthModuleGasEstimation extends EthModule {
+
         private EthModuleGasEstimation(BridgeConstants bridgeConstants, byte chainId, Blockchain blockchain,
                                        TransactionPool transactionPool, ReversibleTransactionExecutor reversibleTransactionExecutor,
                                        ExecutionBlockRetriever executionBlockRetriever, RepositoryLocator repositoryLocator,

@@ -42,6 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Hardfork safety tests for RSKIP-545 (requires RSKIP-543 and RSKIP-546).
@@ -109,13 +111,25 @@ class Rskip545HardforkTest {
     }
 
     @Test
+    void poolRejection_type4_blockedWhenOnlyRskip546Inactive() {
+        Transaction tx = world.getTransactionByName("txTransitionType4");
+        var activations = mock(
+                org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP546)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP545)).thenReturn(true);
+        assertTrue(tx.isTypedTransactionNotAllowed(activations),
+                "Type 4 must be rejected when RSKIP-546 is inactive (matches Type4RawTransactionParser)");
+    }
+
+    @Test
     void poolRejection_type4_blockedWhenOnlyRskip545Inactive() {
         Transaction tx = world.getTransactionByName("txTransitionType4");
-        var activations = org.mockito.Mockito.mock(
+        var activations = mock(
                 org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
-        org.mockito.Mockito.when(activations.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
-        org.mockito.Mockito.when(activations.isActive(ConsensusRule.RSKIP546)).thenReturn(true);
-        org.mockito.Mockito.when(activations.isActive(ConsensusRule.RSKIP545)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP546)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP545)).thenReturn(false);
         assertTrue(tx.isTypedTransactionNotAllowed(activations));
     }
 

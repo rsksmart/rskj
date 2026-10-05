@@ -103,6 +103,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
@@ -887,8 +888,8 @@ public class Web3Impl implements Web3 {
     public TransactionReceiptDTO eth_getTransactionReceipt(TxHashParam transactionHash) {
         logger.trace("eth_getTransactionReceipt({})", transactionHash);
 
-        byte[] hash = stringHexToByteArray(transactionHash.getHash().toHexString());
-        TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore).orElse(null);
+        TransactionInfo txInfo = receiptStore.getInMainChain(
+                transactionHash.getHash().getBytes(), blockStore).orElse(null);
 
         if (txInfo == null) {
             logger.trace("No transaction info for {}", transactionHash);
@@ -896,38 +897,155 @@ public class Web3Impl implements Web3 {
         }
 
         Block block = blockStore.getBlockByHash(txInfo.getBlockHash());
+        if (block == null) {
+            logger.error("eth_getTransactionReceipt: block not found for tx {}", transactionHash);
+            return null;
+        }
 
+        TxBlockContext ctx = buildTxBlockContext(block, transactionHash.getHash());
+        if (ctx.tx() == null) {
+            logger.error("eth_getTransactionReceipt: tx {} not found in block {}", transactionHash,
+                    block.getHash());
+            return null;
+        }
+        txInfo.setTransaction(ctx.tx());
+
+        Long overrideGasUsed = deriveOverrideGasUsed(txInfo.getReceipt(), ctx, block, transactionHash);
+
+        return new TransactionReceiptDTO(block, txInfo, signatureCache, ctx.logIndexAcc(), overrideGasUsed);
+    }
+
+    /**
+     * Scans the block's transaction list up to (and including) the queried transaction,
+     * collecting the data needed to build a correct receipt DTO: the transaction's own
+     * index, the accumulated log count from preceding transactions, and the
+     * {@link TransactionInfo} for the immediately preceding transaction (used to derive
+     * per-tx gasUsed for four-field receipts).
+     */
+    private TxBlockContext buildTxBlockContext(Block block, Keccak256 txHash) {
         byte[] blockHash = block.getHash().getBytes();
         int logIndexAcc = 0;
-        long prevCumulativeGas = 0;
-        for(Transaction tx: block.getTransactionsList()) {
+        TransactionInfo prevTxInfo = null;
 
-            if(tx.getHash().equals(transactionHash.getHash())){
-                txInfo.setTransaction(tx);
-                break;
+        List<Transaction> txList = block.getTransactionsList();
+        for (int i = 0; i < txList.size(); i++) {
+            Transaction tx = txList.get(i);
+            if (tx.getHash().equals(txHash)) {
+                return new TxBlockContext(i, logIndexAcc, prevTxInfo, tx);
             }
-            TransactionInfo prevTxInfo = blockchain.getTransactionInfoByBlock(tx, blockHash);
+            prevTxInfo = blockchain.getTransactionInfoByBlock(tx, blockHash);
             if (prevTxInfo != null) {
                 logIndexAcc += Optional.ofNullable(prevTxInfo.getReceipt().getLogInfoList()).map(List::size).orElse(0);
-                prevCumulativeGas = prevTxInfo.getReceipt().getCumulativeGasLong();
             }
         }
+        return new TxBlockContext(0, logIndexAcc, prevTxInfo, null);
+    }
 
-        // For four-field typed receipts (Type 1, standard Type 2, Type 4) the RLP body does not
-        // store gasUsed (only the cumulative total). Derive the per-tx value from the cumulative
-        // gas difference and pass it to the DTO on `gasUsed.length == 0`) avoids accidentally 
-        // rewriting the gasUsed of any malformed/synthetic legacy receipt whose gasUsed was 
-        // encoded as the empty byte array.
-        TransactionReceipt receipt = txInfo.getReceipt();
-        Long overrideGasUsed = null;
+    /**
+     * Returns the gasUsed value to pass to the DTO, or {@code null} when no override is
+     * needed (legacy receipts already encode gasUsed explicitly on disk).
+     *
+     * <p>For four-field typed receipts (Type 1, standard Type 2, Type 4) the RLP body stores
+     * only the cumulative gas total; the per-tx value must be derived as
+     * {@code cumulative - prevCumulative}. Passing {@code null} on failure leaves the DTO
+     * to emit the empty on-disk value (0x0) rather than a misleading cumulative total.
+     */
+    @Nullable
+    private Long deriveOverrideGasUsed(TransactionReceipt receipt, TxBlockContext ctx,
+                                       Block block, TxHashParam transactionHash) {
         Transaction receiptTx = receipt.getTransaction();
-        boolean usesFourFieldReceipt = receiptTx != null
-                && TransactionReceipt.usesFourFieldReceiptBody(receiptTx.getTypePrefix());
-        if (usesFourFieldReceipt && receipt.getGasUsed().length == 0) {
-            overrideGasUsed = receipt.getCumulativeGasLong() - prevCumulativeGas;
+        if (receiptTx == null || !TransactionReceipt.usesFourFieldReceiptBody(receiptTx.getTypePrefix())) {
+            return null;
         }
 
-        return new TransactionReceiptDTO(block, txInfo, signatureCache, logIndexAcc, overrideGasUsed);
+        long cumulativeGas = receipt.getCumulativeGasLong();
+        OptionalLong prevCumulativeGas = prevCumulativeGasInSublist(
+                ctx.txIndex(), block.getHeader().getTxExecutionSublistsEdges(),
+                ctx.prevTxInfo(), block);
+
+        if (!prevCumulativeGas.isPresent()) {
+            logger.warn("eth_getTransactionReceipt: cannot derive gasUsed for tx {} — " +
+                            "previous receipt in sublist missing (cumulative={})",
+                    transactionHash, cumulativeGas);
+            return null;
+        }
+
+        OptionalLong derivedGasUsed = deriveGasUsedFromCumulative(cumulativeGas, prevCumulativeGas.getAsLong());
+        if (derivedGasUsed.isPresent()) {
+            return derivedGasUsed.getAsLong();
+        }
+
+        // Four-field receipts carry no per-tx gasUsed on disk. Do not fall back to the
+        // sublist cumulative: for mid-sublist txs that would inflate gasUsed to the
+        // running total. Leave override unset so the DTO emits the empty on-disk value
+        // (0x0) rather than a misleading cumulative.
+        logger.warn("eth_getTransactionReceipt: non-positive gasUsed derived for tx {} " +
+                        "(cumulative={}, prevCumulative={}) — not overriding gasUsed",
+                transactionHash, cumulativeGas, prevCumulativeGas.getAsLong());
+        return null;
+    }
+
+    /**
+     * Carries the per-transaction context extracted by {@link #buildTxBlockContext}: the
+     * transaction's position in the block, the accumulated log count from all preceding
+     * transactions, the {@link TransactionInfo} of the immediately preceding transaction,
+     * and the transaction object itself.
+     */
+    private record TxBlockContext(
+            int txIndex,
+            int logIndexAcc,
+            @Nullable TransactionInfo prevTxInfo,
+            @Nullable Transaction tx) {
+    }
+
+    /**
+     * Returns the cumulative gas of the previous transaction in the same RSKIP-144 execution
+     * sublist, or {@code 0} when {@code txIndex} is the first transaction of its sublist
+     * (or of the block). Empty when the previous receipt is required but missing, so callers do
+     * not treat an unknown baseline as {@code 0} and inflate mid-sublist {@code gasUsed}.
+     */
+    private OptionalLong prevCumulativeGasInSublist(
+            int txIndex, @Nullable short[] edges,
+            @Nullable TransactionInfo prevTxInfoInBlock, Block block) {
+        if (txIndex == 0 || isSublistStart(txIndex, edges)) {
+            return OptionalLong.of(0L);
+        }
+        if (prevTxInfoInBlock == null) {
+            logger.warn("eth_getTransactionReceipt: receipt not found for tx preceding index {} in block {}",
+                    txIndex, block.getHash());
+            return OptionalLong.empty();
+        }
+        return OptionalLong.of(prevTxInfoInBlock.getReceipt().getCumulativeGasLong());
+    }
+
+    /**
+     * {@code true} when transaction index {@code txIndex} (greater than 0) is the first transaction of an
+     * RSKIP-144 execution sublist. An edge value {@code e} means the transaction at index
+     * {@code e} starts a new sublist. {@code null} or empty edges mean a single sequential list.
+     */
+    private static boolean isSublistStart(int txIndex, @Nullable short[] edges) {
+        if (txIndex <= 0 || edges == null || edges.length == 0) {
+            return false;
+        }
+        for (short edge : edges) {
+            if (edge == txIndex) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Derives per-tx gasUsed as {@code cumulative - previousCumulative}. Empty when the result
+     * is not positive, so callers do not emit two's-complement garbage hex for a negative long
+     * (or a zero that cannot be a mined typed receipt's gasUsed).
+     */
+    private static OptionalLong deriveGasUsedFromCumulative(long cumulativeGas, long previousCumulativeGas) {
+        long derived = cumulativeGas - previousCumulativeGas;
+        if (derived <= 0) {
+            return OptionalLong.empty();
+        }
+        return OptionalLong.of(derived);
     }
 
     @Override

@@ -219,7 +219,11 @@ public class ActivationConfigsForTest {
     private static List<ConsensusRule> getCardamom1000Rskips() {
         return new ArrayList<>(List.of(
             ConsensusRule.RSKIP378,
-            ConsensusRule.RSKIP559
+            ConsensusRule.RSKIP543,
+            ConsensusRule.RSKIP545,
+            ConsensusRule.RSKIP546,
+            ConsensusRule.RSKIP559,
+            ConsensusRule.RSKIP692
         ));
     }
 

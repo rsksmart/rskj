@@ -27,7 +27,6 @@ public sealed interface ParsedRawTransaction
         ParsedType0Transaction,
         ParsedType1Transaction,
         ParsedType2Transaction,
-        ParsedType2RSKTransaction,
         ParsedType4Transaction {
 
     TransactionTypePrefix typePrefix();

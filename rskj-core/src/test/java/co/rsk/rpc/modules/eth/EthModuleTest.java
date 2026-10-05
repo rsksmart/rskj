@@ -38,6 +38,8 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
+import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.datasource.HashMapDB;
@@ -95,7 +97,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -109,7 +111,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -152,7 +154,7 @@ class EthModuleTest {
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionOnSnapshot(any(), eq(block), any(), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -405,7 +407,7 @@ class EthModuleTest {
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionOnSnapshot(any(), eq(block), any(), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -438,6 +440,71 @@ class EthModuleTest {
     }
 
     @Test
+    void callWithAccountOverrideAndBlockFinalStateIsNotNull_preservesType4Params() {
+        RskAddress from = TestUtils.generateAddress("from");
+        RskAddress to = TestUtils.generateAddress("to");
+
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress(to.toJsonString());
+        entry.setStorageKeys(List.of("0x" + "0".repeat(63) + "1"));
+        List<CallArguments.AccessListEntry> accessList = List.of(entry);
+
+        CallArguments args = Rskip545TestSupport.defaultType4CallArguments(new byte[0]);
+        args.setFrom(from.toJsonString());
+        args.setTo(to.toJsonString());
+        args.setAccessList(accessList);
+
+        AccountOverride accountOverride = new AccountOverride(to);
+        accountOverride.setBalance(BigInteger.valueOf(100_000));
+
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+        when(blockResult.getFinalState()).thenReturn(new Trie());
+
+        ProgramResult result = mock(ProgramResult.class);
+        when(result.getHReturn()).thenReturn(new byte[0]);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransactionOnSnapshot(any(), eq(block), any(), any(), any())).thenReturn(result);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+        EthModule eth = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                null,
+                null,
+                executor,
+                retriever,
+                mock(RepositoryLocator.class),
+                null,
+                null,
+                bridgeSupportFactory,
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
+                true,
+                new DefaultStateOverrideApplier(config.getActivationConfig()));
+
+        eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"), List.of(accountOverride));
+
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> captor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
+        verify(executor).executeTransactionOnSnapshot(any(), eq(block), any(), any(), captor.capture());
+
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = captor.getValue();
+
+        assertAll(
+                () -> assertEquals(TransactionType.TYPE_4, params.type()),
+                () -> assertArrayEquals(AccessListCodec.encodeAccessList(accessList), params.accessListBytes()),
+                () -> assertNotNull(params.authorizationList()),
+                () -> assertEquals(1, params.authorizationList().size())
+        );
+    }
+
+    @Test
     void callWithoutReturn() {
         // Given
         CallArguments args = new CallArguments();
@@ -454,7 +521,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -466,7 +533,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -508,7 +575,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -520,7 +587,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -563,7 +630,7 @@ class EthModuleTest {
         when(executorResult.isRevert()).thenReturn(true);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -575,7 +642,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -767,6 +834,125 @@ class EthModuleTest {
     }
 
     @Test
+    void sendRawTransaction_legacyChainIdWithTwoByteV_throwsInvalidParams() {
+        // Legacy EIP-155 tx signed for chainId 111: v = 111*2 + 35 + yParity = 257, which needs two bytes.
+        String raw = "0xf8638203e801825208947986b3df570230288501eea3d890bd66948c9b790180820101"
+                + "a0f2c1c4648c681c5d901bca52fdb1b7ec8148da9f0481bb38bce41c7a46dffa33"
+                + "a01d367a76e7eb2e115147a0dc07b47ff4ccc40365f9ac2e146500579d5ea79e76";
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
+                Constants.regtest(), new Wallet(new HashMapDB()), mock(TransactionPool.class), transactionGateway);
+        HexDataParam hexDataParam = new HexDataParam(raw);
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendRawTransaction(hexDataParam));
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Invalid transaction: Signature V is invalid", ex.getMessage());
+        verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
+    void sendTransaction_type2PriorityFeeAboveMaxFee_throwsInvalidParams() {
+        Constants constants = Constants.regtest();
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        args.setGasPrice(null);
+        args.setType("0x2");
+        args.setChainId("0x21");
+        args.setMaxPriorityFeePerGas("0x77359400");
+        args.setMaxFeePerGas("0x3b9aca00");
+
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, mock(TransactionPool.class), transactionGateway);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Invalid transaction: maxPriorityFeePerGas (2000000000) must not exceed maxFeePerGas (1000000000)", ex.getMessage());
+        verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
+    void sendRawTransaction_highSLegacy_reportsInvalidSignatureNotChainId() {
+        // cow, chainId 33, s replaced by n - s (and v parity flipped)
+        assertSendRawTransactionError("0xf86380843b9aca00825208940000000000000000000000000000000000001234018066a0f53d18aab36abf06f1a949c41b22e595c238359cee7b21de5f5aca46e5348643a0eeb67fbc51d66da3ac6c08a71e966a662e01e0ac81fc67afa62ac0f1121e378f",
+                "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_highSType2_reportsInvalidSignatureNotChainId() {
+        assertSendRawTransactionError("0x02f866218001843b9aca008252089400000000000000000000000000000000000012340180c001a0b92e98d144431440978c1979b1e2e6e842a2b7d2df534ca6baca121b4e365f7ea092e0bb82c67746ec8365f618a816cabd337a87104b848488750305f0f4943919",
+                "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_type2ChainId200_reportsUnsignedChainId() {
+        assertSendRawTransactionError("0x02f86781c88001843b9aca008252089400000000000000000000000000000000000012340180c001a0a048b82d4f92d1c4a4932ae046ad260993c345f96959432901d6b179f093befda07e84f07e2eb801b997baabfd57e47c318410c409ce6398118a367d1f8b34fcab",
+                "Invalid chainId: 200");
+    }
+
+    @Test
+    void sendRawTransaction_legacyWrongChainId_stillReportsChainId() {
+        assertSendRawTransactionError("0xf86380843b9aca00825208940000000000000000000000000000000000001234018061a00245b6b834cbe95175953c8483b0685483faae336fc854c2a402a31ff82c1407a02a2661345258c3b86a913ce1c2af60b005a9be82d5848037276acf3472d21a3f",
+                "Invalid chainId: 31");
+    }
+
+    @Test
+    void sendRawTransaction_highSAndWrongChain_reportsInvalidSignature() {
+        // chainId 31 (wrong for regtest) AND s > n/2: the signature problem is reported first
+        Transaction tx = Transaction.builder()
+                .nonce(new byte[]{1}).gasPrice(BigInteger.valueOf(1_000_000_000L)).gasLimit(BigInteger.valueOf(21000))
+                .receiveAddress(new RskAddress(new byte[20])).value(BigInteger.ONE).chainId((byte) 31).build();
+        tx.sign(ECKey.fromPrivate(BigInteger.ONE).getPrivKeyBytes());
+        ECDSASignature sig = tx.getSignature();
+        BigInteger highS = Constants.getSECP256K1N().subtract(sig.getS());
+        tx.setSignature(new ECDSASignature(sig.getR(), highS, sig.getV() == 27 ? (byte) 28 : (byte) 27));
+        assertSendRawTransactionError("0x" + Hex.toHexString(tx.getEncoded()),
+                "Invalid transaction signature");
+    }
+
+    private static void assertSendRawTransactionError(String rawHex, String expectedMessage) {
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
+                Constants.regtest(), new Wallet(new HashMapDB()), mock(TransactionPool.class), transactionGateway);
+
+        RskJsonRpcRequestException e = Assertions.assertThrows(RskJsonRpcRequestException.class,
+                () -> ethModuleTransaction.sendRawTransaction(new HexDataParam(rawHex)));
+        assertEquals(-32602, e.getCode());
+        assertEquals(expectedMessage, e.getMessage());
+        verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
+    void sendTransaction_pendingStateLookupFails_isNotReportedAsInvalidParams() {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, wallet.addAccount());
+        args.setNonce(null);
+        TransactionPool transactionPool = mock(TransactionPool.class);
+        when(transactionPool.getPendingState()).thenThrow(new IllegalArgumentException("The trie with root 0xabc is missing in this store"));
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(Constants.regtest(), wallet, transactionPool, mock(TransactionGateway.class));
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        assertThrows(IllegalArgumentException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+    }
+
+    @Test
+    void sendTransaction_poolFailsWithIllegalArgument_isNotReportedAsInvalidParams() {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, wallet.addAccount());
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenThrow(new IllegalArgumentException("The trie with root 0xabc is missing in this store"));
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(Constants.regtest(), wallet, mock(TransactionPool.class), transactionGateway);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        assertThrows(IllegalArgumentException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+    }
+
+    @Test
     void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
         // Given
         Constants constants = Constants.regtest();
@@ -867,7 +1053,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -879,7 +1065,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -895,10 +1081,10 @@ class EthModuleTest {
 
         eth.call(callArgumentsParam, blockIdentifierParam);
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(executor, times(1))
-                .executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), dataCaptor.getValue());
+                .executeTransactionAtBlock(eq(block), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), paramsCaptor.getValue().data());
     }
 
     @Test
@@ -918,7 +1104,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -930,7 +1116,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -946,10 +1132,10 @@ class EthModuleTest {
 
         eth.call(callArgumentsParam, blockIdentifierParam);
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(executor, times(1))
-                .executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+                .executeTransactionAtBlock(eq(block), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), paramsCaptor.getValue().data());
     }
 
     @Test
@@ -970,7 +1156,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -982,7 +1168,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -999,10 +1185,10 @@ class EthModuleTest {
 
         eth.call(callArgumentsParam, blockIdentifierParam);
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(executor, times(1))
-                .executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+                .executeTransactionAtBlock(eq(block), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), paramsCaptor.getValue().data());
     }
 
     @Test
@@ -1022,7 +1208,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -1049,10 +1235,10 @@ class EthModuleTest {
 
         eth.estimateGas(callArgumentsParam, new BlockIdentifierParam("latest"));
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), dataCaptor.getValue());
+                .estimateGas(eq(block), any(), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), paramsCaptor.getValue().data());
     }
 
     @Test
@@ -1072,7 +1258,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -1120,7 +1306,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -1147,10 +1333,10 @@ class EthModuleTest {
 
         eth.estimateGas(callArgumentsParam, new BlockIdentifierParam("latest"));
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+                .estimateGas(eq(block), any(), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), paramsCaptor.getValue().data());
     }
 
     @Test
@@ -1171,7 +1357,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -1198,10 +1384,10 @@ class EthModuleTest {
 
         eth.estimateGas(callArgumentsParam, new BlockIdentifierParam("latest"));
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+                .estimateGas(eq(block), any(), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), paramsCaptor.getValue().data());
     }
 
     @Test
@@ -1460,6 +1646,345 @@ class EthModuleTest {
         List<Transaction> result = ethModule.ethPendingTransactions();
 
         assertTrue(result.isEmpty(), "Expected no transactions as wallet is disabled");
+    }
+
+    @Test
+    void call_type4WithStateOverride_usesSnapshotAndPreservesTypedParams() {
+        RskAddress from = TestUtils.generateAddress("from");
+        RskAddress to = TestUtils.generateAddress("to");
+        CallArguments args = Rskip545TestSupport.defaultType4CallArguments(new byte[0]);
+
+        args.setFrom(from.toJsonString());
+        args.setTo(to.toJsonString());
+
+        CallArguments.AccessListEntry accessListEntry = new CallArguments.AccessListEntry();
+        accessListEntry.setAddress(to.toJsonString());
+        accessListEntry.setStorageKeys(List.of("0x" + "0".repeat(63) + "1"));
+        List<CallArguments.AccessListEntry> accessList = List.of(accessListEntry);
+        args.setAccessList(accessList);
+
+        AccountOverride accountOverride = new AccountOverride(to);
+
+        accountOverride.setBalance(BigInteger.valueOf(100_000));
+
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        RepositorySnapshot snapshot = new MutableRepository(new TrieStoreImpl(new HashMapDB()), new Trie());
+        when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
+
+        ProgramResult result = mock(ProgramResult.class);
+        when(result.getHReturn()).thenReturn(new byte[0]);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+
+        when(executor.executeTransactionOnSnapshot(any(), eq(block), any(), any(), any())).thenReturn(result);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+        EthModule eth = new EthModule(
+                        null,
+                        Constants.REGTEST_CHAIN_ID,
+                        null,
+                        null,
+                        executor,
+                        retriever,
+                        repositoryLocator,
+                        null,
+                        null,
+                        bridgeSupportFactory,
+                        config.getGasEstimationCap(),
+                        config.getCallGasCap(),
+                        config.getActivationConfig(),
+                        new PrecompiledContracts(
+                                config,
+                                bridgeSupportFactory,
+                                signatureCache),
+                        true,
+                        new DefaultStateOverrideApplier(
+                                config.getActivationConfig()));
+
+
+        eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"), List.of(accountOverride));
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> captor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
+
+        verify(executor).executeTransactionOnSnapshot(any(), eq(block), any(), any(), captor.capture());
+        verify(executor, never()).executeTransactionAtBlock(any(), any(), any());
+
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = captor.getValue();
+
+        assertAll(
+                () -> assertEquals(TransactionType.TYPE_4, params.type()),
+                () -> assertEquals(Constants.REGTEST_CHAIN_ID, params.chainId()),
+                () -> assertArrayEquals(AccessListCodec.encodeAccessList(accessList), params.accessListBytes()),
+                () -> assertArrayEquals(new byte[]{0x0a}, params.maxPriorityFeePerGas()),
+                () -> assertArrayEquals(new byte[]{0x64}, params.maxFeePerGas()),
+                () -> assertNotNull(params.authorizationList()),
+                () -> assertEquals(1, params.authorizationList().size())
+        );
+    }
+
+    @Test
+    void call_type2WithStateOverride_usesSnapshotAndPreservesTypedParams() {
+        RskAddress from = TestUtils.generateAddress("from");
+        RskAddress to = TestUtils.generateAddress("to");
+
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress(to.toJsonString());
+        entry.setStorageKeys(List.of("0x" + "0".repeat(63) + "1"));
+        List<CallArguments.AccessListEntry> accessList = List.of(entry);
+
+        CallArguments args = new CallArguments();
+        args.setFrom(from.toJsonString());
+        args.setTo(to.toJsonString());
+        args.setGas("0x100000");
+        args.setMaxPriorityFeePerGas("0x2");
+        args.setMaxFeePerGas("0x5");
+        args.setAccessList(accessList);
+
+        AccountOverride accountOverride = new AccountOverride(to);
+        accountOverride.setBalance(BigInteger.valueOf(100_000));
+
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        RepositorySnapshot snapshot = new MutableRepository(new TrieStoreImpl(new HashMapDB()), new Trie());
+        when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
+
+        ProgramResult result = mock(ProgramResult.class);
+        when(result.getHReturn()).thenReturn(new byte[0]);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransactionOnSnapshot(any(), eq(block), any(), any(), any())).thenReturn(result);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+        EthModule eth = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                null,
+                null,
+                executor,
+                retriever,
+                repositoryLocator,
+                null,
+                null,
+                bridgeSupportFactory,
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
+                true,
+                new DefaultStateOverrideApplier(config.getActivationConfig()));
+
+        eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"), List.of(accountOverride));
+
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> captor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
+
+        verify(executor).executeTransactionOnSnapshot(any(), eq(block), any(), any(), captor.capture());
+        verify(executor, never()).executeTransactionAtBlock(any(), any(), any());
+
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = captor.getValue();
+
+        assertAll(
+                () -> assertEquals(TransactionType.TYPE_2, params.type()),
+                () -> assertEquals(Constants.REGTEST_CHAIN_ID, params.chainId()),
+                () -> assertArrayEquals(AccessListCodec.encodeAccessList(accessList), params.accessListBytes()),
+                () -> assertArrayEquals(new byte[]{0x02}, params.maxPriorityFeePerGas()),
+                () -> assertArrayEquals(new byte[]{0x05}, params.maxFeePerGas()),
+                () -> assertTrue(params.authorizationList().isEmpty())
+        );
+    }
+
+    @Test
+    void estimateGas_type4_preservesAllTypedTransactionParams() {
+        RskAddress from = TestUtils.generateAddress("from");
+        RskAddress to = TestUtils.generateAddress("to");
+
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress(to.toJsonString());
+        entry.setStorageKeys(List.of("0x" + "0".repeat(63) + "1"));
+        List<CallArguments.AccessListEntry> accessList = List.of(entry);
+
+        CallArguments args = Rskip545TestSupport.defaultType4CallArguments(new byte[0]);
+        args.setFrom(from.toJsonString());
+        args.setTo(to.toJsonString());
+        args.setMaxPriorityFeePerGas("0x3");
+        args.setMaxFeePerGas("0x9");
+        args.setAccessList(accessList);
+
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
+
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        RepositorySnapshot snapshot = mock(RepositorySnapshot.class);
+        when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
+
+        ProgramResult programResult = mock(ProgramResult.class);
+        TransactionExecutor transactionExecutor = mock(TransactionExecutor.class);
+        when(transactionExecutor.getResult()).thenReturn(programResult);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.estimateGas(eq(block), any(), eq(snapshot), any())).thenReturn(transactionExecutor);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
+        EthModule eth = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                mock(Blockchain.class),
+                null,
+                executor,
+                retriever,
+                repositoryLocator,
+                null,
+                null,
+                bridgeSupportFactory,
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
+                false,
+                null);
+
+        eth.estimateGas(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
+
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> captor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
+        verify(executor).estimateGas(eq(block), any(), eq(snapshot), captor.capture());
+
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = captor.getValue();
+
+        assertAll(
+                () -> assertEquals(TransactionType.TYPE_4, params.type()),
+                () -> assertEquals(Constants.REGTEST_CHAIN_ID, params.chainId()),
+                () -> assertArrayEquals(AccessListCodec.encodeAccessList(accessList), params.accessListBytes()),
+                () -> assertArrayEquals(new byte[]{0x03}, params.maxPriorityFeePerGas()),
+                () -> assertArrayEquals(new byte[]{0x09}, params.maxFeePerGas()),
+                () -> assertNotNull(params.authorizationList()),
+                () -> assertEquals(1, params.authorizationList().size())
+        );
+    }
+
+    @Test
+    void call_maxPriorityHigherThanMaxFee_rejects() {
+        RskAddress from = TestUtils.generateAddress("from");
+        RskAddress to = TestUtils.generateAddress("to");
+
+        CallArguments args = new CallArguments();
+        args.setFrom(from.toJsonString());
+        args.setTo(to.toJsonString());
+        args.setMaxPriorityFeePerGas("0xa");
+        args.setMaxFeePerGas("0x5");
+
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
+        EthModule eth = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                null,
+                null,
+                executor,
+                retriever,
+                mock(RepositoryLocator.class),
+                null,
+                null,
+                bridgeSupportFactory,
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
+                false,
+                null);
+
+        RskJsonRpcRequestException exception = assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest")));
+
+        assertEquals(-32602, exception.getCode());
+
+        verify(executor, never()).executeTransactionAtBlock(any(), any(), any());
+        verify(executor, never()).executeTransactionOnSnapshot(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void call_type4WithoutStateOverride_usesBlockAndPreservesTypedParams() {
+        RskAddress from = TestUtils.generateAddress("from");
+        RskAddress to = TestUtils.generateAddress("to");
+
+        CallArguments args = Rskip545TestSupport.defaultType4CallArguments(new byte[0]);
+        args.setFrom(from.toJsonString());
+        args.setTo(to.toJsonString());
+
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        ProgramResult result = mock(ProgramResult.class);
+        when(result.getHReturn()).thenReturn(new byte[0]);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+
+        when(executor.executeTransactionAtBlock(eq(block), any(), any())).thenReturn(result);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
+        EthModule eth =
+                new EthModule(
+                        null,
+                        Constants.REGTEST_CHAIN_ID,
+                        null,
+                        null,
+                        executor,
+                        retriever,
+                        mock(RepositoryLocator.class),
+                        null,
+                        null,
+                        bridgeSupportFactory,
+                        config.getGasEstimationCap(),
+                        config.getCallGasCap(),
+                        config.getActivationConfig(),
+                        new PrecompiledContracts(
+                                config,
+                                bridgeSupportFactory,
+                                signatureCache),
+                        true,
+                        new DefaultStateOverrideApplier(
+                                config.getActivationConfig()));
+
+        eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
+
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> captor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
+
+        verify(executor).executeTransactionAtBlock(eq(block), any(), captor.capture());
+        verify(executor, never()).executeTransactionOnSnapshot(any(), any(), any(), any(), any());
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = captor.getValue();
+
+        assertEquals(TransactionType.TYPE_4, params.type());
+        assertEquals(Constants.REGTEST_CHAIN_ID, params.chainId());
+
+        assertNotNull(params.authorizationList());
+        assertEquals(1, params.authorizationList().size());
     }
 
     private Transaction createMockTransaction(String fromAddress) {

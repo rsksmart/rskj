@@ -43,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.ethereum.core.Rskip546TestSupport.signatureWord;
 
 /**
  * Unit tests for RSKIP-545 Type 4 (EIP-7702 set-code) transaction encoding and decoding.
@@ -281,7 +282,7 @@ class Rskip545TypedTransactionTest {
         assertDecodeRejects(rawType4(
                 field(10, RLP.encodeByte((byte) 0)),
                 field(11, RLP.encodeElement(OVERSIZE_WORD)),
-                field(12, RLP.encodeElement(new byte[32]))
+                field(12, RLP.encodeElement(signatureWord()))
         ), "Signature R is not valid");
     }
 
@@ -289,14 +290,14 @@ class Rskip545TypedTransactionTest {
     void decode_rejectsOversizeSignatureS() {
         assertDecodeRejects(rawType4(
                 field(10, RLP.encodeByte((byte) 0)),
-                field(11, RLP.encodeElement(new byte[32])),
+                field(11, RLP.encodeElement(signatureWord())),
                 field(12, RLP.encodeElement(OVERSIZE_WORD))
         ), "Signature S is not valid");
     }
 
     @ParameterizedTest(name = "rskip543={0}, rskip546={1}, rskip545={2} -> blocked={3}")
     @MethodSource("type4ActivationMatrix")
-    void isTypedTransactionNotAllowed_respectsRskip545Gate(
+    void isTypedTransactionNotAllowed_respectsType4ActivationGates(
             boolean rskip543, boolean rskip546, boolean rskip545, boolean expectBlocked) {
         Transaction tx = createType4(EMPTY_DATA);
         ActivationConfig.ForBlock activations = mockActivations(rskip543, rskip546, rskip545);
@@ -305,10 +306,13 @@ class Rskip545TypedTransactionTest {
     }
 
     private static Stream<Arguments> type4ActivationMatrix() {
+        // Mirrors Type4RawTransactionParser.validate: RSKIP-543, RSKIP-546, then RSKIP-545.
         return Stream.of(
                 Arguments.of(false, false, false, true),
                 Arguments.of(true, false, false, true),
+                Arguments.of(true, false, true, true),
                 Arguments.of(true, true, false, true),
+                Arguments.of(false, true, true, true),
                 Arguments.of(true, true, true, false)
         );
     }

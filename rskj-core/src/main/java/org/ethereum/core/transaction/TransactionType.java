@@ -73,6 +73,10 @@ public enum TransactionType {
         return firstByte == RESERVED_BYTE;
     }
 
+    /**
+     * True when raw bytes start with the reserved RSKIP-543 namespace form
+     * {@code 0x02 || subtype} ({@code subtype} in {@code [0x00, 0x7f]}).
+     */
     public static boolean hasRskNamespacePrefix(byte[] rawData) {
         return rawData.length > 1
                 && rawData[0] == RSK_NAMESPACE_PREFIX
