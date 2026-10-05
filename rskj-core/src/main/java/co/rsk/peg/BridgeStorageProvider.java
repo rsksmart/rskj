@@ -25,7 +25,6 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.PegoutsWaitingForConfirmations.EntriesStore;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.io.IOException;
@@ -38,12 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
-/**
- * Provides an object oriented facade of the bridge contract memory.
- * @see co.rsk.peg.BridgeStorageProvider
- * @author ajlopez
- * @author Oscar Guindzberg
- */
 public class BridgeStorageProvider {
     private static final Logger logger = LoggerFactory.getLogger(BridgeStorageProvider.class);
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
@@ -76,7 +69,7 @@ public class BridgeStorageProvider {
     private Sha256Hash flyoverBtcTxHash;
     private FlyoverFederationInformation flyoverFederationInformation;
     private FlyoverFederationInformation flyoverRetiringFederationInformation;
-    private long receiveHeadersLastTimestamp = 0;
+    private long receiveHeadersLastTimestampInSeconds = 0;
 
     private Long nextPegoutHeight;
 
@@ -119,7 +112,7 @@ public class BridgeStorageProvider {
         }
 
         Optional<Long> height = getFromRepository(getStorageKeyForBtcTxHashAlreadyProcessed(btcTxHash), BridgeSerializationUtils::deserializeOptionalLong);
-        if (!height.isPresent()) {
+        if (height.isEmpty()) {
             return height;
         }
 
@@ -153,7 +146,7 @@ public class BridgeStorageProvider {
             return btcTxHashesAlreadyProcessed;
         }
 
-        btcTxHashesAlreadyProcessed = getFromRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, BridgeSerializationUtils::deserializeMapOfHashesToLong);
+        btcTxHashesAlreadyProcessed = getFromRepository(BTC_TX_HASHES_ALREADY_PROCESSED, BridgeSerializationUtils::deserializeMapOfHashesToLong);
         return btcTxHashesAlreadyProcessed;
     }
 
@@ -162,7 +155,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, btcTxHashesAlreadyProcessed, BridgeSerializationUtils::serializeMapOfHashesToLong);
+        safeSaveToRepository(BTC_TX_HASHES_ALREADY_PROCESSED, btcTxHashesAlreadyProcessed, BridgeSerializationUtils::serializeMapOfHashesToLong);
     }
 
     public ReleaseRequestQueue getReleaseRequestQueue() throws IOException {
@@ -213,7 +206,7 @@ public class BridgeStorageProvider {
 
         var entriesDeser = getFromRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS,
                 data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters).getEntries(activations));
-        var entries = EntriesStore.setOfEntries(entriesDeser);
+        var entries = new HashSet<>(entriesDeser);
 
         if (!activations.isActive(RSKIP146)) {
             pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
@@ -221,7 +214,7 @@ public class BridgeStorageProvider {
         }
 
         entries.addAll(getFromRepository(
-            PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY,
+            PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH,
             data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries(activations)));
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
@@ -237,7 +230,7 @@ public class BridgeStorageProvider {
         safeSaveToRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializePegoutsWaitingForConfirmations);
 
         if (activations.isActive(RSKIP146)) {
-            safeSaveToRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializePegoutsWaitingForConfirmationsWithTxHash);
+            safeSaveToRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializePegoutsWaitingForConfirmationsWithTxHash);
         }
     }
 
@@ -500,26 +493,24 @@ public class BridgeStorageProvider {
         );
     }
 
-    public Optional<Long> getReceiveHeadersLastTimestamp() {
-        if (activations.isActive(RSKIP200)) {
-            return safeGetFromRepository(
+    public Optional<Long> getReceiveHeadersLastTimestampInSeconds() {
+        return safeGetFromRepository(
+            RECEIVE_HEADERS_TIMESTAMP,
+            BridgeSerializationUtils::deserializeOptionalLong
+        );
+    }
+
+    public void setReceiveHeadersLastTimestampInSeconds(long timestampInSeconds) {
+        receiveHeadersLastTimestampInSeconds = timestampInSeconds;
+    }
+
+    private void saveReceiveHeadersLastTimestampInSeconds() {
+        if (this.receiveHeadersLastTimestampInSeconds > 0) {
+            safeSaveToRepository(
                 RECEIVE_HEADERS_TIMESTAMP,
-                BridgeSerializationUtils::deserializeOptionalLong
+                this.receiveHeadersLastTimestampInSeconds,
+                BridgeSerializationUtils::serializeLong
             );
-        }
-
-        return Optional.empty();
-    }
-
-    public void setReceiveHeadersLastTimestamp(Long timeInMillis) {
-        if (activations.isActive(RSKIP200)) {
-            receiveHeadersLastTimestamp = timeInMillis;
-        }
-    }
-
-    public void saveReceiveHeadersLastTimestamp() {
-        if (activations.isActive(RSKIP200) && this.receiveHeadersLastTimestamp > 0) {
-            safeSaveToRepository(RECEIVE_HEADERS_TIMESTAMP, this.receiveHeadersLastTimestamp, BridgeSerializationUtils::serializeLong);
         }
     }
 
@@ -529,7 +520,7 @@ public class BridgeStorageProvider {
         }
 
         if (nextPegoutHeight == null) {
-            nextPegoutHeight = safeGetFromRepository(NEXT_PEGOUT_HEIGHT_KEY, BridgeSerializationUtils::deserializeOptionalLong).orElse(0L);
+            nextPegoutHeight = safeGetFromRepository(NEXT_PEGOUT_HEIGHT, BridgeSerializationUtils::deserializeOptionalLong).orElse(0L);
         }
 
         return Optional.of(nextPegoutHeight);
@@ -544,7 +535,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(NEXT_PEGOUT_HEIGHT_KEY, nextPegoutHeight, BridgeSerializationUtils::serializeLong);
+        safeSaveToRepository(NEXT_PEGOUT_HEIGHT, nextPegoutHeight, BridgeSerializationUtils::serializeLong);
     }
 
     protected int getReleaseRequestQueueSize() throws IOException {
@@ -794,7 +785,7 @@ public class BridgeStorageProvider {
         saveFlyoverFederationInformation();
         saveFlyoverRetiringFederationInformation();
 
-        saveReceiveHeadersLastTimestamp();
+        saveReceiveHeadersLastTimestampInSeconds();
 
         saveNextPegoutHeight();
 
@@ -860,6 +851,7 @@ public class BridgeStorageProvider {
     private <T> void safeSaveToRepository(BridgeStorageIndexKey addressKey, T object, RepositorySerializer<T> serializer) {
         safeSaveToRepository(addressKey.getKey(), object, serializer);
     }
+
     private <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
         try {
             saveToRepository(addressKey, object, serializer);
