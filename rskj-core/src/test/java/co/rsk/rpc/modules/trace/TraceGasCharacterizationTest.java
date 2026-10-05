@@ -62,11 +62,11 @@ class TraceGasCharacterizationTest {
         return world;
     }
 
-    private static World worldWithoutRskip560(String fixture, ReceiptStore receiptStore) throws Exception {
+    private static World worldWithoutRskip692(String fixture, ReceiptStore receiptStore) throws Exception {
         TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
-                .withValue("blockchain.config.consensusRules.rskip560", ConfigValueFactory.fromAnyRef(-1)));
+                .withValue("blockchain.config.consensusRules.rskip692", ConfigValueFactory.fromAnyRef(-1)));
         World world = world(fixture, new World(receiptStore, config));
-        assertFalse(world.getConfig().getActivationConfig().isActive(ConsensusRule.RSKIP560, 1));
+        assertFalse(world.getConfig().getActivationConfig().isActive(ConsensusRule.RSKIP692, 1));
         return world;
     }
 
@@ -158,7 +158,7 @@ class TraceGasCharacterizationTest {
         assertFrame(traces.get(1), "[0]", "0x1000", "0x6");
     }
 
-    /** A RSKIP-560 failed direct precompile call (status 0) must trace as a failed frame. */
+    /** A RSKIP-692 failed direct precompile call (status 0) must trace as a failed frame. */
     @Test
     void failedPrecompileCall_hasErrorAndNoResult() throws Exception {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
@@ -189,11 +189,11 @@ class TraceGasCharacterizationTest {
                 .startsWith("class org.ethereum.vm.program.Program$OutOfGasException: Out of Gas calling precompiled contract"));
     }
 
-    /** Before RSKIP-560 a precompile call that runs out of gas already fails, so it traces as a failed frame too. */
+    /** Before RSKIP-692 a precompile call that runs out of gas already fails, so it traces as a failed frame too. */
     @Test
-    void outOfGasPrecompileCall_withoutRskip560_hasErrorAndNoResult() throws Exception {
+    void outOfGasPrecompileCall_withoutRskip692_hasErrorAndNoResult() throws Exception {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        World world = worldWithoutRskip560("dsl/trace_failed_precompile.txt", receiptStore);
+        World world = worldWithoutRskip692("dsl/trace_failed_precompile.txt", receiptStore);
         assertFalse(world.getTransactionReceiptByName("tx03").isSuccessful());
 
         JsonNode traces = traceOf(world, traceModule(world, receiptStore), "tx03");
@@ -204,11 +204,11 @@ class TraceGasCharacterizationTest {
                 .startsWith("class org.ethereum.vm.program.Program$OutOfGasException: Out of Gas calling precompiled contract"));
     }
 
-    /** Before RSKIP-560 a junk Bridge call succeeds (status 1), so its trace keeps a result and no error. */
+    /** Before RSKIP-692 a junk Bridge call succeeds (status 1), so its trace keeps a result and no error. */
     @Test
-    void failedPrecompileCall_withoutRskip560_hasResultAndNoError() throws Exception {
+    void failedPrecompileCall_withoutRskip692_hasResultAndNoError() throws Exception {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        World world = worldWithoutRskip560("dsl/trace_failed_precompile.txt", receiptStore);
+        World world = worldWithoutRskip692("dsl/trace_failed_precompile.txt", receiptStore);
         assertTrue(world.getTransactionReceiptByName("tx01").isSuccessful());
 
         JsonNode traces = traceOf(world, traceModule(world, receiptStore), "tx01");

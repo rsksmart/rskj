@@ -43,6 +43,7 @@ import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
@@ -64,12 +65,29 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
     private static final long FAKE_PRECOMPILE_REQUIRED_GAS = 1_000L;
     private static final byte[] REVERT_CODE = Hex.decode("60006000fd");
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void authorizationRefundOnPlainVmExceptionBehavesPerActivation(boolean rskip560Active) {
-        activationConfig = rskip560Active
+    /**
+     * A set-code transaction whose call ends in an EVM exceptional halt is charged its gas limit minus the capped
+     * authorization refund, with or without RSKIP692, so the fee matches the receipt gasUsed.
+     *
+     * <p>Expected values, by hand: the authority already exists, so the authorization earns
+     * PER_EMPTY_ACCOUNT_COST - PER_AUTH_BASE_COST = 25_000 - 15_500 = 9_500 (the RSKIP-692 case 9 figure).
+     * The halt consumes the whole 200_000 gas limit, so the cap is 200_000 / 2 = 100_000 and the refund applies in full.
+     * Charged gas = 200_000 - 9_500 = 190_500; with gasPrice 1 the fee is 190_500 and the sender keeps
+     * 1_000_000 - 190_500 = 809_500.
+     */
+    @ParameterizedTest(name = "{0}, rskip692Active={2}")
+    @CsvSource({
+            "invalid opcode, fe, true",
+            "invalid opcode, fe, false",
+            "out of gas in a loop, 5b600056, true",
+            "out of gas in a loop, 5b600056, false",
+            "stack underflow, 01, true",
+            "stack underflow, 01, false",
+    })
+    void authorizationRefundOnEvmExceptionalHaltIsChargedConsistently(String haltKind, String code, boolean rskip692Active) {
+        activationConfig = rskip692Active
                 ? ActivationConfigsForTest.all()
-                : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
+                : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
         when(config.getActivationConfig()).thenReturn(activationConfig);
         mockExecutionBlockForRealVm();
 
@@ -80,142 +98,96 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
         repository.setNonce(authorityAddress, ZERO_NONCE);
         repository.saveCode(authorityAddress, existingDelegation);
 
-        repository.createAccount(sender);
-        repository.addBalance(sender, Coin.valueOf(1_000_000L));
-        repository.setNonce(sender, ZERO_NONCE);
+        fundSender(repository, ZERO_NONCE, 1_000_000);
 
-        RskAddress plainContract = new RskAddress(HashUtil.calcNewAddr(receiver.getBytes(), BigInteger.ZERO.toByteArray()));
-        repository.createAccount(plainContract);
-        repository.saveCode(plainContract, Hex.decode("fe"));
-        mockAddressAsNotAPrecompiled(plainContract);
+        RskAddress haltingContract = new RskAddress(HashUtil.calcNewAddr(receiver.getBytes(), BigInteger.ZERO.toByteArray()));
+        repository.createAccount(haltingContract);
+        repository.saveCode(haltingContract, Hex.decode(code));
+        mockAddressAsNotAPrecompiled(haltingContract);
 
         SetCodeAuthorization authorization =
                 createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, constants.getChainId(), authorityKey);
 
         Transaction tx = createSignedType4Transaction(
-                senderKey,
-                constants.getChainId(),
-                ZERO_NONCE,
-                200_000,
-                1,
-                1,
-                plainContract,
-                0,
-                EMPTY_DATA,
-                authorization
+                senderKey, constants.getChainId(), ZERO_NONCE, 200_000, 1, 1,
+                haltingContract, 0, EMPTY_DATA, authorization
         );
 
         TransactionExecutor txExecutor = newExecutorWithRealVm(tx, repository);
         assertTrue(txExecutor.executeTransaction());
 
-        assertNotNull(txExecutor.getResult().getException());
-        assertArrayEquals(
-                DelegationCodeResolver.createDelegatedCode(delegatedAddress),
-                repository.getCode(authorityAddress),
-                "authorization must persist regardless of activation -- it commits before call()/create() runs"
-        );
+        assertNotNull(txExecutor.getResult().getException(), haltKind + " must end in an exceptional halt");
+        assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
 
         TransactionReceipt receipt = txExecutor.getReceipt();
         assertFalse(receipt.isSuccessful());
 
-        BigInteger reportedGasUsed = new BigInteger(1, receipt.getGasUsed());
-        Coin fullFee = Coin.valueOf(200_000L);
-        long authorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST; // 9_500
+        long expectedChargedGas = 190_500L; // 200_000 - 9_500
+        assertEquals(BigInteger.valueOf(expectedChargedGas), new BigInteger(1, receipt.getGasUsed()));
+        assertEquals(Coin.valueOf(expectedChargedGas), txExecutor.getPaidFees(), "fee must equal receipt gasUsed * gasPrice");
+        assertEquals(Coin.valueOf(809_500L), repository.getBalance(sender), "the authorization refund must be returned to the sender");
+    }
 
-        if (rskip560Active) {
-            Coin expectedFee = Coin.valueOf(200_000L - authorizationRefund);
-            assertEquals(expectedFee, txExecutor.getPaidFees(), "post-activation, the authorization refund reduces the charged fee");
-            assertEquals(BigInteger.valueOf(200_000L - authorizationRefund), reportedGasUsed, "post-activation, receipt.gasUsed matches what was actually charged");
-            assertEquals(Coin.valueOf(reportedGasUsed.longValueExact()), txExecutor.getPaidFees(), "post-activation, paidFees and receipt.gasUsed must reconcile");
-        } else {
-            assertEquals(fullFee, txExecutor.getPaidFees(), "pre-activation, the authorization refund must be discarded -- legacy behavior charges the full gas limit");
-            assertNotEquals(Coin.valueOf(reportedGasUsed.longValueExact()), txExecutor.getPaidFees(), "pre-activation, paidFees and receipt.gasUsed are expected to diverge -- reproducing the original bug");
-        }
+    /**
+     * A legacy transaction (no authorization list) ending in an EVM exceptional halt is charged its full gas limit,
+     * whatever the activation state. The contract clears a storage slot and calls a child that self-destructs before
+     * halting, so every refund source other than the authorization refund is exercised and must be discarded.
+     *
+     * <p>Expected values, by hand: gas limit 200_000 and gasPrice 1, so fee = receipt gasUsed = 200_000 and the
+     * sender keeps 1_000_000 - 200_000 = 800_000. The control run ends with STOP instead of INVALID and must be
+     * charged less than the limit, which shows the refund sources are live.
+     */
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"all", "allButRskip692", "allButRskip545AndRskip692"})
+    void legacyEvmExceptionalHaltChargesFullGasLimit(String activations) {
+        activationConfig = switch (activations) {
+            case "all" -> ActivationConfigsForTest.all();
+            case "allButRskip692" -> ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
+            default -> ActivationConfigsForTest.allBut(ConsensusRule.RSKIP545, ConsensusRule.RSKIP692);
+        };
+        when(config.getActivationConfig()).thenReturn(activationConfig);
+        mockExecutionBlockForRealVm();
+
+        LegacyRun halted = runLegacyRefundSourcesScenario("fe");
+        assertNotNull(halted.executor.getResult().getException());
+        assertFalse(halted.executor.getReceipt().isSuccessful());
+        assertEquals(BigInteger.valueOf(200_000L), new BigInteger(1, halted.executor.getReceipt().getGasUsed()));
+        assertEquals(Coin.valueOf(200_000L), halted.executor.getPaidFees());
+        assertEquals(Coin.valueOf(800_000L), halted.repository.getBalance(sender));
+
+        LegacyRun control = runLegacyRefundSourcesScenario("00");
+        assertNull(control.executor.getResult().getException());
+        assertTrue(control.executor.getResult().getDeductedRefund() > 0, "control run must earn a refund");
     }
 
     @Test
     void revertBehavesIdenticallyRegardlessOfActivation() {
-        TxResult withRskip560 = runRevertScenario(true, false);
-        TxResult withoutRskip560 = runRevertScenario(false, false);
+        TxResult withRskip692 = runRevertScenario(true, false);
+        TxResult withoutRskip692 = runRevertScenario(false, false);
 
-        assertFalse(withRskip560.receiptSuccessful);
-        assertFalse(withoutRskip560.receiptSuccessful);
-        assertEquals(withoutRskip560.paidFees, withRskip560.paidFees, "REVERT fee accounting must be unaffected by RSKIP560");
-        assertEquals(withoutRskip560.reportedGasUsed, withRskip560.reportedGasUsed, "REVERT receipt.gasUsed must be unaffected by RSKIP560");
-        assertTrue(withRskip560.reportedGasUsed.compareTo(BigInteger.valueOf(200_000L)) < 0);
+        assertFalse(withRskip692.receiptSuccessful);
+        assertFalse(withoutRskip692.receiptSuccessful);
+        assertEquals(withoutRskip692.paidFees, withRskip692.paidFees, "REVERT fee accounting must be unaffected by RSKIP692");
+        assertEquals(withoutRskip692.reportedGasUsed, withRskip692.reportedGasUsed, "REVERT receipt.gasUsed must be unaffected by RSKIP692");
+        assertTrue(withRskip692.reportedGasUsed.compareTo(BigInteger.valueOf(200_000L)) < 0);
     }
 
     @Test
     void revertWithAuthorizationRefundBehavesIdenticallyRegardlessOfActivation() {
-        TxResult withRskip560 = runRevertScenario(true, true);
-        TxResult withoutRskip560 = runRevertScenario(false, true);
+        TxResult withRskip692 = runRevertScenario(true, true);
+        TxResult withoutRskip692 = runRevertScenario(false, true);
 
-        assertFalse(withRskip560.receiptSuccessful);
-        assertFalse(withoutRskip560.receiptSuccessful);
-        assertEquals(withoutRskip560.paidFees, withRskip560.paidFees, "REVERT + authorization refund fee accounting must be unaffected by RSKIP560");
-        assertEquals(withoutRskip560.reportedGasUsed, withRskip560.reportedGasUsed, "REVERT + authorization refund receipt.gasUsed must be unaffected by RSKIP560");
-        assertTrue(withRskip560.reportedGasUsed.compareTo(BigInteger.valueOf(200_000L)) < 0);
+        assertFalse(withRskip692.receiptSuccessful);
+        assertFalse(withoutRskip692.receiptSuccessful);
+        assertEquals(withoutRskip692.paidFees, withRskip692.paidFees, "REVERT + authorization refund fee accounting must be unaffected by RSKIP692");
+        assertEquals(withoutRskip692.reportedGasUsed, withRskip692.reportedGasUsed, "REVERT + authorization refund receipt.gasUsed must be unaffected by RSKIP692");
+        assertTrue(withRskip692.reportedGasUsed.compareTo(BigInteger.valueOf(200_000L)) < 0);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void authorizationOnFailingPrecompileBehavesPerActivation(boolean rskip560Active) {
-        activationConfig = rskip560Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
-        when(config.getActivationConfig()).thenReturn(activationConfig);
-
-        MutableRepository repository = createRepository();
-
-        repository.createAccount(authorityAddress);
-        repository.setNonce(authorityAddress, ONE_NONCE);
-        repository.saveCode(authorityAddress, DelegationCodeResolver.createDelegatedCode(createRandomAddress()));
-
-        fundSender(repository, ZERO_NONCE, 1_000_000);
-
-        RskAddress fakeContractAddress = createRandomAddress();
-        PrecompiledContracts.PrecompiledContract throwingPrecompile = createPrecompiledContract();
-        when(precompiledContracts.getContractForAddress(any(), eq(DataWord.valueOf(fakeContractAddress.getBytes()))))
-                .thenReturn(throwingPrecompile);
-
-        SetCodeAuthorization authorization = createValidAuthorizationTuple(delegatedAddress, ONE_NONCE, constants.getChainId(), authorityKey);
-
-        Transaction tx = createSignedType4Transaction(
-                senderKey, constants.getChainId(), ZERO_NONCE, 100_000, 1, 1,
-                fakeContractAddress, 0, EMPTY_DATA, authorization
-        );
-
-        TransactionExecutor txExecutor = newExecutor(tx, repository);
-        assertTrue(txExecutor.executeTransaction());
-
-        assertNotNull(txExecutor.getResult().getException());
-        assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
-
-        TransactionReceipt receipt = txExecutor.getReceipt();
-        BigInteger  reportedGasUsed = new BigInteger(1, receipt.getGasUsed());
-        long authorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST; // 9_500
-        long expectedGasUsed = 100_000L - authorizationRefund; // 90_500
-
-        if (rskip560Active) {
-            assertEquals(authorizationRefund, txExecutor.getResult().getDeductedRefund(), "authorization refund should be fully applied (well under the half-of-gasUsed cap)");
-            assertFalse(receipt.isSuccessful(), "post-activation, both gates fire: status must be FAILED");
-
-            Coin expectedFee = Coin.valueOf(100_000L - authorizationRefund); // 90_500
-
-            assertEquals(BigInteger.valueOf(expectedGasUsed), reportedGasUsed, "receipt.getGasUsed should be gasLimit minus the authorization refund");
-
-            assertEquals(expectedFee, txExecutor.getPaidFees());  // effective gasPrice = 1
-            assertEquals(Coin.valueOf(909_500L), repository.getBalance(sender), "post-activation, authorization refund must be returned to sender");
-        } else {
-            assertTrue(receipt.isSuccessful(), "pre-activation, legacy (buggy) SUCCESS status must be preserved even with an authorization present");
-            assertEquals(Coin.valueOf(100_000L), txExecutor.getPaidFees(), "pre-activation, full gasLimit is still charged -- the authorization refund is discarded, same as legacy");
-            assertTrue(reportedGasUsed.compareTo(BigInteger.valueOf(100_000L)) < 0);
-            assertEquals(Coin.valueOf(900_000L), repository.getBalance(sender), "pre-activation, exception must refund nothing");
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void authorizationOnFailingPrecompileAppliesGasPriceMultiplier(boolean rskip560Active) {
-        activationConfig = rskip560Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
+    void authorizationOnFailingPrecompileAppliesGasPriceMultiplier(boolean rskip692Active) {
+        activationConfig = rskip692Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
         when(config.getActivationConfig()).thenReturn(activationConfig);
 
         long gasPrice = 3L;
@@ -248,7 +220,7 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
 
         long authorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST; // 9_500
 
-        if (rskip560Active) {
+        if (rskip692Active) {
             long expectedChargedGas = 100_000L - authorizationRefund; // 90_500
             Coin expectedFee = Coin.valueOf(expectedChargedGas * gasPrice); // 271_500
             Coin expectedSenderBalance = Coin.valueOf(1_000_000L - expectedChargedGas * gasPrice); // 728_500
@@ -266,8 +238,8 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void localCallOnFailingPrecompileDoesNotInflateGasEstimateToLimit(boolean rskip560Active) {
-        activationConfig = rskip560Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
+    void localCallOnFailingPrecompileDoesNotInflateGasEstimateToLimit(boolean rskip692Active) {
+        activationConfig = rskip692Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
         when(config.getActivationConfig()).thenReturn(activationConfig);
 
         MutableRepository repository = createRepository();
@@ -297,13 +269,13 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
 
         long maxGasUsed = txExecutor.getResult().getMaxGasUsed();
         assertTrue(maxGasUsed < gasEstimationCapStandIn / 2, "a local call against a throwing precompile must not report gasUsed inflated toward the full gas limit; got " + maxGasUsed);
-        assertNotEquals(gasEstimationCapStandIn, maxGasUsed, "gasUsed must reflect the precompile's declared cost, not txGasLimit, regardless of RSKIP560 activation");
+        assertNotEquals(gasEstimationCapStandIn, maxGasUsed, "gasUsed must reflect the precompile's declared cost, not txGasLimit, regardless of RSKIP692 activation");
     }
 
-    private TxResult runRevertScenario(boolean rskip560Active, boolean withAuthorization) {
-        activationConfig = rskip560Active
+    private TxResult runRevertScenario(boolean rskip692Active, boolean withAuthorization) {
+        activationConfig = rskip692Active
                 ? ActivationConfigsForTest.all()
-                : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
+                : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
         when(config.getActivationConfig()).thenReturn(activationConfig);
         mockExecutionBlockForRealVm();
 
@@ -417,6 +389,50 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
         TransactionReceipt receipt = txExecutor.getReceipt();
 
         assertFalse(receipt.isSuccessful());
+    }
+
+    private LegacyRun runLegacyRefundSourcesScenario(String terminalOpcode) {
+        MutableRepository repository = createRepository();
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+
+        // CALLER SELFDESTRUCT
+        RskAddress selfDestructingChild = createRandomAddress();
+        repository.createAccount(selfDestructingChild);
+        repository.saveCode(selfDestructingChild, Hex.decode("33ff"));
+
+        // SSTORE(0, 0) over a non-zero slot, CALL(gas, child, 0, 0, 0, 0, 0), POP, then the terminal opcode
+        RskAddress parent = new RskAddress(HashUtil.calcNewAddr(receiver.getBytes(), BigInteger.ZERO.toByteArray()));
+        repository.createAccount(parent);
+        repository.saveCode(parent, Hex.decode("600060005560006000600060006000"
+                + "73" + Hex.toHexString(selfDestructingChild.getBytes()) + "5af150" + terminalOpcode));
+        repository.addStorageRow(parent, DataWord.ZERO, DataWord.ONE);
+        mockAddressAsNotAPrecompiled(parent);
+        mockAddressAsNotAPrecompiled(selfDestructingChild);
+
+        Transaction tx = Transaction.builder()
+                .nonce(ZERO_NONCE)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(200_000L))
+                .receiveAddress(parent)
+                .chainId(constants.getChainId())
+                .value(Coin.ZERO)
+                .data(EMPTY_DATA)
+                .build();
+        tx.sign(senderKey.getPrivKeyBytes());
+
+        TransactionExecutor txExecutor = newExecutorWithRealVm(tx, repository);
+        assertTrue(txExecutor.executeTransaction());
+        return new LegacyRun(txExecutor, repository);
+    }
+
+    private static final class LegacyRun {
+        final TransactionExecutor executor;
+        final MutableRepository repository;
+
+        LegacyRun(TransactionExecutor executor, MutableRepository repository) {
+            this.executor = executor;
+            this.repository = repository;
+        }
     }
 
     private static final class TxResult {

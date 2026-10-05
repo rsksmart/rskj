@@ -19,6 +19,7 @@
 
 package co.rsk.core;
 
+import co.rsk.core.exception.TransactionExecutionRejectedException;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.util.TestContract;
 import org.bouncycastle.util.encoders.Hex;
@@ -105,6 +106,53 @@ class ReversibleTransactionExecutorTest {
         assertArrayEquals(
                 new String[]{"chinchilla"},
                 helloFn.decodeResult(result.getHReturn()));
+    }
+
+    @Test
+    void executeTransaction_gasLimitAboveLongMax_runsTheCall() {
+        TestContract hello = TestContract.hello();
+        CallTransaction.Function helloFn = hello.functions.get("hello");
+        RskAddress contractAddress = contractRunner.addContract(hello.runtimeBytecode);
+
+        RskAddress from = TestUtils.generateAddress("from");
+        byte[] gasLimit = Hex.decode("ffffffffffffffff");
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                Hex.decode("00"), gasLimit, contractAddress.getBytes(), Hex.decode("00"), helloFn.encode(), from,
+                null, (byte) 0, TransactionType.LEGACY, null, null, null
+        );
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(bestBlock, bestBlock.getCoinbase(), params);
+
+        assertArrayEquals(new String[]{"chinchilla"}, helloFn.decodeResult(result.getHReturn()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("localCallsBelowIntrinsicGas")
+    void executeTransaction_gasBelowIntrinsicCost_isRejectedWithMessage(byte[] to, byte[] data, long intrinsic) {
+        RskAddress from = TestUtils.generateAddress("from");
+        byte[] gasLimit = BigInteger.valueOf(20000).toByteArray();
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+        RskAddress coinbase = bestBlock.getCoinbase();
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                gasPrice, gasLimit, to, new byte[]{0}, data, from,
+                null, (byte) 0, TransactionType.LEGACY, null, null, null
+        );
+
+        TransactionExecutionRejectedException ex = Assertions.assertThrows(TransactionExecutionRejectedException.class,
+                () -> reversibleTransactionExecutor.executeTransactionAtBlock(bestBlock, coinbase, params));
+        assertEquals("Not enough gas for transaction execution: tx needs: " + intrinsic + " tx sent: 20000", ex.getMessage());
+    }
+
+    private static Stream<Arguments> localCallsBelowIntrinsicGas() {
+        byte[] eoa = TestUtils.generateAddress("eoa").getBytes();
+        byte[] remasc = Hex.decode(PrecompiledContracts.REMASC_ADDR_STR);
+        return Stream.of(
+                Arguments.of(eoa, new byte[0], 21000L),      // plain call: used to throw InvalidGasException (-32603)
+                Arguments.of(remasc, new byte[0], 21000L),   // precompile call: same
+                Arguments.of(null, new byte[0], 53000L),     // empty create: same
+                Arguments.of(null, new byte[]{0}, 53006L)    // create with 1-byte initcode: used to silently succeed
+        );
     }
 
     @Test

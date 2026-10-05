@@ -113,6 +113,7 @@ public class TransactionExecutor {
     private final boolean postponeFeePayment;
 
     private long authorizationRefund = 0;
+    private boolean precompileExecutionFailed = false;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -167,34 +168,12 @@ public class TransactionExecutor {
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
-        if (tx.isTypedTransactionNotAllowed(activations)) {
-            logger.warn("Transaction type {} is not supported before its activation, tx {}", tx.getTypePrefix(), tx.getHash());
-            execError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
+        if (!transactionTypeIsValid()) {
             return false;
-        }
-        if(tx.isType4()){
-            if(tx.isContractCreation()){
-                logger.warn("Transaction type {} can not execute a contract, tx {}", tx.getTypePrefix(), tx.getHash());
-                execError("transaction type " + tx.getTypePrefix() + " can not execute a contract");
-                return false;
-            }
-            if (!isSenderCodeValid()) {
-                logger.warn("Transaction type {} sender has non-delegated code, tx {}", tx.getTypePrefix(), tx.getHash());
-                execError("transaction type " + tx.getTypePrefix() + " sender must be an EOA or an already-delegated account");
-                return false;
-            }
-
-        }else{
-            if (tx.isInitCodeSizeInvalidForTx(activations)) {
-                String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
-                logger.warn(errorMessage);
-                execError(errorMessage);
-                return false;
-            }
         }
 
         if (localCall) {
-            return true;
+            return localCallGasIsValid();
         }
 
 
@@ -231,6 +210,47 @@ public class TransactionExecutor {
         }
 
         return transactionAddressesAreValid();
+    }
+
+    private boolean transactionTypeIsValid() {
+        if (tx.isTypedTransactionNotAllowed(activations)) {
+            logger.warn("Transaction type {} is not supported before its activation, tx {}", tx.getTypePrefix(), tx.getHash());
+            execError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
+            return false;
+        }
+        if(tx.isType4()){
+            if(tx.isContractCreation()){
+                logger.warn("Transaction type {} can not execute a contract, tx {}", tx.getTypePrefix(), tx.getHash());
+                execError("transaction type " + tx.getTypePrefix() + " can not execute a contract");
+                return false;
+            }
+            if (!isSenderCodeValid()) {
+                logger.warn("Transaction type {} sender has non-delegated code, tx {}", tx.getTypePrefix(), tx.getHash());
+                execError("transaction type " + tx.getTypePrefix() + " sender must be an EOA or an already-delegated account");
+                return false;
+            }
+
+        }else{
+            if (tx.isInitCodeSizeInvalidForTx(activations)) {
+                String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
+                logger.warn(errorMessage);
+                execError(errorMessage);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean localCallGasIsValid() {
+        // eth_call / eth_estimateGas skip the block-level checks in init(), but the intrinsic-cost
+        // check must still run: otherwise GasCost.subtract() throws later and leaks as -32603.
+        // Read unsigned: GasCost.toGas throws for 8-byte limits of 2^63 or more, which eth_call can send
+        BigInteger localCallGasLimit = new BigInteger(1, tx.getGasLimit());
+        if (localCallGasLimit.compareTo(BigInteger.valueOf(basicTxCost)) < 0) {
+            execError(String.format("Not enough gas for transaction execution: tx needs: %s tx sent: %s", basicTxCost, localCallGasLimit));
+            return false;
+        }
+        return true;
     }
 
     private boolean isSenderCodeValid() {
@@ -392,12 +412,19 @@ public class TransactionExecutor {
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
-            if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
+            if (!enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
                 execError(String.format( "Out of Gas calling precompiled contract at block %d " +
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, gasLeftover));
                 gasLeftover = 0;
+                if (localCall) {
+                    // A simulated call reports the failure through its result, as a failing precompiled contract does
+                    result.setException(new Program.OutOfGasException("%s", executionError));
+                } else if (activations.isActive(ConsensusRule.RSKIP692)) {
+                    // An exceptional halt consumes the gas limit, so the refunds that survive a halt apply to it
+                    result.spendGas(txGasLimit);
+                }
                 profiler.stop(metric);
                 return;
             }
@@ -418,9 +445,16 @@ public class TransactionExecutor {
                     track.initializeStorage(targetAddress);
                 }
             } catch (VMException | RuntimeException e) {
-                if (!localCall && activations.isActive(ConsensusRule.RSKIP560)) {
+                precompileExecutionFailed = true;
+                if (!localCall && activations.isActive(ConsensusRule.RSKIP692)) {
                     gasLeftover = 0;
                     gasUsed = txGasLimit;
+                    // Discard what the precompiled contract did before failing. The nonce increase, the fee
+                    // and the authorization list were applied on track, so they are not rolled back.
+                    // A precompiled contract cannot add internal transactions to the result, and its
+                    // subtraces are only read on success, so there are none to reject.
+                    result.clearFieldsOnException();
+                    cacheTrack.rollback();
                     execError(e);
                 }
                 result.setException(e);
@@ -696,8 +730,18 @@ public class TransactionExecutor {
         logger.trace("tx finalization for gas estimation done");
     }
 
+    /**
+     * Before RSKIP692 a failing direct call to a precompiled contract is charged the full gas limit even though
+     * gasLeftover is not zero. Every other outcome is charged by gasLeftover. After an EVM exceptional halt
+     * gasLeftover holds only the capped authorization refund, because the halt clears the future refund and the
+     * deleted accounts, so a transaction without an authorization list is still charged the full gas limit.
+     */
+    private boolean chargesFullGasLimit() {
+        return precompileExecutionFailed && !activations.isActive(ConsensusRule.RSKIP692);
+    }
+
     private Coin calculateFee() {
-        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP560)) {
+        if (chargesFullGasLimit()) {
             return tx.getGasPrice().multiply(toBI(tx.getGasLimit()));
         }
         BigInteger chargedGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(gasLeftover));
@@ -705,7 +749,7 @@ public class TransactionExecutor {
     }
 
     private Coin calculateRefund() {
-        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP560)) {
+        if (chargesFullGasLimit()) {
             return Coin.ZERO;
         }
         return tx.getGasPrice().multiply(BigInteger.valueOf(gasLeftover));
