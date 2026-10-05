@@ -419,6 +419,7 @@ class BridgeSupportSvpTest {
             assertReleaseWasSettledForVetiver(
                 repository,
                 bridgeStorageProvider,
+                federationSupport,
                 logs,
                 rskExecutionBlock.getNumber(),
                 rskTx.getHash(),
@@ -529,6 +530,8 @@ class BridgeSupportSvpTest {
             assertReleaseWasSettled(
                 repository,
                 bridgeStorageProvider,
+                federationStorageProvider,
+                federationSupport,
                 logs,
                 rskExecutionBlock.getNumber(),
                 rskTx.getHash(),
