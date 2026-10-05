@@ -36,7 +36,7 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationChangeResponseCode;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.feeperkb.FeePerKbResponseCode;
-import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCode;
 import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.vote.ABICallSpec;
@@ -239,8 +239,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
     public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");
     public static final DataWord COMMIT_FEDERATION_TOPIC = DataWord.fromString("commit_federation_topic");
-
-    private static final Integer RECEIVE_HEADER_ERROR_SIZE_MISTMATCH = -20;
 
     private final Constants constants;
     private final BridgeConstants bridgeConstants;
@@ -572,7 +570,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (!BtcTransactionFormatUtils.isBlockHeaderSize(headerArg.length, activations)) {
             logger.warn("Unexpected BTC header received (size mismatch). Aborting processing.");
-            return RECEIVE_HEADER_ERROR_SIZE_MISTMATCH;
+            return ReceiveHeaderResponseCode.HEADER_SIZE_MISMATCH.getCode();
         }
 
         BtcBlock header = bridgeConstants.getBtcParams().getDefaultSerializer().makeBlock(headerArg);
@@ -1381,7 +1379,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             );
         } catch (Exception e) {
             logger.warn("Exception in registerFlyoverBtcTransaction", e);
-            return BigInteger.valueOf(FlyoverTxResponseCodes.GENERIC_ERROR.value());
+            return BigInteger.valueOf(FlyoverTxResponseCode.GENERIC_ERROR.getCode());
         }
     }
 

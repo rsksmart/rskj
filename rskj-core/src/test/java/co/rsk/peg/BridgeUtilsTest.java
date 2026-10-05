@@ -36,7 +36,7 @@ import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.federation.*;
-import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCode;
 import co.rsk.test.builders.PegoutTransactionBuilder;
 import co.rsk.test.builders.UTXOBuilder;
 import co.rsk.trie.TrieStore;
@@ -1897,7 +1897,7 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
 
         Assertions.assertEquals(
-            FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
+            FlyoverTxResponseCode.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
             BridgeUtils.validateFlyoverPeginValue(
                 activations,
                 bridgeConstantsRegtest,
@@ -1924,7 +1924,7 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, addressReceivingFundsAboveMinimum);
 
         Assertions.assertEquals(
-            FlyoverTxResponseCodes.VALID_TX,
+            FlyoverTxResponseCode.VALID_TX,
             BridgeUtils.validateFlyoverPeginValue(
                 activations,
                 bridgeConstantsRegtest,
@@ -1948,7 +1948,7 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddressReceivingFunds);
 
         Assertions.assertEquals(
-            FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
+            FlyoverTxResponseCode.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
             BridgeUtils.validateFlyoverPeginValue(
                 activations,
                 bridgeConstantsRegtest,
@@ -1974,7 +1974,7 @@ class BridgeUtilsTest {
         btcTx.addOutput(minimumPegInTxValue, secondBtcAddressReceivingFundsEqualToMin);
 
         Assertions.assertEquals(
-            FlyoverTxResponseCodes.VALID_TX,
+            FlyoverTxResponseCode.VALID_TX,
             BridgeUtils.validateFlyoverPeginValue(
                 activations,
                 bridgeConstantsRegtest,
@@ -2001,7 +2001,7 @@ class BridgeUtilsTest {
         btcTx.addOutput(aboveMinimumPegInTxValue, btcAddressReceivingFundsAboveMin);
 
         Assertions.assertEquals(
-            FlyoverTxResponseCodes.VALID_TX,
+            FlyoverTxResponseCode.VALID_TX,
             BridgeUtils.validateFlyoverPeginValue(
                 activations,
                 bridgeConstantsRegtest,
