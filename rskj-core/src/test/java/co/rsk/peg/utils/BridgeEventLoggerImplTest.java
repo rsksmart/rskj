@@ -78,6 +78,7 @@ import java.util.stream.Stream;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.coinListOf;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -98,7 +99,7 @@ class BridgeEventLoggerImplTest {
     private static final List<Coin> SINGLE_VALUE = List.of(Coin.COIN);
     private static final List<Long> SINGLE_OUTPUT_INDEX = List.of(0L);
     private static final Address FEDERATION_BTC_ADDRESS = P2shP2wshErpFederationBuilder.builder().build().getAddress();
-    private static final List<Coin> MULTIPLE_VALUES = List.of(Coin.COIN, Coin.SATOSHI, Coin.valueOf(500_000));
+    private static final List<Coin> MULTIPLE_VALUES = List.of(Coin.COIN, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT, Coin.valueOf(500_000));
     private static final List<Long> MULTIPLE_OUTPUT_INDEXES = List.of(0L, 2L, 5L);
     private static final int FIFTY_OUTPUTS_COUNT = 50;
 
@@ -722,7 +723,7 @@ class BridgeEventLoggerImplTest {
         @Test
         void logUtxosRegistered_whenMoreValuesThanOutputIndexes_shouldThrowIllegalArgumentException() {
             // arrange
-            List<Coin> values = List.of(Coin.COIN, Coin.SATOSHI);
+            List<Coin> values = List.of(Coin.COIN, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
 
             // act & assert
             assertThrows(IllegalArgumentException.class, () -> eventLogger.logUtxosRegistered(
@@ -992,7 +993,7 @@ class BridgeEventLoggerImplTest {
         @Test
         void logFlyoverUtxosRegistered_whenMoreValuesThanOutputIndexes_shouldThrowIllegalArgumentException() {
             // arrange
-            List<Coin> values = List.of(Coin.COIN, Coin.SATOSHI);
+            List<Coin> values = List.of(Coin.COIN, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
 
             // act & assert
             assertThrows(IllegalArgumentException.class, () -> eventLogger.logFlyoverUtxosRegistered(
