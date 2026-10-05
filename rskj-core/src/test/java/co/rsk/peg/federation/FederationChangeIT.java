@@ -7,6 +7,7 @@ import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasNotEmitted;
 import static co.rsk.peg.BridgeSupportTestUtil.assertFederatorSigning;
+import static co.rsk.peg.BridgeSupportTestUtil.assertLogFlyoverUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.assertLogUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutTxSigHashWasSaved;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
@@ -149,6 +150,9 @@ class FederationChangeIT {
     private static final Coin PEGIN_VALUE = Coin.COIN;
     // pegin output to the federation is the first one
     private static final long PEGIN_OUTPUT_INDEX_TO_FED = 0;
+    private static final Coin FLYOVER_PEGIN_VALUE = Coin.COIN;
+    // flyover pegin has a single output, to the flyover federation address
+    private static final long FLYOVER_PEGIN_OUTPUT_INDEX_TO_FED = 0;
     private static final Coin PEGOUT_CHANGE_VALUE = Coin.COIN.multiply(10);
     // pegout change output comes after the user output
     private static final long PEGOUT_CHANGE_OUTPUT_INDEX = 1;
@@ -1083,6 +1087,31 @@ class FederationChangeIT {
         }
     }
 
+    private void verifyLogFlyoverUtxosRegistered(
+        int logsSizeBeforeCheckpoint,
+        BtcTransaction flyoverPeginBtcTx,
+        List<Coin> expectedValuesInSatoshis,
+        List<Long> expectedOutputIndexes,
+        Address expectedFederationAddress,
+        Keccak256 expectedFlyoverDerivationHash
+    ) {
+        // Flyover crediting goes straight to the LBC contract; no PEGIN_BTC/LOCK_BTC event is emitted for it,
+        // so its only event is flyover_utxos_registered, emitted after RSKIP643
+        if (activations.isActive(ConsensusRule.RSKIP643)) {
+            assertEquals(logsSizeBeforeCheckpoint + 1, logs.size());
+            assertLogFlyoverUtxosRegistered(
+                logs.subList(logsSizeBeforeCheckpoint, logs.size()),
+                flyoverPeginBtcTx.getHash(),
+                expectedValuesInSatoshis,
+                expectedOutputIndexes,
+                expectedFederationAddress,
+                expectedFlyoverDerivationHash
+            );
+        } else {
+            assertNoEventWasEmittedSince(logsSizeBeforeCheckpoint);
+        }
+    }
+
     private void assertUtxosRegisteredWasNotEmitted(BtcTransaction btcTransaction) {
         List<DataWord> encodedTopics = getEncodedTopics(
             BridgeEvents.UTXOS_REGISTERED.getEvent(),
@@ -1318,11 +1347,17 @@ class FederationChangeIT {
         ));
         // assert utxo was registered
         assertEquals(utxosSizeBeforeRegisteringFlyoverPegin + 1, federationUtxosReference.size());
-        // Flyover crediting goes straight to the LBC contract; no PEGIN_BTC/LOCK_BTC event is emitted for it
-        assertNoEventWasEmittedSince(logsSizeBeforeFlyoverPegin);
+        verifyLogFlyoverUtxosRegistered(
+            logsSizeBeforeFlyoverPegin,
+            flyoverPeginBtcTx,
+            List.of(FLYOVER_PEGIN_VALUE),
+            List.of(FLYOVER_PEGIN_OUTPUT_INDEX_TO_FED),
+            federation.getAddress(),
+            flyoverPegin.getRight()
+        );
 
         // assert funds were actually transferred from the bridge to the LBC contract
-        var flyoverPeginAmountInWeis = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
+        var flyoverPeginAmountInWeis = co.rsk.core.Coin.fromBitcoin(FLYOVER_PEGIN_VALUE);
         assertEquals(lbcBalanceBeforeFlyoverPegin.add(flyoverPeginAmountInWeis), repository.getBalance(LBC_ADDRESS));
         assertEquals(bridgeBalanceBeforeFlyoverPegin.subtract(flyoverPeginAmountInWeis), repository.getBalance(BRIDGE_ADDRESS));
 
@@ -1500,7 +1535,7 @@ class FederationChangeIT {
         );
 
         var flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(NETWORK_PARAMS, flyoverDerivationHash, federation);
-        flyoverPeginBtcTx.addOutput(Coin.COIN, flyoverFederationAddress);
+        flyoverPeginBtcTx.addOutput(FLYOVER_PEGIN_VALUE, flyoverFederationAddress);
 
         return Pair.of(flyoverPeginBtcTx, flyoverDerivationHash);
     }
