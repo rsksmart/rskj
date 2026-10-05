@@ -8,6 +8,7 @@ public enum FederationStorageIndexKey {
     NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP("newFederationBtcUTXOsForTestnet"),
     NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP("newFedBtcUTXOsForTestnetPostHop"),
     OLD_FEDERATION_BTC_UTXOS_KEY("oldFederationBtcUTXOs"),
+    FEDERATIONS_PENDING_BTC_UTXOS_KEY("federationsPendingBtcUTXOs"),
 
     NEW_FEDERATION_KEY("newFederation"),
     OLD_FEDERATION_KEY("oldFederation"),
@@ -36,5 +37,9 @@ public enum FederationStorageIndexKey {
 
     public DataWord getKey() {
         return DataWord.fromString(key);
+    }
+
+    public DataWord getCompoundKey(String delimiter, String identifier) {
+        return DataWord.fromLongString(key + delimiter + identifier);
     }
 }
