@@ -1457,6 +1457,9 @@ public class BridgeSupport {
         }
 
         List<UTXO> utxosSentToLiveFederations = getUtxosSentToLiveFederations(releaseTransaction);
+        if (utxosSentToLiveFederations.isEmpty()) {
+            return;
+        }
         federationSupport.storeFederationsPendingBtcUTXOs(releaseTransaction.getHash(), utxosSentToLiveFederations);
     }
 
