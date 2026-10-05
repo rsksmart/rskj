@@ -51,7 +51,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author Oscar Guindzberg
@@ -336,16 +335,25 @@ public final class BridgeUtils {
      */
     private static List<UTXO> getUTXOsSentToAddresses(Context context, BtcTransaction btcTx, List<Address> addresses) {
         Wallet wallet = BridgeUtils.createWatchedBtcWalletFromAddresses(context, addresses);
-        return btcTx.getWalletOutputs(wallet).stream().map(
-            txOutput -> new UTXO(
+        return getUtxosSentToWallet(btcTx, wallet);
+    }
+
+    /**
+     * @param btcTx
+     * @param wallet
+     * @return the list of UTXOs in the given btcTx sent to the given wallet
+     */
+    public static List<UTXO> getUtxosSentToWallet(BtcTransaction btcTx, Wallet wallet) {
+        return btcTx.getWalletOutputs(wallet).stream()
+            .map(output -> new UTXO(
                 btcTx.getHash(),
-                txOutput.getIndex(),
-                txOutput.getValue(),
+                output.getIndex(),
+                output.getValue(),
                 0,
                 btcTx.isCoinBase(),
-                txOutput.getScriptPubKey()
-            )
-        ).collect(Collectors.toList());
+                output.getScriptPubKey()
+            ))
+            .toList();
     }
 
     /**
