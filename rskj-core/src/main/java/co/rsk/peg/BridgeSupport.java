@@ -845,15 +845,15 @@ public class BridgeSupport {
         if (retiringFederationWallet.isEmpty()) {
             return;
         }
+        Address retiringFederationAddress = federationSupport.getRetiringFederationAddress()
+            .orElseThrow(() -> new IllegalStateException("Retiring federation wallet exists without a retiring federation"));
 
         List<UTXO> utxosToTheRetiringFederation = getUtxosSentToWallet(btcTx, retiringFederationWallet.get());
         federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosToTheRetiringFederation);
-        federationSupport.getRetiringFederationAddress().ifPresent(retiringFederationAddress ->
-            logUtxosRegistered(
-                btcTx.getHash(),
-                utxosToTheRetiringFederation,
-                retiringFederationAddress
-            )
+        logUtxosRegistered(
+            btcTx.getHash(),
+            utxosToTheRetiringFederation,
+            retiringFederationAddress
         );
         logger.debug("[registerNewUtxosToTheRetiringFederation] Registered {} UTXOs sent to the retiring federation", utxosToTheRetiringFederation.size());
     }
