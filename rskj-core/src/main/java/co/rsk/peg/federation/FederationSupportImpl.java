@@ -344,6 +344,14 @@ public class FederationSupportImpl implements FederationSupport {
                 utxosToActiveFederation.add(utxo);
             } else if (retiringFederationScript.filter(utxo.getScript()::equals).isPresent()) {
                 utxosToRetiringFederation.add(utxo);
+            } else {
+                logger.warn(
+                    "[movePendingUtxosToFederations] Discarding utxo with index {} and value {} for btcTxId {}. Its script {} does not match any live federation",
+                    utxo.getIndex(),
+                    utxo.getValue(),
+                    btcTxId,
+                    utxo.getScript()
+                );
             }
         }
 
