@@ -107,6 +107,25 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     }
 
     @Test
+    void contractWithZeroNonceIsDeleted() {
+        MutableRepository repository = createRepository();
+        installContract(repository, CONTRACT_C, BigInteger.ZERO, CODE_D, BALANCE_C);
+        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
+        fundSender(repository, SENDER_BALANCE);
+        mockExecutionBlockForRealVm();
+
+        Transaction tx = signedCall(CONTRACT_C, beneficiaryWord(BENEFICIARY_B));
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction());
+        assertNull(executor.getResult().getException());
+
+        assertFalse(repository.isExist(CONTRACT_C));
+        assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
+        assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_C.getBytes())));
+    }
+
+    @Test
     void contractCreatedByCreate2AndDestroyedInTheSameTransactionIsDeleted() {
         MutableRepository repository = createRepository();
         installContract(repository, FACTORY_F, BigInteger.ONE, CODE_FACTORY_F, 0);
