@@ -320,6 +320,57 @@ public class FederationSupportImpl implements FederationSupport {
         return Collections.emptyList();
     }
 
+    @Override
+    public void storeFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos) {
+        provider.setFederationsPendingBtcUTXOs(btcTxId, utxos);
+    }
+
+    @Override
+    public boolean hasFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        return provider.getFederationsPendingBtcUTXOs(btcTxId).isPresent();
+    }
+
+    @Override
+    public void movePendingUtxosToFederations(Sha256Hash btcTxId) {
+        List<UTXO> pendingUtxos = provider.getFederationsPendingBtcUTXOs(btcTxId).orElse(List.of());
+
+        Script activeFederationScript = getActiveFederation().getP2SHScript();
+        Optional<Script> retiringFederationScript = getRetiringFederation().map(Federation::getP2SHScript);
+
+        List<UTXO> utxosToActiveFederation = new ArrayList<>();
+        List<UTXO> utxosToRetiringFederation = new ArrayList<>();
+        for (UTXO utxo : pendingUtxos) {
+            if (utxo.getScript().equals(activeFederationScript)) {
+                utxosToActiveFederation.add(utxo);
+            } else if (retiringFederationScript.filter(utxo.getScript()::equals).isPresent()) {
+                utxosToRetiringFederation.add(utxo);
+            } else {
+                logger.warn(
+                    "[movePendingUtxosToFederations] Discarding utxo with index {} and value {} for btcTxId {}. Its script {} does not match any live federation",
+                    utxo.getIndex(),
+                    utxo.getValue(),
+                    btcTxId,
+                    utxo.getScript()
+                );
+            }
+        }
+
+        if (!utxosToActiveFederation.isEmpty()) {
+            getActiveFederationBtcUTXOs().addAll(utxosToActiveFederation);
+        }
+        if (!utxosToRetiringFederation.isEmpty()) {
+            getRetiringFederationBtcUTXOs().addAll(utxosToRetiringFederation);
+        }
+        provider.removeFederationsPendingBtcUTXOs(btcTxId);
+
+        logger.info(
+            "[movePendingUtxosToFederations] Moved {} utxos to active federation and {} utxos to retiring federation for btcTxId {}",
+            utxosToActiveFederation.size(),
+            utxosToRetiringFederation.size(),
+            btcTxId
+        );
+    }
+
     @Nullable
     private PendingFederation getPendingFederation() {
         return provider.getPendingFederation();
