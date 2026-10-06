@@ -418,6 +418,9 @@ public class Program {
         RskAddress owner = getOwnerRskAddress();
         Coin balance = getStorage().getBalance(owner);
         RskAddress obtainer = new RskAddress(obtainerAddress);
+        // RSKIP701: a delegated account only moves its balance; it is never marked for deletion
+        boolean accountSurvivesSelfdestruct = getActivations().isActive(ConsensusRule.RSKIP701)
+                && getStorage().isActiveDelegatedEOA(owner);
 
         if (!balance.equals(Coin.ZERO)) {
             logger.info("Transfer to: [{}] heritage: [{}]", obtainer, balance);
@@ -425,14 +428,19 @@ public class Program {
             addInternalTx(null, null, owner, obtainer, balance, null, "suicide");
 
             if (FastByteComparisons.compareTo(owner.getBytes(), 0, 20, obtainer.getBytes(), 0, 20) == 0) {
-                // if owner == obtainer just zeroing account according to Yellow Paper
-                getStorage().addBalance(owner, balance.negate());
+                // if owner == obtainer just zeroing account according to Yellow Paper,
+                // unless the account survives (RSKIP701), in which case its balance is unchanged
+                if (!accountSurvivesSelfdestruct) {
+                    getStorage().addBalance(owner, balance.negate());
+                }
             } else {
                 getStorage().transfer(owner, obtainer, balance);
             }
         }
-        // In any case, remove the account
-        getResult().addDeleteAccount(this.getOwnerAddress());
+
+        if (!accountSurvivesSelfdestruct) {
+            getResult().addDeleteAccount(this.getOwnerAddress());
+        }
 
         SuicideInvoke invoke = new SuicideInvoke(DataWord.valueOf(owner.getBytes()), obtainerAddress,
                 DataWord.valueOf(balance.getBytes()));
