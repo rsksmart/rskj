@@ -34,6 +34,8 @@ import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.transaction.SetCodeAuthorization;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
@@ -46,6 +48,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -79,6 +82,8 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
 
     private static final RskAddress CONTRACT_C = new RskAddress("7c0d52faab596c08f484e3478aebc6205f3f5d8c");
     private static final RskAddress FACTORY_F = new RskAddress("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff00010203");
+    private static final RskAddress CONTRACT_D = new RskAddress("d0d1d2d3d4d5d6d7d8d9dadbdcdddedf00010203");
+    private static final long BALANCE_A = 777;
     private static final RskAddress BENEFICIARY_B = new RskAddress("b1c7a1f0e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9");
     private static final long BALANCE_C = 1000;
     private static final long BALANCE_B = 5;
@@ -105,6 +110,44 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_C.getBytes())),
                 "A cleared account is still recorded as deleted for the same-block creation check");
     }
+
+    // -------------------------------------------------------------------------
+    // SELFDESTRUCT in a delegated account
+    // -------------------------------------------------------------------------
+
+    @Test
+    void delegatedAccountOnlyMovesItsBalance() {
+        MutableRepository repository = createRepository();
+        installContract(repository, CONTRACT_D, BigInteger.ONE, CODE_D, 0);
+        createAccountWithBalance(repository, authorityAddress, BALANCE_A);
+        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
+        fundSender(repository, SENDER_BALANCE);
+        mockExecutionBlockForRealVm();
+
+        installDelegation(repository, authorityKey, BigInteger.ZERO, CONTRACT_D, BigInteger.ZERO);
+        assertTrue(repository.isActiveDelegatedEOA(authorityAddress));
+        assertEquals(Coin.valueOf(BALANCE_A), repository.getBalance(authorityAddress));
+
+        Transaction tx = signedCall(BigInteger.ONE, authorityAddress, beneficiaryWord(BENEFICIARY_B));
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction());
+        assertNull(executor.getResult().getException());
+
+        assertEquals(BigInteger.ONE, repository.getNonce(authorityAddress));
+        assertArrayEquals(DelegationCodeResolver.createDelegatedCode(CONTRACT_D), repository.getCode(authorityAddress));
+        assertEquals(DataWord.valueOf(42), repository.getStorageValue(authorityAddress, DataWord.ZERO));
+        assertEquals(Coin.ZERO, repository.getBalance(authorityAddress));
+        assertTrue(repository.hasDelegationAuthority(authorityAddress));
+        assertTrue(repository.hasInitializedStorage(authorityAddress));
+        assertEquals(Coin.valueOf(BALANCE_B + BALANCE_A), repository.getBalance(BENEFICIARY_B));
+        assertFalse(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(authorityAddress.getBytes())),
+                "A delegated account is never marked");
+    }
+
+    // -------------------------------------------------------------------------
+    // Marked accounts at the end of the transaction
+    // -------------------------------------------------------------------------
 
     @Test
     void contractWithZeroNonceIsDeleted() {
@@ -308,8 +351,12 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     }
 
     private Transaction signedCall(RskAddress to, byte[] data) {
+        return signedCall(BigInteger.ZERO, to, data);
+    }
+
+    private Transaction signedCall(BigInteger senderNonce, RskAddress to, byte[] data) {
         Transaction tx = Transaction.builder()
-                .nonce(BigInteger.ZERO)
+                .nonce(senderNonce)
                 .gasPrice(Coin.valueOf(1))
                 .gasLimit(BigInteger.valueOf(GAS_LIMIT))
                 .receiveAddress(to)
@@ -319,6 +366,19 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
                 .build();
         tx.sign(senderKey.getPrivKeyBytes());
         return tx;
+    }
+
+    /** Runs a set-code transaction from the sender carrying one authorization of the authority for the delegate. */
+    private void installDelegation(MutableRepository repository, ECKey authority, BigInteger authorityNonce,
+                                   RskAddress delegate, BigInteger senderNonce) {
+        SetCodeAuthorization authorization = createValidAuthorizationTuple(
+                delegate, authorityNonce, constants.getChainId(), authority);
+        Transaction setCodeTx = createSignedType4Transaction(
+                senderKey, constants.getChainId(), senderNonce, 600_000, 1, 1,
+                BENEFICIARY_B, 0, EMPTY_DATA, authorization);
+        TransactionExecutor executor = newRealVmExecutor(setCodeTx, repository);
+        assertTrue(executor.executeTransaction(), "The set-code transaction must succeed");
+        assertNull(executor.getResult().getException());
     }
 
     private TransactionExecutor newRealVmExecutor(Transaction tx, Repository repository) {
