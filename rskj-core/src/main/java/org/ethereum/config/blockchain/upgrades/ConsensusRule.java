@@ -122,6 +122,7 @@ public enum ConsensusRule {
     RSKIP552("rskip552"), // Blake2F improvements in data handling
     RSKIP559("rskip559"), // Pegouts deterministic sorting
     RSKIP692("rskip692"), // Precompiled contract exception handling on direct-call path
+    RSKIP701("rskip701"), // SELFDESTRUCT preserves account nonces
     ;
 
     private final String configKey;
