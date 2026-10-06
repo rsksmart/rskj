@@ -31,6 +31,7 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -444,8 +445,12 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     private void validateUniqueOutputIndexes(List<Long> outputIndexes) {
-        if (new HashSet<>(outputIndexes).size() != outputIndexes.size()) {
-            throw new IllegalArgumentException("outputIndexes must not contain duplicates");
+        Set<Long> seenOutputIndexes = new HashSet<>();
+        for (Long outputIndex : outputIndexes) {
+            boolean isAlreadyAdded = !seenOutputIndexes.add(outputIndex);
+            if (isAlreadyAdded) {
+                throw new IllegalArgumentException("outputIndexes must not contain duplicates");
+            }
         }
     }
 
