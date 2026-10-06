@@ -48,6 +48,8 @@ public class ProgramResult {
     private Map<DataWord, byte[]> codeChanges;
 
     private Set<DataWord> deleteAccounts;
+    // RSKIP701: accounts created in the current transaction, kept in step with deleteAccounts
+    private Set<DataWord> createdAccounts;
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
 
@@ -131,6 +133,10 @@ public class ProgramResult {
     }
 
 
+    /**
+     * Accounts marked by SELFDESTRUCT. Before RSKIP701 every marked account is deleted at finalization; under
+     * RSKIP701 some are cleared instead and keep their nonce, but all of them still count as deleted.
+     */
     public Set<DataWord> getDeleteAccounts() {
         if (deleteAccounts == null) {
             deleteAccounts = new HashSet<>();
@@ -158,9 +164,27 @@ public class ProgramResult {
         getDeleteAccounts().addAll(accounts);
     }
 
+    public Set<DataWord> getCreatedAccounts() {
+        if (createdAccounts == null) {
+            createdAccounts = new HashSet<>();
+        }
+        return createdAccounts;
+    }
+
+    public void addCreatedAccount(DataWord address) {
+        getCreatedAccounts().add(address);
+    }
+
+    public void addCreatedAccounts(Set<DataWord> accounts) {
+        getCreatedAccounts().addAll(accounts);
+    }
+
     public void clearFieldsOnException() {
         if (deleteAccounts!=null) {
             deleteAccounts.clear();
+        }
+        if (createdAccounts!=null) {
+            createdAccounts.clear();
         }
         if (logInfoList!=null) {
             logInfoList.clear();
@@ -291,6 +315,7 @@ public class ProgramResult {
         addInternalTransactions(another.getInternalTransactions());
         if (another.getException() == null && !another.isRevert()) {
             addDeleteAccounts(another.getDeleteAccounts());
+            addCreatedAccounts(another.getCreatedAccounts());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
             addDeductedRefund(another.getDeductedRefund());

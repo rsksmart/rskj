@@ -774,6 +774,8 @@ public class Program {
         track.commit();
 
         getResult().addDeleteAccounts(programResult.getDeleteAccounts());
+        getResult().addCreatedAccounts(programResult.getCreatedAccounts());
+        getResult().addCreatedAccount(DataWord.valueOf(contractAddress.getBytes()));
         getResult().addLogInfos(programResult.getLogInfoList());
 
         stackPush(DataWord.valueOf(contractAddress.getBytes()));

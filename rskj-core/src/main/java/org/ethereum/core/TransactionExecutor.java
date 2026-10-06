@@ -546,6 +546,7 @@ public class TransactionExecutor {
             gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
             if (tx.isContractCreation() && !result.isRevert()) {
+                result.addCreatedAccount(DataWord.valueOf(tx.getContractAddress().getBytes()));
                 createContract();
             }
 
@@ -691,13 +692,32 @@ public class TransactionExecutor {
 
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
         // Traverse list of suicides
-        result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));
+        result.getDeleteAccounts().forEach(address -> processMarkedAccount(new RskAddress(address)));
 
         track.clearTransientStorage();
 
         logger.trace("tx listener done");
 
         logger.trace("tx finalization done");
+    }
+
+    /**
+     * RSKIP701: an account marked by SELFDESTRUCT is deleted when it was created in this transaction or when its
+     * nonce is zero, as before activation. Otherwise it is cleared: code, storage and balance are removed and the
+     * account node keeps its nonce.
+     */
+    private void processMarkedAccount(RskAddress address) {
+        if (!activations.isActive(ConsensusRule.RSKIP701) || isCreatedInTransaction(address)
+                || track.getNonce(address).signum() == 0) {
+            track.delete(address);
+            return;
+        }
+
+        track.clearAccount(address);
+    }
+
+    private boolean isCreatedInTransaction(RskAddress address) {
+        return result.getCreatedAccounts().contains(DataWord.valueOf(address.getBytes()));
     }
 
     private void localCallFinalization() {
