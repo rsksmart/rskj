@@ -8408,7 +8408,7 @@ class BridgeSupportTest {
             return pegoutWFS.getOutputs().stream()
                 .filter(output -> output.getScriptPubKey().equals(activeFederation.getP2SHScript()))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalArgumentException("Expected pegout transaction to contain a change output for active federation address"));
         }
 
         private void updateBridgeSupport() {
