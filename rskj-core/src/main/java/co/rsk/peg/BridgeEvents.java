@@ -90,7 +90,7 @@ public enum BridgeEvents {
         new CallTransaction.Param(false, Fields.VALUES, SolidityType.getType(SolidityType.BYTES)),
         new CallTransaction.Param(false, Fields.OUTPUT_INDEXES, SolidityType.getType(SolidityType.BYTES)),
         new CallTransaction.Param(false, Fields.FEDERATION_BTC_ADDRESS, SolidityType.getType(SolidityType.STRING)),
-        new CallTransaction.Param(false, "flyoverDerivationHash", SolidityType.getType(SolidityType.BYTES32))
+        new CallTransaction.Param(false, Fields.FLYOVER_DERIVATION_HASH, SolidityType.getType(SolidityType.BYTES32))
     }),
     UNION_LOCKING_CAP_INCREASED("union_bridge_locking_cap_increased", new CallTransaction.Param[] {
         new CallTransaction.Param(true, Fields.CALLER, SolidityType.getType(SolidityType.ADDRESS)),
@@ -139,5 +139,6 @@ public enum BridgeEvents {
         private static final String FEDERATION_BTC_ADDRESS = "federationBtcAddress";
         private static final String REQUESTER = "requester";
         private static final String CALLER = "caller";
+        private static final String FLYOVER_DERIVATION_HASH = "flyoverDerivationHash";
     }
 }
