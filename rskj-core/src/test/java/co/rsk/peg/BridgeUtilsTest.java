@@ -69,6 +69,7 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.BridgeUtils.calculateMigrationTransactionOutputsValues;
 import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.MAX_STANDARD_TX_SIZE_ALLOWED;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateSignerEncodedSignatures;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateTransactionInputsSigHashes;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
@@ -84,6 +85,8 @@ class BridgeUtilsTest {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
     private static final byte[] MISSING_SIGNATURE = new byte[0];
+    private static final int BTC_TX_HEIGHT = 100;
+    private static final int UTXO_HEIGHT_BEFORE_CARDAMOM = 0;
 
     private Constants constants;
     private ActivationConfig activationConfig;
@@ -2032,6 +2035,7 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             addresses
         ));
     }
@@ -2071,6 +2075,7 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             /* Only the first address in the list is used to pick the utxos sent.
             This is due the legacy logic before RSKIP293 */
             Arrays.asList(btcAddress1, btcAddress2, btcAddress3)
@@ -2103,6 +2108,7 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             /* Even we are passing three address, only the first one in the list will be use to pick the utxos sent to
             it. This is due the legacy logic before RSKIP293 */
             Arrays.asList(PegTestUtils.createRandomP2PKHBtcAddress(networkParameters), btcAddress1, btcAddress3)
@@ -2142,6 +2148,7 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             Collections.singletonList(btcAddress)
         );
 
@@ -2187,6 +2194,7 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             Arrays.asList(
                 btcAddress1,
                 btcAddress2,
@@ -2226,10 +2234,99 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             Arrays.asList(PegTestUtils.createRandomP2PKHBtcAddress(networkParameters))
         );
 
         Assertions.assertTrue(foundUTXOs.isEmpty());
+    }
+
+    @Test
+    void getHeightForNewUtxos_forVetiver_shouldReturnZero() {
+        // arrange
+        ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0);
+
+        // act
+        int heightForNewUtxos = BridgeUtils.getHeightForNewUtxos(vetiverActivations, BTC_TX_HEIGHT);
+
+        // assert
+        assertEquals(UTXO_HEIGHT_BEFORE_CARDAMOM, heightForNewUtxos);
+    }
+
+    @Test
+    void getHeightForNewUtxos_forCardamom_shouldReturnBtcTxHeight() {
+        // arrange
+        ActivationConfig.ForBlock cardamomActivations = ActivationConfigsForTest.cardamom1000().forBlock(0);
+
+        // act
+        int heightForNewUtxos = BridgeUtils.getHeightForNewUtxos(cardamomActivations, BTC_TX_HEIGHT);
+
+        // assert
+        assertEquals(BTC_TX_HEIGHT, heightForNewUtxos);
+    }
+
+    @Test
+    void getUTXOsSentToAddresses_forVetiver_shouldReturnUtxosWithZeroHeight() {
+        // arrange
+        ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0);
+        Context btcContext = new Context(networkParameters);
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "btcAddress");
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        TransactionOutput outputToAddress = btcTx.addOutput(Coin.COIN, btcAddress);
+        List<UTXO> expectedUTXOs = List.of(
+            UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .withOutpointIndex(outputToAddress.getIndex())
+                .withValue(outputToAddress.getValue())
+                .withBlockHeight(UTXO_HEIGHT_BEFORE_CARDAMOM)
+                .withScriptPubKey(outputToAddress.getScriptPubKey())
+                .build()
+        );
+
+        // act
+        List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
+            vetiverActivations,
+            networkParameters,
+            btcContext,
+            btcTx,
+            BTC_TX_HEIGHT,
+            List.of(btcAddress)
+        );
+
+        // assert
+        assertUtxosAreEqual(expectedUTXOs, foundUTXOs);
+    }
+
+    @Test
+    void getUTXOsSentToAddresses_shouldReturnUtxosWithBtcTxHeight() {
+        // arrange
+        ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+        Context btcContext = new Context(networkParameters);
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "btcAddress");
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        TransactionOutput outputToAddress = btcTx.addOutput(Coin.COIN, btcAddress);
+        List<UTXO> expectedUTXOs = List.of(
+            UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .withOutpointIndex(outputToAddress.getIndex())
+                .withValue(outputToAddress.getValue())
+                .withBlockHeight(BTC_TX_HEIGHT)
+                .withScriptPubKey(outputToAddress.getScriptPubKey())
+                .build()
+        );
+
+        // act
+        List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
+            allActivations,
+            networkParameters,
+            btcContext,
+            btcTx,
+            BTC_TX_HEIGHT,
+            List.of(btcAddress)
+        );
+
+        // assert
+        assertUtxosAreEqual(expectedUTXOs, foundUTXOs);
     }
 
     @Nested

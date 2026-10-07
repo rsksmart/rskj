@@ -404,9 +404,9 @@ public class BridgeSupport {
             logger.info("[registerBtcTransaction][btctx: {}] This is a {} transaction type", btcTx.getHash(), pegTxType);
             switch (pegTxType) {
                 case PEGIN -> registerPegIn(btcTx, rskTxHash, height);
-                case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx);
-                case SVP_FUND_TX -> registerSvpFundTx(btcTx);
-                case SVP_SPEND_TX -> registerSvpSpendTx(btcTx);
+                case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx, height);
+                case SVP_FUND_TX -> registerSvpFundTx(btcTx, height);
+                case SVP_SPEND_TX -> registerSvpSpendTx(btcTx, height);
                 case UNKNOWN -> logger.warn("[registerBtcTransaction] Unknown peg tx type won't be registered.");
             }
         } catch (RegisterBtcTransactionException e) {
@@ -419,8 +419,8 @@ public class BridgeSupport {
         }
     }
 
-    private void registerSvpFundTx(BtcTransaction btcTx) throws IOException {
-        registerNewUtxos(btcTx); // Need to register the change UTXO
+    private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
+        registerNewUtxos(btcTx, btcTxHeight); // Need to register the change UTXO
 
         // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
         // In that case, the fundTx will be identified as a regular peg-out tx and processed via #registerPegoutOrMigration
@@ -430,8 +430,8 @@ public class BridgeSupport {
         }
     }
 
-    private void registerSvpSpendTx(BtcTransaction btcTx) throws IOException {
-        registerNewUtxos(btcTx);
+    private void registerSvpSpendTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
+        registerNewUtxos(btcTx, btcTxHeight);
         provider.clearSvpSpendTxHashUnsigned();
 
         logger.info("[registerSvpSpendTx] Going to commit the proposed federation.");
@@ -495,7 +495,12 @@ public class BridgeSupport {
         switch (peginProcessAction) {
             case REGISTER -> {
                 logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
-                executePegIn(btcTx, peginInformation, totalAmount);
+                executePegIn(
+                    btcTx,
+                    peginInformation,
+                    totalAmount,
+                    height
+                );
             }
             case REFUND -> handleRefundablePegin(btcTx, rskTxHash, peginEvaluationResult, peginInformation.getBtcRefundAddress());
             case NO_REFUND -> handleNonRefundablePegin(btcTx, peginInformation.getProtocolVersion(), peginEvaluationResult);
@@ -653,7 +658,12 @@ public class BridgeSupport {
 
         // Confirm we should process this lock
         if (shouldProcessPegInVersionLegacy(senderBtcAddressType, btcTx, senderBtcAddress, totalAmount, height)) {
-            executePegIn(btcTx, peginInformation, totalAmount);
+            executePegIn(
+                btcTx,
+                peginInformation,
+                totalAmount,
+                0
+            );
         } else {
             if (activations.isActive(ConsensusRule.RSKIP181)) {
                 if (!isTxLockableForLegacyVersion(senderBtcAddressType, btcTx, senderBtcAddress)) {
@@ -680,7 +690,12 @@ public class BridgeSupport {
 
         // Confirm we should process this lock
         if (verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {
-            executePegIn(btcTx, peginInformation, totalAmount);
+            executePegIn(
+                btcTx,
+                peginInformation,
+                totalAmount,
+                0
+            );
         } else {
             logger.debug("[processPegInVersion1] Peg-in attempt surpasses locking cap. Amount attempted to lock: {}", totalAmount);
 
@@ -693,7 +708,7 @@ public class BridgeSupport {
         }
     }
 
-    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) throws IOException {
+    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount, int btcTxHeight) throws IOException {
         RskAddress rskDestinationAddress = peginInformation.getRskDestinationAddress();
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
@@ -718,7 +733,7 @@ public class BridgeSupport {
         }
 
         // Save UTXOs from the federation(s) only if we actually locked the funds
-        registerNewUtxos(btcTx);
+        registerNewUtxos(btcTx, btcTxHeight);
     }
 
     private void refundTxSender(
@@ -821,7 +836,9 @@ public class BridgeSupport {
     so they can be used as inputs in future peg-out transactions.
     Finally, mark the btcTx as processed.
      */
-    private void registerNewUtxos(BtcTransaction btcTx) throws IOException {
+    private void registerNewUtxos(BtcTransaction btcTx, int btcTxHeight) throws IOException {
+        int heightForNewUtxos = getHeightForNewUtxos(activations, btcTxHeight);
+
         // Outputs to the active federation
         Wallet activeFederationWallet = getActiveFederationWallet(false);
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
@@ -832,7 +849,7 @@ public class BridgeSupport {
                 btcTx.getHash(),
                 output.getIndex(),
                 output.getValue(),
-                0,
+                heightForNewUtxos,
                 btcTx.isCoinBase(),
                 output.getScriptPubKey()
             );
@@ -849,7 +866,7 @@ public class BridgeSupport {
                     btcTx.getHash(),
                     output.getIndex(),
                     output.getValue(),
-                    0,
+                    heightForNewUtxos,
                     btcTx.isCoinBase(),
                     output.getScriptPubKey()
                 );
@@ -2913,7 +2930,7 @@ public class BridgeSupport {
             List<FlyoverFederationInformation> fbFederations = flyoverRetiringFederationInformation
                 .map(flyoverFederationInformation -> Arrays.asList(flyoverActiveFederationInformation, flyoverFederationInformation))
                 .orElseGet(() -> Collections.singletonList(flyoverActiveFederationInformation));
-            WalletProvider walletProvider = createFlyoverWalletProvider(fbFederations);
+            WalletProvider walletProvider = createFlyoverWalletProvider(fbFederations, height);
 
             provider.markFlyoverDerivationHashAsUsed(btcTxHashWithoutWitness, flyoverDerivationHash);
 
@@ -2936,6 +2953,7 @@ public class BridgeSupport {
             networkParameters,
             btcContext,
             btcTx,
+            height,
             Collections.singletonList(flyoverActiveFederationAddress)
         );
         logger.info(
@@ -2956,6 +2974,7 @@ public class BridgeSupport {
                 networkParameters,
                 btcContext,
                 btcTx,
+                height,
                 Collections.singletonList(
                     flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(networkParameters)
                 )
@@ -3074,13 +3093,15 @@ public class BridgeSupport {
     }
 
     private WalletProvider createFlyoverWalletProvider(
-        List<FlyoverFederationInformation> fbFederations) {
+        List<FlyoverFederationInformation> fbFederations,
+        int btcTxHeight) {
         return (BtcTransaction btcTx, List<Address> addresses) -> {
             List<UTXO> utxosList = getUTXOsSentToAddresses(
                 activations,
                 networkParameters,
                 btcContext,
                 btcTx,
+                btcTxHeight,
                 addresses
             );
             return getFlyoverWallet(btcContext, utxosList, fbFederations);
