@@ -353,7 +353,7 @@ class RepositoryBtcBlockStoreWithCacheTest {
     }
 
     @Test
-    void getStoredBlockAtMainChainHeight_testnet2_heightBelowBlockIndexActivation_throwsWithoutSearching() throws BlockStoreException {
+    void getStoredBlockAtMainChainHeight_whenTestnet2AndHeightBelowBlockIndexActivation_shouldThrowWithoutSearching() throws BlockStoreException {
         BridgeConstants bridgeTestNet2Constants = BridgeTestNet2Constants.getInstance();
         Repository repository = createRepository();
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeTestNet2Constants.getBtcParams());

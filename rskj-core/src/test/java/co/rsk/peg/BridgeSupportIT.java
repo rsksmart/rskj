@@ -3393,7 +3393,7 @@ public class BridgeSupportIT {
     }
 
     @Test
-    void testnet2_btcBlockStoreStartsAtBtcHeightWhenBlockIndexActivates() throws IOException, BlockStoreException {
+    void initialChainHeadWithBtcCheckpoints_whenTestnet2_shouldStartAtBtcHeightWhenBlockIndexActivates() throws IOException, BlockStoreException {
         // The block index covers the BTC block store from its first block on, so both must start at the same height.
         // This fails if a change to the testnet4 checkpoints moves the store's first block.
         BridgeConstants bridgeTestNet2Constants = BridgeTestNet2Constants.getInstance();
