@@ -3,6 +3,7 @@ package co.rsk.core;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeaderExtensionV1;
+import org.ethereum.core.BlockHeaderExtensionV2;
 import org.ethereum.core.BlockHeaderV1;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -64,6 +65,28 @@ class BlockHeaderV1Test {
     }
 
     @Test
+    void setExtensionRejectsMismatchedVersion() {
+        BlockHeaderV1 header = createBlockHeader(TestUtils.generateBytes("bloom", 256));
+        BlockHeaderExtensionV2 mismatchedExtension = new BlockHeaderExtensionV2(
+                TestUtils.generateBytes("v2bloom", 256), new short[] { 1 }, new byte[] { 1 });
+
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> header.setExtension(mismatchedExtension));
+
+        Assertions.assertEquals("Mismatched extension version 2 for header version 1", ex.getMessage());
+    }
+
+    @Test
+    void setExtensionRejectsNull() {
+        BlockHeaderV1 header = createBlockHeader(TestUtils.generateBytes("bloom", 256));
+
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> header.setExtension(null));
+
+        Assertions.assertEquals("Mismatched extension version none for header version 1", ex.getMessage());
+    }
+
+    @Test
     void setsLogsBloomToExtension() {
         byte[] bloom = TestUtils.generateBytes("bloom", 256);
         BlockHeaderV1 header = createBlockHeader(new byte[]{});
@@ -89,12 +112,14 @@ class BlockHeaderV1Test {
         BlockHeaderV1 header = createBlockHeader(TestUtils.generateBytes("bloom", 256));
         BlockHeaderExtensionV1 extension = Mockito.mock(BlockHeaderExtensionV1.class);
         byte[] hash = TestUtils.generateHash("hash").getBytes();
+        Mockito.when(extension.getVersion()).thenReturn((byte) 0x1);
         Mockito.when(extension.getHash()).thenReturn(hash);
         header.setExtension(extension);
 
         BlockHeaderV1 otherHeader = createBlockHeader(TestUtils.generateBytes("otherBloom", 256));
         BlockHeaderExtensionV1 otherExtension = Mockito.mock(BlockHeaderExtensionV1.class);
         byte[] otherHash = TestUtils.generateHash("otherHash").getBytes();
+        Mockito.when(otherExtension.getVersion()).thenReturn((byte) 0x1);
         Mockito.when(otherExtension.getHash()).thenReturn(otherHash);
         otherHeader.setExtension(otherExtension);
 
