@@ -1,0 +1,89 @@
+comment
+
+RSKIP701 cases 7 and 8. The factory creates C with CREATE2 (salt 1, init code whose runtime stores 42 in
+slot 0 and then executes SELFDESTRUCT with the beneficiary taken from the call data). A call to the factory
+with call data also calls C forwarding the call data; a call without call data only creates C.
+
+C = 564277e6a03a179c7b29165fd3fa2612dd9b6602 (CREATE2 of the factory with salt 1)
+accB = b88c95fb184c1a6e33aa447c12561777de55e376
+callerC calls C with no value; callerZ calls an address that never exists.
+
+end
+
+block_chain g00
+account_new acc1 10000000
+account_new accB 1000
+account_new factory 0 7168602a600055600035ff60005260096017f360005260016012600e6000f536156039576020600060203760006000602060206000855af1505b00
+account_new callerC 0 6000600060006000600073564277e6a03a179c7b29165fd3fa2612dd9b66025af15000
+account_new callerZ 0 600060006000600060007300000000000000000000000000000000000077015af15000
+
+transaction_build createC
+    sender acc1
+    receiver factory
+    nonce 0
+    value 0
+    gas 1000000
+    build
+
+transaction_build destroyC
+    sender acc1
+    receiverAddress 564277e6a03a179c7b29165fd3fa2612dd9b6602
+    nonce 1
+    value 1000
+    data 000000000000000000000000b88c95fb184c1a6e33aa447c12561777de55e376
+    gas 200000
+    build
+
+transaction_build callC
+    sender acc1
+    receiver callerC
+    nonce 2
+    value 0
+    gas 200000
+    build
+
+transaction_build callZ
+    sender acc1
+    receiver callerZ
+    nonce 3
+    value 0
+    gas 200000
+    build
+
+transaction_build recreateC
+    sender acc1
+    receiver factory
+    nonce 4
+    value 0
+    gas 200000
+    build
+
+block_build b01
+    parent g00
+    gasLimit 6800000
+    transactions createC
+    build
+
+block_connect b01
+
+block_build b02
+    parent b01
+    gasLimit 6800000
+    transactions destroyC
+    build
+
+block_connect b02
+
+block_build b03
+    parent b02
+    gasLimit 6800000
+    transactions callC callZ recreateC
+    build
+
+block_connect b03
+
+assert_tx_success createC
+assert_tx_success destroyC
+assert_tx_success callC
+assert_tx_success callZ
+assert_balance accB 2000

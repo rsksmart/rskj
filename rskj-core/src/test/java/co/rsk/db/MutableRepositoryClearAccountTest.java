@@ -35,10 +35,10 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
+import static co.rsk.db.ClearedAccountAssertions.assertClearedAccount;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -138,15 +138,8 @@ class MutableRepositoryClearAccountTest {
     }
 
     private void assertClearedShape(Repository repository, int expectedFlags) {
-        assertTrue(repository.isExist(ACCOUNT));
-        assertEquals(NONCE, repository.getNonce(ACCOUNT));
-        assertEquals(Coin.ZERO, repository.getBalance(ACCOUNT));
-        assertEquals(0, repository.getCodeLength(ACCOUNT));
-        assertEquals(0, repository.getStorageKeysCount(ACCOUNT));
-        assertFalse(repository.hasInitializedStorage(ACCOUNT));
-        assertNull(repository.getStorageValue(ACCOUNT, SLOT));
+        assertClearedAccount(repository, ACCOUNT, NONCE);
         assertEquals(expectedFlags, repository.getAccountState(ACCOUNT).getStateFlags());
-        assertEquals(MutableRepository.KECCAK_256_OF_EMPTY_ARRAY, repository.getCodeHashStandard(ACCOUNT));
     }
 
     /**
