@@ -283,17 +283,30 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void constructorDoesNotEnforceBaseEventMaxSize() {
-        // Pinned quirk: only setBaseEvent() enforces BASE_EVENT_MAX_SIZE, the constructor
-        // does not, so oversized data can still reach the value object through it.
+    void constructorEnforcesBaseEventMaxSize() {
         byte[] oversizedValue = new byte[BASE_EVENT_MAX_SIZE + 1];
         for (int i = 0; i < oversizedValue.length; i++) {
             oversizedValue[i] = (byte) (i % 256);
         }
 
-        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], EDGES, oversizedValue);
+        assertThrows(FieldMaxSizeBlockHeaderException.class,
+                () -> new BlockHeaderExtensionV2(new byte[256], EDGES, oversizedValue));
+    }
 
-        assertArrayEquals(oversizedValue, extension.getBaseEvent());
+    @Test
+    void decodeEnforcesBaseEventMaxSize() {
+        // Wire data is a peer-controlled input: an oversized baseEvent in the
+        // extension encoding must not decode into a value object.
+        byte[] oversizedValue = new byte[BASE_EVENT_MAX_SIZE + 1];
+        for (int i = 0; i < oversizedValue.length; i++) {
+            oversizedValue[i] = (byte) (i % 256);
+        }
+        byte[] encoded = RLP.encodeList(
+                RLP.encodeElement(new byte[256]),
+                RLP.encodeElement(oversizedValue));
+
+        assertThrows(FieldMaxSizeBlockHeaderException.class,
+                () -> BlockHeaderExtensionV2.fromEncoded(encoded));
     }
 
     @Test

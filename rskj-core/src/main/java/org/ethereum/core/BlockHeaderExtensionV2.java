@@ -49,9 +49,9 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
     private final byte[] baseEvent;
 
     public BlockHeaderExtensionV2(byte[] logsBloom, short[] edges, byte[] baseEvent) {
-        // Pinned quirk: only withBaseEvent() enforces BASE_EVENT_MAX_SIZE, the
-        // constructor does not, so oversized data can still reach the value
-        // object through here or through fromEncoded().
+        if (baseEvent != null && baseEvent.length > BASE_EVENT_MAX_SIZE) {
+            throw new FieldMaxSizeBlockHeaderException("baseEvent length cannot exceed " + BASE_EVENT_MAX_SIZE + " bytes");
+        }
         this.logsBloom = logsBloom != null ? Arrays.copyOf(logsBloom, logsBloom.length) : null;
         this.txExecutionSublistsEdges = edges != null ? Arrays.copyOf(edges, edges.length) : null;
         this.baseEvent = baseEvent != null ? Arrays.copyOf(baseEvent, baseEvent.length) : null;
@@ -113,9 +113,6 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
     }
 
     public BlockHeaderExtensionV2 withBaseEvent(byte[] baseEvent) {
-        if (baseEvent != null && baseEvent.length > BASE_EVENT_MAX_SIZE) {
-            throw new FieldMaxSizeBlockHeaderException("baseEvent length cannot exceed " + BASE_EVENT_MAX_SIZE + " bytes");
-        }
         return new BlockHeaderExtensionV2(this.logsBloom, this.txExecutionSublistsEdges, baseEvent);
     }
 
