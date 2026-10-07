@@ -1132,8 +1132,9 @@ class BridgeSupportRegisterBtcTransactionTest {
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
 
+            int numberOfOutputsToActiveFed = 10;
             List<Long> outputIndexesToActiveFed = new ArrayList<>();
-            for (int i = 0; i < MANY_PEGIN_UTXOS; i++) {
+            for (int i = 0; i < numberOfOutputsToActiveFed; i++) {
                 btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
                 outputIndexesToActiveFed.add((long) i);
             }
@@ -1157,10 +1158,10 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
-            verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(MANY_PEGIN_UTXOS)), eq(0));
+            verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(numberOfOutputsToActiveFed)), eq(0));
             assertUtxosWereRegisteredInActiveFed(
                 btcTransaction,
-                MANY_PEGIN_UTXOS,
+                numberOfOutputsToActiveFed,
                 expectedUtxoHeight
             );
 
