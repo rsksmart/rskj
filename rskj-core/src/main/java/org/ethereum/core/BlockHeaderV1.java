@@ -25,11 +25,10 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.exception.SealedBlockHeaderException;
 import org.ethereum.util.RLP;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class BlockHeaderV1 extends BlockHeader {
-    private BlockHeaderExtensionV1 extension;
+    private BlockHeaderExtension extension;
 
     public BlockHeaderV1(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                          byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData, BlockDifficulty difficulty,
@@ -55,7 +54,7 @@ public class BlockHeaderV1 extends BlockHeader {
                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                          Coin minimumGasPrice, int uncleCount, boolean sealed,
                          boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot,
-                         BlockHeaderExtensionV1 extension, boolean compressed) {
+                         BlockHeaderExtension extension, boolean compressed) {
         super(parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, compressed ? extensionData : null, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
@@ -92,13 +91,18 @@ public class BlockHeaderV1 extends BlockHeader {
     }
 
     @Override
-    public BlockHeaderExtensionV1 getExtension() {
+    public BlockHeaderExtension getExtension() {
         return this.extension;
     }
 
     @Override
     public void setExtension(BlockHeaderExtension extension) {
-        this.extension = (BlockHeaderExtensionV1) extension;
+        if (extension == null || extension.getVersion() != this.getVersion()) {
+            String extensionVersion = extension == null ? "none" : String.valueOf(extension.getVersion());
+            throw new IllegalArgumentException(String.format(
+                    "Mismatched extension version %s for header version %d", extensionVersion, this.getVersion()));
+        }
+        this.extension = extension;
     }
 
     protected void updateExtensionData() {
@@ -117,7 +121,7 @@ public class BlockHeaderV1 extends BlockHeader {
         }
         this.hash = null;
 
-        this.extension.setLogsBloom(logsBloom);
+        this.extension = this.extension.withLogsBloom(logsBloom);
         this.updateExtensionData();
     }
 
@@ -133,7 +137,7 @@ public class BlockHeaderV1 extends BlockHeader {
         }
         this.hash = null;
 
-        this.extension.setTxExecutionSublistsEdges(edges != null ? Arrays.copyOf(edges, edges.length) : null);
+        this.extension = this.extension.withTxExecutionSublistsEdges(edges);
         this.updateExtensionData();
     }
 

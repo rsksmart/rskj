@@ -60,10 +60,10 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void setBaseEventCopiesArray() {
+    void withBaseEventCopiesArray() {
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, null);
         byte[] hash = new byte[]{0x0A, 0x0B};
-        ext.setBaseEvent(hash);
+        ext = ext.withBaseEvent(hash);
 
         assertArrayEquals(hash, ext.getBaseEvent());
         // Mutate original array to check for defensive copy
@@ -72,12 +72,13 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void getBaseEventReturnsCopy() {
+    void getBaseEventReturnsInternalArray() {
+        // Immutable value objects copy on construction and expose their internals
+        // directly: callers get a read-only view and must not mutate it.
         byte[] hash = new byte[]{0x0A, 0x0B};
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, hash);
         byte[] returned = ext.getBaseEvent();
-        returned[0] = 0x00;
-        assertNotEquals(returned[0], ext.getBaseEvent()[0]);
+        assertArrayEquals(hash, returned);
     }
 
     @Test
@@ -180,56 +181,56 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void testSetBaseEventWithNull() {
+    void testWithBaseEventNull() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
-        extension.setBaseEvent(null);
+        extension = extension.withBaseEvent(null);
         assertNull(extension.getBaseEvent());
     }
 
     @Test
-    void testSetBaseEventWithEmptyArray() {
+    void testWithBaseEventEmptyArray() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
         byte[] emptyArray = new byte[0];
-        extension.setBaseEvent(emptyArray);
+        extension = extension.withBaseEvent(emptyArray);
         assertArrayEquals(emptyArray, extension.getBaseEvent());
     }
 
     @Test
-    void testSetBaseEventWithLargeValue() {
+    void testWithBaseEventLargeValue() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
         byte[] largeValue = new byte[BASE_EVENT_MAX_SIZE];
         for (int i = 0; i < BASE_EVENT_MAX_SIZE; i++) {
             largeValue[i] = (byte) (i % 256);
         }
-        extension.setBaseEvent(largeValue);
+        extension = extension.withBaseEvent(largeValue);
         assertArrayEquals(largeValue, extension.getBaseEvent());
     }
 
     @Test
-    void testSetBaseEventExceedingMaxSizeThrowsException() {
+    void testWithBaseEventExceedingMaxSizeThrowsException() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
         byte[] oversizedValue = new byte[BASE_EVENT_MAX_SIZE + 1];
-        assertThrows(FieldMaxSizeBlockHeaderException.class, () -> extension.setBaseEvent(oversizedValue));
+        assertThrows(FieldMaxSizeBlockHeaderException.class, () -> extension.withBaseEvent(oversizedValue));
     }
 
     @Test
-    void testSetBaseEventWithSpecialBytes() {
+    void testWithBaseEventSpecialBytes() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
         byte[] specialBytes = new byte[]{0x00, (byte) 0xFF, (byte) 0x80, (byte) 0x7F};
-        extension.setBaseEvent(specialBytes);
+        extension = extension.withBaseEvent(specialBytes);
         assertArrayEquals(specialBytes, extension.getBaseEvent());
     }
 
     @Test
-    void testSetBaseEventMultipleTimes() {
+    void testWithBaseEventMultipleTimes() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
 
         byte[] firstValue = new byte[]{1, 2, 3};
-        extension.setBaseEvent(firstValue);
+        extension = extension.withBaseEvent(firstValue);
         assertArrayEquals(firstValue, extension.getBaseEvent());
 
         byte[] secondValue = new byte[]{4, 5, 6, 7, 8};
-        extension.setBaseEvent(secondValue);
+        extension = extension.withBaseEvent(secondValue);
         assertArrayEquals(secondValue, extension.getBaseEvent());
     }
 

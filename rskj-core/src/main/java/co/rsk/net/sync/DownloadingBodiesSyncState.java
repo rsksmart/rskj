@@ -116,9 +116,13 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
 
         // we already checked that this message was expected
         BlockHeader header = pendingBodyResponses.remove(requestId).header;
-        header.setExtension(message.getBlockHeaderExtension());
         Block block;
         try {
+            // setExtension is inside the try on purpose: a mismatched extension
+            // (wrong version for this header, or missing where one is required)
+            // must land in handleInvalidBody with the peer scored, not escape
+            // to the broad catch in NodeMessageHandler.
+            header.setExtension(message.getBlockHeaderExtension());
             block = blockFactory.newBlock(header, message.getTransactions(), message.getUncles());
             block.seal();
         } catch (IllegalArgumentException ex) {

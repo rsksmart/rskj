@@ -31,7 +31,7 @@ class BlockHeaderExtensionV1Test {
     }
 
     @Test
-    void setLogsBloom() {
+    void withLogsBloomReturnsNewInstance() {
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
 
         byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
@@ -40,21 +40,42 @@ class BlockHeaderExtensionV1Test {
         logsBloom[2] = 0x03;
         logsBloom[3] = 0x04;
 
-        extension.setLogsBloom(logsBloom);
+        BlockHeaderExtensionV1 updated = extension.withLogsBloom(logsBloom);
 
-        Assertions.assertArrayEquals(logsBloom, extension.getLogsBloom());
+        Assertions.assertArrayEquals(logsBloom, updated.getLogsBloom());
+        // the source instance is untouched: value objects are immutable
+        Assertions.assertArrayEquals(new byte[32], extension.getLogsBloom());
     }
 
+    @Test
+    void withLogsBloomRejectsNull() {
+        // Pinned quirk, kept from the old setter: null throws NullPointerException
+        // (Arrays.copyOf) while the constructor accepts null.
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
+
+        Assertions.assertThrows(NullPointerException.class, () -> extension.withLogsBloom(null));
+    }
 
     @Test
-    void setEdges() {
+    void withEdgesReturnsNewInstance() {
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
 
         short[] edges = new short[] { 5, 6, 7, 8};
 
-        extension.setTxExecutionSublistsEdges(edges);
+        BlockHeaderExtensionV1 updated = extension.withTxExecutionSublistsEdges(edges);
 
-        Assertions.assertArrayEquals(edges, extension.getTxExecutionSublistsEdges());
+        Assertions.assertArrayEquals(edges, updated.getTxExecutionSublistsEdges());
+        // the source instance is untouched: value objects are immutable
+        Assertions.assertArrayEquals(EDGES, extension.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void withEdgesAcceptsNull() {
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
+
+        BlockHeaderExtensionV1 updated = extension.withTxExecutionSublistsEdges(null);
+
+        Assertions.assertNull(updated.getTxExecutionSublistsEdges());
     }
 
     @Test
