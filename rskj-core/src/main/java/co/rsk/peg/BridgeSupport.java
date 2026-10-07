@@ -1505,27 +1505,13 @@ public class BridgeSupport {
             return;
         }
 
-        List<UTXO> utxosSentToLiveFederations = getUtxosSentToLiveFederations(releaseTransaction);
+        Wallet wallet = getNoSpendWalletForLiveFederations(false);
+        int btcTxHeight = 0;
+        List<UTXO> utxosSentToLiveFederations = getUtxosSentToWallet(releaseTransaction, wallet, btcTxHeight);
         if (utxosSentToLiveFederations.isEmpty()) {
             return;
         }
         federationSupport.storeFederationsPendingBtcUTXOs(releaseTransaction.getHash(), utxosSentToLiveFederations);
-    }
-
-    private List<UTXO> getUtxosSentToLiveFederations(BtcTransaction btcTx) {
-        return btcTx.getWalletOutputs(getNoSpendWalletForLiveFederations(false))
-            .stream()
-            .map(output ->
-                new UTXO(
-                    btcTx.getHash(),
-                    output.getIndex(),
-                    output.getValue(),
-                    0,
-                    btcTx.isCoinBase(),
-                    output.getScriptPubKey()
-                )
-            )
-            .toList();
     }
 
     private void removeSpentUtxos(List<UTXO> utxosToUse, BtcTransaction releaseTx) {
