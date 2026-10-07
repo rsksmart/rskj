@@ -1,7 +1,6 @@
-package co.rsk.core;
+package org.ethereum.core;
 
-import org.ethereum.core.BlockHeaderExtensionV1;
-import org.ethereum.core.Bloom;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +9,12 @@ import java.util.Arrays;
 class BlockHeaderExtensionV1Test {
     private static final short[] EDGES = new short[] { 1, 2, 3, 4 };
     private static final short[] NO_EDGES = new short[0];
+
+    // Golden fixtures: the bloom input and expected bytes were captured from the
+    // current implementation before any refactor; the refactor must reproduce the
+    // encodings and hashes byte for byte.
+    private static final String GOLDEN_V1_BLOOM =
+            "6a66323a9e4d08c68b9591d3216c5b8d18eb631fdf0fecb3ca9f08656eb25317e851ef7dec705b1252743c7ff56b37ded80afdf6ba729c877070060c416faeb515cba865daffc0f74f2a7365452a7141b168c15f222fab57d2958896a1c82c5a923dfe638c9d9f21a422891023fa8c9aad4533295d0289d18c2702148f1d3dd8746cec9489619e6b052f0583a2d38a118dbd6bf955804f3f0df9d00f543e70aac36c8d923e8071e03d4628ea5e706cc341e9cf3919c4dfdb19c0e1aafbd0f4d5fc6fedd27b836389a9921d5af177b26d71d157975ab0f6bc488b42eed2c56ae7905ebeaef4129d13bbd0ad817fbca236f730d128efbf586684881d08eddb0036";
 
     @Test
     void createWithLogsBloomAndEdges() {
@@ -106,5 +111,37 @@ class BlockHeaderExtensionV1Test {
         );
 
         Assertions.assertArrayEquals(NO_EDGES, extension.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void goldenEncodingWithEdges() {
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(Hex.decode(GOLDEN_V1_BLOOM), EDGES);
+
+        Assertions.assertArrayEquals(Hex.decode("f9010c" + "b90100" + GOLDEN_V1_BLOOM + "880100020003000400"),
+                extension.getEncoded());
+    }
+
+    @Test
+    void goldenHashWithEdges() {
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(Hex.decode(GOLDEN_V1_BLOOM), EDGES);
+
+        Assertions.assertArrayEquals(Hex.decode("f26c14ea90289d65601ee7304730c0eea1e5bec5777d12d0c8f240279434149f"),
+                extension.getHash());
+    }
+
+    @Test
+    void goldenEncodingWithoutEdges() {
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(Hex.decode(GOLDEN_V1_BLOOM), null);
+
+        Assertions.assertArrayEquals(Hex.decode("f90103" + "b90100" + GOLDEN_V1_BLOOM),
+                extension.getEncoded());
+    }
+
+    @Test
+    void goldenHashWithoutEdges() {
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(Hex.decode(GOLDEN_V1_BLOOM), null);
+
+        Assertions.assertArrayEquals(Hex.decode("5df7f958b248cf0c68050a2a5b215f0d7d707f14565b853798da76f4b4e59fba"),
+                extension.getHash());
     }
 }
