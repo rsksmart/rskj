@@ -7,7 +7,7 @@ import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class BlockHeaderExtensionTest {
+class BlockHeaderExtensionCodecTest {
     private static final short[] EDGES = new short[] { 1, 2, 3, 4 };
 
     // Golden fixtures: expected bytes were captured from the current implementation
@@ -31,8 +31,8 @@ class BlockHeaderExtensionTest {
 
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(logsBloom, edges);
 
-        BlockHeaderExtension decoded = BlockHeaderExtension.fromEncoded(
-                BlockHeaderExtension.toEncoded(extension)
+        BlockHeaderExtension decoded = BlockHeaderExtensionCodec.fromEncoded(
+                BlockHeaderExtensionCodec.toEncoded(extension)
         );
 
         Assertions.assertArrayEquals(extension.getHash(), decoded.getHash());
@@ -43,8 +43,8 @@ class BlockHeaderExtensionTest {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(
                 Hex.decode(GOLDEN_V2_BLOOM), EDGES, Hex.decode(GOLDEN_V2_BASE_EVENT));
 
-        BlockHeaderExtension decoded = BlockHeaderExtension.fromEncoded(
-                BlockHeaderExtension.toEncoded(extension)
+        BlockHeaderExtension decoded = BlockHeaderExtensionCodec.fromEncoded(
+                BlockHeaderExtensionCodec.toEncoded(extension)
         );
 
         Assertions.assertInstanceOf(BlockHeaderExtensionV2.class, decoded);
@@ -57,7 +57,7 @@ class BlockHeaderExtensionTest {
         byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
         short[] edges = { 1, 2, 3, 4 };
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> BlockHeaderExtension.fromEncoded(
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BlockHeaderExtensionCodec.fromEncoded(
                 RLP.encodeList(
                         RLP.encodeByte(version),
                         RLP.encodeList(
@@ -74,7 +74,7 @@ class BlockHeaderExtensionTest {
         short[] edges = { 1, 2, 3, 4 };
 
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> BlockHeaderExtension.fromEncoded(unknownVersionEncoding((byte) 0x3, logsBloom, edges)));
+                () -> BlockHeaderExtensionCodec.fromEncoded(unknownVersionEncoding((byte) 0x3, logsBloom, edges)));
 
         Assertions.assertEquals("Unknown extension with version: 3", ex.getMessage());
     }
@@ -82,7 +82,7 @@ class BlockHeaderExtensionTest {
     @Test
     void decodeRejectsOneElementOuterList() {
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> BlockHeaderExtension.fromEncoded(RLP.encodeList(RLP.encodeByte((byte) 0x1))));
+                () -> BlockHeaderExtensionCodec.fromEncoded(RLP.encodeList(RLP.encodeByte((byte) 0x1))));
 
         Assertions.assertEquals("Invalid extension encoding", ex.getMessage());
     }
@@ -90,7 +90,7 @@ class BlockHeaderExtensionTest {
     @Test
     void decodeRejectsThreeElementOuterList() {
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> BlockHeaderExtension.fromEncoded(RLP.encodeList(
+                () -> BlockHeaderExtensionCodec.fromEncoded(RLP.encodeList(
                         RLP.encodeByte((byte) 0x1),
                         RLP.encodeElement(new byte[] { 0x01 }),
                         RLP.encodeElement(new byte[] { 0x02 }))));
@@ -101,7 +101,7 @@ class BlockHeaderExtensionTest {
     @Test
     void decodeRejectsNonListPayload() {
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> BlockHeaderExtension.fromEncoded(RLP.encodeElement(new byte[] { 0x01 })));
+                () -> BlockHeaderExtensionCodec.fromEncoded(RLP.encodeElement(new byte[] { 0x01 })));
 
         Assertions.assertEquals("The decoded element wasn't a list", ex.getMessage());
     }
@@ -113,7 +113,7 @@ class BlockHeaderExtensionTest {
                 RLP.encodeList(RLP.encodeByte((byte) 0x2)));
 
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> BlockHeaderExtension.fromEncoded(twoLists));
+                () -> BlockHeaderExtensionCodec.fromEncoded(twoLists));
 
         Assertions.assertEquals("Expected one RLP item but got 2", ex.getMessage());
     }
@@ -124,7 +124,7 @@ class BlockHeaderExtensionTest {
         short[] edges = { 1, 2, 3, 4 };
 
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> BlockHeaderExtension.fromEncoded(RLP.encodeList(
+                () -> BlockHeaderExtensionCodec.fromEncoded(RLP.encodeList(
                         RLP.encodeElement(new byte[0]),
                         RLP.encodeList(
                                 RLP.encodeElement(logsBloom),
@@ -135,7 +135,7 @@ class BlockHeaderExtensionTest {
 
     @Test
     void encodeRejectsNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> BlockHeaderExtension.toEncoded(null));
+        Assertions.assertThrows(NullPointerException.class, () -> BlockHeaderExtensionCodec.toEncoded(null));
     }
 
     @Test
@@ -161,7 +161,7 @@ class BlockHeaderExtensionTest {
         };
 
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> BlockHeaderExtension.toEncoded(nonMember));
+                () -> BlockHeaderExtensionCodec.toEncoded(nonMember));
 
         Assertions.assertEquals("Unknown extension", ex.getMessage());
     }
@@ -172,7 +172,7 @@ class BlockHeaderExtensionTest {
 
         Assertions.assertArrayEquals(Hex.decode(
                 "f9011301" + "b9010f" + "f9010c" + "b90100" + GOLDEN_V1_BLOOM + "880100020003000400"),
-                BlockHeaderExtension.toEncoded(extension));
+                BlockHeaderExtensionCodec.toEncoded(extension));
     }
 
     @Test
@@ -181,7 +181,7 @@ class BlockHeaderExtensionTest {
 
         Assertions.assertArrayEquals(Hex.decode(
                 "f9010a01" + "b90106" + "f90103" + "b90100" + GOLDEN_V1_BLOOM),
-                BlockHeaderExtension.toEncoded(extension));
+                BlockHeaderExtensionCodec.toEncoded(extension));
     }
 
     @Test
@@ -191,7 +191,7 @@ class BlockHeaderExtensionTest {
 
         Assertions.assertArrayEquals(Hex.decode(
                 "f9013402" + "b90130" + "f9012d" + "b90100" + GOLDEN_V2_BLOOM + "a0" + GOLDEN_V2_BASE_EVENT + "880100020003000400"),
-                BlockHeaderExtension.toEncoded(extension));
+                BlockHeaderExtensionCodec.toEncoded(extension));
     }
 
     @Test
@@ -200,7 +200,7 @@ class BlockHeaderExtensionTest {
 
         Assertions.assertArrayEquals(Hex.decode(
                 "f9011402" + "b90110" + "f9010d" + "b90100" + GOLDEN_V2_BLOOM + "80" + "880100020003000400"),
-                BlockHeaderExtension.toEncoded(extension));
+                BlockHeaderExtensionCodec.toEncoded(extension));
     }
 
     @Test
@@ -210,7 +210,7 @@ class BlockHeaderExtensionTest {
 
         Assertions.assertArrayEquals(Hex.decode(
                 "f9012b02" + "b90127" + "f90124" + "b90100" + GOLDEN_V2_BLOOM + "a0" + GOLDEN_V2_BASE_EVENT),
-                BlockHeaderExtension.toEncoded(extension));
+                BlockHeaderExtensionCodec.toEncoded(extension));
     }
 
     private static byte[] unknownVersionEncoding(byte version, byte[] logsBloom, short[] edges) {
