@@ -849,45 +849,77 @@ public class BridgeSupport {
      */
     private void registerNewUtxos(BtcTransaction btcTx, int btcTxHeight) throws IOException {
         int heightForNewUtxos = getHeightForNewUtxos(activations, btcTxHeight);
-
-        // Outputs to the active federation
-        Wallet activeFederationWallet = getActiveFederationWallet(false);
-        List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
-            activeFederationWallet
-        );
-        for (TransactionOutput output : outputsToTheActiveFederation) {
-            UTXO utxo = new UTXO(
-                btcTx.getHash(),
-                output.getIndex(),
-                output.getValue(),
-                heightForNewUtxos,
-                btcTx.isCoinBase(),
-                output.getScriptPubKey()
-            );
-            federationSupport.getActiveFederationBtcUTXOs().add(utxo);
-        }
-        logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
-
-        // Outputs to the retiring federation (if any)
-        Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
-        if (retiringFederationWallet.isPresent()) {
-            List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet.get());
-            for (TransactionOutput output : outputsToTheRetiringFederation) {
-                UTXO utxo = new UTXO(
-                    btcTx.getHash(),
-                    output.getIndex(),
-                    output.getValue(),
-                    heightForNewUtxos,
-                    btcTx.isCoinBase(),
-                    output.getScriptPubKey()
-                );
-                federationSupport.getRetiringFederationBtcUTXOs().add(utxo);
-            }
-            logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
-        }
+        registerNewUtxosToTheActiveFederation(btcTx, heightForNewUtxos);
+        registerNewUtxosToTheRetiringFederation(btcTx, heightForNewUtxos);
 
         markTxAsProcessed(btcTx);
         logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
+    }
+
+    private void registerNewUtxosToTheRetiringFederation(BtcTransaction btcTx, int btcTxHeight) {
+        Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
+        if (retiringFederationWallet.isEmpty()) {
+            return;
+        }
+        Address retiringFederationAddress = federationSupport.getRetiringFederationAddress()
+            .orElseThrow(() -> new IllegalStateException("Retiring federation wallet exists without a retiring federation"));
+
+        List<UTXO> utxosToTheRetiringFederation = getUtxosSentToWallet(btcTx, retiringFederationWallet.get(), btcTxHeight);
+        federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosToTheRetiringFederation);
+        logUtxosRegistered(
+            btcTx.getHash(),
+            utxosToTheRetiringFederation,
+            retiringFederationAddress
+        );
+        logger.debug("[registerNewUtxosToTheRetiringFederation] Registered {} UTXOs sent to the retiring federation", utxosToTheRetiringFederation.size());
+    }
+
+    private void registerNewUtxosToTheActiveFederation(BtcTransaction btcTx, int btcTxHeight) {
+        Wallet activeFederationWallet = getActiveFederationWallet(false);
+        List<UTXO> utxosToTheActiveFederation = getUtxosSentToWallet(btcTx, activeFederationWallet, btcTxHeight);
+        federationSupport.getActiveFederationBtcUTXOs().addAll(utxosToTheActiveFederation);
+        logUtxosRegistered(
+            btcTx.getHash(),
+            utxosToTheActiveFederation,
+            federationSupport.getActiveFederationAddress()
+        );
+        logger.debug("[registerNewUtxosToTheActiveFederation] Registered {} UTXOs sent to the active federation", utxosToTheActiveFederation.size());
+    }
+
+    private void logUtxosRegistered(Sha256Hash btcTxHash, List<UTXO> registeredUtxos, Address federationAddress) {
+        if (!activations.isActive(RSKIP643) || registeredUtxos.isEmpty()) {
+            return;
+        }
+
+        List<Coin> valuesInSatoshis = registeredUtxos.stream().map(UTXO::getValue).toList();
+        List<Long> outputIndexes = registeredUtxos.stream().map(UTXO::getIndex).toList();
+        eventLogger.logUtxosRegistered(
+            btcTxHash,
+            valuesInSatoshis,
+            outputIndexes,
+            federationAddress
+        );
+    }
+
+    private void logFlyoverUtxosRegistered(
+        Sha256Hash btcTxHash,
+        List<UTXO> registeredUtxos,
+        Address federationAddress,
+        Keccak256 flyoverDerivationHash
+    ) {
+        if (!activations.isActive(RSKIP643) || registeredUtxos.isEmpty()) {
+            return;
+        }
+
+        List<Coin> valuesInSatoshis = registeredUtxos.stream().map(UTXO::getValue).toList();
+        List<Long> outputIndexes = registeredUtxos.stream().map(UTXO::getIndex).toList();
+        eventLogger.logFlyoverUtxosRegistered(
+            btcTxHash,
+            valuesInSatoshis,
+            outputIndexes,
+            federationAddress,
+            flyoverDerivationHash
+        );
     }
 
     /**
@@ -3134,14 +3166,28 @@ public class BridgeSupport {
    // This method will be used by registerBtcTransfer to save all the data required on storage (utxos, btcTxHash-derivationHash),
    // and will look like.
     protected void saveFlyoverActiveFederationDataInStorage(
-            Sha256Hash btcTxHash,
-            Keccak256 derivationHash,
-            FlyoverFederationInformation flyoverFederationInformation,
-            List<UTXO> utxosList
+        Sha256Hash btcTxHash,
+        Keccak256 derivationHash,
+        FlyoverFederationInformation flyoverFederationInformation,
+        List<UTXO> utxosList
     ) {
+        Address activeFederationAddress = federationSupport.getActiveFederationAddress();
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
         federationSupport.getActiveFederationBtcUTXOs().addAll(utxosList);
+        logFlyoverUtxosRegistered(
+            btcTxHash,
+            utxosList,
+            activeFederationAddress,
+            derivationHash
+        );
+        logger.info(
+            "[saveFlyoverActiveFederationDataInStorage] {} flyover UTXOs registered for BTC tx hash: {}, derivation hash: {}, active federation address: {}",
+            utxosList.size(),
+            btcTxHash,
+            derivationHash,
+            activeFederationAddress
+        );
     }
 
     protected void saveFlyoverRetiringFederationDataInStorage(
@@ -3150,9 +3196,25 @@ public class BridgeSupport {
         FlyoverFederationInformation flyoverRetiringFederationInformation,
         List<UTXO> utxosList
     ) {
+        Address retiringFederationAddress = federationSupport.getRetiringFederationAddress()
+            .orElseThrow(() -> new IllegalStateException("Flyover retiring federation information exists without a retiring federation"));
+
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverRetiringFederationInformation(flyoverRetiringFederationInformation);
         federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosList);
+        logFlyoverUtxosRegistered(
+            btcTxHash,
+            utxosList,
+            retiringFederationAddress,
+            derivationHash
+        );
+        logger.info(
+            "[saveFlyoverRetiringFederationDataInStorage] {} flyover UTXOs registered for BTC tx hash: {}, derivation hash: {}, retiring federation address: {}",
+            utxosList.size(),
+            btcTxHash,
+            derivationHash,
+            retiringFederationAddress
+        );
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {
