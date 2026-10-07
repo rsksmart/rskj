@@ -83,10 +83,7 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
             throw new SealedBlockHeaderException("trying to alter baseEvent data of a sealed block");
         }
 
-        // Pinned quirk, kept from the old setter: this dereferences baseEvent
-        // before any null check, so a null baseEvent throws NullPointerException
-        // here while the extension value object accepts null.
-        if (baseEvent.length > BASE_EVENT_MAX_SIZE) {
+        if (baseEvent != null && baseEvent.length > BASE_EVENT_MAX_SIZE) {
             throw new FieldMaxSizeBlockHeaderException(String.format("baseEvent length cannot exceed %d bytes", BASE_EVENT_MAX_SIZE));
         }
         this.hash = null;
