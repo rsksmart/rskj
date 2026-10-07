@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 import java.util.Set;
 
+import static co.rsk.db.ClearedAccountAssertions.assertClearedAccount;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -437,21 +438,6 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
 
         assertFalse(repository.isExist(CONTRACT_C));
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
-    }
-
-    // -------------------------------------------------------------------------
-    // Assertions
-    // -------------------------------------------------------------------------
-
-    private static void assertClearedAccount(MutableRepository repository, RskAddress address, BigInteger expectedNonce) {
-        assertTrue(repository.isExist(address));
-        assertEquals(expectedNonce, repository.getNonce(address));
-        assertEquals(Coin.ZERO, repository.getBalance(address));
-        assertEquals(0, repository.getCodeLength(address));
-        assertEquals(0, repository.getStorageKeysCount(address));
-        assertFalse(repository.hasInitializedStorage(address));
-        assertNull(repository.getStorageValue(address, DataWord.ZERO));
-        assertEquals(MutableRepository.KECCAK_256_OF_EMPTY_ARRAY, repository.getCodeHashStandard(address));
     }
 
     // -------------------------------------------------------------------------
