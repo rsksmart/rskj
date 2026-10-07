@@ -90,6 +90,9 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     private static final RskAddress CONTRACT_X = new RskAddress("a0a1a2a3a4a5a6a7a8a9aaabacadaeaf00010203");
     private static final RskAddress CONTRACT_Y = new RskAddress("c0c1c2c3c4c5c6c7c8c9cacbcccdcecf00010203");
     private static final RskAddress SECOND_DELEGATE = new RskAddress("5051525354555657585960616263646566676869");
+    private static final RskAddress CONTRACT_G = new RskAddress("606162636465666768696a6b6c6d6e6f00010203");
+    // CREATE(0, 0, 0) POP PUSH1 0 CALLDATALOAD SELFDESTRUCT: the CREATE raises the nonce before the mark
+    private static final byte[] CODE_G = Hex.decode("600060006000f050600035ff");
     private static final long BALANCE_A = 777;
     private static final long BALANCE_Y = 50;
     private static final RskAddress BENEFICIARY_B = new RskAddress("b1c7a1f0e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9");
@@ -302,6 +305,57 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
         assertFalse(repository.isExist(CONTRACT_Y));
+    }
+
+    @Test
+    void contractRaisingItsNonceBeforeSelfdestructIsClearedWithTheRaisedNonce() {
+        MutableRepository repository = createRepository();
+        installContract(repository, CONTRACT_G, BigInteger.ZERO, CODE_G, BALANCE_C);
+        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
+        fundSender(repository, SENDER_BALANCE);
+        mockExecutionBlockForRealVm();
+        RskAddress child = new RskAddress(HashUtil.calcNewAddr(CONTRACT_G.getBytes(), BigInteger.ZERO.toByteArray()));
+
+        TransactionExecutor executor = execute(repository, signedCall(CONTRACT_G, beneficiaryWord(BENEFICIARY_B)));
+
+        assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_G.getBytes())));
+        assertClearedAccount(repository, CONTRACT_G, BigInteger.ONE);
+        assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
+        assertTrue(repository.isExist(child));
+        assertEquals(BigInteger.ONE, repository.getNonce(child));
+    }
+
+    @Test
+    void beforeActivationContractRaisingItsNonceBeforeSelfdestructIsDeleted() {
+        activateAllBut(ConsensusRule.RSKIP701);
+        MutableRepository repository = createRepository();
+        installContract(repository, CONTRACT_G, BigInteger.ZERO, CODE_G, BALANCE_C);
+        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
+        fundSender(repository, SENDER_BALANCE);
+        mockExecutionBlockForRealVm();
+
+        execute(repository, signedCall(CONTRACT_G, beneficiaryWord(BENEFICIARY_B)));
+
+        assertFalse(repository.isExist(CONTRACT_G));
+        assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
+    }
+
+    @Test
+    void beforeActivationBalanceReceivedAfterMarkingIsRemovedWithTheAccount() {
+        activateAllBut(ConsensusRule.RSKIP701);
+        MutableRepository repository = createRepository();
+        installContract(repository, CONTRACT_C, BigInteger.ONE, CODE_D, BALANCE_C);
+        installContract(repository, CONTRACT_Y, BigInteger.ZERO, codeDestructingTo(CONTRACT_C), BALANCE_Y);
+        installContract(repository, CONTRACT_X, BigInteger.ONE, codeCallingThenCalling(CONTRACT_C, CONTRACT_Y), 0);
+        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
+        fundSender(repository, SENDER_BALANCE);
+        mockExecutionBlockForRealVm();
+
+        execute(repository, signedCall(CONTRACT_X, beneficiaryWord(BENEFICIARY_B)));
+
+        assertFalse(repository.isExist(CONTRACT_C));
+        assertFalse(repository.isExist(CONTRACT_Y));
+        assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
     }
 
     @Test
