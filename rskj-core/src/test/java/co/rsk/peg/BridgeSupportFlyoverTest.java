@@ -22,6 +22,7 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -1115,6 +1116,141 @@ class BridgeSupportFlyoverTest {
             var chainHeight = btcBlockWithPmtHeight + bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations();
 
             recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
+            bridgeStorageProvider.save();
+        }
+    }
+
+    @Nested
+    class FlyoverPeginUtxoHeight {
+        private final int btcBlockToRegisterHeight = bridgeConstantsMainnet.getBtcHeightWhenBlockIndexActivates();
+        private static final Coin FLYOVER_PEGIN_AMOUNT = Coin.COIN;
+        private static final int UTXO_HEIGHT_BEFORE_CARDAMOM = 0;
+
+        private FederationSupport federationSupport;
+        private BridgeStorageProvider bridgeStorageProvider;
+        private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+        private BridgeSupport bridgeSupport;
+
+        private BtcTransaction flyoverBtcTx;
+        private TransactionOutput outputToFlyoverActiveFederation;
+        private PartialMerkleTree pmtWithTransactions;
+
+        @Test
+        void registerFlyoverBtcTransaction_forVetiver_shouldRegisterActiveFederationUtxoWithZeroHeight() throws Exception {
+            // arrange
+            ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0);
+            setUpWithActivations(vetiverActivations);
+            arrangeFlyoverBtcTransaction(vetiverActivations);
+
+            List<UTXO> expectedUtxos = List.of(
+                UTXOBuilder.builder()
+                    .withTransactionHash(flyoverBtcTx.getHash())
+                    .withOutpointIndex(outputToFlyoverActiveFederation.getIndex())
+                    .withValue(outputToFlyoverActiveFederation.getValue())
+                    .withBlockHeight(UTXO_HEIGHT_BEFORE_CARDAMOM)
+                    .withScriptPubKey(outputToFlyoverActiveFederation.getScriptPubKey())
+                    .build()
+            );
+
+            // act
+            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
+                rskTx,
+                flyoverBtcTx.bitcoinSerialize(),
+                btcBlockToRegisterHeight,
+                pmtWithTransactions.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                lpBtcAddress,
+                true
+            );
+
+            // assert
+            assertEquals(co.rsk.core.Coin.fromBitcoin(FLYOVER_PEGIN_AMOUNT).asBigInteger(), result);
+            assertUtxosAreEqual(expectedUtxos, federationSupport.getActiveFederationBtcUTXOs());
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_shouldRegisterActiveFederationUtxoWithBtcTxHeight() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            arrangeFlyoverBtcTransaction(allActivations);
+
+            List<UTXO> expectedUtxos = List.of(
+                UTXOBuilder.builder()
+                    .withTransactionHash(flyoverBtcTx.getHash())
+                    .withOutpointIndex(outputToFlyoverActiveFederation.getIndex())
+                    .withValue(outputToFlyoverActiveFederation.getValue())
+                    .withBlockHeight(btcBlockToRegisterHeight)
+                    .withScriptPubKey(outputToFlyoverActiveFederation.getScriptPubKey())
+                    .build()
+            );
+
+            // act
+            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
+                rskTx,
+                flyoverBtcTx.bitcoinSerialize(),
+                btcBlockToRegisterHeight,
+                pmtWithTransactions.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                lpBtcAddress,
+                true
+            );
+
+            // assert
+            assertEquals(co.rsk.core.Coin.fromBitcoin(FLYOVER_PEGIN_AMOUNT).asBigInteger(), result);
+            assertUtxosAreEqual(expectedUtxos, federationSupport.getActiveFederationBtcUTXOs());
+        }
+
+        private void setUpWithActivations(ActivationConfig.ForBlock activations) {
+            Block currentBlock = createRskBlock();
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationConstantsMainnet)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(currentBlock)
+                .withActivations(activations)
+                .build();
+            federationStorageProvider.setNewFederation(activeFederation);
+
+            lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, lockingCapMainnetConstants, signatureCache);
+            repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(bridgeConstantsMainnet.getMaxRbtc()));
+
+            bridgeStorageProvider = new BridgeStorageProvider(repository, btcMainnetParams, activations);
+            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
+
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(activations)
+                .withExecutionBlock(currentBlock)
+                .withBridgeConstants(bridgeConstantsMainnet)
+                .withProvider(bridgeStorageProvider)
+                .withRepository(repository)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withLockingCapSupport(lockingCapSupport)
+                .build();
+        }
+
+        private void arrangeFlyoverBtcTransaction(ActivationConfig.ForBlock activations) throws Exception {
+            Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lpBtcAddress,
+                lbcAddress,
+                activations
+            );
+            Address flyoverActiveFederationAddress = getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, activeFederation);
+
+            flyoverBtcTx = new BtcTransaction(btcMainnetParams);
+            flyoverBtcTx.addInput(BitcoinTestUtils.createHash(0), 0, new Script(new byte[]{}));
+            outputToFlyoverActiveFederation = flyoverBtcTx.addOutput(FLYOVER_PEGIN_AMOUNT, flyoverActiveFederationAddress);
+
+            pmtWithTransactions = createValidPmtForTransactions(List.of(flyoverBtcTx), btcMainnetParams);
+            BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeConstantsMainnet, bridgeStorageProvider, activations);
+            int chainHeight = btcBlockToRegisterHeight + bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations();
+            recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockToRegisterHeight, btcMainnetParams);
             bridgeStorageProvider.save();
         }
     }
