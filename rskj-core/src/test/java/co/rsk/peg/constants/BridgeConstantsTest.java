@@ -136,6 +136,44 @@ class BridgeConstantsTest {
         assertEquals(expectedValue, pegoutTxIndexGracePeriodInBtcBlocks);
     }
 
+    private static Stream<Arguments> getBtcHeightWhenBlockIndexActivatesArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), 696_022),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 2_039_594),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), 143_136),
+            Arguments.of(new BridgeRegTestConstants(), 10)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("getBtcHeightWhenBlockIndexActivatesArgProvider")
+    void getBtcHeightWhenBlockIndexActivates(BridgeConstants bridgeConstants, int expectedValue) {
+        // Act
+        int btcHeightWhenBlockIndexActivates = bridgeConstants.getBtcHeightWhenBlockIndexActivates();
+
+        // assert
+        assertEquals(expectedValue, btcHeightWhenBlockIndexActivates);
+    }
+
+    private static Stream<Arguments> getMaxDepthToSearchBlocksBelowIndexActivationArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), 4_320),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 4_320),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), 0),
+            Arguments.of(new BridgeRegTestConstants(), 5)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("getMaxDepthToSearchBlocksBelowIndexActivationArgProvider")
+    void getMaxDepthToSearchBlocksBelowIndexActivation(BridgeConstants bridgeConstants, int expectedValue) {
+        // Act
+        int maxDepthToSearchBlocksBelowIndexActivation = bridgeConstants.getMaxDepthToSearchBlocksBelowIndexActivation();
+
+        // assert
+        assertEquals(expectedValue, maxDepthToSearchBlocksBelowIndexActivation);
+    }
+
     @ParameterizedTest()
     @MethodSource("getFeePerKbConstantsProvider")
     void getFeePerKbConstants(BridgeConstants bridgeConstants, FeePerKbConstants expectedValue) {
