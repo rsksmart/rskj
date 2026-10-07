@@ -139,34 +139,6 @@ class BlockHeaderExtensionCodecTest {
     }
 
     @Test
-    void encodeRejectsNonMemberExtension() {
-        // Pins the current instanceof guard. The guard and this test go away once the
-        // interface is sealed: a non-member then fails to compile instead of being
-        // rejected at runtime.
-        BlockHeaderExtension nonMember = new BlockHeaderExtension() {
-            @Override
-            public byte[] getEncoded() {
-                return new byte[0];
-            }
-
-            @Override
-            public byte[] getHash() {
-                return new byte[0];
-            }
-
-            @Override
-            public byte getVersion() {
-                return 0x3;
-            }
-        };
-
-        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> BlockHeaderExtensionCodec.toEncoded(nonMember));
-
-        Assertions.assertEquals("Unknown extension", ex.getMessage());
-    }
-
-    @Test
     void goldenOuterEncodingV1WithEdges() {
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(Hex.decode(GOLDEN_V1_BLOOM), EDGES);
 

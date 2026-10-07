@@ -33,17 +33,8 @@ public final class BlockHeaderExtensionCodec {
     }
 
     public static byte[] toEncoded(BlockHeaderExtension extension) {
-        if (!(Objects.requireNonNull(extension) instanceof BlockHeaderExtensionV1)) {
-            throw new IllegalArgumentException("Unknown extension");
-        }
-        if (extension instanceof BlockHeaderExtensionV2) {
-            return RLP.encodeList(
-                    RLP.encodeByte((byte) 0x2),
-                    RLP.encodeElement(extension.getEncoded())
-            );
-        }
         return RLP.encodeList(
-                RLP.encodeByte((byte) 0x1),
+                RLP.encodeByte(Objects.requireNonNull(extension).getVersion()),
                 RLP.encodeElement(extension.getEncoded())
         );
     }
@@ -55,12 +46,13 @@ public final class BlockHeaderExtensionCodec {
         }
         byte[] versionData = rlpList.get(0).getRLPData();
         byte version = versionData == null || versionData.length == 0 ? 0 : versionData[0];
-        if (version == 0x2) {
-            return BlockHeaderExtensionV2.fromEncoded(rlpList.get(1).getRLPData());
+        switch (version) {
+            case 0x1:
+                return BlockHeaderExtensionV1.fromEncoded(rlpList.get(1).getRLPData());
+            case 0x2:
+                return BlockHeaderExtensionV2.fromEncoded(rlpList.get(1).getRLPData());
+            default:
+                throw new IllegalArgumentException("Unknown extension with version: " + version);
         }
-        if (version == 0x1) {
-            return BlockHeaderExtensionV1.fromEncoded(rlpList.get(1).getRLPData());
-        }
-        throw new IllegalArgumentException("Unknown extension with version: " + version);
     }
 }
