@@ -3166,19 +3166,27 @@ public class BridgeSupport {
    // This method will be used by registerBtcTransfer to save all the data required on storage (utxos, btcTxHash-derivationHash),
    // and will look like.
     protected void saveFlyoverActiveFederationDataInStorage(
-            Sha256Hash btcTxHash,
-            Keccak256 derivationHash,
-            FlyoverFederationInformation flyoverFederationInformation,
-            List<UTXO> utxosList
+        Sha256Hash btcTxHash,
+        Keccak256 derivationHash,
+        FlyoverFederationInformation flyoverFederationInformation,
+        List<UTXO> utxosList
     ) {
+        Address activeFederationAddress = federationSupport.getActiveFederationAddress();
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
         federationSupport.getActiveFederationBtcUTXOs().addAll(utxosList);
         logFlyoverUtxosRegistered(
             btcTxHash,
             utxosList,
-            federationSupport.getActiveFederationAddress(),
+            activeFederationAddress,
             derivationHash
+        );
+        logger.info(
+            "[saveFlyoverActiveFederationDataInStorage] {} flyover UTXOs registered for BTC tx hash: {}, derivation hash: {}, active federation address: {}",
+            utxosList.size(),
+            btcTxHash,
+            derivationHash,
+            activeFederationAddress
         );
     }
 
@@ -3188,16 +3196,24 @@ public class BridgeSupport {
         FlyoverFederationInformation flyoverRetiringFederationInformation,
         List<UTXO> utxosList
     ) {
+        Address retiringFederationAddress = federationSupport.getRetiringFederationAddress()
+            .orElseThrow(() -> new IllegalStateException("Flyover retiring federation information exists without a retiring federation"));
+
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverRetiringFederationInformation(flyoverRetiringFederationInformation);
         federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosList);
-        federationSupport.getRetiringFederationAddress().ifPresent(retiringFederationAddress ->
-            logFlyoverUtxosRegistered(
-                btcTxHash,
-                utxosList,
-                retiringFederationAddress,
-                derivationHash
-            )
+        logFlyoverUtxosRegistered(
+            btcTxHash,
+            utxosList,
+            retiringFederationAddress,
+            derivationHash
+        );
+        logger.info(
+            "[saveFlyoverRetiringFederationDataInStorage] {} flyover UTXOs registered for BTC tx hash: {}, derivation hash: {}, retiring federation address: {}",
+            utxosList.size(),
+            btcTxHash,
+            derivationHash,
+            retiringFederationAddress
         );
     }
 
