@@ -29,6 +29,7 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderBuilder;
 import org.ethereum.core.BlockHeaderExtension;
+import org.ethereum.core.BlockHeaderExtensionCodec;
 import org.ethereum.core.BlockHeaderExtensionV2;
 import org.ethereum.core.BlockHeaderV1;
 import org.ethereum.core.Bloom;
@@ -908,8 +909,8 @@ class BlockFactoryTest {
 
         // Round-trip the extension through its wire encoding so an empty baseEvent
         // is read back via fromEncoded.
-        BlockHeaderExtension wireExtension = BlockHeaderExtension.fromEncoded(
-                BlockHeaderExtension.toEncoded(header.getExtension()));
+        BlockHeaderExtension wireExtension = BlockHeaderExtensionCodec.fromEncoded(
+                BlockHeaderExtensionCodec.toEncoded(header.getExtension()));
         header.setExtension(wireExtension);
 
         // Re-encode the header: the empty baseEvent slot is preserved in the layout.
@@ -936,8 +937,8 @@ class BlockFactoryTest {
                 .build();
         assertArrayEquals(new byte[0], header.getBaseEvent());
 
-        BlockHeaderExtension wireExtension = BlockHeaderExtension.fromEncoded(
-                BlockHeaderExtension.toEncoded(header.getExtension()));
+        BlockHeaderExtension wireExtension = BlockHeaderExtensionCodec.fromEncoded(
+                BlockHeaderExtensionCodec.toEncoded(header.getExtension()));
         header.setExtension(wireExtension);
 
         byte[] stored = header.getFullEncoded();
