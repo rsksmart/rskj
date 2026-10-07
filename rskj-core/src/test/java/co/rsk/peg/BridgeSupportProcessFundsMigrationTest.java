@@ -1614,8 +1614,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 migrationEntry.getPegoutCreationRskTxHash(),
                 migrationTransaction,
                 outpointValues,
-                totalAmountMigrated,
-                ALL_ACTIVATIONS
+                totalAmountMigrated
             );
 
             assertBtcTxVersionIs2(migrationTransaction);
@@ -1693,8 +1692,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 migrationEntry.getPegoutCreationRskTxHash(),
                 migrationTransaction,
                 outpointValues,
-                totalAmountMigrated,
-                ALL_ACTIVATIONS
+                totalAmountMigrated
             );
 
             assertBtcTxVersionIs2(migrationTransaction);

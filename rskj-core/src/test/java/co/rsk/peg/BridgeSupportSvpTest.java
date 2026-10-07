@@ -551,8 +551,7 @@ class BridgeSupportSvpTest {
                 rskTx.getHash(),
                 svpFundTransaction,
                 svpFundTxOutpointsValues,
-                totalValueSentToProposedFederation,
-                allActivations
+                totalValueSentToProposedFederation
             );
 
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints

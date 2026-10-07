@@ -8302,8 +8302,7 @@ class BridgeSupportTest {
                 tx.getHash(),
                 releaseTransaction,
                 outpointValues,
-                totalAmountRequested,
-                allActivations
+                totalAmountRequested
             );
         }
 

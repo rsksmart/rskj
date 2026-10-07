@@ -404,11 +404,10 @@ public final class BridgeSupportTestUtil {
         Keccak256 releaseCreationTxHash,
         BtcTransaction releaseTransaction,
         List<Coin> expectedOutpointsValues,
-        Coin totalAmountRequested,
-        ActivationConfig.ForBlock activations
+        Coin totalAmountRequested
     ) throws IOException {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock, activations);
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock, ACTIVATIONS_ALL);
         assertPegoutTxSigHashWasNotSaved(bridgeStorageProvider, releaseTransaction);
         assertFederationsPendingBtcUTXOsWereSaved(federationStorageProvider, federationSupport, releaseTransaction);
         assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransaction.getHash(), totalAmountRequested);
