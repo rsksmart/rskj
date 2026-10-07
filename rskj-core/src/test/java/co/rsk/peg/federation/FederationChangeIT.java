@@ -577,10 +577,12 @@ class FederationChangeIT {
         return newFederation;
     }
 
+    // TODO(juli): once registerPegoutTransaction is implemented, add a version of this test with allActivations
+    //  that registers the pegout change through registerPegoutTransaction
     @Test
-    void rollbackPendingFederation_afterPartiallyBuilt_wipesStateAndAllowsNewFederationChangeToProceed() throws Exception {
+    void rollbackPendingFederation_afterPartiallyBuilt_forVetiver_wipesStateAndAllowsNewFederationChangeToProceed() throws Exception {
         // Arrange
-        setUp(ALL_ACTIVATIONS);
+        setUp(VETIVER_ACTIVATIONS);
         var originalFederation = createOriginalSegwitFederation();
 
         assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
