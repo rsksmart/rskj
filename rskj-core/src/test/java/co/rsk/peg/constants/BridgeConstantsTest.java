@@ -147,7 +147,7 @@ class BridgeConstantsTest {
 
     @ParameterizedTest()
     @MethodSource("getBtcHeightWhenBlockIndexActivatesArgProvider")
-    void getBtcHeightWhenBlockIndexActivates(BridgeConstants bridgeConstants, int expectedValue) {
+    void getBtcHeightWhenBlockIndexActivates_shouldReturnNetworkValue(BridgeConstants bridgeConstants, int expectedValue) {
         // Act
         int btcHeightWhenBlockIndexActivates = bridgeConstants.getBtcHeightWhenBlockIndexActivates();
 
@@ -166,7 +166,7 @@ class BridgeConstantsTest {
 
     @ParameterizedTest()
     @MethodSource("getMaxDepthToSearchBlocksBelowIndexActivationArgProvider")
-    void getMaxDepthToSearchBlocksBelowIndexActivation(BridgeConstants bridgeConstants, int expectedValue) {
+    void getMaxDepthToSearchBlocksBelowIndexActivation_shouldReturnNetworkValue(BridgeConstants bridgeConstants, int expectedValue) {
         // Act
         int maxDepthToSearchBlocksBelowIndexActivation = bridgeConstants.getMaxDepthToSearchBlocksBelowIndexActivation();
 
