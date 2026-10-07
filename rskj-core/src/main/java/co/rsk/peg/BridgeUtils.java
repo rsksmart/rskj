@@ -51,7 +51,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author Oscar Guindzberg
@@ -350,22 +349,32 @@ public final class BridgeUtils {
     /**
      * @param context
      * @param btcTx
-     * @param utxosHeight
+     * @param btcTxHeight
      * @param addresses
      * @return the list of UTXOs in the given btcTx sent to the given list of address
      */
-    private static List<UTXO> getUTXOsSentToAddresses(Context context, BtcTransaction btcTx, int utxosHeight, List<Address> addresses) {
+    private static List<UTXO> getUTXOsSentToAddresses(Context context, BtcTransaction btcTx, int btcTxHeight, List<Address> addresses) {
         Wallet wallet = BridgeUtils.createWatchedBtcWalletFromAddresses(context, addresses);
-        return btcTx.getWalletOutputs(wallet).stream().map(
-            txOutput -> new UTXO(
+        return getUtxosSentToWallet(btcTx, wallet, btcTxHeight);
+    }
+
+    /**
+     * @param btcTx
+     * @param wallet
+     * @param btcTxHeight
+     * @return the list of UTXOs in the given btcTx sent to the given wallet
+     */
+    public static List<UTXO> getUtxosSentToWallet(BtcTransaction btcTx, Wallet wallet, int btcTxHeight) {
+        return btcTx.getWalletOutputs(wallet).stream()
+            .map(output -> new UTXO(
                 btcTx.getHash(),
-                txOutput.getIndex(),
-                txOutput.getValue(),
-                utxosHeight,
+                output.getIndex(),
+                output.getValue(),
+                btcTxHeight,
                 btcTx.isCoinBase(),
-                txOutput.getScriptPubKey()
-            )
-        ).collect(Collectors.toList());
+                output.getScriptPubKey()
+            ))
+            .toList();
     }
 
     /**
