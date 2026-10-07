@@ -398,6 +398,8 @@ class FederationChangeIT {
         assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
     }
 
+    // TODO(juli): assertPegoutsShouldWorkToFed saves the pegout tx sighash itself, which the bridge no longer does
+    //  after RSKIP643. Once registerPegoutTransaction is implemented, register the pegout change through it instead
     @Test
     void changeFederation_withAllActivations_fromSegwitToSegwit_splitMigrationOutputs() throws Exception {
         // Arrange
