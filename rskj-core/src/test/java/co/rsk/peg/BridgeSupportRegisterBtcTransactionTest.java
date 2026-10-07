@@ -1425,7 +1425,6 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(2)), eq(0));
-
             assertUtxosWereRegisteredInActiveAndRetiringFed(btcTransaction, expectedUtxoHeight);
             verifyLogUtxosRegistered(
                 activations,
@@ -1513,6 +1512,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
             verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(2)), eq(0));
+            assertUtxosWereRegisteredInActiveAndRetiringFed(btcTransaction, expectedUtxoHeight);
             verifyLogUtxosRegistered(
                 activations,
                 btcTransaction,
