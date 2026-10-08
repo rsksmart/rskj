@@ -109,7 +109,7 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
     }
 
     public byte[] getBaseEvent() {
-        return this.baseEvent;
+        return this.baseEvent != null ? Arrays.copyOf(this.baseEvent, this.baseEvent.length) : null;
     }
 
     public BlockHeaderExtensionV2 withBaseEvent(byte[] baseEvent) {
@@ -132,7 +132,9 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
     }
 
     public short[] getTxExecutionSublistsEdges() {
-        return this.txExecutionSublistsEdges;
+        return this.txExecutionSublistsEdges != null
+                ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length)
+                : null;
     }
 
     @Override

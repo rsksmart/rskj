@@ -72,13 +72,26 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void getBaseEventReturnsInternalArray() {
-        // Immutable value objects copy on construction and expose their internals
-        // directly: callers get a read-only view and must not mutate it.
+    void getBaseEventReturnsCopy() {
+        // Java arrays have no read-only view, so an immutable value object must
+        // copy on the way out as well as on the way in.
         byte[] hash = new byte[]{0x0A, 0x0B};
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, hash);
         byte[] returned = ext.getBaseEvent();
         assertArrayEquals(hash, returned);
+
+        returned[0] = 0x00;
+        assertEquals(0x0A, ext.getBaseEvent()[0]);
+    }
+
+    @Test
+    void getEdgesReturnsCopy() {
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, EDGES, null);
+        short[] returned = ext.getTxExecutionSublistsEdges();
+        assertArrayEquals(EDGES, returned);
+
+        returned[0] = 99;
+        assertEquals(EDGES[0], ext.getTxExecutionSublistsEdges()[0]);
     }
 
     @Test
