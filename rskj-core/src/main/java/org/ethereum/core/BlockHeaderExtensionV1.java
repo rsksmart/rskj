@@ -33,7 +33,7 @@ import java.util.List;
  * <p>Immutable value object: wire layout is
  * {@code [logsBloom, edges?]}; the hash covers
  * {@code keccak256(logsBloom)} instead of the raw logsBloom, plus the
- * edges slot when present. Immutable value object.
+ * edges slot when present.
  */
 public final class BlockHeaderExtensionV1 implements BlockHeaderExtension {
     private final byte[] logsBloom;
@@ -88,7 +88,9 @@ public final class BlockHeaderExtensionV1 implements BlockHeaderExtension {
     }
 
     public short[] getTxExecutionSublistsEdges() {
-        return this.txExecutionSublistsEdges;
+        return this.txExecutionSublistsEdges != null
+                ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length)
+                : null;
     }
 
     @Override
