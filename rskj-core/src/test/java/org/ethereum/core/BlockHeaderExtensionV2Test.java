@@ -18,7 +18,9 @@
  */
 package org.ethereum.core;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.exception.FieldMaxSizeBlockHeaderException;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -31,6 +33,16 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BlockHeaderExtensionV2Test {
+
+    private static final short[] EDGES = new short[] { 1, 2, 3, 4 };
+
+    // Golden fixtures: inputs and expected bytes were captured from the current
+    // implementation before any refactor; the refactor must reproduce the encodings
+    // and hashes byte for byte.
+    private static final String GOLDEN_V2_BLOOM =
+            "57afbc42df5c50a2b79c978bf534cf093f95ddba9a3bd04c11fa4ae8658500458f01ee2ba7a657487425abe67b4d2cd4e49ef79d0c1e985706b1aa6097c8d30516579bb4f52f842a217955fdb0886ceabda21729ebeb1fc47d69021eacbedffef6cce54245d508918ef0f9b4f1334535672f01f8de0866f12ac5859c3bc95b9d7faa97ad088ac8a66ee2846db08e0aa402de12c8bfea8e02e2dde8f031c952a2c4e55dba21c3de0adbfb2fb6f278cc21b49e43781dac79f620a6415c4c354c8c1cb8fdc26ab1da31d02849d8d171eab62615cde9bb6e64a582d984c9a08091fba142f83e304c37acae0cbe5ffbe5b810050515a40f8eca484a7d80d616d1490a";
+    private static final String GOLDEN_V2_BASE_EVENT =
+            "b6925d33ad9d6297a4907256a7e5f2683102537aa2909bb6c17b4f1adc51b38d";
 
     @Test
     void constructorAndGetters() {
@@ -48,10 +60,10 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void setBaseEventCopiesArray() {
+    void withBaseEventCopiesArray() {
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, null);
         byte[] hash = new byte[]{0x0A, 0x0B};
-        ext.setBaseEvent(hash);
+        ext = ext.withBaseEvent(hash);
 
         assertArrayEquals(hash, ext.getBaseEvent());
         // Mutate original array to check for defensive copy
@@ -61,11 +73,25 @@ class BlockHeaderExtensionV2Test {
 
     @Test
     void getBaseEventReturnsCopy() {
+        // Java arrays have no read-only view, so an immutable value object must
+        // copy on the way out as well as on the way in.
         byte[] hash = new byte[]{0x0A, 0x0B};
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, hash);
         byte[] returned = ext.getBaseEvent();
+        assertArrayEquals(hash, returned);
+
         returned[0] = 0x00;
-        assertNotEquals(returned[0], ext.getBaseEvent()[0]);
+        assertEquals(0x0A, ext.getBaseEvent()[0]);
+    }
+
+    @Test
+    void getEdgesReturnsCopy() {
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, EDGES, null);
+        short[] returned = ext.getTxExecutionSublistsEdges();
+        assertArrayEquals(EDGES, returned);
+
+        returned[0] = 99;
+        assertEquals(EDGES[0], ext.getTxExecutionSublistsEdges()[0]);
     }
 
     @Test
@@ -168,56 +194,56 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void testSetBaseEventWithNull() {
+    void testWithBaseEventNull() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
-        extension.setBaseEvent(null);
+        extension = extension.withBaseEvent(null);
         assertNull(extension.getBaseEvent());
     }
 
     @Test
-    void testSetBaseEventWithEmptyArray() {
+    void testWithBaseEventEmptyArray() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
         byte[] emptyArray = new byte[0];
-        extension.setBaseEvent(emptyArray);
+        extension = extension.withBaseEvent(emptyArray);
         assertArrayEquals(emptyArray, extension.getBaseEvent());
     }
 
     @Test
-    void testSetBaseEventWithLargeValue() {
+    void testWithBaseEventLargeValue() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
         byte[] largeValue = new byte[BASE_EVENT_MAX_SIZE];
         for (int i = 0; i < BASE_EVENT_MAX_SIZE; i++) {
             largeValue[i] = (byte) (i % 256);
         }
-        extension.setBaseEvent(largeValue);
+        extension = extension.withBaseEvent(largeValue);
         assertArrayEquals(largeValue, extension.getBaseEvent());
     }
 
     @Test
-    void testSetBaseEventExceedingMaxSizeThrowsException() {
+    void testWithBaseEventExceedingMaxSizeThrowsException() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
         byte[] oversizedValue = new byte[BASE_EVENT_MAX_SIZE + 1];
-        assertThrows(FieldMaxSizeBlockHeaderException.class, () -> extension.setBaseEvent(oversizedValue));
+        assertThrows(FieldMaxSizeBlockHeaderException.class, () -> extension.withBaseEvent(oversizedValue));
     }
 
     @Test
-    void testSetBaseEventWithSpecialBytes() {
+    void testWithBaseEventSpecialBytes() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
         byte[] specialBytes = new byte[]{0x00, (byte) 0xFF, (byte) 0x80, (byte) 0x7F};
-        extension.setBaseEvent(specialBytes);
+        extension = extension.withBaseEvent(specialBytes);
         assertArrayEquals(specialBytes, extension.getBaseEvent());
     }
 
     @Test
-    void testSetBaseEventMultipleTimes() {
+    void testWithBaseEventMultipleTimes() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
 
         byte[] firstValue = new byte[]{1, 2, 3};
-        extension.setBaseEvent(firstValue);
+        extension = extension.withBaseEvent(firstValue);
         assertArrayEquals(firstValue, extension.getBaseEvent());
 
         byte[] secondValue = new byte[]{4, 5, 6, 7, 8};
-        extension.setBaseEvent(secondValue);
+        extension = extension.withBaseEvent(secondValue);
         assertArrayEquals(secondValue, extension.getBaseEvent());
     }
 
@@ -267,5 +293,102 @@ class BlockHeaderExtensionV2Test {
         }
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], maxSizeValue);
         assertArrayEquals(maxSizeValue, extension.getBaseEvent());
+    }
+
+    @Test
+    void constructorDoesNotEnforceBaseEventMaxSize() {
+        // Pinned quirk: only setBaseEvent() enforces BASE_EVENT_MAX_SIZE, the constructor
+        // does not, so oversized data can still reach the value object through it.
+        byte[] oversizedValue = new byte[BASE_EVENT_MAX_SIZE + 1];
+        for (int i = 0; i < oversizedValue.length; i++) {
+            oversizedValue[i] = (byte) (i % 256);
+        }
+
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], EDGES, oversizedValue);
+
+        assertArrayEquals(oversizedValue, extension.getBaseEvent());
+    }
+
+    @Test
+    void decodeWithOneElementListThrowsIndexOutOfBounds() {
+        // Pinned quirk: fromEncoded() reads the baseEvent slot (index 1) unconditionally,
+        // so an inner list without it fails with IndexOutOfBoundsException.
+        byte[] logsBloom = new byte[256];
+        byte[] oneElementList = RLP.encodeList(RLP.encodeElement(logsBloom));
+
+        assertThrows(IndexOutOfBoundsException.class, () -> BlockHeaderExtensionV2.fromEncoded(oneElementList));
+    }
+
+    @Test
+    void hashIncludesLogsBloom() {
+        byte[] logsBloom1 = new byte[256];
+        Arrays.fill(logsBloom1, (byte) 0x01);
+        byte[] logsBloom2 = new byte[256];
+        Arrays.fill(logsBloom2, (byte) 0x02);
+
+        BlockHeaderExtensionV2 extension1 = new BlockHeaderExtensionV2(logsBloom1, EDGES, new byte[] { 0x01 });
+        BlockHeaderExtensionV2 extension2 = new BlockHeaderExtensionV2(logsBloom2, EDGES, new byte[] { 0x01 });
+
+        assertNotEquals(
+                Hex.toHexString(extension1.getHash()),
+                Hex.toHexString(extension2.getHash()));
+    }
+
+    @Test
+    void hashIncludesBaseEvent() {
+        byte[] logsBloom = new byte[256];
+        Arrays.fill(logsBloom, (byte) 0x01);
+
+        BlockHeaderExtensionV2 extension1 = new BlockHeaderExtensionV2(logsBloom, EDGES, new byte[] { 0x01 });
+        BlockHeaderExtensionV2 extension2 = new BlockHeaderExtensionV2(logsBloom, EDGES, new byte[] { 0x02 });
+
+        assertNotEquals(
+                Hex.toHexString(extension1.getHash()),
+                Hex.toHexString(extension2.getHash()));
+    }
+
+    @Test
+    void hashIncludesEdges() {
+        byte[] logsBloom = new byte[256];
+        Arrays.fill(logsBloom, (byte) 0x01);
+
+        BlockHeaderExtensionV2 extension1 = new BlockHeaderExtensionV2(logsBloom, new short[] { 1, 2 }, new byte[] { 0x01 });
+        BlockHeaderExtensionV2 extension2 = new BlockHeaderExtensionV2(logsBloom, new short[] { 3, 4 }, new byte[] { 0x01 });
+
+        assertNotEquals(
+                Hex.toHexString(extension1.getHash()),
+                Hex.toHexString(extension2.getHash()));
+    }
+
+    @Test
+    void goldenEncodingAndHashWithEdgesAndBaseEvent() {
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(
+                Hex.decode(GOLDEN_V2_BLOOM), EDGES, Hex.decode(GOLDEN_V2_BASE_EVENT));
+
+        assertArrayEquals(Hex.decode("f9012d" + "b90100" + GOLDEN_V2_BLOOM + "a0" + GOLDEN_V2_BASE_EVENT + "880100020003000400"),
+                extension.getEncoded());
+        assertArrayEquals(Hex.decode("83ad17bbc2bbe2dd8cff717f99c97445da62a0d1fd575192707b09f6e9858a14"),
+                extension.getHash());
+    }
+
+    @Test
+    void goldenEncodingAndHashWithNullBaseEvent() {
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(Hex.decode(GOLDEN_V2_BLOOM), EDGES, null);
+
+        assertArrayEquals(Hex.decode("f9010d" + "b90100" + GOLDEN_V2_BLOOM + "80" + "880100020003000400"),
+                extension.getEncoded());
+        assertArrayEquals(Hex.decode("1814eb010dccd15a79c6e9977cd8c3d5891374312ddc081be1cb60fb6cec7d69"),
+                extension.getHash());
+    }
+
+    @Test
+    void goldenEncodingAndHashWithNullEdges() {
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(
+                Hex.decode(GOLDEN_V2_BLOOM), null, Hex.decode(GOLDEN_V2_BASE_EVENT));
+
+        assertArrayEquals(Hex.decode("f90124" + "b90100" + GOLDEN_V2_BLOOM + "a0" + GOLDEN_V2_BASE_EVENT),
+                extension.getEncoded());
+        assertArrayEquals(Hex.decode("3fb85c5ee8c1bafa5de427897884c734753dad8209e2198959599efee2b22cb2"),
+                extension.getHash());
     }
 }

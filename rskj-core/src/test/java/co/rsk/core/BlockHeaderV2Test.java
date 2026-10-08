@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import org.ethereum.TestUtils;
+import org.ethereum.core.BlockHeaderExtensionV1;
 import org.ethereum.core.BlockHeaderExtensionV2;
 import org.ethereum.core.BlockHeaderV2;
 import org.ethereum.core.exception.FieldMaxSizeBlockHeaderException;
@@ -30,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -85,6 +87,27 @@ class BlockHeaderV2Test {
         header.setExtension(ext);
         // then
         assertSame(ext, header.getExtension());
+    }
+
+    @Test
+    void testSetExtensionRejectsMismatchedVersion() {
+        // given
+        BlockHeaderV2 header = createHeaderV2();
+        BlockHeaderExtensionV1 mismatchedExtension = new BlockHeaderExtensionV1(new byte[256], new short[] { 1 });
+        // when / then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> header.setExtension(mismatchedExtension));
+        assertEquals("Mismatched extension version 1 for header version 2", ex.getMessage());
+    }
+
+    @Test
+    void testSetExtensionRejectsNull() {
+        // given
+        BlockHeaderV2 header = createHeaderV2();
+        // when / then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> header.setExtension(null));
+        assertEquals("Mismatched extension version none for header version 2", ex.getMessage());
     }
 
     @Test
@@ -180,6 +203,16 @@ class BlockHeaderV2Test {
         header.setBaseEvent(emptyArray);
         // then
         assertArrayEquals(emptyArray, header.getBaseEvent());
+    }
+
+    @Test
+    void testSetBaseEventWithNull() {
+        // given
+        BlockHeaderV2 header = createHeaderV2();
+        // when
+        header.setBaseEvent(null);
+        // then
+        assertNull(header.getBaseEvent());
     }
 
     @Test
@@ -308,7 +341,7 @@ class BlockHeaderV2Test {
         byte[] expectedBaseEvent = new byte[]{0x01, 0x02, 0x03, 0x04, 0x05};
 
         // when
-        header.getExtension().setBaseEvent(expectedBaseEvent);
+        header.setBaseEvent(expectedBaseEvent);
         byte[] result = header.getBaseEvent();
 
         // then

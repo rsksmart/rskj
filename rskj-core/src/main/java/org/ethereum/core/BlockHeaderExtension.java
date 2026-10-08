@@ -18,47 +18,34 @@
  */
 package org.ethereum.core;
 
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-
-import java.util.Objects;
-
-public interface BlockHeaderExtension {
-    static byte[] toEncoded(BlockHeaderExtension extension) {
-        if (!(Objects.requireNonNull(extension) instanceof BlockHeaderExtensionV1)) {
-            throw new IllegalArgumentException("Unknown extension");
-        }
-        if (extension instanceof BlockHeaderExtensionV2) {
-            return RLP.encodeList(
-                    RLP.encodeByte((byte) 0x2),
-                    RLP.encodeElement(extension.getEncoded())
-            );
-        }
-        return RLP.encodeList(
-                RLP.encodeByte((byte) 0x1),
-                RLP.encodeElement(extension.getEncoded())
-        );
-    }
-
-    static BlockHeaderExtension fromEncoded(byte[] encoded) {
-        RLPList rlpList = RLP.decodeList(encoded);
-        if (rlpList.size() != 2) {
-            throw new IllegalArgumentException("Invalid extension encoding");
-        }
-        byte[] versionData = rlpList.get(0).getRLPData();
-        byte version = versionData == null || versionData.length == 0 ? 0 : versionData[0];
-        if (version == 0x2) {
-            return BlockHeaderExtensionV2.fromEncoded(rlpList.get(1).getRLPData());
-        }
-        if (version == 0x1) {
-            return BlockHeaderExtensionV1.fromEncoded(rlpList.get(1).getRLPData());
-        }
-        throw new IllegalArgumentException("Unknown extension with version: " + version);
-    }
+/**
+ * RSKIP-351 block header extension.
+ *
+ * <p>The set of extension versions is fixed by consensus (hard forks), so the
+ * hierarchy is sealed: adding a version means one final class, one
+ * {@code permits} entry and one decode case in {@link BlockHeaderExtensionCodec}.
+ * The compiler enforces the {@code permits} entry; the decode case is not
+ * compiler-enforced (the codec switches on a wire byte), so the codec test
+ * checks every permitted class round-trips through the codec.
+ *
+ * <p>Instances are immutable value objects: arrays are copied in and copied
+ * out (Java arrays have no read-only view), and the {@code with...} methods
+ * derive a new instance with one field replaced. A header pairs with an
+ * extension of the same version, enforced by {@code BlockHeaderV1} at
+ * construction and in {@code setExtension}.
+ */
+public sealed interface BlockHeaderExtension permits BlockHeaderExtensionV1, BlockHeaderExtensionV2 {
+    byte getVersion();
 
     byte[] getEncoded();
 
     byte[] getHash();
 
-    byte getVersion();
+    byte[] getLogsBloom();
+
+    BlockHeaderExtension withLogsBloom(byte[] logsBloom);
+
+    short[] getTxExecutionSublistsEdges();
+
+    BlockHeaderExtension withTxExecutionSublistsEdges(short[] edges);
 }

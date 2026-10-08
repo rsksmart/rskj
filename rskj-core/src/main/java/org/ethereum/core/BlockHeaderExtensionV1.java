@@ -27,12 +27,20 @@ import org.ethereum.util.RLPList;
 import java.util.Arrays;
 import java.util.List;
 
-public class BlockHeaderExtensionV1 implements BlockHeaderExtension {
-    private byte[] logsBloom;
-    private short[] txExecutionSublistsEdges;
+/**
+ * RSKIP-351 block header extension, version 1.
+ *
+ * <p>Immutable value object: wire layout is
+ * {@code [logsBloom, edges?]}; the hash covers
+ * {@code keccak256(logsBloom)} instead of the raw logsBloom, plus the
+ * edges slot when present.
+ */
+public final class BlockHeaderExtensionV1 implements BlockHeaderExtension {
+    private final byte[] logsBloom;
+    private final short[] txExecutionSublistsEdges;
 
     public BlockHeaderExtensionV1(byte[] logsBloom, short[] edges) {
-        this.logsBloom = logsBloom;
+        this.logsBloom = logsBloom != null ? Arrays.copyOf(logsBloom, logsBloom.length) : null;
         this.txExecutionSublistsEdges = edges != null ? Arrays.copyOf(edges, edges.length) : null;
     }
 
@@ -51,42 +59,42 @@ public class BlockHeaderExtensionV1 implements BlockHeaderExtension {
 
     @Override
     public byte[] getHash() {
-        return HashUtil.keccak256(this.getEncodedForHash());
+        List<byte[]> fieldsToEncode = Lists.newArrayList(RLP.encodeElement(HashUtil.keccak256(this.logsBloom)));
+        if (this.txExecutionSublistsEdges != null) {
+            fieldsToEncode.add(ByteUtil.shortsToRLP(this.txExecutionSublistsEdges));
+        }
+        return HashUtil.keccak256(RLP.encodeList(fieldsToEncode.toArray(new byte[][]{})));
     }
 
     @Override
     public byte[] getEncoded() {
-        List<byte[]> fieldToEncodeList = Lists.newArrayList(RLP.encodeElement(this.getLogsBloom()));
-        this.addElementsEncoded(fieldToEncodeList);
-        return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+        List<byte[]> fieldsToEncode = Lists.newArrayList(RLP.encodeElement(this.logsBloom));
+        if (this.txExecutionSublistsEdges != null) {
+            fieldsToEncode.add(ByteUtil.shortsToRLP(this.txExecutionSublistsEdges));
+        }
+        return RLP.encodeList(fieldsToEncode.toArray(new byte[][]{}));
     }
 
     public byte[] getLogsBloom() {
         return this.logsBloom;
     }
 
-    public void setLogsBloom(byte[] logsBloom) {
-        this.logsBloom = Arrays.copyOf(logsBloom, logsBloom.length);
+    @Override
+    public BlockHeaderExtensionV1 withLogsBloom(byte[] logsBloom) {
+        // Pinned quirk, kept from the old setter: a null logsBloom throws
+        // NullPointerException (Arrays.copyOf) while the constructor accepts null.
+        byte[] copy = Arrays.copyOf(logsBloom, logsBloom.length);
+        return new BlockHeaderExtensionV1(copy, this.txExecutionSublistsEdges);
     }
 
     public short[] getTxExecutionSublistsEdges() {
-        return this.txExecutionSublistsEdges != null ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length) : null;
+        return this.txExecutionSublistsEdges != null
+                ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length)
+                : null;
     }
 
-    public void setTxExecutionSublistsEdges(short[] edges) {
-        this.txExecutionSublistsEdges = edges != null ? Arrays.copyOf(edges, edges.length) : null;
-    }
-
-    protected void addElementsEncoded(List<byte[]> fieldToEncodeList) {
-        short[] internalExecutionSublistsEdges = this.getTxExecutionSublistsEdges();
-        if (internalExecutionSublistsEdges != null) {
-            fieldToEncodeList.add(ByteUtil.shortsToRLP(internalExecutionSublistsEdges));
-        }
-    }
-
-    private byte[] getEncodedForHash() {
-        List<byte[]> fieldToEncodeList = Lists.newArrayList(RLP.encodeElement(HashUtil.keccak256(this.getLogsBloom())));
-        this.addElementsEncoded(fieldToEncodeList);
-        return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+    @Override
+    public BlockHeaderExtensionV1 withTxExecutionSublistsEdges(short[] edges) {
+        return new BlockHeaderExtensionV1(this.logsBloom, edges);
     }
 }
