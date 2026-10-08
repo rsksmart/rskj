@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -202,6 +203,16 @@ class BlockHeaderV2Test {
         header.setBaseEvent(emptyArray);
         // then
         assertArrayEquals(emptyArray, header.getBaseEvent());
+    }
+
+    @Test
+    void testSetBaseEventWithNull() {
+        // given
+        BlockHeaderV2 header = createHeaderV2();
+        // when
+        header.setBaseEvent(null);
+        // then
+        assertNull(header.getBaseEvent());
     }
 
     @Test
