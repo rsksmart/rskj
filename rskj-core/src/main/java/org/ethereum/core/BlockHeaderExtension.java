@@ -23,14 +23,16 @@ package org.ethereum.core;
  *
  * <p>The set of extension versions is fixed by consensus (hard forks), so the
  * hierarchy is sealed: adding a version means one final class, one
- * {@code permits} entry and one decode case in {@link BlockHeaderExtensionCodec},
- * and the compiler forces those touch points.
+ * {@code permits} entry and one decode case in {@link BlockHeaderExtensionCodec}.
+ * The compiler enforces the {@code permits} entry; the decode case is not
+ * compiler-enforced (the codec switches on a wire byte), so the codec test
+ * checks every permitted class round-trips through the codec.
  *
- * <p>Instances are immutable value objects: the arrays passed to the
- * constructors are copied once and getters expose them directly, and the
- * {@code with...} methods derive a new instance with one field replaced.
- * A header pairs with an extension of the same version, enforced by
- * {@code BlockHeader.setExtension}.
+ * <p>Instances are immutable value objects: arrays are copied in and copied
+ * out (Java arrays have no read-only view), and the {@code with...} methods
+ * derive a new instance with one field replaced. A header pairs with an
+ * extension of the same version, enforced by {@code BlockHeaderV1} at
+ * construction and in {@code setExtension}.
  */
 public sealed interface BlockHeaderExtension permits BlockHeaderExtensionV1, BlockHeaderExtensionV2 {
     byte getVersion();

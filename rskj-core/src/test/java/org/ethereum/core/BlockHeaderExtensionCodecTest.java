@@ -7,6 +7,9 @@ import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+import java.util.Set;
+
 class BlockHeaderExtensionCodecTest {
     private static final short[] EDGES = new short[] { 1, 2, 3, 4 };
 
@@ -136,6 +139,32 @@ class BlockHeaderExtensionCodecTest {
     @Test
     void encodeRejectsNull() {
         Assertions.assertThrows(NullPointerException.class, () -> BlockHeaderExtensionCodec.toEncoded(null));
+    }
+
+    @Test
+    void everyPermittedVersionRoundTripsThroughTheCodec() {
+        // The sealed permits list is compiler-enforced; the decode switch is not
+        // (it switches on a wire byte with a default). This closes the gap: a new
+        // permits entry fails here until a sample is registered and the codec
+        // decodes it back to the same class.
+        Map<Class<? extends BlockHeaderExtension>, BlockHeaderExtension> samples = Map.of(
+                BlockHeaderExtensionV1.class,
+                new BlockHeaderExtensionV1(Hex.decode(GOLDEN_V1_BLOOM), EDGES),
+                BlockHeaderExtensionV2.class,
+                new BlockHeaderExtensionV2(Hex.decode(GOLDEN_V2_BLOOM), EDGES, Hex.decode(GOLDEN_V2_BASE_EVENT)));
+
+        Set<Class<?>> permitted = Set.of(BlockHeaderExtension.class.getPermittedSubclasses());
+        Assertions.assertEquals(permitted, samples.keySet());
+
+        for (BlockHeaderExtension sample : samples.values()) {
+            BlockHeaderExtension decoded = BlockHeaderExtensionCodec.fromEncoded(
+                    BlockHeaderExtensionCodec.toEncoded(sample));
+
+            Assertions.assertSame(sample.getClass(), decoded.getClass());
+            Assertions.assertEquals(sample.getVersion(), decoded.getVersion());
+            Assertions.assertArrayEquals(sample.getEncoded(), decoded.getEncoded());
+            Assertions.assertArrayEquals(sample.getHash(), decoded.getHash());
+        }
     }
 
     @Test

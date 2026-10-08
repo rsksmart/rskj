@@ -27,6 +27,11 @@ import java.util.Objects;
  * Encodes and decodes block header extensions (RSKIP-351) to and from
  * their outer wire format: a two-element RLP list holding the version
  * byte and the encoded extension.
+ *
+ * <p>Decoding switches on the wire version byte, so the compiler cannot
+ * check it against the sealed {@code permits} list; a new permitted version
+ * needs a decode case added here by hand, and the codec test fails until
+ * every permitted class round-trips.
  */
 public final class BlockHeaderExtensionCodec {
     private BlockHeaderExtensionCodec() {
