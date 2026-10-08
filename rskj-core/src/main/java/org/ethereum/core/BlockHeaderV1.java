@@ -62,7 +62,10 @@ public class BlockHeaderV1 extends BlockHeader {
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot);
-        this.extension = extension;
+        // getVersion() is a per-class constant, so dispatching to a subclass
+        // from the constructor is safe here and keeps a V2 header paired with
+        // a V2 extension through this same path.
+        this.extension = requireMatchingVersion(extension);
         if (!compressed) {
             // update after calculating
             this.extensionData = createExtensionData(extension);
@@ -97,12 +100,16 @@ public class BlockHeaderV1 extends BlockHeader {
 
     @Override
     public void setExtension(BlockHeaderExtension extension) {
+        this.extension = requireMatchingVersion(extension);
+    }
+
+    private BlockHeaderExtension requireMatchingVersion(BlockHeaderExtension extension) {
         if (extension == null || extension.getVersion() != this.getVersion()) {
             String extensionVersion = extension == null ? "none" : String.valueOf(extension.getVersion());
             throw new IllegalArgumentException(String.format(
                     "Mismatched extension version %s for header version %d", extensionVersion, this.getVersion()));
         }
-        this.extension = extension;
+        return extension;
     }
 
     protected void updateExtensionData() {

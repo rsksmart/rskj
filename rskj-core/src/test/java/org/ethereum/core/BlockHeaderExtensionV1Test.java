@@ -70,6 +70,18 @@ class BlockHeaderExtensionV1Test {
     }
 
     @Test
+    void getEdgesReturnsCopy() {
+        // Java arrays have no read-only view, so an immutable value object must
+        // copy on the way out as well as on the way in.
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
+        short[] returned = extension.getTxExecutionSublistsEdges();
+        Assertions.assertArrayEquals(EDGES, returned);
+
+        returned[0] = 99;
+        Assertions.assertEquals(EDGES[0], extension.getTxExecutionSublistsEdges()[0]);
+    }
+
+    @Test
     void withEdgesAcceptsNull() {
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
 
