@@ -30,7 +30,7 @@ import co.rsk.peg.whitelist.constants.WhitelistTestNetConstants;
  * Bridge constants for the RSK testnet2 network, which pegs to Bitcoin testnet4.
  * Modeled on {@link BridgeTestNetConstants}; the key difference is that the Bitcoin network is
  * testnet4 ({@code NetworkParameters.ID_TESTNET4}) and the federation is {@link FederationTestNet2Constants}.
- * The BTC height-gated activations are set to 0 because testnet4 is a fresh, short chain.
+ * The other BTC height-gated activations are left at 0 because testnet4 is a fresh, short chain.
  */
 public class BridgeTestNet2Constants extends BridgeConstants {
     private static final BridgeTestNet2Constants instance = new BridgeTestNet2Constants();
@@ -50,6 +50,12 @@ public class BridgeTestNet2Constants extends BridgeConstants {
 
         minimumPeginTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValue = Coin.valueOf(400_000);
+
+        // The Bridge BTC block store starts at the last block in org.bitcoin.testnet4.checkpoints,
+        // and the block index covers the store from that block on.
+        // So no height below it is in the store, and there are no unindexed blocks to search for.
+        btcHeightWhenBlockIndexActivates = 143_136;
+        maxDepthToSearchBlocksBelowIndexActivation = 0;
 
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes
         maxDepthBlockchainAccepted = 25;
