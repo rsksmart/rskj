@@ -858,7 +858,7 @@ public class BridgeSupport {
 
     /*
     Move the pending UTXOs created by the given release tx to the federation(s) they belong to,
-    so they can be used as inputs. Finally, mark the btcTx as processed.
+    so they can be used as inputs.
      */
     private void registerNewUTXOsByTxId(Sha256Hash btcTxId, int btcTxHeight) {
         List<UTXO> pendingUtxos = federationSupport.getFederationsPendingBtcUTXOs(btcTxId);
