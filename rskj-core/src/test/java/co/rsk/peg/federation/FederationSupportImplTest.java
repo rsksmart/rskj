@@ -2822,7 +2822,7 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void getFederationsPendingBtcUTXOs_whenSavedInPreviousExecution_shouldReturnSavedUtxos() {
+        void getFederationsPendingBtcUTXOs_whenSavedInPreviousExecution_shouldReturnImmutableList() {
             // arrange
             storageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
             storageProvider.save(federationMainnetConstants.getBtcParams(), allActivations);
