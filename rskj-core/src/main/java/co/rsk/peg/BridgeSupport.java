@@ -894,7 +894,7 @@ public class BridgeSupport {
         List<UTXO> pendingUtxos = federationSupport.getFederationsPendingBtcUTXOs(btcTxId);
         federationSupport.movePendingUtxosToFederations(btcTxId, btcTxHeight);
         logPendingUtxosRegistered(btcTxId, pendingUtxos);
-        logger.info("[registerNewUTXOsByTxId] BTC Tx {} processed in RSK", btcTxId);
+        logger.info("[registerNewUTXOsByTxId] Registered pending UTXOs for BTC Tx {}", btcTxId);
     }
 
     private void logPendingUtxosRegistered(Sha256Hash btcTxId, List<UTXO> pendingUtxos) {
