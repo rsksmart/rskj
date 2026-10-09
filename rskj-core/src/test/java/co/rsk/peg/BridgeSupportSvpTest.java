@@ -62,7 +62,7 @@ import org.junit.jupiter.api.*;
 
 class BridgeSupportSvpTest {
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
-    private static final ActivationConfig.ForBlock vetiver900Activations = ActivationConfigsForTest.vetiver900().forBlock(0);
+    private static final ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0);
     // before RSKIP643 the btc tx height is not stored in the registered UTXOs
     private static final int UTXO_HEIGHT_BEFORE_CARDAMOM = 0;
     private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
@@ -416,8 +416,9 @@ class BridgeSupportSvpTest {
         }
 
         @Test
-        void updateCollections_whenFundTxCanBeCreated_whenActiveFedIsLegacy_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
+        void updateCollections_whenFundTxCanBeCreated_whenActiveFedIsLegacy_forVetiver_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
             // arrange
+            setUpBridgeSupportForVetiver();
             int activeFederationUtxosSizeBeforeCreatingFundTx = federationSupport.getActiveFederationBtcUTXOs().size();
 
             // act
@@ -429,16 +430,16 @@ class BridgeSupportSvpTest {
             assertTrue(svpFundTxHashUnsigned.isPresent());
 
             svpFundTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
-            assertReleaseWasSettled(
+            assertReleaseWasSettledForVetiver(
                 repository,
                 bridgeStorageProvider,
+                federationSupport,
                 logs,
                 rskExecutionBlock.getNumber(),
                 rskTx.getHash(),
                 svpFundTransaction,
                 svpFundTxOutpointsValues,
-                totalValueSentToProposedFederation,
-                allActivations
+                totalValueSentToProposedFederation
             );
 
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints
@@ -473,6 +474,33 @@ class BridgeSupportSvpTest {
             for (TransactionInput input : inputs) {
                 assertEquals(activeFederationScriptSig, input.getScriptSig());
             }
+        }
+
+        private void setUpBridgeSupportForVetiver() {
+            federationSupport = FederationSupportBuilder.builder()
+                .withFederationConstants(federationMainNetConstants)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withActivations(vetiverActivations)
+                .build();
+            bridgeStorageProvider = new BridgeStorageProvider(
+                repository,
+                btcMainnetParams,
+                vetiverActivations
+            );
+            bridgeEventLogger = new BridgeEventLoggerImpl(
+                bridgeMainNetConstants,
+                vetiverActivations,
+                logs
+            );
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withEventLogger(bridgeEventLogger)
+                .withActivations(vetiverActivations)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(rskExecutionBlock)
+                .build();
         }
 
         @Test
@@ -516,13 +544,14 @@ class BridgeSupportSvpTest {
             assertReleaseWasSettled(
                 repository,
                 bridgeStorageProvider,
+                federationStorageProvider,
+                federationSupport,
                 logs,
                 rskExecutionBlock.getNumber(),
                 rskTx.getHash(),
                 svpFundTransaction,
                 svpFundTxOutpointsValues,
-                totalValueSentToProposedFederation,
-                allActivations
+                totalValueSentToProposedFederation
             );
 
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints
@@ -606,6 +635,8 @@ class BridgeSupportSvpTest {
         saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
     }
 
+    // TODO(juli): the bridge no longer saves the pegout tx sighash after RSKIP643. Once registerPegoutTransaction
+    //  is implemented, make the allActivations callers register the release through it instead
     private void savePegoutIndex(BtcTransaction pegout) {
         BitcoinUtils.getSigHashForPegoutIndex(pegout)
             .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
@@ -762,7 +793,7 @@ class BridgeSupportSvpTest {
             signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(svpFundTransaction);
             bridgeSupport = bridgeSupportBuilder
-                .withActivations(vetiver900Activations)
+                .withActivations(vetiverActivations)
                 .build();
 
             // Act
@@ -1552,7 +1583,7 @@ class BridgeSupportSvpTest {
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
             bridgeSupport = bridgeSupportBuilder
-                .withActivations(vetiver900Activations)
+                .withActivations(vetiverActivations)
                 .build();
 
             List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());

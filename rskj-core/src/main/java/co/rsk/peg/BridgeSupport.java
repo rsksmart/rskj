@@ -434,7 +434,7 @@ public class BridgeSupport {
         registerNewUtxos(btcTx, btcTxHeight); // Need to register the change UTXO
 
         // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
-        // In that case, the fundTx will be identified as a regular peg-out tx and processed via #registerPegoutOrMigration
+        // In that case, the fundTx will be identified as a regular peg-out tx and processed via #registerPegoutTransaction
         // This covers the case when the fundTx is registered between the validation period end and the next call to updateCollections
         if (isSvpOngoing()) {
             updateSvpFundTransactionValues(btcTx);
@@ -1494,9 +1494,24 @@ public class BridgeSupport {
     private void settleReleaseRequest(List<UTXO> utxosToUse, PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
         removeSpentUtxos(utxosToUse, releaseTransaction);
         addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction, releaseCreationTxHash);
-        savePegoutTxSigHash(releaseTransaction);
+        savePegoutTxInfo(releaseTransaction);
         logReleaseRequested(releaseCreationTxHash, releaseTransaction, requestedAmount);
         processReleaseTransactionInfo(releaseTransaction);
+    }
+
+    private void savePegoutTxInfo(BtcTransaction releaseTransaction) {
+        if (!activations.isActive(RSKIP643)) {
+            savePegoutTxSigHash(releaseTransaction);
+            return;
+        }
+
+        Wallet wallet = getNoSpendWalletForLiveFederations(false);
+        int btcTxHeight = 0;
+        List<UTXO> utxosSentToLiveFederations = getUtxosSentToWallet(releaseTransaction, wallet, btcTxHeight);
+        if (utxosSentToLiveFederations.isEmpty()) {
+            return;
+        }
+        federationSupport.storeFederationsPendingBtcUTXOs(releaseTransaction.getHash(), utxosSentToLiveFederations);
     }
 
     private void removeSpentUtxos(List<UTXO> utxosToUse, BtcTransaction releaseTx) {
