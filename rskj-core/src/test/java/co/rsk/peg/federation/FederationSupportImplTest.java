@@ -2838,7 +2838,8 @@ class FederationSupportImplTest {
             List<UTXO> actualUtxos = federationSupport.getFederationsPendingBtcUTXOs(btcTxId);
 
             // act & assert
-            assertThrows(UnsupportedOperationException.class, () -> actualUtxos.add(expectedOneUtxo.get(0)));
+            UTXO expectedUtxo = expectedOneUtxo.get(0);
+            assertThrows(UnsupportedOperationException.class, () -> actualUtxos.add(expectedUtxo));
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
         }
 
