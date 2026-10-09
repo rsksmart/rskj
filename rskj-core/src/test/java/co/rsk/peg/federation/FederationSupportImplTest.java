@@ -2753,11 +2753,7 @@ class FederationSupportImplTest {
             // arrange
             storageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedThreeUtxos);
             storageProvider.save(federationMainnetConstants.getBtcParams(), allActivations);
-            FederationSupport federationSupportInNextExecution = federationSupportBuilder
-                .withFederationConstants(federationMainnetConstants)
-                .withFederationStorageProvider(new FederationStorageProviderImpl(storageAccessor))
-                .withActivations(allActivations)
-                .build();
+            FederationSupport federationSupportInNextExecution = buildFederationSupportInNextExecution(new FederationStorageProviderImpl(storageAccessor));
 
             // act
             List<UTXO> actualUtxos = federationSupportInNextExecution.getFederationsPendingBtcUTXOs(btcTxId);
@@ -2826,11 +2822,7 @@ class FederationSupportImplTest {
             // arrange
             storageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
             storageProvider.save(federationMainnetConstants.getBtcParams(), allActivations);
-            FederationSupport federationSupportInNextExecution = federationSupportBuilder
-                .withFederationConstants(federationMainnetConstants)
-                .withFederationStorageProvider(new FederationStorageProviderImpl(storageAccessor))
-                .withActivations(allActivations)
-                .build();
+            FederationSupport federationSupportInNextExecution = buildFederationSupportInNextExecution(new FederationStorageProviderImpl(storageAccessor));
             List<UTXO> actualUtxos = federationSupportInNextExecution.getFederationsPendingBtcUTXOs(btcTxId);
             UTXO anotherUtxo = expectedThreeUtxos.get(1);
 
