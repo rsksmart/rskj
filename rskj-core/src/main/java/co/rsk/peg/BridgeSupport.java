@@ -860,12 +860,10 @@ public class BridgeSupport {
     Move the pending UTXOs created by the given release tx to the federation(s) they belong to,
     so they can be used as inputs. Finally, mark the btcTx as processed.
      */
-    private void registerNewUTXOsByTxId(Sha256Hash btcTxId, int btcTxHeight) throws IOException {
+    private void registerNewUTXOsByTxId(Sha256Hash btcTxId, int btcTxHeight) {
         List<UTXO> pendingUtxos = federationSupport.getFederationsPendingBtcUTXOs(btcTxId);
         federationSupport.movePendingUtxosToFederations(btcTxId, btcTxHeight);
         logPendingUtxosRegistered(btcTxId, pendingUtxos);
-
-        markBtcTxHashAsProcessed(btcTxId);
         logger.info("[registerNewUTXOsByTxId] BTC Tx {} processed in RSK", btcTxId);
     }
 
