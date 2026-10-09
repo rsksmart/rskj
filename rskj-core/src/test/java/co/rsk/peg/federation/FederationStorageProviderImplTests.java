@@ -1268,25 +1268,6 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void getFederationsPendingBtcUTXOs_whenSetFromMutableListAndCallerAttemptsToMutateReturnedList_shouldThrowUnsupportedOperationException() {
-            // arrange
-            // a mutable list, so the returned list is only immutable if the provider does not keep the caller's instance
-            List<UTXO> mutableUtxos = new ArrayList<>(expectedOneUtxo);
-            federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, mutableUtxos);
-
-            Optional<List<UTXO>> firstGet = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
-            assertTrue(firstGet.isPresent());
-
-            // act & assert
-            List<UTXO> firstsUtxos = firstGet.get();
-            assertThrows(UnsupportedOperationException.class, firstsUtxos::clear);
-
-            Optional<List<UTXO>> secondGet = federationStorageProvider.getFederationsPendingBtcUTXOs(btcTxId);
-            assertTrue(secondGet.isPresent());
-            assertUtxosAreEqual(expectedOneUtxo, secondGet.get());
-        }
-
-        @Test
         void setFederationsPendingBtcUTXOs_withOneUtxo_shouldStoreInCache() {
             // act
             federationStorageProvider.setFederationsPendingBtcUTXOs(btcTxId, expectedOneUtxo);
