@@ -346,7 +346,8 @@ class FederationChangeIT {
         var originalFederation = createOriginalSegwitFederation();
 
         // Act & Assert
-        var newFederation = changeFederationFromSegwitUntilMigrationPhase(originalFederation);
+        changeFederationFromSegwitUntilMigrationPhase(originalFederation);
+        var newFederation = federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, activations);
 
         // Calling update collections should start migration. Only one pegout entry has ever existed at
         // this point, so these single-entry assertions hold regardless of how many further legacy-capped
@@ -409,7 +410,8 @@ class FederationChangeIT {
         var originalFederation = createOriginalSegwitFederation();
 
         // Act & Assert
-        var newFederation = changeFederationFromSegwitUntilMigrationPhase(originalFederation);
+        changeFederationFromSegwitUntilMigrationPhase(originalFederation);
+        var newFederation = federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, activations);
 
         // Round 1: the retiring federation is realistically sized (50 UTXOs plus the pegin/pegout
         // activity during the federation change), so its balance is already well past the single-output threshold. This
@@ -519,7 +521,7 @@ class FederationChangeIT {
         assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
     }
 
-    private Federation changeFederationFromSegwitUntilMigrationPhase(Federation originalFederation) throws Exception {
+    private void changeFederationFromSegwitUntilMigrationPhase(Federation originalFederation) throws Exception {
         var originalUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMS, activations);
 
         assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
@@ -575,8 +577,6 @@ class FederationChangeIT {
 
         // Move blockchain until the migration phase
         activateMigration();
-
-        return newFederation;
     }
 
     // TODO(juli): once registerPegoutTransaction is implemented, add a version of this test with allActivations
