@@ -856,6 +856,36 @@ public class BridgeSupport {
         logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
     }
 
+    private void registerNewUtxosToTheRetiringFederation(BtcTransaction btcTx, int btcTxHeight) {
+        Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
+        if (retiringFederationWallet.isEmpty()) {
+            return;
+        }
+        Address retiringFederationAddress = federationSupport.getRetiringFederationAddress()
+            .orElseThrow(() -> new IllegalStateException("Retiring federation wallet exists without a retiring federation"));
+
+        List<UTXO> utxosToTheRetiringFederation = getUtxosSentToWallet(btcTx, retiringFederationWallet.get(), btcTxHeight);
+        federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosToTheRetiringFederation);
+        logUtxosRegistered(
+            btcTx.getHash(),
+            utxosToTheRetiringFederation,
+            retiringFederationAddress
+        );
+        logger.debug("[registerNewUtxosToTheRetiringFederation] Registered {} UTXOs sent to the retiring federation", utxosToTheRetiringFederation.size());
+    }
+
+    private void registerNewUtxosToTheActiveFederation(BtcTransaction btcTx, int btcTxHeight) {
+        Wallet activeFederationWallet = getActiveFederationWallet(false);
+        List<UTXO> utxosToTheActiveFederation = getUtxosSentToWallet(btcTx, activeFederationWallet, btcTxHeight);
+        federationSupport.getActiveFederationBtcUTXOs().addAll(utxosToTheActiveFederation);
+        logUtxosRegistered(
+            btcTx.getHash(),
+            utxosToTheActiveFederation,
+            federationSupport.getActiveFederationAddress()
+        );
+        logger.debug("[registerNewUtxosToTheActiveFederation] Registered {} UTXOs sent to the active federation", utxosToTheActiveFederation.size());
+    }
+
     /*
     Move the pending UTXOs created by the given release tx to the federation(s) they belong to,
     so they can be used as inputs.
@@ -888,36 +918,6 @@ public class BridgeSupport {
         return utxos.stream()
             .filter(utxo -> utxo.getScript().equals(federationScript))
             .toList();
-    }
-
-    private void registerNewUtxosToTheRetiringFederation(BtcTransaction btcTx, int btcTxHeight) {
-        Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
-        if (retiringFederationWallet.isEmpty()) {
-            return;
-        }
-        Address retiringFederationAddress = federationSupport.getRetiringFederationAddress()
-            .orElseThrow(() -> new IllegalStateException("Retiring federation wallet exists without a retiring federation"));
-
-        List<UTXO> utxosToTheRetiringFederation = getUtxosSentToWallet(btcTx, retiringFederationWallet.get(), btcTxHeight);
-        federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosToTheRetiringFederation);
-        logUtxosRegistered(
-            btcTx.getHash(),
-            utxosToTheRetiringFederation,
-            retiringFederationAddress
-        );
-        logger.debug("[registerNewUtxosToTheRetiringFederation] Registered {} UTXOs sent to the retiring federation", utxosToTheRetiringFederation.size());
-    }
-
-    private void registerNewUtxosToTheActiveFederation(BtcTransaction btcTx, int btcTxHeight) {
-        Wallet activeFederationWallet = getActiveFederationWallet(false);
-        List<UTXO> utxosToTheActiveFederation = getUtxosSentToWallet(btcTx, activeFederationWallet, btcTxHeight);
-        federationSupport.getActiveFederationBtcUTXOs().addAll(utxosToTheActiveFederation);
-        logUtxosRegistered(
-            btcTx.getHash(),
-            utxosToTheActiveFederation,
-            federationSupport.getActiveFederationAddress()
-        );
-        logger.debug("[registerNewUtxosToTheActiveFederation] Registered {} UTXOs sent to the active federation", utxosToTheActiveFederation.size());
     }
 
     private void logUtxosRegistered(Sha256Hash btcTxHash, List<UTXO> registeredUtxos, Address federationAddress) {
