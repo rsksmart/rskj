@@ -856,6 +856,42 @@ public class BridgeSupport {
         logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
     }
 
+    /*
+    Move the pending UTXOs created by the given release tx to the federation(s) they belong to,
+    so they can be used as inputs. Finally, mark the btcTx as processed.
+     */
+    private void registerNewUTXOsByTxId(Sha256Hash btcTxId, int btcTxHeight) throws IOException {
+        List<UTXO> pendingUtxos = federationSupport.getFederationsPendingBtcUTXOs(btcTxId);
+        federationSupport.movePendingUtxosToFederations(btcTxId, btcTxHeight);
+        logPendingUtxosRegistered(btcTxId, pendingUtxos);
+
+        markBtcTxHashAsProcessed(btcTxId);
+        logger.info("[registerNewUTXOsByTxId] BTC Tx {} processed in RSK", btcTxId);
+    }
+
+    private void logPendingUtxosRegistered(Sha256Hash btcTxId, List<UTXO> pendingUtxos) {
+        Federation activeFederation = getActiveFederation();
+        logUtxosRegistered(
+            btcTxId,
+            getUtxosSentToFederation(pendingUtxos, activeFederation),
+            activeFederation.getAddress()
+        );
+        getRetiringFederation().ifPresent(retiringFederation ->
+            logUtxosRegistered(
+                btcTxId,
+                getUtxosSentToFederation(pendingUtxos, retiringFederation),
+                retiringFederation.getAddress()
+            )
+        );
+    }
+
+    private static List<UTXO> getUtxosSentToFederation(List<UTXO> utxos, Federation federation) {
+        Script federationScript = federation.getP2SHScript();
+        return utxos.stream()
+            .filter(utxo -> utxo.getScript().equals(federationScript))
+            .toList();
+    }
+
     private void registerNewUtxosToTheRetiringFederation(BtcTransaction btcTx, int btcTxHeight) {
         Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
         if (retiringFederationWallet.isEmpty()) {
