@@ -95,6 +95,14 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public void clearAccount(RskAddress addr) {
+        if (canListenTrace(addr)) {
+            traceListener.onStorageClear();
+        }
+        repository.clearAccount(addr);
+    }
+
+    @Override
     public void hibernate(RskAddress addr) {
         repository.hibernate(addr);
     }
