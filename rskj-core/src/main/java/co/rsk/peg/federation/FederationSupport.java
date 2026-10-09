@@ -178,7 +178,7 @@ public interface FederationSupport {
 
     /**
      * Returns the pending UTXOs of the given BTC tx id, i.e. the ones that would be moved to
-     * the federations (see {@link #movePendingUtxosToFederations(Sha256Hash)}).
+     * the federations (see {@link #movePendingUtxosToFederations(Sha256Hash, int)}).
      * @param btcTxId the BTC tx id to look up
      * @return an immutable list with the pending UTXOs of btcTxId, or an empty list if btcTxId
      * has no pending UTXOs
