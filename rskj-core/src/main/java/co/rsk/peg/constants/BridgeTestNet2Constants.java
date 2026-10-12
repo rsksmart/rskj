@@ -42,8 +42,7 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         federationConstants = FederationTestNet2Constants.getInstance();
         lockingCapConstants = LockingCapTestNetConstants.getInstance();
         unionBridgeConstants = UnionBridgeTestNetConstants.getInstance();
-        historicalPegoutSelectionsConstants =
-            new co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants();
+        historicalPegoutSelectionsConstants = new co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants();
 
         btc2RskMinimumAcceptableConfirmations = 10;
         rsk2BtcMinimumAcceptableConfirmations = 10;
@@ -67,6 +66,10 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         maxInputsPerPegoutTransaction = 50;
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (1 block every 30 seconds)
+
+        // Pegout tx index active since genesis
+        btcHeightWhenPegoutTxIndexActivates = 0;
+        pegoutTxIndexGracePeriodInBtcBlocks = 0;
 
         blockWithTooMuchChainWorkHeight = Integer.MAX_VALUE;
     }
