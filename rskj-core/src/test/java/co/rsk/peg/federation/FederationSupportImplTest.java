@@ -2574,6 +2574,7 @@ class FederationSupportImplTest {
             ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER + federationMainnetConstants.getFederationActivationAge(allActivations);
         private static final long OUTPUT_INDEX_FOR_RETIRING_FEDERATION_UTXO = 2;
         private static final Sha256Hash btcTxId = createHash(1);
+        private static final int BTC_TX_HEIGHT = 850_000;
         private static final Script p2shP2wshErpFederationScript = P2shP2wshErpFederationBuilder.builder().build().getP2SHScript();
         private static final List<UTXO> expectedOneUtxo = List.of(
             UTXOBuilder.builder()
@@ -2613,6 +2614,17 @@ class FederationSupportImplTest {
             .withScriptPubKey(retiringFederation.getP2SHScript())
             .withTransactionHash(btcTxId)
             .withOutpointIndex(OUTPUT_INDEX_FOR_RETIRING_FEDERATION_UTXO)
+            .build();
+        private static final List<UTXO> utxosToActiveFederationAtBtcTxHeight = UTXOBuilder.builder()
+            .withScriptPubKey(activeFederation.getP2SHScript())
+            .withTransactionHash(btcTxId)
+            .withBlockHeight(BTC_TX_HEIGHT)
+            .buildManyFromSameTx(2);
+        private static final UTXO utxoToRetiringFederationAtBtcTxHeight = UTXOBuilder.builder()
+            .withScriptPubKey(retiringFederation.getP2SHScript())
+            .withTransactionHash(btcTxId)
+            .withOutpointIndex(OUTPUT_INDEX_FOR_RETIRING_FEDERATION_UTXO)
+            .withBlockHeight(BTC_TX_HEIGHT)
             .build();
         // outputs 0 and 1 of btcTxId are the ones in utxosToActiveFederation
         private static final List<UTXO> utxosToActiveAndRetiringFederations = List.of(
@@ -2800,7 +2812,7 @@ class FederationSupportImplTest {
             setUpActiveFederation();
             federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveFederation);
             boolean isBtcTxIdPresentBeforeMoving = federationSupport.hasFederationsPendingBtcUTXOs(btcTxId);
-            federationSupport.movePendingUtxosToFederations(btcTxId);
+            federationSupport.movePendingUtxosToFederations(btcTxId, BTC_TX_HEIGHT);
 
             // act & assert
             // moving the pending utxos marks btcTxId as removed, so it can't be stored twice
@@ -2819,10 +2831,10 @@ class FederationSupportImplTest {
             federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveFederation);
 
             // act
-            federationSupport.movePendingUtxosToFederations(btcTxId);
+            federationSupport.movePendingUtxosToFederations(btcTxId, BTC_TX_HEIGHT);
 
             // assert
-            assertUtxosAreEqual(utxosToActiveFederation, federationSupport.getActiveFederationBtcUTXOs());
+            assertUtxosAreEqual(utxosToActiveFederationAtBtcTxHeight, federationSupport.getActiveFederationBtcUTXOs());
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
         }
 
@@ -2833,11 +2845,11 @@ class FederationSupportImplTest {
             federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveAndRetiringFederations);
 
             // act
-            federationSupport.movePendingUtxosToFederations(btcTxId);
+            federationSupport.movePendingUtxosToFederations(btcTxId, BTC_TX_HEIGHT);
 
             // assert
-            assertUtxosAreEqual(utxosToActiveFederation, federationSupport.getActiveFederationBtcUTXOs());
-            assertUtxosAreEqual(List.of(utxoToRetiringFederation), federationSupport.getRetiringFederationBtcUTXOs());
+            assertUtxosAreEqual(utxosToActiveFederationAtBtcTxHeight, federationSupport.getActiveFederationBtcUTXOs());
+            assertUtxosAreEqual(List.of(utxoToRetiringFederationAtBtcTxHeight), federationSupport.getRetiringFederationBtcUTXOs());
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
         }
 
@@ -2848,10 +2860,10 @@ class FederationSupportImplTest {
             federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveFederation);
 
             // act
-            federationSupport.movePendingUtxosToFederations(btcTxId);
+            federationSupport.movePendingUtxosToFederations(btcTxId, BTC_TX_HEIGHT);
 
             // assert
-            assertUtxosAreEqual(utxosToActiveFederation, federationSupport.getActiveFederationBtcUTXOs());
+            assertUtxosAreEqual(utxosToActiveFederationAtBtcTxHeight, federationSupport.getActiveFederationBtcUTXOs());
             assertTrue(federationSupport.getRetiringFederationBtcUTXOs().isEmpty());
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
         }
@@ -2863,11 +2875,11 @@ class FederationSupportImplTest {
             federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, List.of(utxoToRetiringFederation));
 
             // act
-            federationSupport.movePendingUtxosToFederations(btcTxId);
+            federationSupport.movePendingUtxosToFederations(btcTxId, BTC_TX_HEIGHT);
 
             // assert
             assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
-            assertUtxosAreEqual(List.of(utxoToRetiringFederation), federationSupport.getRetiringFederationBtcUTXOs());
+            assertUtxosAreEqual(List.of(utxoToRetiringFederationAtBtcTxHeight), federationSupport.getRetiringFederationBtcUTXOs());
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
         }
 
@@ -2880,10 +2892,10 @@ class FederationSupportImplTest {
             federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, utxosToActiveAndRetiringFederations);
 
             // act
-            federationSupport.movePendingUtxosToFederations(btcTxId);
+            federationSupport.movePendingUtxosToFederations(btcTxId, BTC_TX_HEIGHT);
 
             // assert
-            assertUtxosAreEqual(utxosToActiveFederation, federationSupport.getActiveFederationBtcUTXOs());
+            assertUtxosAreEqual(utxosToActiveFederationAtBtcTxHeight, federationSupport.getActiveFederationBtcUTXOs());
             assertTrue(federationSupport.getRetiringFederationBtcUTXOs().isEmpty());
             assertTrue(storageProvider.getOldFederationBtcUTXOs().isEmpty());
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
@@ -2900,11 +2912,11 @@ class FederationSupportImplTest {
             federationSupport.storeFederationsPendingBtcUTXOs(btcTxId, List.of(utxoToRetiringFederation));
 
             // act
-            federationSupport.movePendingUtxosToFederations(btcTxId);
+            federationSupport.movePendingUtxosToFederations(btcTxId, BTC_TX_HEIGHT);
 
             // assert
-            assertUtxosAreEqual(List.of(utxoToRetiringFederation), federationSupport.getActiveFederationBtcUTXOs());
-            assertUtxosAreEqual(List.of(utxoToRetiringFederation), storageProvider.getOldFederationBtcUTXOs());
+            assertUtxosAreEqual(List.of(utxoToRetiringFederationAtBtcTxHeight), federationSupport.getActiveFederationBtcUTXOs());
+            assertUtxosAreEqual(List.of(utxoToRetiringFederationAtBtcTxHeight), storageProvider.getOldFederationBtcUTXOs());
             assertTrue(federationSupport.getRetiringFederationBtcUTXOs().isEmpty());
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTxId));
         }
@@ -2923,15 +2935,15 @@ class FederationSupportImplTest {
             boolean isBtcTxIdPresentBeforeMoving = registrationFederationSupport.hasFederationsPendingBtcUTXOs(btcTxId);
 
             // act
-            registrationFederationSupport.movePendingUtxosToFederations(btcTxId);
+            registrationFederationSupport.movePendingUtxosToFederations(btcTxId, BTC_TX_HEIGHT);
             registrationStorageProvider.save(federationMainnetConstants.getBtcParams(), allActivations);
 
             // assert
             FederationStorageProvider storageProviderAfterRegistration = new FederationStorageProviderImpl(storageAccessor);
             FederationSupport federationSupportAfterRegistration = buildFederationSupportInNextExecution(storageProviderAfterRegistration);
             assertTrue(isBtcTxIdPresentBeforeMoving);
-            assertUtxosAreEqual(utxosToActiveFederation, federationSupportAfterRegistration.getActiveFederationBtcUTXOs());
-            assertUtxosAreEqual(List.of(utxoToRetiringFederation), federationSupportAfterRegistration.getRetiringFederationBtcUTXOs());
+            assertUtxosAreEqual(utxosToActiveFederationAtBtcTxHeight, federationSupportAfterRegistration.getActiveFederationBtcUTXOs());
+            assertUtxosAreEqual(List.of(utxoToRetiringFederationAtBtcTxHeight), federationSupportAfterRegistration.getRetiringFederationBtcUTXOs());
             assertFalse(federationSupportAfterRegistration.hasFederationsPendingBtcUTXOs(btcTxId));
         }
 
