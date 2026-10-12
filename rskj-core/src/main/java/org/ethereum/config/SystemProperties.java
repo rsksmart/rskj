@@ -22,7 +22,8 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.params.MainNetParams;
 import co.rsk.bitcoinj.params.RegTestParams;
-import co.rsk.bitcoinj.params.TestNet2Params;
+import co.rsk.bitcoinj.params.TestNet3Params;
+import co.rsk.bitcoinj.params.TestNet4Params;
 import co.rsk.config.ConfigLoader;
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import co.rsk.metrics.profilers.ProfilerFactory;
@@ -218,8 +219,11 @@ public abstract class SystemProperties {
                 case MAINNET:
                     networkParameters = MainNetParams.get();
                     break;
-                case TESTNET, TESTNET2:
-                    networkParameters = TestNet2Params.get();
+                case TESTNET:
+                    networkParameters = TestNet3Params.get();
+                    break;
+                case TESTNET2:
+                    networkParameters = TestNet4Params.get();
                     break;
                 case REGTEST:
                     networkParameters = RegTestParams.get();
