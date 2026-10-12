@@ -127,26 +127,33 @@ class NetworkConfigsActivationTest {
     /** Known historical inversions, as "<earlierEnum>><laterEnum>". Extend only with a reason in the commit message. */
     private static final Set<String> KNOWN_ENUM_ORDER_INVERSIONS = Set.of(
         "papyrus200>twoToThree",     // twoToThree shipped before papyrus200 on main/testnet/testnet2
-        "afterBridgeSync>orchid");   // orchid is active from genesis on testnet/testnet2; afterBridgeSync is not
+        // orchid, orchid060 and wasabi100 are active from genesis on testnet/testnet2; afterBridgeSync is not
+        "afterBridgeSync>orchid",
+        "afterBridgeSync>orchid060",
+        "afterBridgeSync>wasabi100");
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("networkNames")
     void enabledHeightsAreMonotonicInEnumOrder(String network) {
         Map<String, Long> heights = activationHeights(loadNetwork(network));
         List<String> inversions = new ArrayList<>();
-        String prevName = null;
-        long prevHeight = -1;
+        // Compare against the highest height so far, not just the previous upgrade: after an allowlisted inversion
+        // the previous height is the lower one, and an upgrade landing between the two would otherwise slip through.
+        String maxName = null;
+        long maxHeight = -1;
         for (NetworkUpgrade upgrade : NetworkUpgrade.values()) {
             Long h = heights.get(upgrade.getName());
             if (h == null || h < 0) {
                 continue; // unconfigured (genesis) or disabled
             }
-            if (prevName != null && h < prevHeight
-                && !KNOWN_ENUM_ORDER_INVERSIONS.contains(prevName + ">" + upgrade.getName())) {
-                inversions.add(network + ": " + prevName + "=" + prevHeight + " > " + upgrade.getName() + "=" + h);
+            if (maxName != null && h < maxHeight
+                && !KNOWN_ENUM_ORDER_INVERSIONS.contains(maxName + ">" + upgrade.getName())) {
+                inversions.add(network + ": " + maxName + "=" + maxHeight + " > " + upgrade.getName() + "=" + h);
             }
-            prevName = upgrade.getName();
-            prevHeight = h;
+            if (h >= maxHeight) {
+                maxName = upgrade.getName();
+                maxHeight = h;
+            }
         }
         assertTrue(inversions.isEmpty(),
             "new enum-order inversion (add to KNOWN_ENUM_ORDER_INVERSIONS only with a documented reason): " + inversions);
