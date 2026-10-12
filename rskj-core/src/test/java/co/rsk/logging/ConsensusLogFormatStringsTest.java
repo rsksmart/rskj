@@ -33,7 +33,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * External log-scraping tooling (rskj-sync-tests) classifies consensus refusals and sync progress
- * from these exact log lines and logger names. Changing one is allowed but must be deliberate: update this test
+ * from these exact log lines, logger names and MDC keys, and launches the node with the CLI forms pinned below
+ * (consumer: config/progress-markers.json in rsksmart/rskj-sync-tests). Changing one is allowed but must be deliberate: update this test
  * and coordinate with the consumer. Same keep-in-sync idea as JsonRpcDocCoverageTest for doc/rpc.
  */
 class ConsensusLogFormatStringsTest {
@@ -44,6 +45,11 @@ class ConsensusLogFormatStringsTest {
     private static final String DIFFICULTY_RULE = "org/ethereum/validator/DifficultyRule.java";
     private static final String COMPOSITE_RULE = "co/rsk/validators/BlockCompositeRule.java";
     private static final String PARENT_COMPOSITE_RULE = "co/rsk/validators/BlockParentCompositeRule.java";
+    private static final String HEADER_COMPOSITE_RULE = "co/rsk/validators/BlockHeaderCompositeRule.java";
+    private static final String HEADER_PARENT_COMPOSITE_RULE = "co/rsk/validators/BlockHeaderParentCompositeRule.java";
+    private static final String BOOTSTRAP_IMPORTER = "co/rsk/db/importer/BootstrapImporter.java";
+    private static final String RSK_CLI = "co/rsk/cli/RskCli.java";
+    private static final String CHANNEL = "org/ethereum/net/server/Channel.java";
     private static final String SYSTEM_UTILS = "co/rsk/util/SystemUtils.java";
     private static final String NODE_RUNNER = "co/rsk/NodeRunnerImpl.java";
     private static final String CHANNEL_MANAGER = "org/ethereum/net/server/ChannelManagerImpl.java";
@@ -74,15 +80,34 @@ class ConsensusLogFormatStringsTest {
             Arguments.of(COMPOSITE_RULE, "\"Error Validating block {} {}\""),
             Arguments.of(PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
             Arguments.of(PARENT_COMPOSITE_RULE, "\"Error Validating block {} {}\""),
+            // header-rule attribution: these two forms name the failing rule, the block forms above do not
+            Arguments.of(HEADER_COMPOSITE_RULE, "\"Error Validating {} for header {} {}\""),
+            Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "\"Error Validating {} for parent header {} {}\""),
+            // peer-relay refusal (classifier: uncorroborated unless a local line agrees). The trailing space is part of
+            // the literal; forbiddenLiterals() below keeps the colon form out of these files.
+            Arguments.of(ASYNC_BLOCK_PROCESSOR, "getLogger(\"asyncblockprocessor\")"),
+            Arguments.of(ASYNC_BLOCK_PROCESSOR, "\"Invalid block with number {} {} from {} \""),
+            Arguments.of(BLOCK_SYNC_SERVICE, "getLogger(\"blocksyncservice\")"),
+            Arguments.of(BLOCK_SYNC_SERVICE, "\"Invalid block with number {} {} from {} \""),
+            // block attribution is read from MDC, not from the message text
+            Arguments.of(BLOCK_CHAIN, "MDC.put(\"blockHeight\""),
+            Arguments.of(BLOCK_CHAIN, "MDC.put(\"blockHash\""),
+            // bootstrap import completion; prefixes only, the rest of each format string carries timings and counts
+            Arguments.of(BOOTSTRAP_IMPORTER, "\"Bootstrap data has successfully been imported"),
+            Arguments.of(BOOTSTRAP_IMPORTER, "\"Bootstrap-data v2 imported {} blocks"),
+            // launcher contract: single-dash -base-path, and -X key=value split on the first '=' only
+            Arguments.of(RSK_CLI, "names = {\"-base-path\"}"),
+            Arguments.of(RSK_CLI, "xArgument.split(\"=\", 2)"),
             // post-import height beacon and network fingerprint (pre-flight gate).
             // SystemUtils holds the message; NodeRunnerImpl's "fullnoderunner" logger is the one that emits it,
             // so the scraper matches on that logger name.
             Arguments.of(SYSTEM_UTILS, "\"WARNING: Network upgrade {} is DISABLED. Best block number is: {}.\""),
             Arguments.of(SYSTEM_UTILS, "disabledNetworkUpgrade.name()"),
             Arguments.of(NODE_RUNNER, "getLogger(\"fullnoderunner\")"),
-            // peer identity for peer.active construction
+            // peer identity for peer.active construction; Channel.toString() is how a peer is rendered in those lines
             Arguments.of(CHANNEL_MANAGER, "getLogger(\"net\")"),
-            Arguments.of(CHANNEL_MANAGER, "\"Added new peer: {}. Total num of active peers: {}\"")
+            Arguments.of(CHANNEL_MANAGER, "\"Added new peer: {}. Total num of active peers: {}\""),
+            Arguments.of(CHANNEL, "\"%s | %s\"")
         );
     }
 
