@@ -331,7 +331,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public void movePendingUtxosToFederations(Sha256Hash btcTxId) {
+    public void movePendingUtxosToFederations(Sha256Hash btcTxId, int btcTxHeight) {
         List<UTXO> pendingUtxos = provider.getFederationsPendingBtcUTXOs(btcTxId).orElse(List.of());
 
         Script activeFederationScript = getActiveFederation().getP2SHScript();
@@ -339,7 +339,8 @@ public class FederationSupportImpl implements FederationSupport {
 
         List<UTXO> utxosToActiveFederation = new ArrayList<>();
         List<UTXO> utxosToRetiringFederation = new ArrayList<>();
-        for (UTXO utxo : pendingUtxos) {
+        for (UTXO pendingUtxo : pendingUtxos) {
+            UTXO utxo = withHeight(pendingUtxo, btcTxHeight);
             if (utxo.getScript().equals(activeFederationScript)) {
                 utxosToActiveFederation.add(utxo);
             } else if (retiringFederationScript.filter(utxo.getScript()::equals).isPresent()) {
@@ -368,6 +369,17 @@ public class FederationSupportImpl implements FederationSupport {
             utxosToActiveFederation.size(),
             utxosToRetiringFederation.size(),
             btcTxId
+        );
+    }
+
+    private static UTXO withHeight(UTXO utxo, int height) {
+        return new UTXO(
+            utxo.getHash(),
+            utxo.getIndex(),
+            utxo.getValue(),
+            height,
+            utxo.isCoinbase(),
+            utxo.getScript()
         );
     }
 
