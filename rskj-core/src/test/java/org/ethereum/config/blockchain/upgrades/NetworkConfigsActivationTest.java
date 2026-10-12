@@ -170,8 +170,8 @@ class NetworkConfigsActivationTest {
      * Bump main/testnet at release time, then run ./gradlew :rskj-core:updateActivationGolden.
      */
     private static final Map<String, Long> AS_OF = Map.of(
-        "main", 9_207_000L,
-        "testnet", 8_037_000L,
+        "main", 9_318_000L,
+        "testnet", 8_175_000L,
         "testnet2", -1L,
         "regtest", -1L);
 

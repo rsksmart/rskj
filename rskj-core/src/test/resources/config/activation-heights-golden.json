@@ -1,8 +1,8 @@
 {
   "asOf" : {
-    "main" : 9207000,
+    "main" : 9318000,
     "regtest" : -1,
-    "testnet" : 8037000,
+    "testnet" : 8175000,
     "testnet2" : -1
   },
   "heights" : {
