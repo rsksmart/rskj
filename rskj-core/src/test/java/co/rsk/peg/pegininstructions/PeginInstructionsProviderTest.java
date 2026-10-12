@@ -244,4 +244,40 @@ class PeginInstructionsProviderTest {
         // Act
         Assertions.assertThrows(NoOpReturnException.class, () -> PeginInstructionsProvider.extractOpReturnData(btcTransaction));
     }
+
+    @Test
+    void buildPeginInstructions_v2_withP2trRefund() throws Exception {
+        // Arrange
+        RskAddress rskDestinationAddress = new RskAddress(new byte[20]);
+        byte[] program = new byte[32];
+        java.util.Arrays.fill(program, (byte) 0x7f);
+        Script opReturnScript = PegTestUtils.createOpReturnScriptForRskV2(
+            rskDestinationAddress, Optional.of(PeginRefundScriptType.P2TR), program);
+        BtcTransaction btcTransaction = new BtcTransaction(params);
+        btcTransaction.addOutput(Coin.ZERO, opReturnScript);
+
+        // Act
+        PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
+        Optional<PeginInstructions> peginInstructions = peginInstructionsProvider.buildPeginInstructions(btcTransaction);
+
+        // Assert
+        Assertions.assertTrue(peginInstructions.isPresent());
+        Assertions.assertEquals(2, peginInstructions.get().getProtocolVersion());
+        PeginInstructionsVersion2 v2 = (PeginInstructionsVersion2) peginInstructions.get();
+        Assertions.assertEquals(rskDestinationAddress, v2.getRskDestinationAddress());
+        Assertions.assertEquals(Optional.of(PeginRefundScriptType.P2TR), v2.getBtcRefundScriptType());
+        Assertions.assertArrayEquals(
+            org.bouncycastle.util.encoders.Hex.decode("5120" + org.bouncycastle.util.encoders.Hex.toHexString(program)),
+            v2.getBtcRefundScript().orElseThrow().getProgram()
+        );
+    }
+
+    @Test
+    void buildPeginInstructions_v2_invalidLength_throwsParseException() {
+        BtcTransaction btcTransaction = new BtcTransaction(params);
+        btcTransaction.addOutput(Coin.ZERO, PegTestUtils.createOpReturnScriptForRskWithCustomPayload(2, new byte[30]));
+
+        PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
+        Assertions.assertThrows(PeginInstructionsParseException.class, () -> peginInstructionsProvider.buildPeginInstructions(btcTransaction));
+    }
 }

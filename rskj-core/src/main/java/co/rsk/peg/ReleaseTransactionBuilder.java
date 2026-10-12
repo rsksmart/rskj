@@ -147,6 +147,19 @@ public class ReleaseTransactionBuilder {
         }, String.format("emptying wallet to %s", to));
     }
 
+    /**
+     * Same as {@link #buildEmptyWalletTo(Address)} but the destination is an output script, which may be a
+     * witness program bitcoinj-thin cannot express as an Address. Change is never produced when emptying
+     * the wallet, so the builder's change address is only a placeholder here.
+     */
+    public BuildResult buildEmptyWalletTo(Script to) {
+        return buildWithConfiguration((SendRequest sr) -> {
+            sr.tx.addOutput(Coin.ZERO, to);
+            sr.changeAddress = changeAddress;
+            sr.emptyWallet = true;
+        }, String.format("emptying wallet to script %s", to));
+    }
+
     private BuildResult buildWithConfiguration(
         SendRequestConfigurator sendRequestConfigurator,
         String operationDescription

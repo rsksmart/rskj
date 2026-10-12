@@ -27,6 +27,8 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.*;
+import co.rsk.peg.pegininstructions.PeginInstructionsVersion2;
+import co.rsk.peg.pegininstructions.PeginRefundScriptType;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Transaction;
@@ -189,6 +191,25 @@ public final class PegTestUtils {
         }
 
         return ScriptBuilder.createOpReturnScript(payloadBytes);
+    }
+
+    /**
+     * Builds a version-2 peg-in instructions OP_RETURN script: RSKT | 0x02 | rsk address | [type | program].
+     */
+    public static Script createOpReturnScriptForRskV2(
+        RskAddress rskDestinationAddress,
+        Optional<PeginRefundScriptType> refundScriptType,
+        byte[] refundProgram
+    ) {
+        byte[] destination = rskDestinationAddress.getBytes();
+        int payloadLength = destination.length + (refundScriptType.isPresent() ? 1 + refundProgram.length : 0);
+        byte[] payload = new byte[payloadLength];
+        System.arraycopy(destination, 0, payload, 0, destination.length);
+        if (refundScriptType.isPresent()) {
+            payload[destination.length] = (byte) refundScriptType.get().getTypeByte();
+            System.arraycopy(refundProgram, 0, payload, destination.length + 1, refundProgram.length);
+        }
+        return createOpReturnScriptForRskWithCustomPayload(PeginInstructionsVersion2.PROTOCOL_VERSION, payload);
     }
 
     public static Script createOpReturnScriptForRskWithCustomPayload(int protocolVersion, byte[] customPayload) {

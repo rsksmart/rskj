@@ -17,6 +17,7 @@ import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.PeginEvaluationResult;
+import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegin.PeginProcessAction;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import java.util.*;
@@ -197,6 +198,13 @@ public class PegUtils {
             .orElse(false);
     }
 
+    /**
+     * PoC test-only seam. No rule yet rejects a parsed version-1/2 payload with a refund, so a conformance
+     * harness needs a way to reach the refundable-rejection decision after parsing and minimum validation.
+     * Production code never sets this; it must be removed or replaced by a real rejection rule before adoption.
+     */
+    static volatile Optional<RejectedPeginReason> testOnlyInjectedRefundableRejection = Optional.empty();
+
     static PeginEvaluationResult evaluatePegin(
         BtcTransaction btcTx,
         PeginInformation peginInformation,
@@ -221,9 +229,9 @@ public class PegUtils {
                 e.getMessage()
             );
 
-            boolean hasRefundAddress = peginInformation.getBtcRefundAddress() != null;
+            boolean hasRefundScript = peginInformation.getBtcRefundScript() != null;
 
-            PeginProcessAction peginProcessAction = hasRefundAddress ?
+            PeginProcessAction peginProcessAction = hasRefundScript ?
                 PeginProcessAction.REFUND :
                 PeginProcessAction.NO_REFUND;
 
@@ -234,7 +242,16 @@ public class PegUtils {
         switch (protocolVersion) {
             case 0:
                 return evaluateLegacyPegin(btcTx, fedWallet, peginInformation.getSenderBtcAddressType());
-            case 1:
+            case 1, 2:
+                Optional<RejectedPeginReason> injectedRejection = testOnlyInjectedRefundableRejection;
+                if (injectedRejection.isPresent()) {
+                    // Refund destination order (draft): payload refund output, else sender-derived, else non-refundable.
+                    // Both of the first two are already folded into getBtcRefundScript() by PeginInformation.
+                    PeginProcessAction action = peginInformation.getBtcRefundScript() != null
+                        ? PeginProcessAction.REFUND
+                        : PeginProcessAction.NO_REFUND;
+                    return new PeginEvaluationResult(action, injectedRejection.get());
+                }
                 return new PeginEvaluationResult(PeginProcessAction.REGISTER);
             default:
                 // This flow should never be reached.

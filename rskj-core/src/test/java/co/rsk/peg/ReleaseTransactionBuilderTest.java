@@ -39,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 import java.util.Collections;
 import java.util.List;
 
@@ -1407,5 +1408,43 @@ class ReleaseTransactionBuilderTest {
             pegoutRequests.add(createTestEntry(123, Coin.COIN));
         }
         return pegoutRequests;
+    }
+
+    // --- Peg-in instructions v2 PoC: emptying the wallet to a refund output script of each supported type ---
+
+    private static byte[] filledProgram(int length, int fill) {
+        byte[] program = new byte[length];
+        Arrays.fill(program, (byte) fill);
+        return program;
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(co.rsk.peg.pegininstructions.PeginRefundScriptType.class)
+    void buildEmptyWalletTo_outputScript_eachRefundType_paysDepositLessFee(co.rsk.peg.pegininstructions.PeginRefundScriptType type) {
+        // Arrange: a real wallet over one federation UTXO, as a rejection release would use
+        Coin deposit = Coin.COIN;
+        List<UTXO> utxos = List.of(BitcoinTestUtils.createUTXO(1, 0, deposit, federation.getAddress()));
+        Wallet realWallet = BridgeUtils.getFederationSpendWallet(
+            new Context(regtestParameters), federation, utxos, false, bridgeStorageProviderMock);
+        ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
+            regtestParameters, realWallet, federation.getFormatVersion(), federation.getAddress(), feePerKb, activations);
+
+        Script refundScript = type.buildOutputScript(filledProgram(type.getProgramLength(), 0xab));
+
+        // Act
+        ReleaseTransactionBuilder.BuildResult result = rtb.buildEmptyWalletTo(refundScript);
+
+        // Assert
+        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
+        BtcTransaction tx = result.btcTx();
+        assertEquals(1, tx.getOutputs().size(), "emptying the wallet produces no change output");
+        assertEquals(refundScript, tx.getOutput(0).getScriptPubKey());
+        assertEquals(1, tx.getInputs().size());
+        Coin paid = tx.getOutput(0).getValue();
+        assertTrue(paid.isLessThan(deposit) && paid.isGreaterThan(Coin.ZERO), "refund is the deposit less the fee");
+        assertTrue(paid.isGreaterThan(tx.getOutput(0).getMinNonDustValue()), "refund output is not dust");
+
+        // Printed so the raw transaction can be checked for output standardness with bitcoind decoderawtransaction
+        System.out.println("PEGIN_V2_REFUND_TX " + type + " " + Hex.toHexString(tx.bitcoinSerialize()));
     }
 }

@@ -140,6 +140,7 @@ class PegUtilsEvaluatePeginTest {
         Address btcRefundAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");;
         PeginInformation peginInformation = mock(PeginInformation.class);
         when(peginInformation.getBtcRefundAddress()).thenReturn(btcRefundAddress);
+        when(peginInformation.getBtcRefundScript()).thenReturn(co.rsk.bitcoinj.script.ScriptBuilder.createOutputScript(btcRefundAddress));
 
         when(peginInformation.getProtocolVersion()).thenReturn(protocolVersion);
 

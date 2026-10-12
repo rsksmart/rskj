@@ -33,6 +33,7 @@ import co.rsk.peg.feeperkb.*;
 import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
+import co.rsk.peg.pegininstructions.PeginRefundScriptType;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
@@ -59,6 +60,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeSupportRegisterBtcTransactionTest {
@@ -1284,7 +1286,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         btcTransaction.addOutput(
             Coin.ZERO,
             PegTestUtils.createOpReturnScriptForRsk(
-                2,
+                3, // version 2 is now valid (peg-in instructions v2); 3 is the next unknown version
                 bridgeContractAddress,
                 Optional.empty()
             )
@@ -3597,5 +3599,110 @@ class BridgeSupportRegisterBtcTransactionTest {
         } else {
             assertPeginIsRejectedAndRefunded(activations, btcTransaction, Coin.COIN, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
         }
+    }
+
+    // --- Peg-in instructions v2 PoC ---
+
+    private static final ActivationConfig.ForBlock allButPeginV2Activations =
+        ActivationConfigsForTest.allBut(ConsensusRule.RSKIP_PEGIN_INSTRUCTIONS_V2).forBlock(0);
+
+    private static byte[] filledProgram(int length, int fill) {
+        byte[] program = new byte[length];
+        java.util.Arrays.fill(program, (byte) fill);
+        return program;
+    }
+
+    private BtcTransaction buildPeginV2Tx(Coin amountToSend, Optional<PeginRefundScriptType> refundType, boolean segwitInput, BtcECKey senderKey) {
+        BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderKey));
+        btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
+        byte[] program = refundType.map(t -> filledProgram(t.getProgramLength(), 0xab)).orElse(new byte[0]);
+        btcTransaction.addOutput(Coin.ZERO, PegTestUtils.createOpReturnScriptForRskV2(destinationRskAddress, refundType, program));
+        if (segwitInput) {
+            TransactionWitness txWitness = new TransactionWitness(1);
+            txWitness.setPush(0, new byte[]{0x1});
+            btcTransaction.setWitness(0, txWitness);
+        }
+        return btcTransaction;
+    }
+
+    @ParameterizedTest
+    @EnumSource(PeginRefundScriptType.class)
+    void pegin_v2_from_segwit_input_with_any_refund_type_is_registered_like_v1(PeginRefundScriptType refundType) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        // arrange
+        int height = heightAtWhichToStartUsingPegoutIndex;
+        Coin amountToSend = Coin.COIN;
+        BtcTransaction btcTransaction = buildPeginV2Tx(amountToSend, Optional.of(refundType), true, new BtcECKey());
+        createPmtAndMockBlockStore(btcTransaction, height);
+        PartialMerkleTree pmtWithWitness = createPmtWithWitness(btcTransaction);
+
+        // act
+        BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
+        bridgeSupport.registerBtcTransaction(rskTx, btcTransaction.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize());
+
+        // assert: credited to the destination, protocol version 2, no refund consulted
+        verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+        verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
+        verify(bridgeEventLogger, times(1)).logPeginBtc(eq(destinationRskAddress), eq(btcTransaction), eq(amountToSend), eq(2));
+        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
+        assertFalse(activeFederationUtxos.isEmpty());
+        assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
+    }
+
+    @Test
+    void pegin_v2_with_output_below_minimum_is_non_refundable() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        int height = heightAtWhichToStartUsingPegoutIndex;
+        BtcTransaction btcTransaction = buildPeginV2Tx(belowMinimumPeginTxValue, Optional.of(PeginRefundScriptType.P2WPKH), true, new BtcECKey());
+        createPmtAndMockBlockStore(btcTransaction, height);
+        PartialMerkleTree pmtWithWitness = createPmtWithWitness(btcTransaction);
+
+        BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
+        bridgeSupport.registerBtcTransaction(rskTx, btcTransaction.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize());
+
+        assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction, allActivations);
+    }
+
+    @Test
+    void pegin_v2_before_activation_from_p2pkh_sender_is_refunded_to_sender() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        // arrange: v2 payload names a taproot refund, but the rule is not active, so the payload is an invalid version
+        int height = heightAtWhichToStartUsingPegoutIndex;
+        BtcECKey senderKey = new BtcECKey();
+        BtcTransaction btcTransaction = buildPeginV2Tx(Coin.COIN, Optional.of(PeginRefundScriptType.P2TR), false, senderKey);
+        PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
+
+        // act
+        BridgeSupport bridgeSupport = buildBridgeSupport(allButPeginV2Activations);
+        bridgeSupport.registerBtcTransaction(rskTx, btcTransaction.bitcoinSerialize(), height, pmt.bitcoinSerialize());
+
+        // assert: refunded to the sender-derived P2PKH address, not to the taproot output
+        verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, PEGIN_V1_INVALID_PAYLOAD);
+        verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
+        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+        BtcTransaction refund = pegoutsWaitingForConfirmations.getEntries().iterator().next().getBtcTransaction();
+        assertEquals(1, refund.getOutputs().size());
+        assertEquals(ScriptBuilder.createOutputScript(senderKey.toAddress(btcMainnetParams)), refund.getOutput(0).getScriptPubKey());
+    }
+
+    @Test
+    void pegin_v2_before_activation_from_segwit_sender_is_unrefundable() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        // a native segwit spend has an empty scriptSig, from which no sender can be derived
+        btcLockSenderProvider = mock(BtcLockSenderProvider.class);
+        when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.empty());
+        int height = heightAtWhichToStartUsingPegoutIndex;
+        BtcTransaction btcTransaction = buildPeginV2Tx(Coin.COIN, Optional.of(PeginRefundScriptType.P2TR), true, new BtcECKey());
+        createPmtAndMockBlockStore(btcTransaction, height);
+        PartialMerkleTree pmtWithWitness = createPmtWithWitness(btcTransaction);
+
+        BridgeSupport bridgeSupport = buildBridgeSupport(allButPeginV2Activations);
+        bridgeSupport.registerBtcTransaction(rskTx, btcTransaction.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize());
+
+        // same outcome a node without this code produces for an unknown protocol version
+        verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, PEGIN_V1_INVALID_PAYLOAD);
+        verify(bridgeEventLogger, times(1)).logNonRefundablePegin(btcTransaction, NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+        assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
     }
 }

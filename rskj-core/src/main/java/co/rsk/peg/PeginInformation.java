@@ -2,6 +2,8 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
@@ -10,6 +12,7 @@ import co.rsk.peg.pegininstructions.PeginInstructions;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsVersion1;
+import co.rsk.peg.pegininstructions.PeginInstructionsVersion2;
 import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -27,6 +30,7 @@ public class PeginInformation {
     private int protocolVersion;
     private RskAddress rskDestinationAddress;
     private Address btcRefundAddress;
+    private Script btcRefundScript;
     private Address senderBtcAddress;
     private TxSenderAddressType senderBtcAddressType;
 
@@ -51,6 +55,14 @@ public class PeginInformation {
 
     public Address getBtcRefundAddress() {
         return this.btcRefundAddress;
+    }
+
+    /**
+     * Output script the Bridge pays a refund to. For protocol versions 0 and 1 it is derived
+     * from {@link #getBtcRefundAddress()}; version 2 may name a witness program with no Address form.
+     */
+    public Script getBtcRefundScript() {
+        return this.btcRefundScript;
     }
 
     public Address getSenderBtcAddress() {
@@ -93,6 +105,9 @@ public class PeginInformation {
         this.protocolVersion = 0;
         this.rskDestinationAddress = btcLockSender.getRskAddress();
         this.btcRefundAddress = btcLockSender.getBTCAddress();
+        this.btcRefundScript = btcLockSender.getBTCAddress() == null
+            ? null
+            : ScriptBuilder.createOutputScript(btcLockSender.getBTCAddress());
         this.senderBtcAddress = btcLockSender.getBTCAddress();
         this.senderBtcAddressType = btcLockSender.getTxSenderAddressType();
 
@@ -104,6 +119,15 @@ public class PeginInformation {
     }
 
     private void parseFromPeginInstructions(PeginInstructions peginInstructions)  throws PeginInstructionsException {
+        // Before activation a version-2 payload must be indistinguishable from an unknown version:
+        // reject it before recording its version, exactly as nodes without this code do.
+        if (peginInstructions.getProtocolVersion() == PeginInstructionsVersion2.PROTOCOL_VERSION
+            && !activations.isActive(ConsensusRule.RSKIP_PEGIN_INSTRUCTIONS_V2)) {
+            String message = String.format("Invalid protocol version: %d", peginInstructions.getProtocolVersion());
+            logger.warn("[parseFromPeginInstructions] {}", message);
+            throw new PeginInstructionsException(message);
+        }
+
         this.protocolVersion = peginInstructions.getProtocolVersion();
         this.rskDestinationAddress = peginInstructions.getRskDestinationAddress();
         logger.trace("[parseFromPeginInstructions] Protocol version: {}", peginInstructions.getProtocolVersion());
@@ -113,6 +137,10 @@ public class PeginInformation {
             case 1:
                 PeginInstructionsVersion1 peginInstructionsV1 = (PeginInstructionsVersion1) peginInstructions;
                 parseFromPeginInstructionsVersion1(peginInstructionsV1);
+                break;
+            case PeginInstructionsVersion2.PROTOCOL_VERSION:
+                PeginInstructionsVersion2 peginInstructionsV2 = (PeginInstructionsVersion2) peginInstructions;
+                parseFromPeginInstructionsVersion2(peginInstructionsV2);
                 break;
             default:
                 String message = String.format("Invalid protocol version: %d", protocolVersion);
@@ -125,7 +153,20 @@ public class PeginInformation {
         Optional<Address> btcRefundAddressOptional = peginInstructions.getBtcRefundAddress();
         if (btcRefundAddressOptional.isPresent()) {
             this.btcRefundAddress = btcRefundAddressOptional.get();
+            this.btcRefundScript = ScriptBuilder.createOutputScript(this.btcRefundAddress);
             logger.trace("[parseFromPeginInstructionsVersion1] BTC refund address: {}", btcRefundAddressOptional.get());
         }
+    }
+
+    private void parseFromPeginInstructionsVersion2(PeginInstructionsVersion2 peginInstructions) {
+        Optional<Script> btcRefundScriptOptional = peginInstructions.getBtcRefundScript();
+        if (btcRefundScriptOptional.isEmpty()) {
+            return; // keep the sender-derived refund, if any, as version 1 does
+        }
+
+        this.btcRefundScript = btcRefundScriptOptional.get();
+        // Witness-program refunds have no Address representation; only legacy types set it
+        this.btcRefundAddress = peginInstructions.getBtcRefundAddress().orElse(null);
+        logger.trace("[parseFromPeginInstructionsVersion2] BTC refund script: {}", this.btcRefundScript);
     }
 }
