@@ -355,11 +355,11 @@ public class BridgeSupport {
      * @return A no spend BTC wallet for the currently live federation(s)
      *
      */
-    public Wallet getNoSpendWalletForLiveFederations(boolean isFlyoverCompatible) {
+    private Wallet getNoSpendWalletForLiveFederations() {
         return getFederationsNoSpendWallet(
             btcContext,
             federationSupport.getLiveFederations(),
-            isFlyoverCompatible,
+            false,
             provider
         );
     }
@@ -492,7 +492,7 @@ public class BridgeSupport {
             activations
         );
         Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
-        Wallet fedWallet = getNoSpendWalletForLiveFederations(false);
+        Wallet fedWallet = getNoSpendWalletForLiveFederations();
         PeginEvaluationResult peginEvaluationResult = PegUtils.evaluatePegin(
             btcTx,
             peginInformation,
@@ -1505,7 +1505,7 @@ public class BridgeSupport {
             return;
         }
 
-        Wallet wallet = getNoSpendWalletForLiveFederations(false);
+        Wallet wallet = getNoSpendWalletForLiveFederations();
         int btcTxHeight = 0;
         List<UTXO> utxosSentToLiveFederations = getUtxosSentToWallet(releaseTransaction, wallet, btcTxHeight);
         if (utxosSentToLiveFederations.isEmpty()) {
@@ -3498,9 +3498,7 @@ public class BridgeSupport {
         WalletProvider walletProvider = (BtcTransaction btcTransaction, List<Address> addresses) -> {
             // Build the list of UTXOs in the BTC transaction sent to either the active
             // or retiring federation
-            List<UTXO> utxosToUse = btcTx.getWalletOutputs(
-                getNoSpendWalletForLiveFederations(false)
-            )
+            List<UTXO> utxosToUse = btcTx.getWalletOutputs(getNoSpendWalletForLiveFederations())
                 .stream()
                 .map(output ->
                     new UTXO(
