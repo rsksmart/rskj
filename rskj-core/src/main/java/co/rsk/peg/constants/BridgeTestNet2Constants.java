@@ -42,6 +42,8 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         federationConstants = FederationTestNet2Constants.getInstance();
         lockingCapConstants = LockingCapTestNetConstants.getInstance();
         unionBridgeConstants = UnionBridgeTestNetConstants.getInstance();
+        historicalPegoutSelectionsConstants =
+            new co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants();
 
         btc2RskMinimumAcceptableConfirmations = 10;
         rsk2BtcMinimumAcceptableConfirmations = 10;
