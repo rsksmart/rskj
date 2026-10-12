@@ -188,25 +188,14 @@ public abstract class SystemProperties {
 
     public Constants getNetworkConstants() {
         if (constants == null) {
-            final var networkName = NetworkName.getByName(netName());
-            switch (networkName) {
-                case MAINNET:
-                    constants = Constants.mainnet();
-                    break;
-                case TESTNET:
-                    constants = Constants.testnet(getActivationConfig());
-                    break;
-                case TESTNET2:
-                    constants = Constants.testnet2(getActivationConfig());
-                    break;
-                case REGTEST:
-                    constants = getGenesisFederationPublicKeys()
-                            .map(Constants::regtestWithFederation)
-                            .orElseGet(Constants::regtest);
-                    break;
-                default:
-                    throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
-            }
+            constants = switch (NetworkName.getByName(netName())) {
+                case MAINNET -> Constants.mainnet();
+                case TESTNET -> Constants.testnet(getActivationConfig());
+                case TESTNET2 -> Constants.testnet2(getActivationConfig());
+                case REGTEST -> getGenesisFederationPublicKeys()
+                        .map(Constants::regtestWithFederation)
+                        .orElseGet(Constants::regtest);
+            };
         }
 
         return constants;
@@ -214,23 +203,12 @@ public abstract class SystemProperties {
 
     public NetworkParameters getBitcoinjNetworkConstants() {
         if (networkParameters == null) {
-            final var networkName = NetworkName.getByName(netName());
-            switch (networkName) {
-                case MAINNET:
-                    networkParameters = MainNetParams.get();
-                    break;
-                case TESTNET:
-                    networkParameters = TestNet3Params.get();
-                    break;
-                case TESTNET2:
-                    networkParameters = TestNet4Params.get();
-                    break;
-                case REGTEST:
-                    networkParameters = RegTestParams.get();
-                    break;
-                default:
-                    throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
-            }
+            networkParameters = switch (NetworkName.getByName(netName())) {
+                case MAINNET -> MainNetParams.get();
+                case TESTNET -> TestNet3Params.get();
+                case TESTNET2 -> TestNet4Params.get();
+                case REGTEST -> RegTestParams.get();
+            };
         }
 
         return networkParameters;
