@@ -160,7 +160,7 @@ public interface FederationSupport {
      * Stores the federation UTXOs created by a release transaction (e.g. its change outputs)
      * as pending, keyed by the release's BTC tx id. They are not spendable until the
      * transaction is registered and they are moved to the federations
-     * (see {@link #movePendingUtxosToFederations(Sha256Hash)}).
+     * (see {@link #movePendingUtxosToFederations(Sha256Hash, int)}).
      * @param btcTxId the BTC tx id of the release transaction that creates the UTXOs
      * @param utxos the UTXOs the release transaction sends to a federation
      * @throws IllegalArgumentException if btcTxId is null or utxos is null or empty
@@ -179,11 +179,13 @@ public interface FederationSupport {
     /**
      * Moves the pending UTXOs of the given BTC tx id into the UTXOs of the federation
      * each one belongs to (matched by scriptPubKey against the active and retiring
-     * federations), then removes the pending entry. Expects btcTxId to have pending UTXOs
+     * federations), then removes the pending entry. Each moved UTXO takes btcTxHeight as
+     * its height. Expects btcTxId to have pending UTXOs
      * (see {@link #hasFederationsPendingBtcUTXOs(Sha256Hash)}).
      * @param btcTxId the BTC tx id whose pending UTXOs are moved
+     * @param btcTxHeight the height of the BTC block that includes the transaction
      */
-    void movePendingUtxosToFederations(Sha256Hash btcTxId);
+    void movePendingUtxosToFederations(Sha256Hash btcTxId, int btcTxHeight);
 
     /**
      * Returns the currently pending federation hash, or null if none exists
