@@ -327,12 +327,17 @@ public class FederationSupportImpl implements FederationSupport {
 
     @Override
     public boolean hasFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
-        return provider.getFederationsPendingBtcUTXOs(btcTxId).isPresent();
+        return !getFederationsPendingBtcUTXOs(btcTxId).isEmpty();
+    }
+
+    @Override
+    public List<UTXO> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        return provider.getFederationsPendingBtcUTXOs(btcTxId).orElse(List.of());
     }
 
     @Override
     public void movePendingUtxosToFederations(Sha256Hash btcTxId, int btcTxHeight) {
-        List<UTXO> pendingUtxos = provider.getFederationsPendingBtcUTXOs(btcTxId).orElse(List.of());
+        List<UTXO> pendingUtxos = getFederationsPendingBtcUTXOs(btcTxId);
 
         Script activeFederationScript = getActiveFederation().getP2SHScript();
         Optional<Script> retiringFederationScript = getRetiringFederation().map(Federation::getP2SHScript);

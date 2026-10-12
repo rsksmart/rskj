@@ -177,6 +177,15 @@ public interface FederationSupport {
     boolean hasFederationsPendingBtcUTXOs(Sha256Hash btcTxId);
 
     /**
+     * Returns the pending UTXOs of the given BTC tx id, i.e. the ones that would be moved to
+     * the federations (see {@link #movePendingUtxosToFederations(Sha256Hash, int)}).
+     * @param btcTxId the BTC tx id to look up
+     * @return an immutable list with the pending UTXOs of btcTxId, or an empty list if btcTxId
+     * has no pending UTXOs
+     */
+    List<UTXO> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId);
+
+    /**
      * Moves the pending UTXOs of the given BTC tx id into the UTXOs of the federation
      * each one belongs to (matched by scriptPubKey against the active and retiring
      * federations), then removes the pending entry. Each moved UTXO takes btcTxHeight as
