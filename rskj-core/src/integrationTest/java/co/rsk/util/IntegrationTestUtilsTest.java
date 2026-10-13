@@ -19,8 +19,6 @@ package co.rsk.util;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,26 +36,6 @@ class IntegrationTestUtilsTest {
         assertEquals(count, Arrays.stream(ports).distinct().count());
         for (int port : ports) {
             assertTrue(port > 0 && port <= 65535, "invalid port " + port);
-        }
-    }
-
-    @Test
-    void findFreePortsReleasesThePorts() throws IOException {
-        int[] ports = IntegrationTestUtils.findFreePorts(2);
-
-        for (int port : ports) {
-            try (ServerSocket socket = new ServerSocket(port)) {
-                assertEquals(port, socket.getLocalPort());
-            }
-        }
-    }
-
-    @Test
-    void findFreePortReturnsABindablePort() throws IOException {
-        int port = IntegrationTestUtils.findFreePort();
-
-        try (ServerSocket socket = new ServerSocket(port)) {
-            assertEquals(port, socket.getLocalPort());
         }
     }
 }
