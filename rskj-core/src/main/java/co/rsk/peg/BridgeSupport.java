@@ -454,8 +454,25 @@ public class BridgeSupport {
             return;
         }
 
+        // The SVP fund tx has to be registered through registerBtcTransaction while the SVP is ongoing,
+        // since the full SVP tx is needed to build the SVP spend tx.
+        if (isTheSvpFundTx(btcTxId)) {
+            logger.warn(
+                "[registerPegoutTransaction][rsk tx {}] Btc tx {} is the SVP fund tx",
+                rskTx.getHash(),
+                btcTxId
+            );
+            return;
+        }
+
         registerNewUTXOsByTxId(btcTxId, height);
         markBtcTxHashAsProcessed(btcTxId);
+    }
+
+    private boolean isTheSvpFundTx(Sha256Hash btcTxId) {
+        return provider.getSvpFundTxHashUnsigned()
+            .filter(btcTxId::equals)
+            .isPresent();
     }
 
     private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {

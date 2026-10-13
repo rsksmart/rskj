@@ -8,6 +8,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.assertTransactionWasProcessed;
 import static co.rsk.peg.BridgeSupportTestUtil.buildExpectedUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.buildPMTAndRecreateChainForSegwitTransactionRegistration;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -39,6 +40,7 @@ import co.rsk.test.builders.PegoutTransactionBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
@@ -227,6 +229,35 @@ class BridgeSupportRegisterPegoutTransactionTest {
         assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
     }
 
+    @Test
+    void registerPegoutTransaction_withSvpFundTx_whileSvpIsOngoing_shouldNotRegister() throws BlockStoreException, IOException {
+        // arrange
+        BtcTransaction svpFundTx = buildSvpFundTxWithSvpOngoing();
+        storePendingUtxosSentToActiveFed(svpFundTx);
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForSegwitTransactionRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            svpFundTx,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            svpFundTx.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        assertPegoutWasNotRegistered(svpFundTx);
+        assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(svpFundTx.getHash()));
+        assertEquals(Optional.of(svpFundTx.getHash()), bridgeStorageProvider.getSvpFundTxHashUnsigned());
+        assertTrue(bridgeStorageProvider.getSvpFundTxSigned().isEmpty());
+    }
+
     private void assertPegoutWasNotRegistered(BtcTransaction release) throws IOException {
         assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
         assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(release.getHash()).isEmpty());
@@ -239,6 +270,35 @@ class BridgeSupportRegisterPegoutTransactionTest {
             .withActiveFederation(activeFederation)
             .withInput(BitcoinTestUtils.createHash(1), 0, RELEASE_INPUT_VALUE)
             .withOutput(PEGOUT_VALUE, userAddress)
+            .withChangeAmount(CHANGE_VALUE)
+            .withSignatures(activeFederationKeys)
+            .build();
+    }
+
+    private BtcTransaction buildSvpFundTxWithSvpOngoing() {
+        Federation proposedFederation = P2shP2wshErpFederationBuilder.builder()
+            .withCreationBlockNumber(rskExecutionBlock.getNumber())
+            .build();
+        federationStorageProvider.setProposedFederation(proposedFederation);
+
+        BtcTransaction svpFundTx = buildSvpFundTxFromActiveFed(proposedFederation);
+        bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTx.getHash());
+        return svpFundTx;
+    }
+
+    private BtcTransaction buildSvpFundTxFromActiveFed(Federation proposedFederation) {
+        Address flyoverProposedFederationAddress = PegUtils.getFlyoverFederationAddress(
+            btcMainnetParams,
+            bridgeMainnetConstants.getProposedFederationFlyoverPrefix(),
+            proposedFederation
+        );
+
+        return PegoutTransactionBuilder.builder()
+            .withNetworkParameters(btcMainnetParams)
+            .withActiveFederation(activeFederation)
+            .withInput(BitcoinTestUtils.createHash(2), 0, RELEASE_INPUT_VALUE)
+            .withOutput(SVP_FUND_TX_OUTPUTS_VALUE, proposedFederation.getAddress())
+            .withOutput(SVP_FUND_TX_OUTPUTS_VALUE, flyoverProposedFederationAddress)
             .withChangeAmount(CHANGE_VALUE)
             .withSignatures(activeFederationKeys)
             .build();
