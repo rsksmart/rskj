@@ -82,6 +82,23 @@ class BlockHeaderExtensionV1Test {
     }
 
     @Test
+    void getLogsBloomReturnsCopy() {
+        byte[] logsBloom = new byte[256];
+        Arrays.fill(logsBloom, (byte) 0x01);
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(logsBloom, EDGES);
+        byte[] encodedBefore = extension.getEncoded();
+        byte[] hashBefore = extension.getHash();
+
+        byte[] returned = extension.getLogsBloom();
+        Assertions.assertArrayEquals(logsBloom, returned);
+        returned[0] = 0x7f;
+
+        Assertions.assertArrayEquals(logsBloom, extension.getLogsBloom());
+        Assertions.assertArrayEquals(encodedBefore, extension.getEncoded());
+        Assertions.assertArrayEquals(hashBefore, extension.getHash());
+    }
+
+    @Test
     void withEdgesAcceptsNull() {
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
 
