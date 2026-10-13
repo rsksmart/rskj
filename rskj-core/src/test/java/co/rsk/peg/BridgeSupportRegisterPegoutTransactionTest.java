@@ -130,7 +130,7 @@ class BridgeSupportRegisterPegoutTransactionTest {
     }
 
     @Test
-    void registerPegoutTransaction_whenPegoutHasChangeToActiveFed_shouldRegisterChangeInActiveFed() throws BlockStoreException, IOException {
+    void registerPegoutTransaction_withPegoutHasChangeToActiveFed_shouldRegisterChangeInActiveFed() throws BlockStoreException, IOException {
         // arrange
         BtcTransaction pegout = buildPegoutWithChangeFromActiveFed();
         storePendingUtxosSentToActiveFed(pegout);
@@ -174,7 +174,7 @@ class BridgeSupportRegisterPegoutTransactionTest {
     }
 
     @Test
-    void registerPegoutTransaction_whenNoPendingUtxosForTxId_shouldNotRegister() throws BlockStoreException, IOException {
+    void registerPegoutTransaction_withNoPendingUtxosForTxId_shouldNotRegister() throws BlockStoreException, IOException {
         // arrange
         BtcTransaction pegout = buildPegoutWithChangeFromActiveFed();
         PartialMerkleTree pmt = buildPMTAndRecreateChainForSegwitTransactionRegistration(
@@ -199,7 +199,7 @@ class BridgeSupportRegisterPegoutTransactionTest {
     }
 
     @Test
-    void registerPegoutTransaction_whenTxIdAlreadyProcessed_shouldNotRegister() throws BlockStoreException, IOException {
+    void registerPegoutTransaction_withTxIdAlreadyProcessed_shouldNotRegister() throws BlockStoreException, IOException {
         // arrange
         BtcTransaction pegout = buildPegoutWithChangeFromActiveFed();
         storePendingUtxosSentToActiveFed(pegout);
