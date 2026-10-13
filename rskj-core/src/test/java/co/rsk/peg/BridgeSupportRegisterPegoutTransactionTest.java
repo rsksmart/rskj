@@ -198,6 +198,41 @@ class BridgeSupportRegisterPegoutTransactionTest {
         assertPegoutWasNotRegistered(pegout);
     }
 
+    @Test
+    void registerPegoutTransaction_whenTxIdAlreadyProcessed_shouldNotRegister() throws BlockStoreException, IOException {
+        // arrange
+        BtcTransaction pegout = buildPegoutWithChangeFromActiveFed();
+        storePendingUtxosSentToActiveFed(pegout);
+        long rskBlockNumberWherePegoutWasProcessed = rskExecutionBlock.getNumber() - 1;
+        bridgeStorageProvider.setHeightBtcTxhashAlreadyProcessed(pegout.getHash(), rskBlockNumberWherePegoutWasProcessed);
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForSegwitTransactionRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pegout,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            pegout.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
+        assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+        assertTransactionWasProcessed(
+            bridgeStorageProvider,
+            pegout.getHash(),
+            (int) rskBlockNumberWherePegoutWasProcessed
+        );
+        assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
+    }
+
     private void assertPegoutWasNotRegistered(BtcTransaction release) throws IOException {
         assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
         assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(release.getHash()).isEmpty());
