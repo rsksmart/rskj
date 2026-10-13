@@ -426,9 +426,18 @@ public class BridgeSupport {
         int height,
         byte[] pmtSerialized
     ) throws IOException {
+        if (isAlreadyBtcTxHashProcessed(btcTxId)) {
+            logger.warn(
+                "[registerPegoutTransaction][rsk tx {}] Btc tx {} already processed",
+                rskTx.getHash(),
+                btcTxId
+            );
+            return;
+        }
+
         if (!federationSupport.hasFederationsPendingBtcUTXOs(btcTxId)) {
             logger.warn(
-                "[registerPegoutTransaction][rsk tx {}] No pending UTXOs found for btc tx {}",
+                "[registerPegoutTransaction][rsk tx {}] No pending UTXOs found for Btc tx {}",
                 rskTx.getHash(),
                 btcTxId
             );
