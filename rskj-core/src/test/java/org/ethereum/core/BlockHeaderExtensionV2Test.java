@@ -95,6 +95,23 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
+    void getLogsBloomReturnsCopy() {
+        byte[] logsBloom = new byte[256];
+        Arrays.fill(logsBloom, (byte) 0x01);
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, EDGES, new byte[]{0x01});
+        byte[] encodedBefore = ext.getEncoded();
+        byte[] hashBefore = ext.getHash();
+
+        byte[] returned = ext.getLogsBloom();
+        assertArrayEquals(logsBloom, returned);
+        returned[0] = 0x7f;
+
+        assertArrayEquals(logsBloom, ext.getLogsBloom());
+        assertArrayEquals(encodedBefore, ext.getEncoded());
+        assertArrayEquals(hashBefore, ext.getHash());
+    }
+
+    @Test
     void encodingAndDecoding() {
         byte[] logsBloom = new byte[256];
         Arrays.fill(logsBloom, (byte) 0x01);
@@ -297,8 +314,9 @@ class BlockHeaderExtensionV2Test {
 
     @Test
     void constructorDoesNotEnforceBaseEventMaxSize() {
-        // Pinned quirk: only setBaseEvent() enforces BASE_EVENT_MAX_SIZE, the constructor
-        // does not, so oversized data can still reach the value object through it.
+        // Pinned quirk: only withBaseEvent() (and BlockHeaderV2.setBaseEvent(), which
+        // delegates to it) enforces BASE_EVENT_MAX_SIZE; the constructor does not, so
+        // oversized data can still reach the value object through it.
         byte[] oversizedValue = new byte[BASE_EVENT_MAX_SIZE + 1];
         for (int i = 0; i < oversizedValue.length; i++) {
             oversizedValue[i] = (byte) (i % 256);

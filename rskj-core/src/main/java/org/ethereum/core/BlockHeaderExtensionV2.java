@@ -120,7 +120,7 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
     }
 
     public byte[] getLogsBloom() {
-        return this.logsBloom;
+        return this.logsBloom != null ? Arrays.copyOf(this.logsBloom, this.logsBloom.length) : null;
     }
 
     @Override
