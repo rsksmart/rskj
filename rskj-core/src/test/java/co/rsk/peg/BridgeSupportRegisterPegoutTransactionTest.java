@@ -304,12 +304,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
             .build();
     }
 
-    private void storePendingUtxosSentToActiveFed(BtcTransaction release) {
+    private void storePendingUtxosSentToActiveFed(BtcTransaction releaseTransaction) {
         List<UTXO> pendingUtxos = buildExpectedUtxosRegistered(
-            release,
+            releaseTransaction,
             activeFederation,
             PENDING_UTXOS_HEIGHT
         );
-        federationSupport.storeFederationsPendingBtcUTXOs(release.getHash(), pendingUtxos);
+        federationSupport.storeFederationsPendingBtcUTXOs(releaseTransaction.getHash(), pendingUtxos);
     }
 }
