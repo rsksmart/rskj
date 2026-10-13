@@ -430,6 +430,16 @@ public class BridgeSupport {
         }
     }
 
+    public void registerPegoutTransaction(
+        Transaction rskTx,
+        Sha256Hash btcTxId,
+        int height,
+        byte[] pmtSerialized
+    ) throws IOException {
+        registerNewUTXOsByTxId(btcTxId, height);
+        markBtcTxHashAsProcessed(btcTxId);
+    }
+
     private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
         registerNewUtxos(btcTx, btcTxHeight); // Need to register the change UTXO
 
