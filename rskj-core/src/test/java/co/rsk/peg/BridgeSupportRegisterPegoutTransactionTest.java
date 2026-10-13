@@ -54,26 +54,25 @@ class BridgeSupportRegisterPegoutTransactionTest {
     private static final FederationConstants federationMainnetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
 
-    private static final int BTC_BLOCK_WITH_RELEASE_HEIGHT = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates()
-        + bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-    // pending UTXOs are stored when the release is created, before it is included in a btc block,
-    // so they don't have a height yet
+    private static final int BTC_BLOCK_WITH_RELEASE_HEIGHT = 1_000;
+    private static final long ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
     private static final int PENDING_UTXOS_HEIGHT = 0;
 
     private static final Coin RELEASE_INPUT_VALUE = Coin.COIN;
     private static final Coin PEGOUT_VALUE = Coin.COIN.div(2);
     private static final Coin CHANGE_VALUE = Coin.COIN.div(4);
+
     // the pegout change output is added last, after the user output
     private static final long OUTPUT_INDEX_FOR_PEGOUT_CHANGE = 1L;
+    private static final Coin SVP_FUND_TX_OUTPUTS_VALUE = Coin.COIN.div(8);
 
-    private static final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-        new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"},
-        true
-    );
+    private static final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeys(20);
     private static final Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
 
     private Federation activeFederation;
+    private BtcTransaction pegout;
     private BridgeStorageProvider bridgeStorageProvider;
+    private FederationStorageProvider federationStorageProvider;
     private FederationSupport federationSupport;
     private BtcBlockStoreWithCache btcBlockStore;
     private BridgeSupport bridgeSupport;
@@ -84,17 +83,15 @@ class BridgeSupportRegisterPegoutTransactionTest {
     @BeforeEach
     void setUp() {
         activeFederation = P2shP2wshErpFederationBuilder.builder()
-            .withNetworkParameters(btcMainnetParams)
             .withMembersBtcPublicKeys(activeFederationKeys)
-            .withErpActivationDelay(federationMainnetConstants.getErpFedActivationDelay())
-            .withErpPublicKeys(federationMainnetConstants.getErpFedPubKeysList())
-            .withCreationBlockNumber(BTC_BLOCK_WITH_RELEASE_HEIGHT)
+            .withCreationBlockNumber(ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER)
             .build();
+        pegout = buildPegoutWithChangeFromActiveFed();
 
         Repository repository = createRepository();
         logs = new ArrayList<>();
 
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(new InMemoryStorage());
+        federationStorageProvider = new FederationStorageProviderImpl(new InMemoryStorage());
         federationStorageProvider.setNewFederation(activeFederation);
 
         bridgeStorageProvider = new BridgeStorageProvider(repository, btcMainnetParams, allActivations);
@@ -132,7 +129,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
     @Test
     void registerPegoutTransaction_withPegoutHasChangeToActiveFed_shouldRegisterChangeInActiveFed() throws BlockStoreException, IOException {
         // arrange
-        BtcTransaction pegout = buildPegoutWithChangeFromActiveFed();
         storePendingUtxosSentToActiveFed(pegout);
         PartialMerkleTree pmt = buildPMTAndRecreateChainForSegwitTransactionRegistration(
             bridgeStorageProvider,
@@ -176,7 +172,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
     @Test
     void registerPegoutTransaction_withNoPendingUtxosForTxId_shouldNotRegister() throws BlockStoreException, IOException {
         // arrange
-        BtcTransaction pegout = buildPegoutWithChangeFromActiveFed();
         PartialMerkleTree pmt = buildPMTAndRecreateChainForSegwitTransactionRegistration(
             bridgeStorageProvider,
             bridgeMainnetConstants,
@@ -201,7 +196,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
     @Test
     void registerPegoutTransaction_withTxIdAlreadyProcessed_shouldNotRegister() throws BlockStoreException, IOException {
         // arrange
-        BtcTransaction pegout = buildPegoutWithChangeFromActiveFed();
         storePendingUtxosSentToActiveFed(pegout);
         long rskBlockNumberWherePegoutWasProcessed = rskExecutionBlock.getNumber() - 1;
         bridgeStorageProvider.setHeightBtcTxhashAlreadyProcessed(pegout.getHash(), rskBlockNumberWherePegoutWasProcessed);
