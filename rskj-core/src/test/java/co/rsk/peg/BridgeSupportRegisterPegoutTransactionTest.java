@@ -2,12 +2,14 @@ package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
+import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasNotEmitted;
 import static co.rsk.peg.BridgeSupportTestUtil.assertLogUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.assertTransactionWasProcessed;
 import static co.rsk.peg.BridgeSupportTestUtil.buildExpectedUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.buildPMTAndRecreateChainForSegwitTransactionRegistration;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -169,6 +171,37 @@ class BridgeSupportRegisterPegoutTransactionTest {
             List.of(OUTPUT_INDEX_FOR_PEGOUT_CHANGE),
             activeFederation.getAddress()
         );
+    }
+
+    @Test
+    void registerPegoutTransaction_whenNoPendingUtxosForTxId_shouldNotRegister() throws BlockStoreException, IOException {
+        // arrange
+        BtcTransaction pegout = buildPegoutWithChangeFromActiveFed();
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForSegwitTransactionRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pegout,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            pegout.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        assertPegoutWasNotRegistered(pegout);
+    }
+
+    private void assertPegoutWasNotRegistered(BtcTransaction release) throws IOException {
+        assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
+        assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(release.getHash()).isEmpty());
+        assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
     }
 
     private BtcTransaction buildPegoutWithChangeFromActiveFed() {
