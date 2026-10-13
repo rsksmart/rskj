@@ -432,46 +432,47 @@ public class BridgeSupport {
 
     public void registerPegoutTransaction(
         Transaction rskTx,
-        Sha256Hash btcTxId,
+        Sha256Hash btcTxHash,
         int height,
         byte[] pmtSerialized
-    ) throws IOException {
-        if (isAlreadyBtcTxHashProcessed(btcTxId)) {
+    ) throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        Context.propagate(btcContext);
+        if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
             logger.warn(
                 "[registerPegoutTransaction][rsk tx {}] Btc tx {} already processed",
                 rskTx.getHash(),
-                btcTxId
+                btcTxHash
             );
             return;
         }
 
-        if (!federationSupport.hasFederationsPendingBtcUTXOs(btcTxId)) {
+        if (!federationSupport.hasFederationsPendingBtcUTXOs(btcTxHash)) {
             logger.warn(
                 "[registerPegoutTransaction][rsk tx {}] No pending UTXOs found for Btc tx {}",
                 rskTx.getHash(),
-                btcTxId
+                btcTxHash
             );
             return;
         }
 
         // The SVP fund tx has to be registered through registerBtcTransaction while the SVP is ongoing,
         // since the full SVP tx is needed to build the SVP spend tx.
-        if (isTheSvpFundTx(btcTxId)) {
+        if (isTheSvpFundTx(btcTxHash)) {
             logger.warn(
                 "[registerPegoutTransaction][rsk tx {}] Btc tx {} is the SVP fund tx",
                 rskTx.getHash(),
-                btcTxId
+                btcTxHash
             );
             return;
         }
 
-        registerNewUTXOsByTxId(btcTxId, height);
-        markBtcTxHashAsProcessed(btcTxId);
+        registerNewUTXOsByTxId(btcTxHash, height);
+        markBtcTxHashAsProcessed(btcTxHash);
     }
 
-    private boolean isTheSvpFundTx(Sha256Hash btcTxId) {
+    private boolean isTheSvpFundTx(Sha256Hash btcTxHash) {
         return provider.getSvpFundTxHashUnsigned()
-            .filter(btcTxId::equals)
+            .filter(btcTxHash::equals)
             .isPresent();
     }
 
