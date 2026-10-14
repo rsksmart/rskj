@@ -114,7 +114,7 @@ public final class BridgeSupportTestUtil {
         return btcTransaction.getHash(true);
     }
 
-    private static PartialMerkleTree createValidPmtForTransactionsHashes(List<Sha256Hash> hashesToAdd, NetworkParameters networkParameters) {
+    public static PartialMerkleTree createValidPmtForTransactionsHashes(List<Sha256Hash> hashesToAdd, NetworkParameters networkParameters) {
         byte[] relevantNodesBits = new byte[(int)Math.ceil(hashesToAdd.size() / 8.0)];
         for (int i = 0; i < hashesToAdd.size(); i++) {
             Utils.setBitLE(relevantNodesBits, i);
@@ -192,6 +192,28 @@ public final class BridgeSupportTestUtil {
         bridgeStorageProvider.save();
 
         return pmtWithTransactions;
+    }
+
+    /**
+     * Builds a registration scenario for a transaction registered by its txid, as releases are through
+     * registerPegoutTransaction: the PMT proves the txid against the block header's merkle root,
+     * which is always computed over txids, even for segwit transactions.
+     */
+    public static PartialMerkleTree buildPMTAndRecreateChainForTxIdRegistration(
+        BridgeStorageProvider bridgeStorageProvider,
+        BridgeConstants bridgeConstants,
+        int btcBlockToRegisterHeight,
+        BtcTransaction transaction,
+        BtcBlockStoreWithCache btcBlockStore
+    ) throws BlockStoreException {
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+
+        PartialMerkleTree pmtWithTxId = createValidPmtForTransactionsHashes(List.of(transaction.getHash()), networkParameters);
+        int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTxId, btcBlockToRegisterHeight, networkParameters);
+        bridgeStorageProvider.save();
+
+        return pmtWithTxId;
     }
 
     /**
