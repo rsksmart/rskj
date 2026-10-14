@@ -48,9 +48,15 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         rsk2BtcMinimumAcceptableConfirmations = 10;
 
         updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes
 
         minimumPeginTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValue = Coin.valueOf(400_000);
+
+        legacyMaxInputsPerMigrationTransaction = 50;
+        maxInputsPerMigrationTransaction = 150;
+        maxOutputsPerMigrationTransaction = 50;
+        migrationValueForMultipleOutputs = Coin.COIN.multiply(20);
 
         // The Bridge BTC block store starts at the last block in org.bitcoin.testnet4.checkpoints,
         // and the block index covers the store from that block on.
@@ -58,12 +64,9 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         btcHeightWhenBlockIndexActivates = 143_136;
         maxDepthToSearchBlocksBelowIndexActivation = 0;
 
-        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes
         maxDepthBlockchainAccepted = 25;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
-
-        maxInputsPerPegoutTransaction = 50;
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (1 block every 30 seconds)
 
