@@ -29,6 +29,7 @@ class FederationConstantsTest {
 
     private static final FederationConstants MAINNET = FederationMainNetConstants.getInstance();
     private static final FederationConstants TESTNET = FederationTestNetConstants.getInstance();
+    private static final FederationConstants TESTNET2 = FederationTestNet2Constants.getInstance();
     private static final FederationConstants REGTEST = new BridgeRegTestConstants().getFederationConstants();
 
     @ParameterizedTest
@@ -41,6 +42,7 @@ class FederationConstantsTest {
         return Stream.of(
             Arguments.of(MAINNET, NetworkParameters.fromID(NetworkParameters.ID_MAINNET)),
             Arguments.of(TESTNET, NetworkParameters.fromID(NetworkParameters.ID_TESTNET)),
+            Arguments.of(TESTNET2, NetworkParameters.fromID(NetworkParameters.ID_TESTNET4)),
             Arguments.of(REGTEST, NetworkParameters.fromID(NetworkParameters.ID_REGTEST))
         );
     }
@@ -77,6 +79,12 @@ class FederationConstantsTest {
             "034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85"
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
+        List<BtcECKey> genesisFederationPublicKeysTestnet2 = Stream.of(
+            "02337f4a3d81fb621ec72e0f62336e3fb9b181063ad86674ea7f80d3ae687acf73",
+            "02f9c08784952982e5cc24624f34d5afd1584ed32851b0790f2bba965e7a131b0f",
+            "030e6370c451967cef1ae35e3a04d2cdfc337d94cc15ce1afa16130ca677294a9b"
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
         List<BtcECKey> genesisFederationPublicKeysRegtest = Stream.of(
             "0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124",
             "03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db",
@@ -86,6 +94,7 @@ class FederationConstantsTest {
         return Stream.of(
             Arguments.of(MAINNET, genesisFederationPublicKeysMainnet),
             Arguments.of(TESTNET, genesisFederationPublicKeysTestnet),
+            Arguments.of(TESTNET2, genesisFederationPublicKeysTestnet2),
             Arguments.of(REGTEST, genesisFederationPublicKeysRegtest)
         );
     }
@@ -99,11 +108,13 @@ class FederationConstantsTest {
     private static Stream<Arguments> genesisFedCreationTimeArgs() {
         Instant genesisFedCreationTimeMainnet = ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant();
         Instant genesisFedCreationTimeTestnet = ZonedDateTime.parse("1970-01-18T19:29:27.600Z").toInstant();
+        Instant genesisFedCreationTimeTestnet2 = ZonedDateTime.parse("2026-07-20T00:00:00Z").toInstant();
         Instant genesisFedCreationTimeRegtest = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
         return Stream.of(
             Arguments.of(MAINNET, genesisFedCreationTimeMainnet),
             Arguments.of(TESTNET, genesisFedCreationTimeTestnet),
+            Arguments.of(TESTNET2, genesisFedCreationTimeTestnet2),
             Arguments.of(REGTEST, genesisFedCreationTimeRegtest)
         );
     }
@@ -118,6 +129,7 @@ class FederationConstantsTest {
         return Stream.of(
             Arguments.of(MAINNET, FederationFormatVersion.STANDARD_MULTISIG_FEDERATION),
             Arguments.of(TESTNET, FederationFormatVersion.STANDARD_MULTISIG_FEDERATION),
+            Arguments.of(TESTNET2, FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION),
             Arguments.of(REGTEST, FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION)
         );
     }
@@ -132,6 +144,7 @@ class FederationConstantsTest {
         return Stream.of(
             Arguments.of(MAINNET, 20000L),
             Arguments.of(TESTNET, 2000L),
+            Arguments.of(TESTNET2, 2000L),
             Arguments.of(REGTEST, 125L)
         );
     }
@@ -146,11 +159,14 @@ class FederationConstantsTest {
         long fedActivationAgeLegacyMainnet = 18500L;
         long fedActivationAgeLegacyTestnet = 60L;
         long fedActivationAgeLegacyRegtest = 10L;
+        // testnet2 activates RSKIP383 at genesis, so it never sets a legacy activation age
+        long fedActivationAgeLegacyTestnet2 = 0L;
         ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop401().forBlock(0L);
 
         long fedActivationAgeMainnet = 40320L;
         long fedActivationAgeTestnet = 120L;
         long fedActivationAgeRegtest = 150L;
+        long fedActivationAgeTestnet2 = 2400L;
         ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0L);
 
         long fedActivationAgeTestnetPostLovell = 2400L;
@@ -159,12 +175,15 @@ class FederationConstantsTest {
         return Stream.of(
             Arguments.of(MAINNET, hopActivations, fedActivationAgeLegacyMainnet),
             Arguments.of(TESTNET, hopActivations, fedActivationAgeLegacyTestnet),
+            Arguments.of(TESTNET2, hopActivations, fedActivationAgeLegacyTestnet2),
             Arguments.of(REGTEST, hopActivations, fedActivationAgeLegacyRegtest),
             Arguments.of(MAINNET, fingerrootActivations, fedActivationAgeMainnet),
             Arguments.of(TESTNET, fingerrootActivations, fedActivationAgeTestnet),
+            Arguments.of(TESTNET2, fingerrootActivations, fedActivationAgeTestnet2),
             Arguments.of(REGTEST, fingerrootActivations, fedActivationAgeRegtest),
             Arguments.of(MAINNET, allActivations, fedActivationAgeMainnet),
             Arguments.of(TESTNET, allActivations, fedActivationAgeTestnetPostLovell),
+            Arguments.of(TESTNET2, allActivations, fedActivationAgeTestnet2),
             Arguments.of(REGTEST, allActivations, fedActivationAgeRegtest)
         );
     }
@@ -178,11 +197,13 @@ class FederationConstantsTest {
     private static Stream<Arguments> fundsMigrationAgeSinceActivationBeginArgs() {
         long fundsMigrationAgeSinceActivationBeginMainnet = 0L;
         long fundsMigrationAgeSinceActivationBeginTestnet = 60L;
+        long fundsMigrationAgeSinceActivationBeginTestnet2 = 60L;
         long fundsMigrationAgeSinceActivationBeginRegtest = 15L;
 
         return Stream.of(
             Arguments.of(MAINNET, fundsMigrationAgeSinceActivationBeginMainnet),
             Arguments.of(TESTNET, fundsMigrationAgeSinceActivationBeginTestnet),
+            Arguments.of(TESTNET2, fundsMigrationAgeSinceActivationBeginTestnet2),
             Arguments.of(REGTEST, fundsMigrationAgeSinceActivationBeginRegtest)
         );
     }
@@ -196,11 +217,14 @@ class FederationConstantsTest {
     private static Stream<Arguments> fundsMigrationAgeSinceActivationEndAndActivationsArgs() {
         long fundsMigrationAgeSinceActivationEndMainnet = 10585L;
         long fundsMigrationAgeSinceActivationEndTestnet = 900L;
+        long fundsMigrationAgeSinceActivationEndTestnet2 = 900L;
         long fundsMigrationAgeSinceActivationEndRegtest = 150L;
         
         // special case is just different for mainnet,
         // between RSKIPs 357 and 374
         long specialCaseFundsMigrationAgeSinceActivationEndMainnet = 172_800L;
+        // testnet2 activates RSKIPs 357 and 374 at genesis, so it never sets a special case value
+        long specialCaseFundsMigrationAgeSinceActivationEndTestnet2 = 0L;
         ActivationConfig.ForBlock activationsSpecialCase = mock(ActivationConfig.ForBlock.class);
         when(activationsSpecialCase.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
         when(activationsSpecialCase.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
@@ -214,12 +238,15 @@ class FederationConstantsTest {
         return Stream.of(
             Arguments.of(MAINNET, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndMainnet),
             Arguments.of(TESTNET, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(TESTNET2, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndTestnet2),
             Arguments.of(REGTEST, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndRegtest),
             Arguments.of(MAINNET, activationsSpecialCase, specialCaseFundsMigrationAgeSinceActivationEndMainnet),
             Arguments.of(TESTNET, activationsSpecialCase, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(TESTNET2, activationsSpecialCase, specialCaseFundsMigrationAgeSinceActivationEndTestnet2),
             Arguments.of(REGTEST, activationsSpecialCase, fundsMigrationAgeSinceActivationEndRegtest),
             Arguments.of(MAINNET, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndMainnet),
             Arguments.of(TESTNET, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(TESTNET2, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndTestnet2),
             Arguments.of(REGTEST, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndRegtest)
         );
     }
@@ -246,6 +273,12 @@ class FederationConstantsTest {
             "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
+        List<ECKey> fedChangeAuthorizedKeysTestnet2 = Stream.of(
+            "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
+            "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
+            "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
         List<ECKey> fedChangeAuthorizedKeysRegtest = Stream.of(
             "04dde17c5fab31ffc53c91c2390136c325bb8690dc135b0840075dd7b86910d8ab9e88baad0c32f3eea8833446a6bc5ff1cd2efa99ecb17801bcb65fc16fc7d991",
             "04af886c67231476807e2a8eee9193878b9d94e30aa2ee469a9611d20e1e1c1b438e5044148f65e6e61bf03e9d72e597cb9cdea96d6fc044001b22099f9ec403e2",
@@ -257,6 +290,7 @@ class FederationConstantsTest {
         return Stream.of(
             Arguments.of(MAINNET, fedChangeAuthorizedKeysMainnet),
             Arguments.of(TESTNET, fedChangeAuthorizedKeysTestnet),
+            Arguments.of(TESTNET2, fedChangeAuthorizedKeysTestnet2),
             Arguments.of(REGTEST, fedChangeAuthorizedKeysRegtest)
         );
     }
@@ -270,11 +304,13 @@ class FederationConstantsTest {
     private static Stream<Arguments> erpActivationDelayArgs() {
         long erpActivationDelayMainnet = 52_560;
         long erpActivationDelayTestnet = 52_560;
+        long erpActivationDelayTestnet2 = 52_560;
         long erpActivationDelayRegtest = 500;
 
         return Stream.of(
             Arguments.of(MAINNET, erpActivationDelayMainnet),
             Arguments.of(TESTNET, erpActivationDelayTestnet),
+            Arguments.of(TESTNET2, erpActivationDelayTestnet2),
             Arguments.of(REGTEST, erpActivationDelayRegtest)
         );
     }
@@ -299,6 +335,12 @@ class FederationConstantsTest {
             "0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
+        List<BtcECKey> erpFedPubKeysTestnet2 = Stream.of(
+            "0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3",
+            "034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f",
+            "0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
         List<BtcECKey> erpFedPubKeysRegtest = Stream.of(
             "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
             "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
@@ -309,6 +351,7 @@ class FederationConstantsTest {
         return Stream.of(
             Arguments.of(MAINNET, erpFedPubKeysMainnet),
             Arguments.of(TESTNET, erpFedPubKeysTestnet),
+            Arguments.of(TESTNET2, erpFedPubKeysTestnet2),
             Arguments.of(REGTEST, erpFedPubKeysRegtest)
         );
     }
@@ -323,10 +366,13 @@ class FederationConstantsTest {
         String oldFederationAddressMainnet = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
         String oldFederationAddressTestnet = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
         String oldFederationAddressRegtest = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
+        // testnet2 has no federation that predates the genesis one
+        String oldFederationAddressTestnet2 = null;
 
         return Stream.of(
             Arguments.of(MAINNET, oldFederationAddressMainnet),
             Arguments.of(TESTNET, oldFederationAddressTestnet),
+            Arguments.of(TESTNET2, oldFederationAddressTestnet2),
             Arguments.of(REGTEST, oldFederationAddressRegtest)
         );
     }
