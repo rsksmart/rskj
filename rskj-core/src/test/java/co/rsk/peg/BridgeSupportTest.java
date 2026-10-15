@@ -8533,8 +8533,20 @@ class BridgeSupportTest {
         List<UTXO> retiringFederationUTXOs;
         List<LogInfo> logs;
         long blockNumber;
+        private static final Federation segwitActiveFederation = P2shP2wshErpFederationBuilder.builder()
+            .build();
 
-        private void setUp(Federation retiringFederation, Federation activeFederation) {
+        private static final List<BtcECKey> segwitRetiringMembersBtcKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+                "retiring01", "retiring02", "retiring03", "retiring04", "retiring05", "retiring06", "retiring07", "retiring08", "retiring09", "retiring10",
+                "retiring11", "retiring12", "retiring13", "retiring14", "retiring15", "retiring16", "retiring17", "retiring18", "retiring19", "retiring20"
+            },
+            true
+        );
+        private static final Federation segwitRetiringFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(segwitRetiringMembersBtcKeys)
+            .build();
+
+        private void setUp(Federation retiringFederation, Federation activeFederation, ActivationConfig.ForBlock activations) {
             federationStorageProvider.setOldFederation(retiringFederation);
             Address proposedFederationAddress = retiringFederation.getAddress();
             Script outputScript = ScriptBuilder.createOutputScript(proposedFederationAddress);
@@ -8556,24 +8568,24 @@ class BridgeSupportTest {
 
             federationStorageProvider.setNewFederation(activeFederation);
 
-            blockNumber = federationConstantsMainnet.getFederationActivationAge(vetiverActivations) + federationConstantsMainnet.getFundsMigrationAgeSinceActivationBegin() + activeFederation.getCreationBlockNumber() + 1;
+            blockNumber = federationConstantsMainnet.getFederationActivationAge(activations) + federationConstantsMainnet.getFundsMigrationAgeSinceActivationBegin() + activeFederation.getCreationBlockNumber() + 1;
             Block currentBlock = createRskBlock(blockNumber);
             federationSupport = FederationSupportBuilder.builder()
                 .withFederationConstants(federationConstantsMainnet)
                 .withFederationStorageProvider(federationStorageProvider)
                 .withRskExecutionBlock(currentBlock)
-                .withActivations(vetiverActivations)
+                .withActivations(activations)
                 .build();
 
             logs = new ArrayList<>();
             BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainNetConstants,
-                vetiverActivations,
+                activations,
                 logs
             );
 
             bridgeSupport = bridgeSupportBuilder
-                .withActivations(vetiverActivations)
+                .withActivations(activations)
                 .withBridgeConstants(bridgeMainNetConstants)
                 .withRepository(repository)
                 .withProvider(bridgeStorageProvider)
@@ -8585,12 +8597,11 @@ class BridgeSupportTest {
                 .build();
         }
 
-        // TODO(juli): add a version of this test with allActivations
         @ParameterizedTest
         @MethodSource("federationArgs")
         void migration_fromRetiring_toActiveFed_forVetiver(Federation retiringFederation, Federation activeFederation) throws IOException {
             // arrange
-            setUp(retiringFederation, activeFederation);
+            setUp(retiringFederation, activeFederation, vetiverActivations);
 
             bridgeSupport.updateCollections(tx);
             bridgeSupport.save();
@@ -8609,6 +8620,29 @@ class BridgeSupportTest {
             );
         }
 
+        @Test
+        void migration_fromRetiring_toActiveFed() throws IOException {
+            // arrange
+            setUp(segwitRetiringFederation, segwitActiveFederation, allActivations);
+
+            bridgeSupport.updateCollections(tx);
+            bridgeSupport.save();
+
+            BtcTransaction migrationTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            assertReleaseWasSettled(
+                repository,
+                bridgeStorageProvider,
+                federationStorageProvider,
+                federationSupport,
+                logs,
+                blockNumber,
+                tx.getHash(),
+                migrationTransaction,
+                utxos,
+                totalAmountRequested
+            );
+        }
+
         private static Stream<Arguments> federationArgs() {
             Federation legacyRetiringFederation = P2shErpFederationBuilder.builder().build();
             List<BtcECKey> legacyActiveMembersBtcKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
@@ -8617,19 +8651,6 @@ class BridgeSupportTest {
             );
             Federation legacyActiveFederation = P2shErpFederationBuilder.builder()
                 .withMembersBtcPublicKeys(legacyActiveMembersBtcKeys)
-                .build();
-
-            Federation segwitActiveFederation = P2shP2wshErpFederationBuilder.builder()
-                .build();
-
-            List<BtcECKey> segwitRetiringMembersBtcKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
-                    "retiring01", "retiring02", "retiring03", "retiring04", "retiring05", "retiring06", "retiring07", "retiring08", "retiring09", "retiring10",
-                    "retiring11", "retiring12", "retiring13", "retiring14", "retiring15", "retiring16", "retiring17", "retiring18", "retiring19", "retiring20"
-                },
-                true
-            );
-            Federation segwitRetiringFederation = P2shP2wshErpFederationBuilder.builder()
-                .withMembersBtcPublicKeys(segwitRetiringMembersBtcKeys)
                 .build();
 
             return Stream.of(
