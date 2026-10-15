@@ -124,18 +124,26 @@ class NetworkConfigsActivationTest {
         assertTrue(missing.isEmpty(), network + " is missing hardforkActivationHeights for " + missing);
     }
 
-    /** Known historical inversions, as "<earlierEnum>><laterEnum>". Extend only with a reason in the commit message. */
-    private static final Set<String> KNOWN_ENUM_ORDER_INVERSIONS = Set.of(
-        "papyrus200>twoToThree",     // twoToThree shipped before papyrus200 on main/testnet/testnet2
+    // twoToThree shipped before papyrus200 on main, testnet and testnet2
+    private static final String PAPYRUS200_TWO_TO_THREE = "papyrus200>twoToThree";
+
+    /**
+     * Known historical inversions per network, as "<earlierEnum>><laterEnum>". Per network so an inversion that is
+     * fine on one network is still caught on another. Extend only with a reason in the commit message.
+     */
+    private static final Map<String, Set<String>> KNOWN_ENUM_ORDER_INVERSIONS = Map.of(
+        "main", Set.of(PAPYRUS200_TWO_TO_THREE),
         // orchid, orchid060 and wasabi100 are active from genesis on testnet/testnet2; afterBridgeSync is not
-        "afterBridgeSync>orchid",
-        "afterBridgeSync>orchid060",
-        "afterBridgeSync>wasabi100");
+        "testnet", Set.of(PAPYRUS200_TWO_TO_THREE,
+            "afterBridgeSync>orchid", "afterBridgeSync>orchid060", "afterBridgeSync>wasabi100"),
+        "testnet2", Set.of(PAPYRUS200_TWO_TO_THREE,
+            "afterBridgeSync>orchid", "afterBridgeSync>orchid060", "afterBridgeSync>wasabi100"));
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("networkNames")
     void enabledHeightsAreMonotonicInEnumOrder(String network) {
         Map<String, Long> heights = activationHeights(loadNetwork(network));
+        Set<String> known = KNOWN_ENUM_ORDER_INVERSIONS.getOrDefault(network, Set.of());
         List<String> inversions = new ArrayList<>();
         // Compare against the highest height so far, not just the previous upgrade: after an allowlisted inversion
         // the previous height is the lower one, and an upgrade landing between the two would otherwise slip through.
@@ -147,7 +155,7 @@ class NetworkConfigsActivationTest {
                 continue; // unconfigured (genesis) or disabled
             }
             if (maxName != null && h < maxHeight
-                && !KNOWN_ENUM_ORDER_INVERSIONS.contains(maxName + ">" + upgrade.getName())) {
+                && !known.contains(maxName + ">" + upgrade.getName())) {
                 inversions.add(network + ": " + maxName + "=" + maxHeight + " > " + upgrade.getName() + "=" + h);
             }
             if (h >= maxHeight) {
