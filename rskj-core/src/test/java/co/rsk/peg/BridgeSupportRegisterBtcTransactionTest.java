@@ -5020,6 +5020,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             bridgeSupport.save();
         }
 
+        // TODO(juli): the bridge no longer saves the pegout tx sighash after RSKIP643. Once registerPegoutTransaction
+        //  is implemented, make the allActivations callers register the release through it instead
         private void registerPegoutTxSigHash(BtcTransaction pegout) {
             Sha256Hash sigHash = getSigHashForPegoutIndex(pegout)
                 .orElseThrow(() -> new IllegalStateException("Could not compute sig hash for pegout"));
