@@ -126,6 +126,8 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
             block = blockFactory.newBlock(header, message.getTransactions(), message.getUncles());
             block.seal();
         } catch (IllegalArgumentException ex) {
+            logger.warn("Rejected body from {} for block {}: {}",
+                    peer.getPeerNodeID(), header.getNumber(), ex.getMessage());
             handleInvalidBody(peer, header);
             return;
         }
