@@ -8525,14 +8525,6 @@ class BridgeSupportTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("test migration transaction between different types of feds")
     class MigrationTransaction {
-        Coin value1 = Coin.valueOf(1_000_000);
-        Coin value2 = Coin.valueOf(500_000);
-        Coin value3 = Coin.valueOf(300_000);
-        List<Coin> utxos = Arrays.asList(value1, value2, value3);
-        Coin totalAmountRequested = value1.add(value2).add(value3);
-        List<UTXO> retiringFederationUTXOs;
-        List<LogInfo> logs;
-        long blockNumber;
         private static final Federation segwitActiveFederation = P2shP2wshErpFederationBuilder.builder()
             .build();
 
@@ -8545,6 +8537,15 @@ class BridgeSupportTest {
         private static final Federation segwitRetiringFederation = P2shP2wshErpFederationBuilder.builder()
             .withMembersBtcPublicKeys(segwitRetiringMembersBtcKeys)
             .build();
+
+        Coin value1 = Coin.valueOf(1_000_000);
+        Coin value2 = Coin.valueOf(500_000);
+        Coin value3 = Coin.valueOf(300_000);
+        List<Coin> utxos = Arrays.asList(value1, value2, value3);
+        Coin totalAmountRequested = value1.add(value2).add(value3);
+        List<UTXO> retiringFederationUTXOs;
+        List<LogInfo> logs;
+        long blockNumber;
 
         private void setUp(Federation retiringFederation, Federation activeFederation, ActivationConfig.ForBlock activations) {
             federationStorageProvider.setOldFederation(retiringFederation);
