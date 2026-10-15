@@ -90,6 +90,9 @@ class BridgeSupportRegisterPegoutTransactionTest {
     private static final long MIGRATION_CREATION_BLOCK_NUMBER = PEGOUT_CREATION_BLOCK_NUMBER
         + federationMainnetConstants.getFundsMigrationAgeSinceActivationBegin() + 1;
     private static final long MIGRATION_REGISTRATION_BLOCK_NUMBER = MIGRATION_CREATION_BLOCK_NUMBER + 1;
+    private static final int FIXED_VALUE_MIGRATION_OUTPUTS = 3;
+    private static final Coin FIXED_VALUE_MIGRATION_RETIRING_FEDERATION_BALANCE = bridgeMainnetConstants.getMigrationValueForMultipleOutputs()
+        .multiply(FIXED_VALUE_MIGRATION_OUTPUTS);
 
     private static final Coin PEGOUT_INPUT_VALUE = Coin.COIN;
     private static final Coin PEGOUT_OUTPOINT_VALUE = Coin.COIN.div(2);
@@ -346,6 +349,33 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
         // assert
         assertEquals(1, migrationTransaction.getOutputs().size());
+        assertMigrationWasRegisteredInActiveFed(migrationTransaction);
+    }
+
+    @Test
+    void registerPegoutTransaction_withMigrationWithFixedValueOutputs_shouldRegisterMigratedUtxosInActiveFed() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        // arrange
+        BtcTransaction migrationTransaction = setupMigrationFromRetiringFedToActiveFed(FIXED_VALUE_MIGRATION_RETIRING_FEDERATION_BALANCE);
+        setUpBridgeAndFederationSupportForExecutionBlock(MIGRATION_REGISTRATION_BLOCK_NUMBER);
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            migrationTransaction,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            migrationTransaction.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        assertEquals(FIXED_VALUE_MIGRATION_OUTPUTS, migrationTransaction.getOutputs().size());
         assertMigrationWasRegisteredInActiveFed(migrationTransaction);
     }
 
