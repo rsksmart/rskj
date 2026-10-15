@@ -100,10 +100,11 @@ class ConsensusLogFormatStringsTest {
             Arguments.of(RSK_CLI, "xArgument.split(\"=\", 2)"),
             // post-import height beacon and network fingerprint (pre-flight gate).
             // SystemUtils holds the message; NodeRunnerImpl's "fullnoderunner" logger is the one that emits it,
-            // so the scraper matches on that logger name.
+            // so the scraper matches on that logger name. The call pin ties the two together.
             Arguments.of(SYSTEM_UTILS, "\"WARNING: Network upgrade {} is DISABLED. Best block number is: {}.\""),
             Arguments.of(SYSTEM_UTILS, "disabledNetworkUpgrade.name()"),
             Arguments.of(NODE_RUNNER, "getLogger(\"fullnoderunner\")"),
+            Arguments.of(NODE_RUNNER, "SystemUtils.printDisabledNetworkUpgrades(logger,"),
             // peer identity for peer.active construction; Channel.toString() is how a peer is rendered in those lines
             Arguments.of(CHANNEL_MANAGER, "getLogger(\"net\")"),
             Arguments.of(CHANNEL_MANAGER, "\"Added new peer: {}. Total num of active peers: {}\""),
