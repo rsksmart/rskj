@@ -85,6 +85,9 @@ class BridgeSupportRegisterPegoutTransactionTest {
         + federationMainnetConstants.getFederationActivationAge(allActivations);
     private static final long PEGOUT_REGISTRATION_BLOCK_NUMBER = PEGOUT_CREATION_BLOCK_NUMBER + 1;
     private static final long SVP_FUND_TX_CREATION_BLOCK_NUMBER = PEGOUT_REGISTRATION_BLOCK_NUMBER + 1;
+    // once the proposed federation is active, the federation that created the pegout is the retiring one
+    private static final long PEGOUT_REGISTRATION_WHILE_RETIRING_BLOCK_NUMBER = SVP_FUND_TX_CREATION_BLOCK_NUMBER
+        + federationMainnetConstants.getFederationActivationAge(allActivations);
     private static final long SVP_ONGOING_BLOCK_NUMBER = SVP_FUND_TX_CREATION_BLOCK_NUMBER + 1;
     private static final long SVP_SPEND_TX_REGISTRATION_BLOCK_NUMBER = SVP_ONGOING_BLOCK_NUMBER + 1;
     // the proposed federation is created along with the svp fund tx, so the svp ends one validation period later
@@ -118,6 +121,9 @@ class BridgeSupportRegisterPegoutTransactionTest {
     private static final Coin MAXIMUM_PEGOUT_REQUEST_VALUE = INPUT_VALUE.multiply(MAXIMUM_PEGOUT_INPUTS)
         .subtract(CHANGE_VALUE)
         .divide(MAXIMUM_PEGOUT_REQUESTS);
+    private static final int MULTIPLE_PEGOUT_REQUESTS = 3;
+    private static final Coin MULTIPLE_PEGOUT_REQUEST_VALUE = INPUT_VALUE.subtract(CHANGE_VALUE)
+        .divide(MULTIPLE_PEGOUT_REQUESTS);
 
     // the pegout change output is added last, after the user output
     private static final long OUTPUT_INDEX_FOR_PEGOUT_CHANGE = 1L;
@@ -132,8 +138,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
     private static final Federation retiringFederation = P2shP2wshErpFederationBuilder.builder()
         .withCreationBlockNumber(0L)
         .build();
+    // the proposed federation is created along with the svp fund tx
+    private static final Federation proposedFederation = P2shP2wshErpFederationBuilder.builder()
+        .withCreationBlockNumber(SVP_FUND_TX_CREATION_BLOCK_NUMBER)
+        .build();
     private static final Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
     private static final Address anotherUserAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "anotherUserAddress");
+    private static final Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
     private static final BtcTransaction anotherPegout = buildPegoutWithChangeFromActiveFedPayingTo(anotherUserAddress);
     private static final BtcTransaction pegin = buildPeginFromUserToActiveFed();
     private static final Keccak256 FLYOVER_DERIVATION_HASH = RskTestUtils.createHash(3);
@@ -198,6 +209,60 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
         // assert
         assertChangeWasRegisteredInActiveFed(pegout, OUTPUT_INDEX_FOR_PEGOUT_CHANGE);
+    }
+
+    @Test
+    void registerPegoutTransaction_withPegoutToActiveFed_afterChangingToRetiringFed_shouldRegisterChangeInRetiringFed() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        // arrange
+        BtcTransaction pegout = setupPegoutFromActiveFedPayingToUser();
+        setUpBridgeAndFederationSupportWithActiveFederationRetiring();
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pegout,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            pegout.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        assertChangeWasRegisteredInRetiringFed(pegout, OUTPUT_INDEX_FOR_PEGOUT_CHANGE);
+    }
+
+    @Test
+    void registerPegoutTransaction_withPegoutWithMultipleRequests_shouldRegisterChangeInActiveFed() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        // arrange
+        BtcTransaction pegout = setupPegoutWithMultipleRequestsFromActiveFed();
+        setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_REGISTRATION_BLOCK_NUMBER);
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pegout,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            pegout.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        int actualOutputsWithoutChange = pegout.getOutputs().size() - 1;
+        assertEquals(MULTIPLE_PEGOUT_REQUESTS, actualOutputsWithoutChange);
+        assertChangeWasRegisteredInActiveFed(pegout, MULTIPLE_PEGOUT_REQUESTS);
     }
 
     @Test
@@ -629,7 +694,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
         setUpBridgeAndFederationSupportForExecutionBlock(SVP_VALIDATION_PERIOD_END_BLOCK_NUMBER);
 
         // the svp fails since its validation period ended, clearing the proposed federation and the svp values
-        Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction(2);
         bridgeSupport.updateCollections(updateCollectionsTransaction);
         PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
             bridgeStorageProvider,
@@ -995,6 +1059,23 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
     }
 
+    private void assertChangeWasRegisteredInRetiringFed(BtcTransaction releaseTransaction, long outputIndexForChange) throws IOException {
+        // the federation that created the release is now the retiring one
+        List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
+            releaseTransaction,
+            activeFederation,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT
+        );
+        assertUtxosAreEqual(expectedUtxosRegistered, federationSupport.getRetiringFederationBtcUTXOs());
+        assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
+        Coin changeValue = releaseTransaction.getOutput(outputIndexForChange).getValue();
+        assertReleaseWasRegistered(
+            releaseTransaction,
+            List.of(changeValue),
+            List.of(outputIndexForChange)
+        );
+    }
+
     private void assertOutputsWereRegisteredInActiveFed(
         BtcTransaction releaseTransaction,
         List<Coin> expectedValues,
@@ -1006,6 +1087,18 @@ class BridgeSupportRegisterPegoutTransactionTest {
             BTC_BLOCK_WITH_RELEASE_HEIGHT
         );
         assertUtxosAreEqual(expectedUtxosRegistered, federationSupport.getActiveFederationBtcUTXOs());
+        assertReleaseWasRegistered(
+            releaseTransaction,
+            expectedValues,
+            expectedOutputIndexes
+        );
+    }
+
+    private void assertReleaseWasRegistered(
+        BtcTransaction releaseTransaction,
+        List<Coin> expectedValues,
+        List<Long> expectedOutputIndexes
+    ) throws IOException {
         assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(releaseTransaction.getHash()));
         assertTransactionWasProcessed(
             bridgeStorageProvider,
@@ -1029,6 +1122,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
     private void setUpBridgeAndFederationSupportForExecutionBlock(long executionBlockNumber) {
         setUpBridgeAndFederationSupportWithActivations(executionBlockNumber, allActivations);
+    }
+
+    private void setUpBridgeAndFederationSupportWithActiveFederationRetiring() {
+        federationStorageProvider.setOldFederation(activeFederation);
+        federationStorageProvider.setNewFederation(proposedFederation);
+        setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_REGISTRATION_WHILE_RETIRING_BLOCK_NUMBER);
     }
 
     private void setUpBridgeAndFederationSupportForVetiverExecutionBlock(long executionBlockNumber) {
@@ -1079,21 +1178,41 @@ class BridgeSupportRegisterPegoutTransactionTest {
     }
 
     private BtcTransaction setupPegoutWithMaximumInputsAndOutputsFromActiveFed() throws IOException {
+        return createBatchedPegoutFromActiveFed(
+            MAXIMUM_PEGOUT_INPUTS,
+            MAXIMUM_PEGOUT_REQUESTS,
+            MAXIMUM_PEGOUT_REQUEST_VALUE
+        );
+    }
+
+    private BtcTransaction setupPegoutWithMultipleRequestsFromActiveFed() throws IOException {
+        int activeFederationUtxosCount = 1;
+        return createBatchedPegoutFromActiveFed(
+            activeFederationUtxosCount,
+            MULTIPLE_PEGOUT_REQUESTS,
+            MULTIPLE_PEGOUT_REQUEST_VALUE
+        );
+    }
+
+    private BtcTransaction createBatchedPegoutFromActiveFed(
+        int activeFederationUtxosCount,
+        int pegoutRequestsCount,
+        Coin pegoutRequestValue
+    ) throws IOException {
         setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_CREATION_BLOCK_NUMBER);
         List<UTXO> activeFederationUtxos = UTXOBuilder.builder()
             .withValue(INPUT_VALUE)
             .withScriptPubKey(activeFederation.getP2SHScript())
-            .buildMany(MAXIMUM_PEGOUT_INPUTS, i -> BitcoinTestUtils.createHash(i + 1));
+            .buildMany(activeFederationUtxosCount, i -> BitcoinTestUtils.createHash(i + 1));
         federationStorageProvider.getNewFederationBtcUTXOs(btcMainnetParams, allActivations).addAll(activeFederationUtxos);
 
         addPegoutRequestsToQueue(
             bridgeStorageProvider.getReleaseRequestQueue(),
-            MAXIMUM_PEGOUT_REQUESTS,
-            MAXIMUM_PEGOUT_REQUEST_VALUE,
+            pegoutRequestsCount,
+            pegoutRequestValue,
             btcMainnetParams
         );
 
-        Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
         bridgeSupport.updateCollections(updateCollectionsTransaction);
 
         return getReleaseFromPegoutsWFC(bridgeStorageProvider);
@@ -1109,7 +1228,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // settles the release request, storing the pegout change as federations pending utxos
-        Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
         bridgeSupport.updateCollections(updateCollectionsTransaction);
 
         return getReleaseFromPegoutsWFC(bridgeStorageProvider);
@@ -1137,7 +1255,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
         federationStorageProvider.setOldFederation(retiringFederation);
         federationStorageProvider.getOldFederationBtcUTXOs().addAll(retiringFederationUtxos);
 
-        Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
         bridgeSupport.updateCollections(updateCollectionsTransaction);
 
         return getReleaseFromPegoutsWFC(bridgeStorageProvider);
@@ -1145,15 +1262,10 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
     private BtcTransaction setupSvpFundTxFromActiveFed() throws IOException {
         setUpBridgeAndFederationSupportForExecutionBlock(SVP_FUND_TX_CREATION_BLOCK_NUMBER);
-
-        Federation proposedFederation = P2shP2wshErpFederationBuilder.builder()
-            .withCreationBlockNumber(SVP_FUND_TX_CREATION_BLOCK_NUMBER)
-            .build();
         federationStorageProvider.setProposedFederation(proposedFederation);
         addActiveFederationUtxo(BitcoinTestUtils.createHash(2));
 
         // with the svp ongoing, creates the svp fund tx, storing its change as federations pending utxos
-        Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
         bridgeSupport.updateCollections(updateCollectionsTransaction);
 
         Sha256Hash svpFundTxHash = bridgeStorageProvider.getSvpFundTxHashUnsigned().orElseThrow();
@@ -1168,10 +1280,7 @@ class BridgeSupportRegisterPegoutTransactionTest {
         BtcTransaction svpFundTx = setupSvpFundTxFromActiveFed();
         setUpBridgeAndFederationSupportForExecutionBlock(SVP_ONGOING_BLOCK_NUMBER);
         bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
-
-        Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction(2);
         bridgeSupport.updateCollections(updateCollectionsTransaction);
-
         return bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().orElseThrow().getValue();
     }
 
