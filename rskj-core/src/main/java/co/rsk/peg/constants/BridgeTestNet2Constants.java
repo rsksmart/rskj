@@ -47,8 +47,8 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         btc2RskMinimumAcceptableConfirmations = 10;
         rsk2BtcMinimumAcceptableConfirmations = 10;
 
-        updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
-        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes
+        updateBridgeExecutionPeriod = THREE_MINUTES_IN_MILLIS;
+        minSecondsBetweenCallsReceiveHeader = FIVE_MINUTES_IN_SECONDS;
 
         minimumPeginTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValue = Coin.valueOf(400_000);
@@ -68,7 +68,7 @@ public class BridgeTestNet2Constants extends BridgeConstants {
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
 
-        numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (1 block every 30 seconds)
+        numberOfBlocksBetweenPegouts = THREE_HOURS_IN_RSK_BLOCKS;
 
         // Pegout tx index active since genesis
         btcHeightWhenPegoutTxIndexActivates = 0;

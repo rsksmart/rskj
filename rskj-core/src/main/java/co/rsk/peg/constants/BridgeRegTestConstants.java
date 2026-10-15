@@ -36,10 +36,12 @@ public class BridgeRegTestConstants extends BridgeConstants {
     private static final List<BtcECKey> DEFAULT_FEDERATION_PUBLIC_KEYS = Stream.of(
         "0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124",
         "03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db",
-        "02cd53fc53a07f211641a677d250f6de99caf620e8e77071e811a28b3bcddf0be1")
-        .map(Hex::decode)
+        "02cd53fc53a07f211641a677d250f6de99caf620e8e77071e811a28b3bcddf0be1"
+        ).map(Hex::decode)
         .map(BtcECKey::fromPublicOnly)
         .toList();
+    private static final int FIFTEEN_SECONDS_IN_MILLIS = 15 * 1000;
+    private static final int TWENTY_FIVE_MINUTES_IN_RSK_BLOCKS = 25 * 2; // 1 block every 30 seconds, 2 blocks per minute
 
     public BridgeRegTestConstants() {
         this(DEFAULT_FEDERATION_PUBLIC_KEYS);
@@ -54,8 +56,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
         historicalPegoutSelectionsConstants = HistoricalPegoutSelectionsRegTestConstants.getInstance();
         unionBridgeConstants = UnionBridgeRegTestConstants.getInstance();
 
-        updateBridgeExecutionPeriod = 15_000; //15 seconds in millis
-        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
+        updateBridgeExecutionPeriod = FIFTEEN_SECONDS_IN_MILLIS;
+        minSecondsBetweenCallsReceiveHeader = FIVE_MINUTES_IN_SECONDS;
 
         btc2RskMinimumAcceptableConfirmations = 3;
         rsk2BtcMinimumAcceptableConfirmations = 3;
@@ -77,7 +79,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         minimumPegoutValuePercentageToReceiveAfterFee = 20;
 
-        numberOfBlocksBetweenPegouts = 50; // 25 Minutes of RSK blocks (considering 1 block every 30 seconds)
+        numberOfBlocksBetweenPegouts = TWENTY_FIVE_MINUTES_IN_RSK_BLOCKS;
 
         btcHeightWhenPegoutTxIndexActivates = 250;
         pegoutTxIndexGracePeriodInBtcBlocks = 100;
