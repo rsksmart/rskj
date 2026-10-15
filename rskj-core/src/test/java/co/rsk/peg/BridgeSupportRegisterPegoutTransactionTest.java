@@ -4,7 +4,7 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.addPegoutRequestsToQueue;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasNotEmitted;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogUtxosRegistered;
+import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.assertTransactionWasProcessed;
 import static co.rsk.peg.BridgeSupportTestUtil.buildExpectedUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.buildPMTAndRecreateChainForTxIdRegistration;
@@ -1070,9 +1070,14 @@ class BridgeSupportRegisterPegoutTransactionTest {
         assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
         Coin changeValue = releaseTransaction.getOutput(OUTPUT_INDEX_FOR_PEGOUT_CHANGE).getValue();
         assertReleaseWasRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            (int) rskExecutionBlock.getNumber(),
             releaseTransaction,
             List.of(changeValue),
-            List.of(OUTPUT_INDEX_FOR_PEGOUT_CHANGE)
+            List.of(OUTPUT_INDEX_FOR_PEGOUT_CHANGE),
+            activeFederation.getAddress()
         );
     }
 
@@ -1088,26 +1093,11 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
         assertUtxosAreEqual(expectedUtxosRegistered, federationSupport.getActiveFederationBtcUTXOs());
         assertReleaseWasRegistered(
-            releaseTransaction,
-            expectedValues,
-            expectedOutputIndexes
-        );
-    }
-
-    private void assertReleaseWasRegistered(
-        BtcTransaction releaseTransaction,
-        List<Coin> expectedValues,
-        List<Long> expectedOutputIndexes
-    ) throws IOException {
-        assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(releaseTransaction.getHash()));
-        assertTransactionWasProcessed(
             bridgeStorageProvider,
-            releaseTransaction.getHash(),
-            (int) rskExecutionBlock.getNumber()
-        );
-        assertLogUtxosRegistered(
+            federationSupport,
             logs,
-            releaseTransaction.getHash(),
+            (int) rskExecutionBlock.getNumber(),
+            releaseTransaction,
             expectedValues,
             expectedOutputIndexes,
             activeFederation.getAddress()
