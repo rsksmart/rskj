@@ -205,6 +205,15 @@ class BlockHeaderV2Test {
     }
 
     @Test
+    void testSetBaseEventWithNullThrowsLikeTheOriginalSetter() {
+        // given: pinned quirk, the setter dereferences baseEvent before any
+        // null check, as it did before the refactor
+        BlockHeaderV2 header = createHeaderV2();
+        // when / then
+        assertThrows(NullPointerException.class, () -> header.setBaseEvent(null));
+    }
+
+    @Test
     void testSetBaseEventWithMaxSizeForTheEvent() {
         // given
         BlockHeaderV2 header = createHeaderV2();
