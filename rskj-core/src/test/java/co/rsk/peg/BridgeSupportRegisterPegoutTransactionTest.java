@@ -84,6 +84,7 @@ class BridgeSupportRegisterPegoutTransactionTest {
     private static final long PEGOUT_REGISTRATION_BLOCK_NUMBER = PEGOUT_CREATION_BLOCK_NUMBER + 1;
     private static final long SVP_FUND_TX_CREATION_BLOCK_NUMBER = PEGOUT_REGISTRATION_BLOCK_NUMBER + 1;
     private static final long SVP_ONGOING_BLOCK_NUMBER = SVP_FUND_TX_CREATION_BLOCK_NUMBER + 1;
+    private static final long SVP_SPEND_TX_REGISTRATION_BLOCK_NUMBER = SVP_ONGOING_BLOCK_NUMBER + 1;
     // the proposed federation is created along with the svp fund tx, so the svp ends one validation period later
     private static final long SVP_VALIDATION_PERIOD_END_BLOCK_NUMBER = SVP_FUND_TX_CREATION_BLOCK_NUMBER
         + federationMainnetConstants.getValidationPeriodDurationInBlocks();
@@ -478,6 +479,34 @@ class BridgeSupportRegisterPegoutTransactionTest {
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(svpFundTx.getHash()));
         assertEquals(Optional.of(svpFundTx.getHash()), bridgeStorageProvider.getSvpFundTxHashUnsigned());
         assertTrue(bridgeStorageProvider.getSvpFundTxSigned().isEmpty());
+    }
+
+    @Test
+    void registerPegoutTransaction_withSvpSpendTx_whileSvpIsOngoing_shouldNotRegister() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        // arrange
+        BtcTransaction svpSpendTx = setupSvpSpendTxFromProposedFed();
+        setUpBridgeAndFederationSupportForExecutionBlock(SVP_SPEND_TX_REGISTRATION_BLOCK_NUMBER);
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            svpSpendTx,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            svpSpendTx.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        assertPegoutWasNotRegistered(svpSpendTx);
+        assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(svpSpendTx.getHash()));
+        assertEquals(Optional.of(svpSpendTx.getHash()), bridgeStorageProvider.getSvpSpendTxHashUnsigned());
     }
 
     @Test
@@ -1049,6 +1078,17 @@ class BridgeSupportRegisterPegoutTransactionTest {
             .filter(releaseTransaction -> releaseTransaction.getHash().equals(svpFundTxHash))
             .findFirst()
             .orElseThrow();
+    }
+
+    private BtcTransaction setupSvpSpendTxFromProposedFed() throws IOException {
+        BtcTransaction svpFundTx = setupSvpFundTxFromActiveFed();
+        setUpBridgeAndFederationSupportForExecutionBlock(SVP_ONGOING_BLOCK_NUMBER);
+        bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
+
+        Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction(2);
+        bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+        return bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().orElseThrow().getValue();
     }
 
     private void addActiveFederationUtxo(Sha256Hash btcTxHash) {
