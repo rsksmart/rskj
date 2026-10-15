@@ -2,6 +2,7 @@ package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
+import static co.rsk.peg.BridgeSupportTestUtil.addPegoutRequestsToQueue;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasNotEmitted;
 import static co.rsk.peg.BridgeSupportTestUtil.assertLogUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.assertTransactionWasProcessed;
@@ -91,6 +92,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
     // the pegout recipients pay the fees, so the change is the input value minus the requested value
     private static final Coin PEGOUT_REQUEST_VALUE = PEGOUT_INPUT_VALUE.subtract(CHANGE_VALUE);
     private static final Keccak256 PEGOUT_REQUEST_RSK_TX_HASH = RskTestUtils.createHash(2);
+    private static final int MAXIMUM_PEGOUT_INPUTS = 180;
+    private static final int MAXIMUM_PEGOUT_REQUESTS = 57;
+    // requesting all the inputs value but the change forces every utxo to be spent; the division remainder adds to the change
+    private static final Coin MAXIMUM_PEGOUT_REQUEST_VALUE = PEGOUT_INPUT_VALUE.multiply(MAXIMUM_PEGOUT_INPUTS)
+        .subtract(CHANGE_VALUE)
+        .divide(MAXIMUM_PEGOUT_REQUESTS);
 
     // the pegout change output is added last, after the user output
     private static final long OUTPUT_INDEX_FOR_PEGOUT_CHANGE = 1L;
@@ -246,6 +253,36 @@ class BridgeSupportRegisterPegoutTransactionTest {
         // assert
         assertPegoutWasNotRegistered(pegout);
         assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+    }
+
+    @Test
+    void registerPegoutTransaction_withPegoutWithMaximumInputsAndOutputs_shouldRegisterChangeInActiveFed() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        // arrange
+        BtcTransaction pegout = setupPegoutWithMaximumInputsAndOutputsFromActiveFed();
+        setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_REGISTRATION_BLOCK_NUMBER);
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pegout,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            pegout.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        assertEquals(MAXIMUM_PEGOUT_INPUTS, pegout.getInputs().size());
+
+        int actualOutputsWithoutChange = pegout.getOutputs().size() - 1;
+        assertEquals(MAXIMUM_PEGOUT_REQUESTS, actualOutputsWithoutChange);
+        assertChangeWasRegisteredInActiveFed(pegout, MAXIMUM_PEGOUT_REQUESTS);
     }
 
     @Test
@@ -763,6 +800,27 @@ class BridgeSupportRegisterPegoutTransactionTest {
     private BtcTransaction setupPegoutWithoutChangeFromActiveFedPayingToUser() throws IOException {
         setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_CREATION_BLOCK_NUMBER);
         return createPegoutFromActiveFedPayingToUser(PEGOUT_INPUT_VALUE);
+    }
+
+    private BtcTransaction setupPegoutWithMaximumInputsAndOutputsFromActiveFed() throws IOException {
+        setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_CREATION_BLOCK_NUMBER);
+        List<UTXO> activeFederationUtxos = UTXOBuilder.builder()
+            .withValue(PEGOUT_INPUT_VALUE)
+            .withScriptPubKey(activeFederation.getP2SHScript())
+            .buildMany(MAXIMUM_PEGOUT_INPUTS, i -> BitcoinTestUtils.createHash(i + 1));
+        federationStorageProvider.getNewFederationBtcUTXOs(btcMainnetParams, allActivations).addAll(activeFederationUtxos);
+
+        addPegoutRequestsToQueue(
+            bridgeStorageProvider.getReleaseRequestQueue(),
+            MAXIMUM_PEGOUT_REQUESTS,
+            MAXIMUM_PEGOUT_REQUEST_VALUE,
+            btcMainnetParams
+        );
+
+        Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
+        bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+        return getReleaseFromPegoutsWFC(bridgeStorageProvider);
     }
 
     private BtcTransaction createPegoutFromActiveFedPayingToUser(Coin pegoutRequestValue) throws IOException {
