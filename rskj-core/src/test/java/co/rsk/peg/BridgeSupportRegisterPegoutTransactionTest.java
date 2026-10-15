@@ -138,6 +138,7 @@ class BridgeSupportRegisterPegoutTransactionTest {
     private static final BtcTransaction pegin = buildPeginFromUserToActiveFed();
     private static final Keccak256 FLYOVER_DERIVATION_HASH = RskTestUtils.createHash(3);
     private static final BtcTransaction flyoverPegin = buildFlyoverPeginFromUserToActiveFed();
+    private static final BtcTransaction unknownTransaction = buildUnknownTransactionFromUserToAnotherUser();
 
     private Repository repository;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -275,6 +276,32 @@ class BridgeSupportRegisterPegoutTransactionTest {
         // assert
         assertPegoutWasNotRegistered(flyoverPegin);
         assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(flyoverPegin.getHash()));
+    }
+
+    @Test
+    void registerPegoutTransaction_withUnknownTx_shouldNotRegister() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        // arrange
+        setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_REGISTRATION_BLOCK_NUMBER);
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            unknownTransaction,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            unknownTransaction.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        assertPegoutWasNotRegistered(unknownTransaction);
+        assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(unknownTransaction.getHash()));
     }
 
     @Test
@@ -1170,7 +1197,7 @@ class BridgeSupportRegisterPegoutTransactionTest {
     }
 
     private static BtcTransaction buildPeginFromUserToActiveFed() {
-        return buildPeginFromUserTo(activeFederation.getP2SHScript());
+        return buildTransactionFromUserTo(activeFederation.getP2SHScript());
     }
 
     private static BtcTransaction buildFlyoverPeginFromUserToActiveFed() {
@@ -1182,18 +1209,22 @@ class BridgeSupportRegisterPegoutTransactionTest {
             flyoverRedeemScript,
             activeFederation.getFormatVersion()
         );
-        return buildPeginFromUserTo(flyoverOutputScript);
+        return buildTransactionFromUserTo(flyoverOutputScript);
     }
 
-    private static BtcTransaction buildPeginFromUserTo(Script outputScript) {
-        BtcTransaction peginTransaction = new BtcTransaction(btcMainnetParams);
+    private static BtcTransaction buildUnknownTransactionFromUserToAnotherUser() {
+        return buildTransactionFromUserTo(ScriptBuilder.createOutputScript(anotherUserAddress));
+    }
+
+    private static BtcTransaction buildTransactionFromUserTo(Script outputScript) {
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         BtcECKey userKey = BitcoinTestUtils.getBtcEcKeyFromSeed("userAddress");
-        peginTransaction.addInput(
+        transaction.addInput(
             BitcoinTestUtils.createHash(4),
             0,
             ScriptBuilder.createInputScript(null, userKey)
         );
-        peginTransaction.addOutput(INPUT_VALUE, outputScript);
-        return peginTransaction;
+        transaction.addOutput(INPUT_VALUE, outputScript);
+        return transaction;
     }
 }
