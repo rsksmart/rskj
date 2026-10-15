@@ -65,6 +65,7 @@ import org.junit.jupiter.api.Test;
 
 class BridgeSupportRegisterPegoutTransactionTest {
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+    private static final ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0);
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final FederationConstants federationMainnetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
@@ -189,6 +190,34 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
         // assert
         assertPegoutWasNotRegistered(anotherPegout);
+    }
+
+    @Test
+    void registerPegoutTransaction_withPegoutCreatedForVetiver_shouldNotRegister() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        // arrange
+        // before RSKIP643 the pegout sighash is saved instead of its change as federations pending utxos
+        BtcTransaction pegout = setupPegoutForVetiverFromActiveFedPayingToUser();
+        setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_REGISTRATION_BLOCK_NUMBER);
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pegout,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            pegout.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        assertPegoutWasNotRegistered(pegout);
+        assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
 
     @Test
@@ -663,22 +692,30 @@ class BridgeSupportRegisterPegoutTransactionTest {
     }
 
     private void setUpBridgeAndFederationSupportForExecutionBlock(long executionBlockNumber) {
+        setUpBridgeAndFederationSupportWithActivations(executionBlockNumber, allActivations);
+    }
+
+    private void setUpBridgeAndFederationSupportForVetiverExecutionBlock(long executionBlockNumber) {
+        setUpBridgeAndFederationSupportWithActivations(executionBlockNumber, vetiverActivations);
+    }
+
+    private void setUpBridgeAndFederationSupportWithActivations(long executionBlockNumber, ActivationConfig.ForBlock activations) {
         rskExecutionBlock = createRskBlock(executionBlockNumber);
 
         federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(rskExecutionBlock)
-            .withActivations(allActivations)
+            .withActivations(activations)
             .build();
 
         bridgeSupport = BridgeSupportBuilder.builder()
-            .withActivations(allActivations)
+            .withActivations(activations)
             .withExecutionBlock(rskExecutionBlock)
             .withBridgeConstants(bridgeMainnetConstants)
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
-            .withEventLogger(new BridgeEventLoggerImpl(bridgeMainnetConstants, allActivations, logs))
+            .withEventLogger(new BridgeEventLoggerImpl(bridgeMainnetConstants, activations, logs))
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
@@ -687,6 +724,15 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
     private BtcTransaction setupPegoutFromActiveFedPayingToUser() throws IOException {
         setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_CREATION_BLOCK_NUMBER);
+        return createPegoutFromActiveFedPayingToUser();
+    }
+
+    private BtcTransaction setupPegoutForVetiverFromActiveFedPayingToUser() throws IOException {
+        setUpBridgeAndFederationSupportForVetiverExecutionBlock(PEGOUT_CREATION_BLOCK_NUMBER);
+        return createPegoutFromActiveFedPayingToUser();
+    }
+
+    private BtcTransaction createPegoutFromActiveFedPayingToUser() throws IOException {
         addActiveFederationUtxo(BitcoinTestUtils.createHash(1));
 
         bridgeStorageProvider.getReleaseRequestQueue().add(
