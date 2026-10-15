@@ -8141,6 +8141,11 @@ class BridgeSupportTest {
         private final Coin requestedValue2 = Coin.valueOf(400_000);
         private final List<Coin> outpointValues = List.of(outpointValue1, outpointValue2, outpointValue3);
         private final Coin totalAmountRequested = requestedValue1.add(requestedValue2);
+        // we need the federators private keys to sign the pegout
+        private final List<BtcECKey> signingFedMembersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+            "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
+            "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19", "member20"
+        }, true);
 
         private List<LogInfo> logs;
         private Block currentBlock;
@@ -8311,13 +8316,8 @@ class BridgeSupportTest {
         @Test
         void pegoutsFlow_fromAReleaseRequest_toThePegoutChangeBeingCorrectlyRegistered_whenSegwitFed_forVetiver() throws Exception {
             // arrange
-            // we need to recreate the federators keys to have the priv keys for signing
-            List<BtcECKey> membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
-                "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
-                "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19", "member20"
-            }, true);
             activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .withMembersBtcPublicKeys(membersBtcPublicKeys)
+                .withMembersBtcPublicKeys(signingFedMembersKeys)
                 .build();
             federationStorageProvider.setNewFederation(activeFederation);
             setUpReleaseRequests();
@@ -8349,14 +8349,7 @@ class BridgeSupportTest {
                 activeFederation.getRedeemScript()
             );
 
-            // advance blockchain so pegouts have enough confirmations
-            var blockNumber = currentBlock.getNumber() + bridgeMainNetConstants.getRsk2BtcMinimumAcceptableConfirmations();
-            currentBlock = createRskBlock(blockNumber);
-            updateBridgeSupportWithActivations(vetiverActivations);
-
-            // call update collections so pegouts are moved from wfc to wfs
-            bridgeSupport.updateCollections(tx);
-            bridgeSupport.save();
+            confirmPegout(vetiverActivations);
 
             // get pegout from pegouts wfs
             SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
@@ -8364,24 +8357,7 @@ class BridgeSupportTest {
             Keccak256 rskTxHash = pegoutsWFS.firstKey();
             BtcTransaction pegoutWFS = pegoutsWFS.get(rskTxHash);
 
-            // advance blockchain to start signing pegout
-            var newBlockNumber = currentBlock.getNumber() + 1;
-            currentBlock = createRskBlock(newBlockNumber);
-            updateBridgeSupportWithActivations(vetiverActivations);
-
-            List<BtcECKey> signers = membersBtcPublicKeys.subList(0, activeFederation.getNumberOfSignaturesRequired());
-            // sign with federators
-            List<Sha256Hash> sigHashes = generateTransactionInputsSigHashes(pegoutWFS);
-            for (BtcECKey federatorSignerKey : signers) {
-                List<byte[]> signatures = generateSignerEncodedSignatures(federatorSignerKey, sigHashes);
-                bridgeSupport.addSignature(federatorSignerKey, signatures, rskTxHash);
-            }
-
-            // assert federators signed and release was made
-            for (BtcECKey federatorSignerKey : signers) {
-                assertFederatorSigning(rskTxHash.getBytes(), pegoutWFS, sigHashes, activeFederation, federatorSignerKey, logs);
-            }
-            assertLogReleaseBtc(logs, pegoutWFS, rskTxHash);
+            signPegout(vetiverActivations, rskTxHash, pegoutWFS);
 
             List<UTXO> activeFedUtxosBeforeRegisteringChange = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
             // register release change utxo
@@ -8413,13 +8389,8 @@ class BridgeSupportTest {
         @Test
         void pegoutsFlow_fromAReleaseRequest_toThePegoutChangeBeingCorrectlyRegistered_whenSegwitFed() throws Exception {
             // arrange
-            // we need to recreate the federators keys to have the priv keys for signing
-            List<BtcECKey> membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
-                "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
-                "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19", "member20"
-            }, true);
             activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .withMembersBtcPublicKeys(membersBtcPublicKeys)
+                .withMembersBtcPublicKeys(signingFedMembersKeys)
                 .build();
             federationStorageProvider.setNewFederation(activeFederation);
             setUpReleaseRequests();
@@ -8452,14 +8423,7 @@ class BridgeSupportTest {
                 activeFederation.getRedeemScript()
             );
 
-            // advance blockchain so pegouts have enough confirmations
-            var blockNumber = currentBlock.getNumber() + bridgeMainNetConstants.getRsk2BtcMinimumAcceptableConfirmations();
-            currentBlock = createRskBlock(blockNumber);
-            updateBridgeSupportWithActivations(allActivations);
-
-            // call update collections so pegouts are moved from wfc to wfs
-            bridgeSupport.updateCollections(tx);
-            bridgeSupport.save();
+            confirmPegout(allActivations);
 
             // get pegout from pegouts wfs
             SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
@@ -8467,24 +8431,7 @@ class BridgeSupportTest {
             Keccak256 rskTxHash = pegoutsWFS.firstKey();
             BtcTransaction pegoutWFS = pegoutsWFS.get(rskTxHash);
 
-            // advance blockchain to start signing pegout
-            var newBlockNumber = currentBlock.getNumber() + 1;
-            currentBlock = createRskBlock(newBlockNumber);
-            updateBridgeSupportWithActivations(allActivations);
-
-            List<BtcECKey> signers = membersBtcPublicKeys.subList(0, activeFederation.getNumberOfSignaturesRequired());
-            // sign with federators
-            List<Sha256Hash> sigHashes = generateTransactionInputsSigHashes(pegoutWFS);
-            for (BtcECKey federatorSignerKey : signers) {
-                List<byte[]> signatures = generateSignerEncodedSignatures(federatorSignerKey, sigHashes);
-                bridgeSupport.addSignature(federatorSignerKey, signatures, rskTxHash);
-            }
-
-            // assert federators signed and release was made
-            for (BtcECKey federatorSignerKey : signers) {
-                assertFederatorSigning(rskTxHash.getBytes(), pegoutWFS, sigHashes, activeFederation, federatorSignerKey, logs);
-            }
-            assertLogReleaseBtc(logs, pegoutWFS, rskTxHash);
+            signPegout(allActivations, rskTxHash, pegoutWFS);
 
             List<UTXO> activeFedUtxosBeforeRegisteringChange = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
             // register release change utxo
@@ -8535,6 +8482,38 @@ class BridgeSupportTest {
                 List.of(outputIndexForPegoutChange),
                 activeFederation.getAddress()
             );
+        }
+
+        private void confirmPegout(ActivationConfig.ForBlock activations) throws IOException {
+            // advance blockchain so pegouts have enough confirmations
+            var blockNumber = currentBlock.getNumber() + bridgeMainNetConstants.getRsk2BtcMinimumAcceptableConfirmations();
+            currentBlock = createRskBlock(blockNumber);
+            updateBridgeSupportWithActivations(activations);
+
+            // call update collections so pegouts are moved from wfc to wfs
+            bridgeSupport.updateCollections(tx);
+            bridgeSupport.save();
+        }
+
+        private void signPegout(ActivationConfig.ForBlock activations, Keccak256 rskTxHash, BtcTransaction pegoutWFS) throws IOException {
+            // advance blockchain to start signing pegout
+            var newBlockNumber = currentBlock.getNumber() + 1;
+            currentBlock = createRskBlock(newBlockNumber);
+            updateBridgeSupportWithActivations(activations);
+
+            List<BtcECKey> signers = signingFedMembersKeys.subList(0, activeFederation.getNumberOfSignaturesRequired());
+            // sign with federators
+            List<Sha256Hash> sigHashes = generateTransactionInputsSigHashes(pegoutWFS);
+            for (BtcECKey federatorSignerKey : signers) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(federatorSignerKey, sigHashes);
+                bridgeSupport.addSignature(federatorSignerKey, signatures, rskTxHash);
+            }
+
+            // assert federators signed and release was made
+            for (BtcECKey federatorSignerKey : signers) {
+                assertFederatorSigning(rskTxHash.getBytes(), pegoutWFS, sigHashes, activeFederation, federatorSignerKey, logs);
+            }
+            assertLogReleaseBtc(logs, pegoutWFS, rskTxHash);
         }
 
         private void updateBridgeSupportWithActivations(ActivationConfig.ForBlock activations) {
