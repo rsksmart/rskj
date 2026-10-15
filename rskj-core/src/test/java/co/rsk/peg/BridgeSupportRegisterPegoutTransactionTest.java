@@ -92,6 +92,8 @@ class BridgeSupportRegisterPegoutTransactionTest {
     // the pegout recipients pay the fees, so the change is the input value minus the requested value
     private static final Coin PEGOUT_REQUEST_VALUE = PEGOUT_INPUT_VALUE.subtract(CHANGE_VALUE);
     private static final Keccak256 PEGOUT_REQUEST_RSK_TX_HASH = RskTestUtils.createHash(2);
+    private static final Coin CHANGE_BELOW_MINIMUM_PEGIN_VALUE = bridgeMainnetConstants.getMinimumPeginTxValue(allActivations)
+        .subtract(Coin.SATOSHI);
     private static final int MAXIMUM_PEGOUT_INPUTS = 180;
     private static final int MAXIMUM_PEGOUT_REQUESTS = 57;
     // requesting all the inputs value but the change forces every utxo to be spent; the division remainder adds to the change
@@ -283,6 +285,33 @@ class BridgeSupportRegisterPegoutTransactionTest {
         int actualOutputsWithoutChange = pegout.getOutputs().size() - 1;
         assertEquals(MAXIMUM_PEGOUT_REQUESTS, actualOutputsWithoutChange);
         assertChangeWasRegisteredInActiveFed(pegout, MAXIMUM_PEGOUT_REQUESTS);
+    }
+
+    @Test
+    void registerPegoutTransaction_withPegoutWithChangeBelowMinimumPeginValue_shouldRegisterChangeInActiveFed() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        // arrange
+        BtcTransaction pegout = setupPegoutWithChangeBelowMinimumPeginValueFromActiveFedPayingToUser();
+        setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_REGISTRATION_BLOCK_NUMBER);
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pegout,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            pegout.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        assertEquals(CHANGE_BELOW_MINIMUM_PEGIN_VALUE, pegout.getOutput(OUTPUT_INDEX_FOR_PEGOUT_CHANGE).getValue());
+        assertChangeWasRegisteredInActiveFed(pegout, OUTPUT_INDEX_FOR_PEGOUT_CHANGE);
     }
 
     @Test
@@ -800,6 +829,11 @@ class BridgeSupportRegisterPegoutTransactionTest {
     private BtcTransaction setupPegoutWithoutChangeFromActiveFedPayingToUser() throws IOException {
         setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_CREATION_BLOCK_NUMBER);
         return createPegoutFromActiveFedPayingToUser(PEGOUT_INPUT_VALUE);
+    }
+
+    private BtcTransaction setupPegoutWithChangeBelowMinimumPeginValueFromActiveFedPayingToUser() throws IOException {
+        setUpBridgeAndFederationSupportForExecutionBlock(PEGOUT_CREATION_BLOCK_NUMBER);
+        return createPegoutFromActiveFedPayingToUser(PEGOUT_INPUT_VALUE.subtract(CHANGE_BELOW_MINIMUM_PEGIN_VALUE));
     }
 
     private BtcTransaction setupPegoutWithMaximumInputsAndOutputsFromActiveFed() throws IOException {
