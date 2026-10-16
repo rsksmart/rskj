@@ -437,37 +437,25 @@ public class BridgeSupport {
         byte[] pmtSerialized
     ) throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Context.propagate(btcContext);
-        if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
-            logger.warn(
-                "[registerPegoutTransaction][rsk tx {}] Btc tx {} already processed",
-                rskTx.getHash(),
-                btcTxHash
-            );
-            return;
-        }
-
-        if (!federationSupport.hasFederationsPendingBtcUTXOs(btcTxHash)) {
-            logger.warn(
-                "[registerPegoutTransaction][rsk tx {}] No pending UTXOs found for Btc tx {}",
-                rskTx.getHash(),
-                btcTxHash
-            );
-            return;
-        }
-
-        // The SVP fund tx has to be registered through registerBtcTransaction while the SVP is ongoing,
-        // since the full SVP tx is needed to build the SVP spend tx.
-        if (isTheSvpFundTx(btcTxHash)) {
-            logger.warn(
-                "[registerPegoutTransaction][rsk tx {}] Btc tx {} is the SVP fund tx",
-                rskTx.getHash(),
-                btcTxHash
-            );
-            return;
-        }
-
         try {
+            if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
+                throw new RegisterBtcTransactionException("Transaction already processed");
+            }
+
+            if (!federationSupport.hasFederationsPendingBtcUTXOs(btcTxHash)) {
+                throw new RegisterBtcTransactionException("Transaction has no pending UTXOs to register");
+            }
+
+            // The SVP fund tx has to be registered through registerBtcTransaction while the SVP is ongoing,
+            // since the full SVP tx is needed to build the SVP spend tx.
+            if (isTheSvpFundTx(btcTxHash)) {
+                throw new RegisterBtcTransactionException("Transaction is the SVP fund tx");
+            }
+
             validatePegoutTxRegistration(btcTxHash, height, pmtSerialized);
+
+            registerNewUTXOsByTxId(btcTxHash, height);
+            markBtcTxHashAsProcessed(btcTxHash);
         } catch (RegisterBtcTransactionException e) {
             logger.warn(
                 "[registerPegoutTransaction][rsk tx {}] Could not register Btc tx {}. Message: {}",
@@ -475,11 +463,7 @@ public class BridgeSupport {
                 btcTxHash,
                 e.getMessage()
             );
-            return;
         }
-
-        registerNewUTXOsByTxId(btcTxHash, height);
-        markBtcTxHashAsProcessed(btcTxHash);
     }
 
     private boolean isTheSvpFundTx(Sha256Hash btcTxHash) {
