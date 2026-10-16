@@ -31,6 +31,11 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public abstract class BridgeConstants {
+    protected static final int THREE_MINUTES_IN_MILLIS = 3 * 60 * 1000;
+    protected static final int FIVE_MINUTES_IN_SECONDS = 5 * 60;
+    protected static final int THIRTY_DAYS_IN_BTC_BLOCKS = 30 * 24 * 6; // 1 block every 10 minutes, 6 blocks per hour
+    protected static final int THREE_HOURS_IN_RSK_BLOCKS = 3 * 60 * 2; // 1 block every 30 seconds, 2 blocks per minute
+
     protected String btcParamsString;
 
     protected FeePerKbConstants feePerKbConstants;

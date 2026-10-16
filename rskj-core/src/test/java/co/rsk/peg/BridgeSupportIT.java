@@ -46,6 +46,7 @@ import co.rsk.peg.constants.*;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.federation.constants.FederationTestNet2Constants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.lockingcap.*;
 import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
@@ -3389,6 +3390,31 @@ public class BridgeSupportIT {
 
         // As we don't have any checkpoint the genesis block at height 0 should be used and returned
         assertEquals(0, bridgeSupport.getBtcBlockchainInitialBlockHeight());
+    }
+
+    @Test
+    void initialChainHeadWithBtcCheckpoints_whenTestnet2_shouldStartAtBtcHeightWhenBlockIndexActivates() throws IOException, BlockStoreException {
+        // The block index covers the BTC block store from its first block on, so both must start at the same height.
+        // This fails if a change to the testnet4 checkpoints moves the store's first block.
+        BridgeConstants bridgeTestNet2Constants = BridgeTestNet2Constants.getInstance();
+        ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+        FederationSupport testnet2FederationSupport = FederationSupportBuilder.builder()
+            .withFederationConstants(FederationTestNet2Constants.getInstance())
+            .withFederationStorageProvider(new FederationStorageProviderImpl(new InMemoryStorage()))
+            .withActivations(allActivations)
+            .build();
+        bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeTestNet2Constants)
+            .withRepository(createRepository())
+            .withBtcBlockStoreFactory(new RepositoryBtcBlockStoreWithCache.Factory(bridgeTestNet2Constants.getBtcParams()))
+            .withFederationSupport(testnet2FederationSupport)
+            .withActivations(allActivations)
+            .build();
+
+        int btcHeightWhenBlockIndexActivates = bridgeTestNet2Constants.getBtcHeightWhenBlockIndexActivates();
+        assertEquals(btcHeightWhenBlockIndexActivates, bridgeSupport.getBtcBlockchainInitialBlockHeight());
+        // Initializing the store sets its first block as the chain head
+        assertEquals(btcHeightWhenBlockIndexActivates, bridgeSupport.getBtcBlockchainBestChainHeight());
     }
 
     @Test

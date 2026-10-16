@@ -23,18 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.*;
-import co.rsk.peg.vote.ABICallElection;
-import co.rsk.peg.vote.ABICallSpec;
+import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.PendingFederation;
-import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
+import co.rsk.peg.vote.ABICallElection;
+import co.rsk.peg.vote.ABICallSpec;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -42,6 +36,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.ethereum.core.Repository;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.vm.exception.VMException;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 @Disabled
 class FederationChangeTest extends BridgePerformanceTestCase {
@@ -49,10 +49,8 @@ class FederationChangeTest extends BridgePerformanceTestCase {
     private static final List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
         "auth-a",
         "auth-b",
-        "auth-c",
-        "auth-d",
-        "auth-e",
-    }).map(generator -> ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)))).collect(Collectors.toList());
+        "auth-c"
+    }).map(generator -> ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)))).toList();
 
     private ECKey winnerKeyToTry;
     private PendingFederation pendingFederation;
