@@ -420,6 +420,48 @@ public class BridgeSupport {
         }
     }
 
+    public void registerPegoutTransaction(
+        Transaction rskTx,
+        Sha256Hash btcTxHash,
+        int height,
+        byte[] pmtSerialized
+    ) throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        Context.propagate(btcContext);
+        try {
+            if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
+                throw new RegisterBtcTransactionException("Transaction already processed");
+            }
+
+            if (!federationSupport.hasFederationsPendingBtcUTXOs(btcTxHash)) {
+                throw new RegisterBtcTransactionException("Transaction has no pending UTXOs to register");
+            }
+
+            // The SVP fund tx has to be registered through registerBtcTransaction while the SVP is ongoing,
+            // since the full SVP tx is needed to build the SVP spend tx.
+            if (isTheSvpFundTx(btcTxHash)) {
+                throw new RegisterBtcTransactionException("Transaction is the SVP fund tx");
+            }
+
+            validatePegoutTxRegistration(btcTxHash, height, pmtSerialized);
+
+            registerNewUTXOsByTxId(btcTxHash, height);
+            markBtcTxHashAsProcessed(btcTxHash);
+        } catch (RegisterBtcTransactionException e) {
+            logger.warn(
+                "[registerPegoutTransaction][rsk tx {}] Could not register Btc tx {}. Message: {}",
+                rskTx.getHash(),
+                btcTxHash,
+                e.getMessage()
+            );
+        }
+    }
+
+    private boolean isTheSvpFundTx(Sha256Hash btcTxHash) {
+        return provider.getSvpFundTxHashUnsigned()
+            .filter(btcTxHash::equals)
+            .isPresent();
+    }
+
     private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
         registerNewUtxos(btcTx, btcTxHeight); // Need to register the change UTXO
 
@@ -3628,6 +3670,33 @@ public class BridgeSupport {
         }
 
         logger.trace("[validateBtcTxRegistration] Btc tx: {} successfully validated", btcTxHash);
+    }
+
+    private void validatePegoutTxRegistration(
+        Sha256Hash btcTxHash,
+        int height,
+        byte[] pmtSerialized
+    ) throws RegisterBtcTransactionException, BridgeIllegalArgumentException, BlockStoreException {
+        try {
+            validateHeightAndConfirmations(height, getBtcBlockchainBestChainHeight(), bridgeConstants, btcTxHash);
+        } catch (Exception e) {
+            throw new RegisterBtcTransactionException(e.getMessage());
+        }
+
+        validatePMTSize(pmtSerialized);
+
+        Optional<Sha256Hash> merkleRoot = getMerkleRoot(pmtSerialized, btcTxHash);
+        if (merkleRoot.isEmpty()) {
+            throw new RegisterBtcTransactionException("Cannot get merkle root for PMT");
+        }
+
+        try {
+            validateMerkleRoot(merkleRoot.get(), height);
+        } catch (InvalidMerkleRootException e) {
+            throw new RegisterBtcTransactionException(e.getMessage(), e);
+        }
+
+        logger.trace("[validatePegoutTxRegistration] Btc tx: {} successfully validated", btcTxHash);
     }
 
     private void validatePMTSize(byte[] pmtSerialized) throws BridgeIllegalArgumentException {
