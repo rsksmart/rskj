@@ -150,11 +150,11 @@ class BridgeSupportRegisterPegoutTransactionTest {
     private static final Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
     private static final Address anotherUserAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "anotherUserAddress");
     private static final Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
-    private static final BtcTransaction anotherPegout = buildAnotherPegoutWithChangeFromActiveFed();
     private static final BtcTransaction pegin = buildPeginFromUserToActiveFed();
     private static final Keccak256 FLYOVER_DERIVATION_HASH = RskTestUtils.createHash(3);
     private static final BtcTransaction flyoverPegin = buildFlyoverPeginFromUserToActiveFed();
     private static final BtcTransaction unknownTransaction = buildUnknownTransactionFromUserToAnotherUser();
+    private final BtcTransaction anotherPegout = buildAnotherPegoutWithChangeFromActiveFed();
 
     private Repository repository;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -284,13 +284,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            anotherPegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            anotherPegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertPegoutWasNotRegistered(anotherPegout);
@@ -1328,7 +1328,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
             .withInput(spendTxHash, 0, INPUT_VALUE)
             .withOutput(PEGOUT_OUTPOINT_VALUE, anotherUserAddress)
             .withChangeAmount(CHANGE_VALUE)
-            .withSignatures(activeFederationKeys)
             .build();
     }
 
