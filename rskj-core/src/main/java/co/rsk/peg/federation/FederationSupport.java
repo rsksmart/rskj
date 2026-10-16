@@ -159,8 +159,7 @@ public interface FederationSupport {
     /**
      * Stores the federation UTXOs created by a release transaction (e.g. its change outputs)
      * as pending, keyed by the release's BTC tx id. They are not spendable until the
-     * transaction is registered and they are moved to the federations
-     * (see {@link #movePendingUtxosToFederations(Sha256Hash, int)}).
+     * transaction is registered and they are moved to the federations.
      * @param btcTxId the BTC tx id of the release transaction that creates the UTXOs
      * @param utxos the UTXOs the release transaction sends to a federation
      * @throws IllegalArgumentException if btcTxId is null or utxos is null or empty
@@ -178,7 +177,7 @@ public interface FederationSupport {
 
     /**
      * Returns the pending UTXOs of the given BTC tx id, i.e. the ones that would be moved to
-     * the federations (see {@link #movePendingUtxosToFederations(Sha256Hash, int)}).
+     * the federations.
      * @param btcTxId the BTC tx id to look up
      * @return an immutable list with the pending UTXOs of btcTxId, or an empty list if btcTxId
      * has no pending UTXOs
@@ -186,15 +185,11 @@ public interface FederationSupport {
     List<UTXO> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId);
 
     /**
-     * Moves the pending UTXOs of the given BTC tx id into the UTXOs of the federation
-     * each one belongs to (matched by scriptPubKey against the active and retiring
-     * federations), then removes the pending entry. Each moved UTXO takes btcTxHeight as
-     * its height. Expects btcTxId to have pending UTXOs
-     * (see {@link #hasFederationsPendingBtcUTXOs(Sha256Hash)}).
-     * @param btcTxId the BTC tx id whose pending UTXOs are moved
-     * @param btcTxHeight the height of the BTC block that includes the transaction
+     * Removes the pending UTXOs of the given BTC tx id. Called once they have been moved
+     * to the federations they belong to.
+     * @param btcTxId the BTC tx id whose pending UTXOs are removed
      */
-    void movePendingUtxosToFederations(Sha256Hash btcTxId, int btcTxHeight);
+    void removeFederationsPendingBtcUTXOs(Sha256Hash btcTxId);
 
     /**
      * Returns the currently pending federation hash, or null if none exists
