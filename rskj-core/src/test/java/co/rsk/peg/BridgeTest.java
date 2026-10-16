@@ -5,12 +5,14 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.core.RskAddress.ZERO_ADDRESS;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.createHash3;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -26,6 +28,9 @@ import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.flyover.FlyoverTxResponseCode;
+import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.lockingcap.LockingCapStorageProvider;
 import co.rsk.peg.lockingcap.LockingCapStorageProviderImpl;
 import co.rsk.peg.lockingcap.LockingCapSupport;
@@ -36,9 +41,11 @@ import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.test.builders.BridgeBuilder;
 import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.test.builders.UTXOBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -57,6 +64,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.InternalTransaction;
@@ -975,18 +983,61 @@ class BridgeTest {
     }
 
     @Nested
-    class RegisterPegoutTransactionValidations {
+    class RegisterPegoutTransaction {
+        private static final int BTC_BLOCK_WITH_PEGOUT_HEIGHT = 1_000;
+        private static final long ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
+        private static final Coin INPUT_VALUE = Coin.COIN;
+        private static final Coin CHANGE_VALUE = Coin.COIN.div(4);
+        private static final Coin PEGOUT_REQUEST_VALUE = INPUT_VALUE.subtract(CHANGE_VALUE);
+        private static final long OUTPUT_INDEX_FOR_PEGOUT_CHANGE = 1L;
+
         private final CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
+        private static final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeys(20, "active");
+        private final Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
+            .withCreationBlockNumber(ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER)
+            .withMembersBtcPublicKeys(activeFederationKeys)
+            .build();
+        // the active federation must be active for the pegout to be created
+        private final long pegoutCreationBlockNumber = ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER
+            + federationMainNetConstants.getFederationActivationAge(allActivations);
+        private final long pegoutRegistrationBlockNumber = pegoutCreationBlockNumber + 1;
+        private final Address userAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "userAddress");
+
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+        private FederationStorageProvider federationStorageProvider;
+        private FeePerKbSupport feePerKbSupport;
+        private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+        private BtcBlockStoreWithCache btcBlockStore;
+        private Block rskExecutionBlock;
+        private FederationSupport federationSupport;
+        private BridgeSupport bridgeSupport;
+        private List<LogInfo> logs;
 
         @BeforeEach
-        void setup() {
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withActivations(allActivations)
-                .build();
+        void setUp() throws IOException {
+            repository = createRepository();
+            logs = new ArrayList<>();
 
+            StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+            federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+            federationStorageProvider.setNewFederation(activeFederation);
+            feePerKbSupport = new FeePerKbSupportImpl(
+                bridgeMainNetConstants.getFeePerKbConstants(),
+                new FeePerKbStorageProviderImpl(bridgeStorageAccessor)
+            );
+
+            bridgeStorageProvider = new BridgeStorageProvider(repository, networkParameters, allActivations);
+
+            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters, 100, 100);
+            btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, allActivations);
+
+            setUpPegoutFromActiveFedPayingToUser();
+            setUpBridgeAndFederationSupport(pegoutRegistrationBlockNumber);
             bridge = bridgeBuilder
                 .activationConfig(allActivationsConfig)
                 .bridgeSupport(bridgeSupport)
+                .executionBlock(rskExecutionBlock)
                 .build();
         }
 
@@ -1011,19 +1062,6 @@ class BridgeTest {
 
             // act & assert
             assertThrows(VMException.class, () -> bridge.execute(data));
-        }
-
-        @Test
-        void registerPegoutTransaction_afterRSKIP643_shouldNotThrowVMException() {
-            // arrange
-            byte[] btcTxId = BitcoinTestUtils.createHash(1).getBytes();
-            int height = 100;
-            byte[] pmt = Hex.decode("ab");
-
-            byte[] data = registerPegoutTransactionFunction.encode(btcTxId, height, pmt);
-
-            // act & assert
-            assertDoesNotThrow(() -> bridge.execute(data));
         }
 
         @Test
@@ -1075,6 +1113,89 @@ class BridgeTest {
 
             // act & assert
             assertThrows(VMException.class, () -> bridge.execute(invalidData));
+        }
+        @Test
+        void registerPegoutTransaction_withPegoutWithChange_forCardamom_shouldRegisterChangeInActiveFed() throws BlockStoreException, IOException, VMException {
+            // arrange
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+                bridgeStorageProvider,
+                bridgeMainNetConstants,
+                BTC_BLOCK_WITH_PEGOUT_HEIGHT,
+                pegout,
+                btcBlockStore
+            );
+
+            FederationTestUtils.signInputs(activeFederation, activeFederationKeys, pegout);
+            byte[] data = registerPegoutTransactionFunction.encode(
+                pegout.getHash().getBytes(),
+                BTC_BLOCK_WITH_PEGOUT_HEIGHT,
+                pmt.bitcoinSerialize()
+            );
+
+            // act
+            bridge.execute(data);
+
+            // assert
+            List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
+                pegout,
+                activeFederation,
+                BTC_BLOCK_WITH_PEGOUT_HEIGHT
+            );
+            assertUtxosAreEqual(expectedUtxosRegistered, federationSupport.getActiveFederationBtcUTXOs());
+            Coin changeValue = pegout.getOutput(OUTPUT_INDEX_FOR_PEGOUT_CHANGE).getValue();
+            assertReleaseWasRegistered(
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                (int) pegoutRegistrationBlockNumber,
+                pegout,
+                List.of(changeValue),
+                List.of(OUTPUT_INDEX_FOR_PEGOUT_CHANGE),
+                activeFederation.getAddress()
+            );
+        }
+
+        private void setUpPegoutFromActiveFedPayingToUser() throws IOException {
+            setUpBridgeAndFederationSupport(pegoutCreationBlockNumber);
+
+            UTXO activeFederationUtxo = UTXOBuilder.builder()
+                .withTransactionHash(BitcoinTestUtils.createHash(1))
+                .withValue(INPUT_VALUE)
+                .withScriptPubKey(activeFederation.getP2SHScript())
+                .build();
+            federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, allActivations).add(activeFederationUtxo);
+
+            bridgeStorageProvider.getReleaseRequestQueue().add(
+                userAddress,
+                PEGOUT_REQUEST_VALUE,
+                RskTestUtils.createHash(2)
+            );
+
+            bridgeSupport.updateCollections(buildUpdateCollectionsTransaction());
+        }
+
+        private void setUpBridgeAndFederationSupport(long executionBlockNumber) {
+            rskExecutionBlock = createRskBlock(executionBlockNumber);
+
+            federationSupport = FederationSupportBuilder.builder()
+                .withFederationConstants(federationMainNetConstants)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(rskExecutionBlock)
+                .withActivations(allActivations)
+                .build();
+
+            bridgeSupport = BridgeSupportBuilder.builder()
+                .withActivations(allActivations)
+                .withExecutionBlock(rskExecutionBlock)
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withRepository(repository)
+                .withEventLogger(new BridgeEventLoggerImpl(bridgeMainNetConstants, allActivations, logs))
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .build();
         }
     }
 
