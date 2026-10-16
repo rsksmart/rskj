@@ -41,6 +41,7 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationStorageProvider;
 import co.rsk.peg.federation.FederationStorageProviderImpl;
 import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
@@ -199,13 +200,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertChangeWasRegisteredInActiveFed(pegout, OUTPUT_INDEX_FOR_PEGOUT_CHANGE);
@@ -225,13 +226,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertChangeWasRegisteredInRetiringFed(pegout);
@@ -251,13 +252,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         int actualOutputsWithoutChange = pegout.getOutputs().size() - 1;
@@ -384,13 +385,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertPegoutWasNotRegistered(pegout);
@@ -412,13 +413,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertPegoutWasNotRegistered(pegout);
@@ -439,13 +440,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertEquals(MAXIMUM_PEGOUT_INPUTS, pegout.getInputs().size());
@@ -469,13 +470,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertEquals(CHANGE_BELOW_MINIMUM_PEGIN_VALUE, pegout.getOutput(OUTPUT_INDEX_FOR_PEGOUT_CHANGE).getValue());
@@ -582,13 +583,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
@@ -673,13 +674,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertChangeWasRegisteredInActiveFed(pegout, OUTPUT_INDEX_FOR_PEGOUT_CHANGE);
@@ -731,13 +732,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
         // act
         int negativeHeight = -1;
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             negativeHeight,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertPegoutWasNotRegistered(pegout);
@@ -753,13 +754,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         recreateChainWithOneConfirmationLessThanAcceptable(pmt);
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertPegoutWasNotRegistered(pegout);
@@ -778,13 +779,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
         // act
         // the older block has enough confirmations, but its merkle root is not the pegout pmt one
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_ANOTHER_PEGOUT_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertPegoutWasNotRegistered(pegout);
@@ -800,13 +801,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         recreateChainWithExactlyMinimumAcceptableConfirmations(pmt);
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertChangeWasRegisteredInActiveFed(pegout, OUTPUT_INDEX_FOR_PEGOUT_CHANGE);
@@ -824,16 +825,16 @@ class BridgeSupportRegisterPegoutTransactionTest {
             pegout,
             btcBlockStore
         );
-        int heightAboveBestChainHeight = bridgeSupport.getBtcBlockchainBestChainHeight() + 1;
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        int heightAboveBestChainHeight = bridgeSupport.getBtcBlockchainBestChainHeight() + 1;
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             heightAboveBestChainHeight,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertPegoutWasNotRegistered(pegout);
@@ -854,13 +855,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            pegout.getHash(),
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmtForAnotherPegout.bitcoinSerialize()
+            pmtForAnotherPegout
         );
-        bridgeSupport.save();
 
         // assert
         assertPegoutWasNotRegistered(pegout);
@@ -884,6 +885,11 @@ class BridgeSupportRegisterPegoutTransactionTest {
         byte[] pmtWithUnexpectedSize = Arrays.copyOf(pmtSerialized, pmtSerialized.length + 1);
 
         // act & assert
+        FederationTestUtils.signInputs(
+            activeFederation,
+            activeFederationKeys,
+            pegout
+        );
         assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.registerPegoutTransaction(
             rskTx,
             pegout.getHash(),
@@ -916,6 +922,11 @@ class BridgeSupportRegisterPegoutTransactionTest {
         Arrays.fill(malformedPmt, 0, pmtTransactionCountLength, (byte) 0);
 
         // act & assert
+        FederationTestUtils.signInputs(
+            activeFederation,
+            activeFederationKeys,
+            pegout
+        );
         assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.registerPegoutTransaction(
             rskTx,
             pegout.getHash(),
@@ -940,9 +951,14 @@ class BridgeSupportRegisterPegoutTransactionTest {
             pegout,
             btcBlockStore
         );
-        Sha256Hash pegoutWtxid = pegout.getHash(true);
 
         // act
+        FederationTestUtils.signInputs(
+            activeFederation,
+            activeFederationKeys,
+            pegout
+        );
+        Sha256Hash pegoutWtxid = pegout.getHash(true);
         bridgeSupport.registerPegoutTransaction(
             rskTx,
             pegoutWtxid,
@@ -966,13 +982,17 @@ class BridgeSupportRegisterPegoutTransactionTest {
         recreateChainWithTxBlockOneBlockBelowSearchDepthLimit(pmt);
 
         // act & assert
+        FederationTestUtils.signInputs(
+            activeFederation,
+            activeFederationKeys,
+            pegout
+        );
         assertThrows(BlockStoreException.class, () -> bridgeSupport.registerPegoutTransaction(
             rskTx,
             pegout.getHash(),
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
             pmt.bitcoinSerialize()
         ));
-
         bridgeSupport.save();
         assertPegoutWasNotRegistered(pegout);
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
@@ -1033,6 +1053,27 @@ class BridgeSupportRegisterPegoutTransactionTest {
             btcMainnetParams
         );
         bridgeStorageProvider.save();
+    }
+
+    private void signAndRegisterPegoutTransaction(
+        BtcTransaction releaseTransaction,
+        Federation signingFederation,
+        List<BtcECKey> signingKeys,
+        int height,
+        PartialMerkleTree pmt
+    ) throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        FederationTestUtils.signInputs(
+            signingFederation,
+            signingKeys,
+            releaseTransaction
+        );
+        bridgeSupport.registerPegoutTransaction(
+            rskTx,
+            releaseTransaction.getHash(),
+            height,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
     }
 
     private void assertChangeWasRegisteredInActiveFed(BtcTransaction releaseTransaction, long outputIndexForChange) throws IOException {
