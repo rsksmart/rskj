@@ -46,6 +46,7 @@ class UtxoUtilsTest {
     // FE announces a five byte VarInt, followed by 0xFFFFFFFF
     private static final String ENCODED_MAX_OUTPUT_INDEX = "FEFFFFFFFF";
     private static final Address testAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "test");
+    private static final int BLOCK_HEIGHT = 850_000;
 
     private static Stream<Arguments> validOutpointValues() {
         List<Arguments> arguments = new ArrayList<>();
@@ -449,13 +450,12 @@ class UtxoUtilsTest {
             .withBlockHeight(0)
             .withScriptPubKey(TEST_ERP_FEDERATION.getP2SHScript())
             .build();
-        int blockHeight = 850_000;
 
         // act
-        UTXO copiedUtxo = UtxoUtils.copyWithBlockHeight(utxo, blockHeight);
+        UTXO copiedUtxo = UtxoUtils.copyWithBlockHeight(utxo, BLOCK_HEIGHT);
 
         // assert
-        assertEquals(blockHeight, copiedUtxo.getHeight());
+        assertEquals(BLOCK_HEIGHT, copiedUtxo.getHeight());
         assertSameFieldsExceptHeight(utxo, copiedUtxo);
     }
 
@@ -468,7 +468,7 @@ class UtxoUtilsTest {
             .build();
 
         // act
-        UtxoUtils.copyWithBlockHeight(utxo, 850_000);
+        UtxoUtils.copyWithBlockHeight(utxo, BLOCK_HEIGHT);
 
         // assert
         assertEquals(originalBlockHeight, utxo.getHeight());
@@ -482,7 +482,7 @@ class UtxoUtilsTest {
             .build();
 
         // act
-        UTXO copiedUtxo = UtxoUtils.copyWithBlockHeight(coinbaseUtxo, 850_000);
+        UTXO copiedUtxo = UtxoUtils.copyWithBlockHeight(coinbaseUtxo, BLOCK_HEIGHT);
 
         // assert
         assertTrue(copiedUtxo.isCoinbase());
