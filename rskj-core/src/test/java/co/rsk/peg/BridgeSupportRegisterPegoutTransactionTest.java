@@ -136,7 +136,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         .withMembersBtcPublicKeys(activeFederationKeys)
         .withCreationBlockNumber(ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER)
         .build();
+    private static final List<BtcECKey> retiringFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+        "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
+        "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19", "member20"
+    }, true);
     private static final Federation retiringFederation = P2shP2wshErpFederationBuilder.builder()
+        .withMembersBtcPublicKeys(retiringFederationKeys)
         .withCreationBlockNumber(0L)
         .build();
     // the proposed federation is created along with the svp fund tx
@@ -497,13 +502,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            migrationTransaction.getHash(),
+        signAndRegisterPegoutTransaction(
+            migrationTransaction,
+            retiringFederation,
+            retiringFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertEquals(1, migrationTransaction.getOutputs().size());
@@ -524,13 +529,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            migrationTransaction.getHash(),
+        signAndRegisterPegoutTransaction(
+            migrationTransaction,
+            retiringFederation,
+            retiringFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertEquals(FIXED_VALUE_MIGRATION_OUTPUTS, migrationTransaction.getOutputs().size());
@@ -553,13 +558,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            migrationTransaction.getHash(),
+        signAndRegisterPegoutTransaction(
+            migrationTransaction,
+            retiringFederation,
+            retiringFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertEquals(MAXIMUM_MIGRATION_INPUTS, migrationTransaction.getInputs().size());
