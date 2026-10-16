@@ -992,8 +992,10 @@ class BridgeTest {
         private static final long OUTPUT_INDEX_FOR_PEGOUT_CHANGE = 1L;
 
         private final CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
+        private static final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeys(20, "active");
         private final Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
             .withCreationBlockNumber(ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER)
+            .withMembersBtcPublicKeys(activeFederationKeys)
             .build();
         // the active federation must be active for the pegout to be created
         private final long pegoutCreationBlockNumber = ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER
@@ -1124,6 +1126,7 @@ class BridgeTest {
                 btcBlockStore
             );
 
+            FederationTestUtils.signInputs(activeFederation, activeFederationKeys, pegout);
             byte[] data = registerPegoutTransactionFunction.encode(
                 pegout.getHash().getBytes(),
                 BTC_BLOCK_WITH_PEGOUT_HEIGHT,
