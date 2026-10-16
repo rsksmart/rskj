@@ -336,56 +336,8 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public void movePendingUtxosToFederations(Sha256Hash btcTxId, int btcTxHeight) {
-        List<UTXO> pendingUtxos = getFederationsPendingBtcUTXOs(btcTxId);
-
-        Script activeFederationScript = getActiveFederation().getP2SHScript();
-        Optional<Script> retiringFederationScript = getRetiringFederation().map(Federation::getP2SHScript);
-
-        List<UTXO> utxosToActiveFederation = new ArrayList<>();
-        List<UTXO> utxosToRetiringFederation = new ArrayList<>();
-        for (UTXO pendingUtxo : pendingUtxos) {
-            UTXO utxo = withHeight(pendingUtxo, btcTxHeight);
-            if (utxo.getScript().equals(activeFederationScript)) {
-                utxosToActiveFederation.add(utxo);
-            } else if (retiringFederationScript.filter(utxo.getScript()::equals).isPresent()) {
-                utxosToRetiringFederation.add(utxo);
-            } else {
-                logger.warn(
-                    "[movePendingUtxosToFederations] Discarding utxo with index {} and value {} for btcTxId {}. Its script {} does not match any live federation",
-                    utxo.getIndex(),
-                    utxo.getValue(),
-                    btcTxId,
-                    utxo.getScript()
-                );
-            }
-        }
-
-        if (!utxosToActiveFederation.isEmpty()) {
-            getActiveFederationBtcUTXOs().addAll(utxosToActiveFederation);
-        }
-        if (!utxosToRetiringFederation.isEmpty()) {
-            getRetiringFederationBtcUTXOs().addAll(utxosToRetiringFederation);
-        }
+    public void removeFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
         provider.removeFederationsPendingBtcUTXOs(btcTxId);
-
-        logger.info(
-            "[movePendingUtxosToFederations] Moved {} utxos to active federation and {} utxos to retiring federation for btcTxId {}",
-            utxosToActiveFederation.size(),
-            utxosToRetiringFederation.size(),
-            btcTxId
-        );
-    }
-
-    private static UTXO withHeight(UTXO utxo, int height) {
-        return new UTXO(
-            utxo.getHash(),
-            utxo.getIndex(),
-            utxo.getValue(),
-            height,
-            utxo.isCoinbase(),
-            utxo.getScript()
-        );
     }
 
     @Nullable

@@ -6,6 +6,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.UTXO;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,7 +14,7 @@ import java.util.List;
 
 /**
  * Codecs and extraction helpers for the parts of a transaction outpoint that the bridge
- * persists and logs: the outpoint values and the output indexes.
+ * persists and logs: the outpoint values and the output indexes. Also helpers to build UTXOs.
  */
 public final class UtxoUtils {
 
@@ -136,5 +137,23 @@ public final class UtxoUtils {
         }
 
         return generatedTransaction.getInputs().stream().map(TransactionInput::getValue).toList();
+    }
+
+    /**
+     * {@link UTXO} is immutable, so changing its height means building a new one.
+     *
+     * @param utxo the UTXO to copy
+     * @param blockHeight the height of the BTC block that includes the transaction creating the UTXO
+     * @return a new UTXO equal to {@code utxo} except for its height, which is {@code blockHeight}
+     */
+    public static UTXO copyWithBlockHeight(UTXO utxo, int blockHeight) {
+        return new UTXO(
+            utxo.getHash(),
+            utxo.getIndex(),
+            utxo.getValue(),
+            blockHeight,
+            utxo.isCoinbase(),
+            utxo.getScript()
+        );
     }
 }
