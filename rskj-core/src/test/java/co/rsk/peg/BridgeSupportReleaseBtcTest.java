@@ -1930,6 +1930,42 @@ class BridgeSupportReleaseBtcTest {
             assertAmountBurnt(DUST_BUMP);
         }
 
+        @Test
+        void processPegoutsInBatch_withoutChange_afterRSKIP643_shouldSettleReleaseWithoutStoringFederationsPendingBtcUTXOs() throws IOException {
+            // arrange
+            setUp(ACTIVATIONS_ALL);
+            // recipients pay the fees, so requesting the whole federation balance leaves no change output
+            Coin federationBalance = Coin.COIN;
+            int pegoutRequests = 1;
+            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
+            addPegoutRequestsToQueue(
+                releaseRequestQueue,
+                pegoutRequests,
+                federationBalance,
+                NETWORK_PARAMETERS
+            );
+            UTXO federationUtxo = UTXOBuilder.builder()
+                .withScriptPubKey(activeFederation.getP2SHScript())
+                .withValue(federationBalance)
+                .build();
+            federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL).add(federationUtxo);
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+
+            // assert
+            int expectedRemainingRequests = 0;
+            assertRemainingRequests(expectedRemainingRequests);
+            assertReleaseRequested(federationBalance, ACTIVATIONS_ALL);
+
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            // only the output to the pegout receiver, no change output to the federation
+            assertEquals(pegoutRequests, releaseTransaction.getOutputs().size());
+
+            assertPegoutTxSigHashWasNotSaved(bridgeStorageProvider, releaseTransaction);
+            assertFederationsPendingBtcUTXOsWereNotSaved(federationSupport, releaseTransaction);
+        }
+
         private void assertRemainingRequests(int expectedRemainingRequests) throws IOException {
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             int remainingRequests = releaseRequestQueue.getEntries().size();

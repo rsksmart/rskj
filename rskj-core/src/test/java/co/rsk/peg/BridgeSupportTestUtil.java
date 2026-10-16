@@ -3,9 +3,11 @@ package co.rsk.peg;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
+import static co.rsk.peg.BridgeEventsTestUtils.getLogsBySignature;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsData;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASES_OUTPOINTS_VALUES;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -37,16 +39,21 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.utils.NonRefundablePeginReason;
+import co.rsk.test.builders.UTXOBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -67,6 +74,7 @@ import org.ethereum.vm.PrecompiledContracts;
 public final class BridgeSupportTestUtil {
 
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
+    private static final ActivationConfig.ForBlock ACTIVATIONS_VETIVER = ActivationConfigsForTest.vetiver900().forBlock(0L);
 
     private BridgeSupportTestUtil() {}
 
@@ -186,6 +194,46 @@ public final class BridgeSupportTestUtil {
         return pmtWithTransactions;
     }
 
+    /**
+     * Builds a registration scenario for a witness-bearing (segwit) transaction that mirrors how it is
+     * actually validated in production: a Bitcoin block header's merkle root is always computed over
+     * txids, never wtxids, so the merkle branch proving inclusion of a segwit transaction's
+     * witness data can never match the block header directly. Instead, that proof is built over the
+     * transaction's wtxid and validated against the witness commitment recorded from the block's
+     * coinbase transaction (RSKIP143).
+     *
+     * @return the wtxid-rooted merkle branch to submit for registration.
+     */
+    public static PartialMerkleTree buildPMTAndRecreateChainForSegwitTransactionRegistration(
+        BridgeStorageProvider bridgeStorageProvider,
+        BridgeConstants bridgeConstants,
+        int btcBlockToRegisterHeight,
+        BtcTransaction transaction,
+        BtcBlockStoreWithCache btcBlockStore
+    ) throws BlockStoreException {
+        // Without a witness getHash(true) == getHash(false), the chosen path would match the
+        // header's merkle root directly and isBlockMerkleRootValid would never take its coinbase path.
+        assertTrue(transaction.hasWitness());
+
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+
+        PartialMerkleTree pmtForBlockHeader = createValidPmtForTransactionsHashes(List.of(transaction.getHash(false)), networkParameters);
+        int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmtForBlockHeader, btcBlockToRegisterHeight, networkParameters);
+        // setMainChainBlock only updates the provider's in-memory height index; save() is required
+        // before it can be read back via getBtcBestBlockHashByHeight/getStoredBlockAtMainChainHeight
+        bridgeStorageProvider.save();
+
+        PartialMerkleTree pmtWithWitness = createValidPmtForTransactionsHashes(List.of(transaction.getHash(true)), networkParameters);
+        Sha256Hash witnessMerkleRoot = pmtWithWitness.getTxnHashAndMerkleRoot(new ArrayList<>());
+
+        BtcBlock registeredBlockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(btcBlockToRegisterHeight).getHeader();
+        bridgeStorageProvider.setCoinbaseInformation(registeredBlockHeader.getHash(), new CoinbaseInformation(witnessMerkleRoot));
+        bridgeStorageProvider.save();
+
+        return pmtWithWitness;
+    }
+
     public static Transaction buildUpdateCollectionsTransaction() {
         return buildUpdateCollectionsTransaction(0);
     }
@@ -232,6 +280,21 @@ public final class BridgeSupportTestUtil {
         PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
 
         return pegoutEntry.getBtcTransaction();
+    }
+
+    public static List<UTXO> buildExpectedUtxosRegistered(BtcTransaction btcTx, Federation federation, int expectedBtcTxHeight) {
+        Script federationScript = federation.getP2SHScript();
+        return btcTx.getOutputs().stream()
+            .filter(output -> output.getScriptPubKey().equals(federationScript))
+            .map(output -> UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .withOutpointIndex(output.getIndex())
+                .withValue(output.getValue())
+                .withBlockHeight(expectedBtcTxHeight)
+                .withScriptPubKey(output.getScriptPubKey())
+                .build()
+            )
+            .toList();
     }
 
     public static boolean shouldMarkRejectedPeginAsProcessed(ActivationConfig.ForBlock activations) {
@@ -318,20 +381,71 @@ public final class BridgeSupportTestUtil {
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
 
-    public static void assertReleaseWasSettled(
-        Repository repository,
+    public static void assertLegacyReleaseRejectionWasSettled(
         BridgeStorageProvider bridgeStorageProvider,
         List<LogInfo> logs,
         long executionBlock,
         Keccak256 releaseCreationTxHash,
         BtcTransaction releaseTransaction,
-        List<Coin> expectedOutpointsValues,
         Coin totalAmountRequested,
         ActivationConfig.ForBlock activations
     ) throws IOException {
+        Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
+
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock, activations);
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, executionBlock, activations);
+        assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
+
+        // The peg-in was rejected, so it must not have been logged as a registered peg-in,
+        // and since the rejection was refunded it must not have been logged as non-refundable either.
+        assertEventWasNotEmitted(logs, BridgeEvents.PEGIN_BTC.getEvent());
+        assertEventWasNotEmitted(logs, BridgeEvents.UNREFUNDABLE_PEGIN.getEvent());
+
+        // The refund pegout's outpoint values are only logged from RSKIP428 onwards.
+        assertEventWasNotEmitted(logs, BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent());
+
+        // A refund pegout is settled through BridgeSupport.settleReleaseRejection, which unlike
+        // settleReleaseRequest does not index the pegout in the pegout tx index. Pinning this is the
+        // whole point: were the refund indexed at creation time, registering it later would be
+        // recognised through the index instead of taking the path this rejection is testing.
+        assertPegoutTxSigHashWasNotSaved(bridgeStorageProvider, releaseTransaction);
+    }
+
+    public static void assertReleaseWasSettled(
+        Repository repository,
+        BridgeStorageProvider bridgeStorageProvider,
+        FederationStorageProvider federationStorageProvider,
+        FederationSupport federationSupport,
+        List<LogInfo> logs,
+        long executionBlock,
+        Keccak256 releaseCreationTxHash,
+        BtcTransaction releaseTransaction,
+        List<Coin> expectedOutpointsValues,
+        Coin totalAmountRequested
+    ) throws IOException {
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock, ACTIVATIONS_ALL);
+        assertPegoutTxSigHashWasNotSaved(bridgeStorageProvider, releaseTransaction);
+        assertFederationsPendingBtcUTXOsWereSaved(federationStorageProvider, federationSupport, releaseTransaction);
+        assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransaction.getHash(), totalAmountRequested);
+        assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
+    }
+
+    public static void assertReleaseWasSettledForVetiver(
+        Repository repository,
+        BridgeStorageProvider bridgeStorageProvider,
+        FederationSupport federationSupport,
+        List<LogInfo> logs,
+        long executionBlock,
+        Keccak256 releaseCreationTxHash,
+        BtcTransaction releaseTransaction,
+        List<Coin> expectedOutpointsValues,
+        Coin totalAmountRequested
+    ) throws IOException {
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock, ACTIVATIONS_VETIVER);
         assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
+        assertFederationsPendingBtcUTXOsWereNotSaved(federationSupport, releaseTransaction);
         assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransaction.getHash(), totalAmountRequested);
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
@@ -346,12 +460,50 @@ public final class BridgeSupportTestUtil {
         assertTrue(pegoutEntry.isPresent());
     }
 
+    public static void assertFederationsPendingBtcUTXOsWereSaved(
+        FederationStorageProvider federationStorageProvider,
+        FederationSupport federationSupport,
+        BtcTransaction releaseTransaction
+    ) {
+        Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
+        List<Script> liveFederationsOutputScripts = federationSupport.getLiveFederations().stream()
+            .map(Federation::getP2SHScript)
+            .toList();
+        List<UTXO> expectedPendingUtxos = releaseTransaction.getOutputs().stream()
+            .filter(output -> liveFederationsOutputScripts.contains(output.getScriptPubKey()))
+            .map(output -> new UTXO(
+                releaseTransactionHash,
+                output.getIndex(),
+                output.getValue(),
+                0,
+                false,
+                output.getScriptPubKey()
+            ))
+            .toList();
+
+        Optional<List<UTXO>> pendingUtxos = federationStorageProvider.getFederationsPendingBtcUTXOs(releaseTransactionHash);
+        assertTrue(pendingUtxos.isPresent());
+        assertUtxosAreEqual(expectedPendingUtxos, pendingUtxos.get());
+    }
+
+    public static void assertFederationsPendingBtcUTXOsWereNotSaved(FederationSupport federationSupport, BtcTransaction releaseTransaction) {
+        assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(releaseTransaction.getHash()));
+    }
+
     public static void assertPegoutTxSigHashWasSaved(BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTransaction) {
         Optional<Sha256Hash> pegoutTxSigHashOpt = BitcoinUtils.getSigHashForPegoutIndex(pegoutTransaction);
         assertTrue(pegoutTxSigHashOpt.isPresent());
 
         Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
         assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(pegoutTxSigHash));
+    }
+
+    public static void assertPegoutTxSigHashWasNotSaved(BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTransaction) {
+        Optional<Sha256Hash> pegoutTxSigHashOpt = BitcoinUtils.getSigHashForPegoutIndex(pegoutTransaction);
+        assertTrue(pegoutTxSigHashOpt.isPresent());
+
+        Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
+        assertFalse(bridgeStorageProvider.hasPegoutTxSigHash(pegoutTxSigHash));
     }
 
     public static void assertReleaseTransactionInfoWasProcessed(
@@ -389,6 +541,66 @@ public final class BridgeSupportTestUtil {
 
         assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
         assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    public static void assertLogUtxosRegistered(
+        List<LogInfo> logs,
+        Sha256Hash btcTxHash,
+        List<Coin> expectedValuesInSatoshis,
+        List<Long> expectedOutputIndexes,
+        Address expectedFederationAddress
+    ) {
+        CallTransaction.Function utxosRegisteredEvent = BridgeEvents.UTXOS_REGISTERED.getEvent();
+        byte[] btcTxHashSerialized = btcTxHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(utxosRegisteredEvent, btcTxHashSerialized);
+
+        byte[] serializedValuesInSatoshis = UtxoUtils.encodeOutpointValues(expectedValuesInSatoshis);
+        byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(expectedOutputIndexes);
+        byte[] encodedData = getEncodedData(
+            utxosRegisteredEvent,
+            serializedValuesInSatoshis,
+            serializedOutputIndexes,
+            expectedFederationAddress.toString()
+        );
+
+        // topics and data must match on the same log; checked separately, they could
+        // come from different utxos_registered logs, since equal registrations share data
+        List<LogInfo> matchingLogs = logs.stream()
+            .filter(log -> log.getTopics().equals(encodedTopics))
+            .filter(log -> Arrays.equals(log.getData(), encodedData))
+            .toList();
+        assertEquals(1, matchingLogs.size());
+    }
+
+    public static void assertLogFlyoverUtxosRegistered(
+        List<LogInfo> logs,
+        Sha256Hash btcTxHash,
+        List<Coin> expectedValuesInSatoshis,
+        List<Long> expectedOutputIndexes,
+        Address expectedFederationAddress,
+        Keccak256 expectedFlyoverDerivationHash
+    ) {
+        CallTransaction.Function flyoverUtxosRegisteredEvent = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
+        byte[] btcTxHashSerialized = btcTxHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(flyoverUtxosRegisteredEvent, btcTxHashSerialized);
+
+        byte[] serializedValuesInSatoshis = UtxoUtils.encodeOutpointValues(expectedValuesInSatoshis);
+        byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(expectedOutputIndexes);
+        byte[] encodedData = getEncodedData(
+            flyoverUtxosRegisteredEvent,
+            serializedValuesInSatoshis,
+            serializedOutputIndexes,
+            expectedFederationAddress.toString(),
+            expectedFlyoverDerivationHash.getBytes()
+        );
+
+        // topics and data must match on the same log; checked separately, they could
+        // come from different flyover_utxos_registered logs, since equal registrations share data
+        List<LogInfo> matchingLogs = logs.stream()
+            .filter(log -> log.getTopics().equals(encodedTopics))
+            .filter(log -> Arrays.equals(log.getData(), encodedData))
+            .toList();
+        assertEquals(1, matchingLogs.size());
     }
 
     private static void assertReleaseOutpointsValuesWereSaved(Repository repository, BridgeStorageProvider bridgeStorageProvider, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
@@ -474,5 +686,10 @@ public final class BridgeSupportTestUtil {
     public static void assertEventWasEmittedWithExpectedData(List<LogInfo> logs, byte[] expectedData) {
         Optional<LogInfo> data = getLogsData(logs, expectedData);
         assertTrue(data.isPresent());
+    }
+
+    public static void assertEventWasNotEmitted(List<LogInfo> logs, CallTransaction.Function bridgeEvent) {
+        List<LogInfo> event = getLogsBySignature(logs, bridgeEvent);
+        assertEquals(0, event.size());
     }
 }

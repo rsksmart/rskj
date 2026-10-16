@@ -220,7 +220,8 @@ public class ActivationConfigsForTest {
         return new ArrayList<>(List.of(
             ConsensusRule.RSKIP378,
             ConsensusRule.RSKIP455,
-            ConsensusRule.RSKIP559
+            ConsensusRule.RSKIP559,
+            ConsensusRule.RSKIP643
         ));
     }
 

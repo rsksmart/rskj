@@ -322,7 +322,7 @@ class PegUtilsGetTransactionTypeTest {
         );
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
+        FederationTestUtils.spendFromFed(unknownFed, signers, btcTransaction);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
@@ -359,7 +359,7 @@ class PegUtilsGetTransactionTypeTest {
         );
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
         btcTransaction.addOutput(PegTestUtils.createBech32Output(btcMainnetParams, Coin.COIN));
-        FederationTestUtils.addSignatures(unknownFed, unknownFedSigners, btcTransaction);
+        FederationTestUtils.spendFromFed(unknownFed, unknownFedSigners, btcTransaction);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
@@ -1009,7 +1009,7 @@ class PegUtilsGetTransactionTypeTest {
         );
         btcTransaction.addOutput(Coin.COIN, userAddress);
 
-        FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
+        FederationTestUtils.spendFromFed(activeFederation, activeFedSigners, btcTransaction);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
@@ -1096,7 +1096,7 @@ class PegUtilsGetTransactionTypeTest {
             btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30 ));
         }
 
-        FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
+        FederationTestUtils.spendFromFed(activeFederation, activeFedSigners, btcTransaction);
 
         if (activations.isActive(ConsensusRule.RSKIP379)) {
             Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
@@ -1154,7 +1154,7 @@ class PegUtilsGetTransactionTypeTest {
             btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30 ));
         }
 
-        FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
+        FederationTestUtils.spendFromFed(activeFederation, activeFedSigners, btcTransaction);
 
         if (activations.isActive(ConsensusRule.RSKIP379)) {
             Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
@@ -1199,7 +1199,7 @@ class PegUtilsGetTransactionTypeTest {
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
 
-        FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
+        FederationTestUtils.spendFromFed(activeFederation, activeFedSigners, btcTransaction);
 
         if (activations.isActive(ConsensusRule.RSKIP379)) {
             Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
@@ -1419,7 +1419,7 @@ class PegUtilsGetTransactionTypeTest {
             btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), activeFederation.getAddress());
         }
 
-        FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
+        FederationTestUtils.spendFromFed(retiringFederation, retiringFedSigners, btcTransaction);
 
         if (activations.isActive(ConsensusRule.RSKIP379)) {
             Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
@@ -1484,7 +1484,7 @@ class PegUtilsGetTransactionTypeTest {
             btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), activeFederation.getAddress());
         }
 
-        FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
+        FederationTestUtils.spendFromFed(retiringFederation, retiringFedSigners, btcTransaction);
 
         if (activations.isActive(ConsensusRule.RSKIP379)) {
             Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
@@ -1535,7 +1535,7 @@ class PegUtilsGetTransactionTypeTest {
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         btcTransaction.addOutput(minimumPegoutTxValue, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
+        FederationTestUtils.spendFromFed(retiringFederation, retiringFedSigners, btcTransaction);
 
         if (activations.isActive(ConsensusRule.RSKIP379)) {
             Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
@@ -1824,7 +1824,7 @@ class PegUtilsGetTransactionTypeTest {
         migrationTx.addInput(fundingTx.getOutput(FIRST_OUTPUT_INDEX)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
+        FederationTestUtils.spendFromFed(retiringFederation, retiringFedSigners, migrationTx);
 
         Sha256Hash firstInputSigHash = migrationTx.hashForSignature(
             FIRST_INPUT_INDEX,
@@ -1900,7 +1900,7 @@ class PegUtilsGetTransactionTypeTest {
             migrationTx.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
         }
 
-        FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
+        FederationTestUtils.spendFromFed(retiringFederation, retiringFedSigners, migrationTx);
 
         Sha256Hash firstInputSigHash = migrationTx.hashForSignature(
             FIRST_INPUT_INDEX,
@@ -1977,7 +1977,7 @@ class PegUtilsGetTransactionTypeTest {
             btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
         }
 
-        FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
+        FederationTestUtils.spendFromFed(retiringFederation, retiringFedSigners, btcTransaction);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
@@ -2166,7 +2166,7 @@ class PegUtilsGetTransactionTypeTest {
         );
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
+        FederationTestUtils.spendFromFed(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
 
         assertTrue(PegUtilsLegacy.txIsFromOldFederation(migrationTx, oldFederation.getAddress()));
 
@@ -2208,7 +2208,7 @@ class PegUtilsGetTransactionTypeTest {
         );
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, migrationTx);
+        FederationTestUtils.spendFromFed(retiredFed, retiredFedSigners, migrationTx);
 
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(migrationTx);
         assertTrue(firstInputSigHash.isPresent());
@@ -2280,7 +2280,7 @@ class PegUtilsGetTransactionTypeTest {
         );
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(retiredFederation, fedKeys, migrationTx);
+        FederationTestUtils.spendFromFed(retiredFederation, fedKeys, migrationTx);
 
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(migrationTx);
         assertTrue(firstInputSigHash.isPresent());
