@@ -616,13 +616,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            svpFundTx.getHash(),
+        signAndRegisterPegoutTransaction(
+            svpFundTx,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertPegoutWasNotRegistered(svpFundTx);
@@ -705,13 +705,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            svpFundTx.getHash(),
+        signAndRegisterPegoutTransaction(
+            svpFundTx,
+            activeFederation,
+            activeFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertChangeWasRegisteredInActiveFed(svpFundTx, OUTPUT_INDEX_FOR_SVP_FUND_TX_CHANGE);
