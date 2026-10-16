@@ -95,7 +95,7 @@ class BridgeSupportSvpTest {
 
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
 
-    private final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeys(9);
+    private final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeys(9, "seed");
     private final List<BtcECKey> proposedFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
         "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
         "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19", "member20"

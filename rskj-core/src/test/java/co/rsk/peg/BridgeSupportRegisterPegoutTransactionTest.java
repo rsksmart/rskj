@@ -131,21 +131,20 @@ class BridgeSupportRegisterPegoutTransactionTest {
     // the svp fund tx change output is added last, after the proposed and flyover proposed federations outputs
     private static final long OUTPUT_INDEX_FOR_SVP_FUND_TX_CHANGE = 2L;
 
-    private static final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeys(20);
+    private static final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeys(20, "active");
     private static final Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
         .withMembersBtcPublicKeys(activeFederationKeys)
         .withCreationBlockNumber(ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER)
         .build();
-    private static final List<BtcECKey> retiringFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
-        "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
-        "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19", "member20"
-    }, true);
+    private static final List<BtcECKey> retiringFederationKeys = BitcoinTestUtils.getBtcEcKeys(20, "retiring");
     private static final Federation retiringFederation = P2shP2wshErpFederationBuilder.builder()
         .withMembersBtcPublicKeys(retiringFederationKeys)
         .withCreationBlockNumber(0L)
         .build();
+    private static final List<BtcECKey> proposedFederationKeys = BitcoinTestUtils.getBtcEcKeys(20, "proposed");
     // the proposed federation is created along with the svp fund tx
     private static final Federation proposedFederation = P2shP2wshErpFederationBuilder.builder()
+        .withMembersBtcPublicKeys(proposedFederationKeys)
         .withCreationBlockNumber(SVP_FUND_TX_CREATION_BLOCK_NUMBER)
         .build();
     private static final Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
@@ -650,13 +649,13 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // act
-        bridgeSupport.registerPegoutTransaction(
-            rskTx,
-            svpSpendTx.getHash(),
+        signAndRegisterPegoutTransaction(
+            svpSpendTx,
+            proposedFederation,
+            proposedFederationKeys,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
-            pmt.bitcoinSerialize()
+            pmt
         );
-        bridgeSupport.save();
 
         // assert
         assertPegoutWasNotRegistered(svpSpendTx);

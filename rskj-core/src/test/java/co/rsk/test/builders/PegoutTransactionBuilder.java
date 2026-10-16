@@ -21,7 +21,7 @@ public class PegoutTransactionBuilder {
     private boolean signTransaction;
 
     private PegoutTransactionBuilder() {
-        List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeys(20);
+        List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeys(20, "seed");
         this.activeFederation = P2shP2wshErpFederationBuilder.builder()
             .withMembersBtcPublicKeys(defaultKeys)
             .build();
