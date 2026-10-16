@@ -5,16 +5,19 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.test.builders.UTXOBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,6 +46,7 @@ class UtxoUtilsTest {
     // FE announces a five byte VarInt, followed by 0xFFFFFFFF
     private static final String ENCODED_MAX_OUTPUT_INDEX = "FEFFFFFFFF";
     private static final Address testAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "test");
+    private static final int BLOCK_HEIGHT = 850_000;
 
     private static Stream<Arguments> validOutpointValues() {
         List<Arguments> arguments = new ArrayList<>();
@@ -434,5 +438,61 @@ class UtxoUtilsTest {
         // act & assert
         assertThrows(InvalidOutputIndexException.class,
             () -> UtxoUtils.decodeOutputIndexes(encodedOutputIndexes));
+    }
+
+    @Test
+    void copyWithBlockHeight_shouldReturnUtxoWithTheGivenBlockHeightAndTheSameOtherFields() {
+        // arrange
+        UTXO utxo = UTXOBuilder.builder()
+            .withTransactionHash(BitcoinTestUtils.createHash(1))
+            .withOutpointIndex(3)
+            .withValue(Coin.valueOf(50_000))
+            .withBlockHeight(0)
+            .withScriptPubKey(TEST_ERP_FEDERATION.getP2SHScript())
+            .build();
+
+        // act
+        UTXO copiedUtxo = UtxoUtils.copyWithBlockHeight(utxo, BLOCK_HEIGHT);
+
+        // assert
+        assertEquals(BLOCK_HEIGHT, copiedUtxo.getHeight());
+        assertSameFieldsExceptHeight(utxo, copiedUtxo);
+    }
+
+    @Test
+    void copyWithBlockHeight_shouldNotChangeTheOriginalUtxo() {
+        // arrange
+        int originalBlockHeight = 100;
+        UTXO utxo = UTXOBuilder.builder()
+            .withBlockHeight(originalBlockHeight)
+            .build();
+
+        // act
+        UtxoUtils.copyWithBlockHeight(utxo, BLOCK_HEIGHT);
+
+        // assert
+        assertEquals(originalBlockHeight, utxo.getHeight());
+    }
+
+    @Test
+    void copyWithBlockHeight_withCoinbaseUtxo_shouldKeepItAsCoinbase() {
+        // arrange
+        UTXO coinbaseUtxo = UTXOBuilder.builder()
+            .isCoinbase(true)
+            .build();
+
+        // act
+        UTXO copiedUtxo = UtxoUtils.copyWithBlockHeight(coinbaseUtxo, BLOCK_HEIGHT);
+
+        // assert
+        assertTrue(copiedUtxo.isCoinbase());
+    }
+
+    private static void assertSameFieldsExceptHeight(UTXO expectedUtxo, UTXO actualUtxo) {
+        assertEquals(expectedUtxo.getHash(), actualUtxo.getHash());
+        assertEquals(expectedUtxo.getIndex(), actualUtxo.getIndex());
+        assertEquals(expectedUtxo.getValue(), actualUtxo.getValue());
+        assertEquals(expectedUtxo.isCoinbase(), actualUtxo.isCoinbase());
+        assertEquals(expectedUtxo.getScript(), actualUtxo.getScript());
     }
 }
