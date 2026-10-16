@@ -18,8 +18,12 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
+import org.ethereum.TestUtils;
+import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionTypePrefix;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -56,5 +60,33 @@ class TxValidatorGasLimitValidatorTest {
         TxValidatorGasLimitValidator tvglv = new TxValidatorGasLimitValidator();
 
         Assertions.assertFalse(tvglv.validate(tx1, null, gl, null, Long.MAX_VALUE, false).transactionIsValid());
+    }
+
+    @Test
+    void legacyGasLimitEncodedEmpty_isRejectedAsByLegacyValidation() {
+        TxValidatorGasLimitValidator tvglv = new TxValidatorGasLimitValidator();
+        BigInteger gl = BigInteger.valueOf(6_800_000);
+
+        Assertions.assertFalse(tvglv.validate(decodedLegacyTransaction(new byte[0]), null, gl, null, Long.MAX_VALUE, true).transactionIsValid());
+        Assertions.assertTrue(tvglv.validate(decodedLegacyTransaction(new byte[]{0}), null, gl, null, Long.MAX_VALUE, true).transactionIsValid());
+    }
+
+    private static Transaction decodedLegacyTransaction(byte[] gasLimit) {
+        Transaction tx = new Transaction(
+                new byte[0],
+                Coin.valueOf(1L),
+                gasLimit,
+                TestUtils.generateAddress("receiver"),
+                Coin.ZERO,
+                null,
+                (byte) 33,
+                false,
+                TransactionTypePrefix.legacy(),
+                null,
+                null,
+                null,
+                null);
+        tx.sign(TestUtils.generateECKey("sender").getPrivKeyBytes());
+        return new ImmutableTransaction(tx.getEncoded());
     }
 }

@@ -913,6 +913,27 @@ class EthModuleTest {
                 "Invalid transaction signature");
     }
 
+    @Test
+    void sendRawTransaction_legacyGasLimitEncodedEmpty_reportsMissingParameterBeforeChainId() {
+        Transaction tx = new Transaction(
+                new byte[]{1},
+                Coin.valueOf(1_000_000_000L),
+                new byte[0],
+                new RskAddress(new byte[20]),
+                Coin.valueOf(1L),
+                null,
+                (byte) 31,
+                false,
+                TransactionTypePrefix.legacy(),
+                null,
+                null,
+                null,
+                null);
+        tx.sign(ECKey.fromPrivate(BigInteger.ONE).getPrivKeyBytes());
+        assertSendRawTransactionError("0x" + Hex.toHexString(tx.getEncoded()),
+                "Missing parameter, gasPrice, gas or value");
+    }
+
     private static void assertSendRawTransactionError(String rawHex, String expectedMessage) {
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
