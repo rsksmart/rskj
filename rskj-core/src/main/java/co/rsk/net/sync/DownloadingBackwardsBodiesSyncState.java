@@ -94,7 +94,18 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSelectedPeerSyncSta
             return;
         }
 
-        requestedHeader.setExtension(body.getBlockHeaderExtension());
+        // setExtension is wrapped on purpose: a mismatched extension (wrong
+        // version for this header, or missing where one is required) is invalid
+        // wire data and must be scored against the peer instead of escaping.
+        try {
+            requestedHeader.setExtension(body.getBlockHeaderExtension());
+        } catch (IllegalArgumentException ex) {
+            peersInformation.reportEventToPeerScoring(peer, EventType.INVALID_MESSAGE,
+                    "Invalid body response (mismatched extension) received on {}",
+                    this.getClass());
+            return;
+        }
+
         Block block = blockFactory.newBlock(requestedHeader, body.getTransactions(), body.getUncles());
         block.seal();
 
