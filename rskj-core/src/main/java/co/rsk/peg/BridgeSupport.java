@@ -21,6 +21,7 @@ import static co.rsk.peg.BridgeUtils.*;
 import static co.rsk.peg.PegUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
+import static co.rsk.peg.bitcoin.UtxoUtils.copyWithBlockHeight;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static java.util.Objects.isNull;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
@@ -891,33 +892,65 @@ public class BridgeSupport {
     so they can be used as inputs.
      */
     private void registerNewUTXOsByTxId(Sha256Hash btcTxId, int btcTxHeight) {
-        List<UTXO> pendingUtxos = federationSupport.getFederationsPendingBtcUTXOs(btcTxId);
-        federationSupport.movePendingUtxosToFederations(btcTxId, btcTxHeight);
-        logPendingUtxosRegistered(btcTxId, pendingUtxos);
+        Script activeFederationScript = getActiveFederation().getP2SHScript();
+        Optional<Script> retiringFederationScript = getRetiringFederation().map(Federation::getP2SHScript);
+
+        List<UTXO> utxosToTheActiveFederation = new ArrayList<>();
+        List<UTXO> utxosToTheRetiringFederation = new ArrayList<>();
+        for (UTXO pendingUtxo : federationSupport.getFederationsPendingBtcUTXOs(btcTxId)) {
+            UTXO utxo = copyWithBlockHeight(pendingUtxo, btcTxHeight);
+            // checked first so a utxo is never registered to both federations when they share the same script
+            if (utxo.getScript().equals(activeFederationScript)) {
+                utxosToTheActiveFederation.add(utxo);
+            } else if (retiringFederationScript.filter(utxo.getScript()::equals).isPresent()) {
+                utxosToTheRetiringFederation.add(utxo);
+            } else {
+                logger.warn(
+                    "[registerNewUTXOsByTxId] Discarding utxo with index {} and value {} for btcTxId {}. Its script {} does not match any live federation",
+                    utxo.getIndex(),
+                    utxo.getValue(),
+                    btcTxId,
+                    utxo.getScript()
+                );
+            }
+        }
+
+        registerPendingUtxosToTheActiveFederation(btcTxId, utxosToTheActiveFederation);
+        registerPendingUtxosToTheRetiringFederation(btcTxId, utxosToTheRetiringFederation);
+        federationSupport.removeFederationsPendingBtcUTXOs(btcTxId);
         logger.info("[registerNewUTXOsByTxId] Registered pending UTXOs for BTC Tx {}", btcTxId);
     }
 
-    private void logPendingUtxosRegistered(Sha256Hash btcTxId, List<UTXO> pendingUtxos) {
-        Federation activeFederation = getActiveFederation();
+    private void registerPendingUtxosToTheActiveFederation(Sha256Hash btcTxId, List<UTXO> utxosToTheActiveFederation) {
+        // reading the federation utxos marks them to be saved, so skip it when there is nothing to add
+        if (utxosToTheActiveFederation.isEmpty()) {
+            return;
+        }
+
+        federationSupport.getActiveFederationBtcUTXOs().addAll(utxosToTheActiveFederation);
         logUtxosRegistered(
             btcTxId,
-            getUtxosSentToFederation(pendingUtxos, activeFederation),
-            activeFederation.getAddress()
+            utxosToTheActiveFederation,
+            federationSupport.getActiveFederationAddress()
         );
-        getRetiringFederation().ifPresent(retiringFederation ->
-            logUtxosRegistered(
-                btcTxId,
-                getUtxosSentToFederation(pendingUtxos, retiringFederation),
-                retiringFederation.getAddress()
-            )
-        );
+        logger.debug("[registerPendingUtxosToTheActiveFederation] Registered {} UTXOs sent to the active federation", utxosToTheActiveFederation.size());
     }
 
-    private static List<UTXO> getUtxosSentToFederation(List<UTXO> utxos, Federation federation) {
-        Script federationScript = federation.getP2SHScript();
-        return utxos.stream()
-            .filter(utxo -> utxo.getScript().equals(federationScript))
-            .toList();
+    private void registerPendingUtxosToTheRetiringFederation(Sha256Hash btcTxId, List<UTXO> utxosToTheRetiringFederation) {
+        // reading the federation utxos marks them to be saved, so skip it when there is nothing to add
+        if (utxosToTheRetiringFederation.isEmpty()) {
+            return;
+        }
+        Address retiringFederationAddress = federationSupport.getRetiringFederationAddress()
+            .orElseThrow(() -> new IllegalStateException("UTXOs sent to the retiring federation exist without a retiring federation"));
+
+        federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosToTheRetiringFederation);
+        logUtxosRegistered(
+            btcTxId,
+            utxosToTheRetiringFederation,
+            retiringFederationAddress
+        );
+        logger.debug("[registerPendingUtxosToTheRetiringFederation] Registered {} UTXOs sent to the retiring federation", utxosToTheRetiringFederation.size());
     }
 
     private void logUtxosRegistered(Sha256Hash btcTxHash, List<UTXO> registeredUtxos, Address federationAddress) {
