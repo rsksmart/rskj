@@ -422,14 +422,19 @@ In this example, blocks will be imported from the file `/path/to/blocks_file.txt
 
 The `ExecuteBlocks` command is a tool for executing blocks for a specified block range. This command is useful for testing purposes, debugging or for analyzing the behavior of a blockchain in a given range of blocks.
 
+Blocks are re-executed from the node's own block store -- they are not fetched from peers -- and each one is checked against the state root its header claims. That makes it a way to check that a change did not break consensus over past history. Executing block N requires the state at block N-1 to be present in the trie store, so the range is limited to the history this node actually retains.
+
+The tool exits with a non-zero status if any block fails, so it can be used as a pass/fail check. A block that produces no final state -- because it was rejected, for instance for creating native currency out of nothing -- is reported by block number and reason.
+
 **Usage:**
 
-- `java -cp rsk.jar co.rsk.cli.tools.ExecuteBlocks -fb <from_block_number> -tb <to_block_number> --<network_flag>`
+- `java -cp rsk.jar co.rsk.cli.tools.ExecuteBlocks -fb <from_block_number> -tb <to_block_number> [--saveState=<true|false>] --<network_flag>`
 
 **Options:**
 
 - `-fb, --fromBlock`: The starting block number.
 - `-tb, --toBlock`: The ending block number.
+- `-ss, --saveState`: Whether to persist the state produced by each block. Defaults to `false`, so verifying a range does not write to the database. The state roots are still checked, because executing a block only needs its parent's state, which is already in the store. Pass `--saveState=true` to write the produced state back.
 
 **Example:**
 

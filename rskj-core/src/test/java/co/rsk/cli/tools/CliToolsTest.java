@@ -23,6 +23,8 @@ import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.RepositoryLocator;
@@ -249,6 +251,163 @@ class CliToolsTest {
         Assertions.assertEquals(2, world.getBlockChain().getBestBlock().getNumber());
 
         verify(stopper).stop(0);
+    }
+
+    /**
+     * The same replay, without writing the produced state back to the database. The state roots are
+     * still checked: executing a block only needs its parent's state, which is already in the store.
+     */
+    @Test
+    void executeBlocksWithoutSavingState() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String[] args = new String[]{"--fromBlock", "1", "--toBlock", "2", "--saveState=false"};
+
+        RskContext rskContext = executeBlocksContext(world);
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        new ExecuteBlocks().execute(args, () -> rskContext, stopper);
+
+        Assertions.assertEquals(2, world.getBlockChain().getBestBlock().getNumber());
+        verify(stopper).stop(0);
+    }
+
+    /**
+     * A block rejected for creating native currency carries no final state. The tool must say so and
+     * fail, rather than dereferencing the missing state and dying with a NullPointerException.
+     */
+    @Test
+    void executeBlocksReportsSupplyViolationInsteadOfFailingOnTheMissingState()
+            throws FileNotFoundException, DslProcessorException {
+        assertRejectionIsReportedCleanly(BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT);
+    }
+
+    @Test
+    void executeBlocksReportsInterruptedExecutionInsteadOfFailingOnTheMissingState()
+            throws FileNotFoundException, DslProcessorException {
+        assertRejectionIsReportedCleanly(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT);
+    }
+
+    private void assertRejectionIsReportedCleanly(BlockResult rejection)
+            throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        BlockExecutor rejectingExecutor = mock(BlockExecutor.class);
+        Mockito.when(rejectingExecutor.execute(
+                        Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.any(),
+                        Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+                .thenReturn(rejection);
+
+        BlockStore blockStore = Mockito.spy(world.getBlockStore());
+
+        RskContext rskContext = executeBlocksContext(world);
+        doReturn(rejectingExecutor).when(rskContext).getBlockExecutor();
+        doReturn(blockStore).when(rskContext).getBlockStore();
+
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        String[] args = new String[]{"--fromBlock", "1", "--toBlock", "2", "--saveState=false"};
+
+        new ExecuteBlocks().execute(args, () -> rskContext, stopper);
+
+        // The tool shut down in an orderly way rather than dying partway through. This is what
+        // distinguishes a reported rejection from a NullPointerException on the missing final
+        // state: both would end in stop(1), because the framework turns a thrown exception into a
+        // non-zero exit too, but only the orderly path reaches the flush.
+        verify(blockStore).flush();
+
+        // Non-zero exit, so the replay can be used as a pass/fail consensus check.
+        verify(stopper).stop(1);
+    }
+
+    /**
+     * The default must not write to the database: the tool's main use is verifying that a change
+     * did not break consensus, and doing that should not mutate the state it is verifying against.
+     */
+    @Test
+    void executeBlocksDoesNotSaveStateUnlessAsked() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        BlockExecutor blockExecutor = Mockito.spy(world.getBlockExecutor());
+
+        RskContext rskContext = executeBlocksContext(world);
+        doReturn(blockExecutor).when(rskContext).getBlockExecutor();
+
+        // No --saveState on the command line.
+        new ExecuteBlocks().execute(new String[]{"--fromBlock", "1", "--toBlock", "2"},
+                () -> rskContext, mock(NodeStopper.class));
+
+        // The last argument of execute(...) is saveState.
+        verify(blockExecutor, atLeastOnce()).execute(
+                Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.any(),
+                Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.eq(false));
+        verify(blockExecutor, never()).execute(
+                Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.any(),
+                Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.eq(true));
+    }
+
+    @Test
+    void executeBlocksSavesStateWhenAsked() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        BlockExecutor blockExecutor = Mockito.spy(world.getBlockExecutor());
+
+        RskContext rskContext = executeBlocksContext(world);
+        doReturn(blockExecutor).when(rskContext).getBlockExecutor();
+
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        new ExecuteBlocks().execute(new String[]{"--fromBlock", "1", "--toBlock", "2", "--saveState=true"},
+                () -> rskContext, stopper);
+
+        verify(blockExecutor, atLeastOnce()).execute(
+                Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.any(),
+                Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.eq(true));
+        verify(stopper).stop(0);
+    }
+
+    /**
+     * The rejection reasons themselves, so the mapping is pinned independently of how the tool is
+     * driven.
+     */
+    @Test
+    void executeBlocksNamesTheReasonABlockProducedNoState() {
+        String supply = ExecuteBlocks.rejectionReasonOf(BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT);
+        Assertions.assertNotNull(supply);
+        MatcherAssert.assertThat(supply, org.hamcrest.Matchers.containsString("supply conservation"));
+
+        Assertions.assertNotNull(ExecuteBlocks.rejectionReasonOf(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT));
+        Assertions.assertNotNull(ExecuteBlocks.rejectionReasonOf(null));
+
+        // A result that carries a final state is not a rejection.
+        BlockResult usable = mock(BlockResult.class);
+        doReturn(new Trie()).when(usable).getFinalState();
+        Assertions.assertNull(ExecuteBlocks.rejectionReasonOf(usable));
+    }
+
+    private RskContext executeBlocksContext(World world) {
+        RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
+        doReturn(world.getBlockExecutor()).when(rskContext).getBlockExecutor();
+        doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
+        doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
+        doReturn(world.getStateRootHandler()).when(rskContext).getStateRootHandler();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        return rskContext;
     }
 
     @Test
