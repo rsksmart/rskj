@@ -22,7 +22,9 @@ import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.KeyValueDataSourceUtils;
+import org.ethereum.datasource.RocksDbDataSource;
 import org.ethereum.util.FileUtil;
+import org.rocksdb.CompressionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
@@ -156,8 +158,19 @@ public class DbMigrate extends PicoCliToolRskContextAware {
     ) {
         logger.info("Preparing data sources for db: {}", dbName);
 
-        KeyValueDataSource sourceDataSource = KeyValueDataSourceUtils.makeDataSource(Paths.get(sourceDbDir, dbName), sourceDbKind);
-        KeyValueDataSource targetDataSource = KeyValueDataSourceUtils.makeDataSource(Paths.get(targetDbDir, dbName), targetDbKind);
+        CompressionType rocksDbCompressionType = RocksDbDataSource.parseCompressionType(
+                ctx.getRskSystemProperties().databaseRocksDbCompressionType()
+        );
+        KeyValueDataSource sourceDataSource = KeyValueDataSourceUtils.makeDataSource(
+                Paths.get(sourceDbDir, dbName),
+                sourceDbKind,
+                rocksDbCompressionType
+        );
+        KeyValueDataSource targetDataSource = KeyValueDataSourceUtils.makeDataSource(
+                Paths.get(targetDbDir, dbName),
+                targetDbKind,
+                rocksDbCompressionType
+        );
 
         logger.info("Data sources prepared successfully");
         logger.info("Preparing indexes for db: {}", dbName);

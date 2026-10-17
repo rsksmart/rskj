@@ -24,8 +24,10 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.RocksDbDataSource;
 import picocli.CommandLine;
 import org.ethereum.datasource.KeyValueDataSourceUtils;
+import org.rocksdb.CompressionType;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -58,7 +60,14 @@ public class ImportState extends PicoCliToolRskContextAware {
         Path unitrieDbPath = Paths.get(databaseDir, "unitrie");
         DbKind currentDbKind = ctx.getDbKind(databaseDir);
 
-        KeyValueDataSource trieDB = KeyValueDataSourceUtils.makeDataSource(unitrieDbPath, currentDbKind);
+        CompressionType rocksDbCompressionType = RocksDbDataSource.parseCompressionType(
+                rskSystemProperties.databaseRocksDbCompressionType()
+        );
+        KeyValueDataSource trieDB = KeyValueDataSourceUtils.makeDataSource(
+                unitrieDbPath,
+                currentDbKind,
+                rocksDbCompressionType
+        );
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             importState(reader, trieDB);
