@@ -421,7 +421,6 @@ public class BridgeSupport {
     }
 
     public void registerPegoutTransaction(
-        Transaction rskTx,
         Sha256Hash btcTxHash,
         int height,
         byte[] pmtSerialized
@@ -448,8 +447,7 @@ public class BridgeSupport {
             markBtcTxHashAsProcessed(btcTxHash);
         } catch (RegisterBtcTransactionException e) {
             logger.warn(
-                "[registerPegoutTransaction][rsk tx {}] Could not register Btc tx {}. Message: {}",
-                rskTx.getHash(),
+                "[registerPegoutTransaction] Could not register Btc tx {}. Message: {}",
                 btcTxHash,
                 e.getMessage()
             );

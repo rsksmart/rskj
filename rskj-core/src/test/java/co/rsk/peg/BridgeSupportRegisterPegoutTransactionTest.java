@@ -310,7 +310,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
         // act
         bridgeSupport.registerPegoutTransaction(
-            rskTx,
             pegin.getHash(),
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
             pmt.bitcoinSerialize()
@@ -336,7 +335,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
         // act
         bridgeSupport.registerPegoutTransaction(
-            rskTx,
             flyoverPegin.getHash(),
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
             pmt.bitcoinSerialize()
@@ -362,7 +360,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
         // act
         bridgeSupport.registerPegoutTransaction(
-            rskTx,
             unknownTransaction.getHash(),
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
             pmt.bitcoinSerialize()
@@ -895,7 +892,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
             pegout
         );
         assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.registerPegoutTransaction(
-            rskTx,
             pegout.getHash(),
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
             pmtWithUnexpectedSize
@@ -932,7 +928,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
             pegout
         );
         assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.registerPegoutTransaction(
-            rskTx,
             pegout.getHash(),
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
             malformedPmt
@@ -964,7 +959,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
         Sha256Hash pegoutWtxid = pegout.getHash(true);
         bridgeSupport.registerPegoutTransaction(
-            rskTx,
             pegoutWtxid,
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
             pmt.bitcoinSerialize()
@@ -992,7 +986,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
             pegout
         );
         assertThrows(BlockStoreException.class, () -> bridgeSupport.registerPegoutTransaction(
-            rskTx,
             pegout.getHash(),
             BTC_BLOCK_WITH_RELEASE_HEIGHT,
             pmt.bitcoinSerialize()
@@ -1072,7 +1065,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
             releaseTransaction
         );
         bridgeSupport.registerPegoutTransaction(
-            rskTx,
             releaseTransaction.getHash(),
             height,
             pmt.bitcoinSerialize()

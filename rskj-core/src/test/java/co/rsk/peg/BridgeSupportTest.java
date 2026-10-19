@@ -7856,7 +7856,6 @@ class BridgeSupportTest {
             );
 
             bridgeSupport.registerPegoutTransaction(
-                tx,
                 pegoutWFS.getHash(),
                 releaseTxBlockNumber,
                 pmtWithReleaseTxId.bitcoinSerialize()
