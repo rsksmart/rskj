@@ -45,9 +45,13 @@ import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigInteger;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static co.rsk.db.ClearedAccountAssertions.assertClearedAccount;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -91,6 +95,8 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     private static final RskAddress CONTRACT_Y = new RskAddress("c0c1c2c3c4c5c6c7c8c9cacbcccdcecf00010203");
     private static final RskAddress SECOND_DELEGATE = new RskAddress("5051525354555657585960616263646566676869");
     private static final RskAddress CONTRACT_G = new RskAddress("606162636465666768696a6b6c6d6e6f00010203");
+    private static final byte OP_CALLCODE = (byte) 0xf2;
+    private static final byte OP_DELEGATECALL = (byte) 0xf4;
     // CREATE(0, 0, 0) POP PUSH1 0 CALLDATALOAD SELFDESTRUCT: the CREATE raises the nonce before the mark
     private static final byte[] CODE_G = Hex.decode("600060006000f050600035ff");
     private static final long BALANCE_A = 777;
@@ -214,11 +220,19 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         assertFalse(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(authorityAddress.getBytes())));
     }
 
-    @Test
-    void delegatedAccountReachedThroughDelegatecallOnlyMovesItsBalance() {
+    /** RSKIP701 case 4: both opcodes run D's SELFDESTRUCT in the context of A, via the same owner address path. */
+    static Stream<Arguments> codeSharingCallOpcodes() {
+        return Stream.of(
+                Arguments.of("DELEGATECALL", OP_DELEGATECALL),
+                Arguments.of("CALLCODE", OP_CALLCODE));
+    }
+
+    @ParameterizedTest(name = "RSKIP701 case 4: delegated account reached through {0} only moves its balance")
+    @MethodSource("codeSharingCallOpcodes")
+    void delegatedAccountReachedThroughCodeSharingCallOnlyMovesItsBalance(String opcodeName, byte opcode) {
         MutableRepository repository = createRepository();
         installContract(repository, CONTRACT_D, BigInteger.ONE, CODE_D, 0);
-        installContract(repository, CONTRACT_E, BigInteger.ONE, codeForwardingByDelegatecallTo(CONTRACT_D), 0);
+        installContract(repository, CONTRACT_E, BigInteger.ONE, codeForwardingTo(opcode, CONTRACT_D), 0);
         createAccountWithBalance(repository, authorityAddress, BALANCE_A);
         createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
         fundSender(repository, SENDER_BALANCE);
@@ -526,9 +540,26 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         repository.addBalance(sender, Coin.valueOf(balance));
     }
 
-    /** CALLDATACOPY(0, 0, CALLDATASIZE) DELEGATECALL(GAS, target, 0, CALLDATASIZE, 0, 0) POP STOP */
-    private static byte[] codeForwardingByDelegatecallTo(RskAddress target) {
-        return ByteUtil.merge(Hex.decode("36600060003760006000366000" + "73"), target.getBytes(), Hex.decode("5af45000"));
+    /**
+     * CALLDATACOPY(0, 0, CALLDATASIZE) DELEGATECALL(GAS, target, 0, CALLDATASIZE, 0, 0) POP STOP
+     * <pre>
+     * 36 6000 6000 37            CALLDATACOPY(0, 0, CALLDATASIZE)
+     * 6000 6000 36 6000          retSize=0, retOffset=0, argsSize=CALLDATASIZE, argsOffset=0
+     * 73 &lt;target&gt; 5a f4         PUSH20 target, GAS, DELEGATECALL
+     * 50 00                      POP STOP
+     * </pre>
+     * For CALLCODE the call takes one more stack argument, the value, so a PUSH1 0 goes between the
+     * arguments offset and the target: CALLCODE(GAS, target, 0, 0, CALLDATASIZE, 0, 0).
+     * <pre>
+     * 36 6000 6000 37 6000 6000 36 6000 | 6000 | 73 &lt;target&gt; 5a f2 50 00
+     * </pre>
+     */
+    private static byte[] codeForwardingTo(byte callOpcode, RskAddress target) {
+        String valueArgument = callOpcode == OP_CALLCODE ? "6000" : "";
+        return ByteUtil.merge(
+                Hex.decode("36600060003760006000366000" + valueArgument + "73"),
+                target.getBytes(),
+                new byte[]{(byte) 0x5a, callOpcode, (byte) 0x50, (byte) 0x00});
     }
 
     /** PUSH20 beneficiary SELFDESTRUCT */

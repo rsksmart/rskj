@@ -145,9 +145,7 @@ public class MutableRepository implements Repository {
         // while every node under the account node (code, storage placeholder, storage cells) is removed.
         delete(addr);
 
-        AccountState cleared = new AccountState(account.getNonce(), Coin.ZERO);
-        cleared.setStateFlags(account.getStateFlags());
-        updateAccountState(addr, cleared);
+        updateAccountState(addr, account.cleared());
     }
 
     @Override

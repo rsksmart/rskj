@@ -157,17 +157,12 @@ public class MutableTrieCache implements MutableTrie {
     ////////////////////////////////////////////////////////////////////////////////////
     @Override
     public void deleteRecursive(byte[] key) {
-        // Can there be wrongly unhandled interactions interactions between put() and deleteRecurse()
-        // In theory, yes. In practice, never.
-        // Suppose that a contract X calls a contract S.
-        // Contract S calls itself with CALL.
-        // Contract S suicides with SUICIDE opcode.
-        // This causes a return to prev contract.
-        // But the SUICIDE DOES NOT cause the storage keys to be removed YET.
-        // Now parent contract S is still running, and it then can create a new storage cell
-        // with SSTORE. This will be stored in the cache as a put(). The cache later receives a
-        // deleteRecursive, BUT NEVER IN THE OTHER order.
-        // See TransactionExecutor.finalization(), when it iterates the list with getDeleteAccounts().forEach()
+        // A put() on the same account after a deleteRecursive() is supported, and
+        // MutableRepository.clearAccount() relies on it (delete the account, then write the account node back).
+        // The delete drops the cached entries of the account and is logged, and commit() applies the logged
+        // deletes before the cached puts. Entries put afterwards are therefore applied on top of the deleted
+        // subtree. Until then, reads of the account (see internalGet and getStorageKeys) ignore the parent trie
+        // and only see the entries put after the delete.
         ByteArrayWrapper wrap = new ByteArrayWrapper(key);
         deleteRecursiveLog.add(wrap);
         cache.remove(wrap);

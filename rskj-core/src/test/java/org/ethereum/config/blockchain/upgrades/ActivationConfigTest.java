@@ -32,9 +32,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigResolveOptions;
+import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
@@ -260,6 +268,46 @@ class ActivationConfigTest {
     void isActive_oneRuleInactive_returnsFalse() {
         ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP351);
         assertFalse(config.areActive(10L, RSKIP85, RSKIP351));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"main", "testnet", "testnet2", "regtest"})
+    void rskip701ActivatesNoLaterThanRskip545_shippedNetworkConfigs(String network) {
+        // same layering as ConfigLoader: the network file overrides the defaults in reference.conf; paths that
+        // depend on the environment are left unresolved, the activation heights do not use them
+        Config blockchainConfig = ConfigFactory.parseResourcesAnySyntax("config/" + network)
+                .withFallback(ConfigFactory.parseResourcesAnySyntax("reference.conf"))
+                .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
+                .getConfig("blockchain.config");
+
+        assertRskip701ActivatesNoLaterThanRskip545(network, blockchainConfig);
+    }
+
+    /**
+     * RSKIP701 spec: "RSKIP545 must not activate before this RSKIP", so RSKIP701 may activate at the same
+     * height as RSKIP545 or earlier. Activation is monotonic, so it is enough to check every height at which
+     * either rule could switch on: wherever RSKIP545 is active, RSKIP701 must be active too.
+     */
+    private static void assertRskip701ActivatesNoLaterThanRskip545(String network, Config blockchainConfig) {
+        ActivationConfig activationConfig = ActivationConfig.read(blockchainConfig);
+
+        Set<Long> candidateHeights = new TreeSet<>();
+        for (String section : new String[]{"hardforkActivationHeights", "consensusRules"}) {
+            for (Map.Entry<String, ConfigValue> entry : blockchainConfig.getConfig(section).entrySet()) {
+                if (entry.getValue().unwrapped() instanceof Number) {
+                    candidateHeights.add(((Number) entry.getValue().unwrapped()).longValue());
+                }
+            }
+        }
+        candidateHeights.removeIf(height -> height < 0);
+
+        for (long height : candidateHeights) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP545, height)) {
+                assertTrue(activationConfig.isActive(ConsensusRule.RSKIP701, height),
+                        String.format("%s: RSKIP545 must not activate before RSKIP701, but RSKIP545 is active and RSKIP701 is not at height %d",
+                                network, height));
+            }
+        }
     }
 
 }
