@@ -225,7 +225,7 @@ public final class PegTestUtils {
     }
 
     /**
-     * @deprecated Use co.rsk.peg.bitcoin.BitcoinTestUtils#getBtcEcKeys(int amount) instead.
+     * @deprecated Use co.rsk.peg.bitcoin.BitcoinTestUtils#getBtcEcKeys(int amount, String seedPrefix) instead.
      * Avoid using random values in tests
      */
     @Deprecated
