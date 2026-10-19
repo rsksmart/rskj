@@ -208,7 +208,7 @@ public final class BridgeSupportTestUtil {
     ) throws BlockStoreException {
         NetworkParameters networkParameters = bridgeConstants.getBtcParams();
 
-        PartialMerkleTree pmtWithTxId = createValidPmtForTransactionsHashes(List.of(transaction.getHash()), networkParameters);
+        PartialMerkleTree pmtWithTxId = createValidPmtForTransactionsHashes(List.of(transaction.getHash(false)), networkParameters);
         int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
         recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTxId, btcBlockToRegisterHeight, networkParameters);
         bridgeStorageProvider.save();
@@ -237,15 +237,9 @@ public final class BridgeSupportTestUtil {
         // header's merkle root directly and isBlockMerkleRootValid would never take its coinbase path.
         assertTrue(transaction.hasWitness());
 
+        buildPMTAndRecreateChainForTxIdRegistration(bridgeStorageProvider, bridgeConstants, btcBlockToRegisterHeight, transaction, btcBlockStore);
+
         NetworkParameters networkParameters = bridgeConstants.getBtcParams();
-
-        PartialMerkleTree pmtForBlockHeader = createValidPmtForTransactionsHashes(List.of(transaction.getHash(false)), networkParameters);
-        int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
-        recreateChainFromPmt(btcBlockStore, chainHeight, pmtForBlockHeader, btcBlockToRegisterHeight, networkParameters);
-        // setMainChainBlock only updates the provider's in-memory height index; save() is required
-        // before it can be read back via getBtcBestBlockHashByHeight/getStoredBlockAtMainChainHeight
-        bridgeStorageProvider.save();
-
         PartialMerkleTree pmtWithWitness = createValidPmtForTransactionsHashes(List.of(transaction.getHash(true)), networkParameters);
         Sha256Hash witnessMerkleRoot = pmtWithWitness.getTxnHashAndMerkleRoot(new ArrayList<>());
 
