@@ -611,7 +611,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         int height = ((BigInteger)args[1]).intValue();
         byte[] pmtSerialized = (byte[]) args[2];
         try {
-            bridgeSupport.registerPegoutTransaction(rskTx, btcTxHash, height, pmtSerialized);
+            logger.trace("[registerPegoutTransaction] btcTxHash: {} rskTxhash: {}", btcTxHash, rskTx.getHash());
+            bridgeSupport.registerPegoutTransaction(btcTxHash, height, pmtSerialized);
         } catch (IOException | BlockStoreException e) {
             logger.warn("Exception in registerPegoutTransaction", e);
             throw new VMException("Exception in registerPegoutTransaction", e);
