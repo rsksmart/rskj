@@ -72,10 +72,6 @@ public class MutableRepository implements Repository {
         this(mutableTrie, aInMemoryMutableTrie(), tracker);
     }
 
-    private static MutableTrieImpl aInMemoryMutableTrie() {
-        return new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie());
-    }
-
     public MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie) {
         this.trieKeyMapper = new TrieKeyMapper();
         this.mutableTrie = mutableTrie;
@@ -88,6 +84,10 @@ public class MutableRepository implements Repository {
         this.mutableTrie = mutableTrie;
         this.transientTrie = transientTrie;
         this.tracker = tracker;
+    }
+
+    private static MutableTrieImpl aInMemoryMutableTrie() {
+        return new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie());
     }
 
     @Override
