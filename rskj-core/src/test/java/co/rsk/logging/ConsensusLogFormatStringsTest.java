@@ -81,7 +81,9 @@ class ConsensusLogFormatStringsTest {
             Arguments.of(PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
             Arguments.of(PARENT_COMPOSITE_RULE, "\"Error Validating block {} {}\""),
             // header-rule attribution: these two forms name the failing rule, the block forms above do not
+            Arguments.of(HEADER_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
             Arguments.of(HEADER_COMPOSITE_RULE, "\"Error Validating {} for header {} {}\""),
+            Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
             Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "\"Error Validating {} for parent header {} {}\""),
             // peer-relay refusal (classifier: uncorroborated unless a local line agrees). The trailing space is part of
             // the literal; forbiddenLiterals() below keeps the colon form out of these files.
