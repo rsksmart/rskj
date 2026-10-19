@@ -1150,14 +1150,13 @@ class BridgeTest {
                 BTC_BLOCK_WITH_PEGOUT_HEIGHT
             );
             assertUtxosAreEqual(expectedUtxosRegistered, federationSupport.getActiveFederationBtcUTXOs());
-            Coin changeValue = pegout.getOutput(OUTPUT_INDEX_FOR_PEGOUT_CHANGE).getValue();
             assertReleaseWasRegistered(
                 bridgeStorageProvider,
                 federationSupport,
                 logs,
                 (int) pegoutRegistrationBlockNumber,
                 pegout,
-                List.of(changeValue),
+                List.of(CHANGE_VALUE),
                 List.of(OUTPUT_INDEX_FOR_PEGOUT_CHANGE),
                 activeFederation.getAddress()
             );
