@@ -5,7 +5,6 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.addPegoutRequestsToQueue;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasNotEmitted;
 import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasRegistered;
-import static co.rsk.peg.BridgeSupportTestUtil.assertTransactionWasProcessed;
 import static co.rsk.peg.BridgeSupportTestUtil.buildExpectedUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.buildPMTAndRecreateChainForTxIdRegistration;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
@@ -13,6 +12,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.createValidPmtForTransactionsHash
 import static co.rsk.peg.BridgeSupportTestUtil.getReleaseFromPegoutsWFC;
 import static co.rsk.peg.BridgeSupportTestUtil.recreateChainFromPmt;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -240,6 +240,33 @@ class BridgeSupportRegisterPegoutTransactionTest {
 
         // assert
         assertChangeWasRegisteredInRetiringFed(pegout);
+    }
+
+    @Test
+    void registerPegoutTransaction_withActiveAndRetiringFedsSharingScript_shouldRegisterChangeOnlyInActiveFed() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        // arrange
+        BtcTransaction pegout = setupPegoutFromActiveFedPayingToUser();
+        setUpBridgeAndFederationSupportWithActiveFederationAsAlsoRetiring();
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pegout,
+            btcBlockStore
+        );
+
+        // act
+        signAndRegisterPegoutTransaction(
+            pegout,
+            activeFederation,
+            activeFederationKeys,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt
+        );
+
+        // assert
+        assertChangeWasRegisteredInActiveFed(pegout, OUTPUT_INDEX_FOR_PEGOUT_CHANGE);
+        assertTrue(federationSupport.getRetiringFederationBtcUTXOs().isEmpty());
     }
 
     @Test
@@ -569,12 +596,10 @@ class BridgeSupportRegisterPegoutTransactionTest {
     }
 
     @Test
-    void registerPegoutTransaction_withTxIdAlreadyProcessed_shouldNotRegister() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+    void registerPegoutTransaction_withPegoutAlreadyProcessed_shouldNotRegisterAgain() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         // arrange
         BtcTransaction pegout = setupPegoutFromActiveFedPayingToUser();
         setUpBridgeAndFederationSupportWithActivations(PEGOUT_REGISTRATION_BLOCK_NUMBER, allActivations);
-        long rskBlockNumberWherePegoutWasProcessed = rskExecutionBlock.getNumber() - 1;
-        bridgeStorageProvider.setHeightBtcTxhashAlreadyProcessed(pegout.getHash(), rskBlockNumberWherePegoutWasProcessed);
         PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
             bridgeStorageProvider,
             bridgeMainnetConstants,
@@ -582,8 +607,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
             pegout,
             btcBlockStore
         );
-
-        // act
         signAndRegisterPegoutTransaction(
             pegout,
             activeFederation,
@@ -592,15 +615,25 @@ class BridgeSupportRegisterPegoutTransactionTest {
             pmt
         );
 
-        // assert
-        assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
-        assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
-        assertTransactionWasProcessed(
-            bridgeStorageProvider,
+        List<UTXO> activeFederationUtxosAfterFirstRegistration = List.copyOf(federationSupport.getActiveFederationBtcUTXOs());
+        List<LogInfo> logsAfterFirstRegistration = List.copyOf(logs);
+        byte[] repositoryRootAfterFirstRegistration = repository.getRoot();
+
+        // act
+        long nextExecutionBlockNumber = PEGOUT_REGISTRATION_BLOCK_NUMBER + 1;
+        setUpBridgeAndFederationSupportWithActivations(nextExecutionBlockNumber, allActivations);
+        bridgeSupport.registerPegoutTransaction(
             pegout.getHash(),
-            (int) rskBlockNumberWherePegoutWasProcessed
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
         );
-        assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
+        bridgeSupport.save();
+
+        // assert
+        assertUtxosAreEqual(activeFederationUtxosAfterFirstRegistration, federationSupport.getActiveFederationBtcUTXOs());
+        assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+        assertEquals(logsAfterFirstRegistration, logs);
+        assertArrayEquals(repositoryRootAfterFirstRegistration, repository.getRoot());
     }
 
     @Test
@@ -1151,6 +1184,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         federationStorageProvider.setOldFederation(activeFederation);
         federationStorageProvider.setNewFederation(proposedFederation);
         setUpBridgeAndFederationSupportWithActivations(PEGOUT_REGISTRATION_WHILE_RETIRING_BLOCK_NUMBER, allActivations);
+    }
+
+    private void setUpBridgeAndFederationSupportWithActiveFederationAsAlsoRetiring() {
+        // the same federation stored as old and new makes the active and retiring federations share the script
+        federationStorageProvider.setOldFederation(activeFederation);
+        setUpBridgeAndFederationSupportWithActivations(PEGOUT_REGISTRATION_BLOCK_NUMBER, allActivations);
     }
 
     private void setUpBridgeAndFederationSupportWithActivations(long executionBlockNumber, ActivationConfig.ForBlock activations) {
