@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 
 
-public class RepositoryTrackingTest {
+class RepositoryTrackingTest {
     public static final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
 
     private MutableRepository repository;
@@ -27,7 +27,7 @@ public class RepositoryTrackingTest {
     private IReadWrittenKeysTracker tracker;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         trieStore = new TrieStoreImpl(new HashMapDB());
         mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
         tracker = new ReadWrittenKeysTracker();
@@ -77,7 +77,8 @@ public class RepositoryTrackingTest {
 
         repository.delete(COW);
 
-        assertRepositoryHasSize(0, 1);
+        // The account key and the storage prefix key
+        assertRepositoryHasSize(0, 2);
     }
 
     @Test
@@ -99,7 +100,8 @@ public class RepositoryTrackingTest {
 
         repository.getStorageBytes(COW, DataWord.valueOf(cowKey));
 
-        assertRepositoryHasSize(1, 0);
+        // The storage cell key and the storage prefix key
+        assertRepositoryHasSize(2, 0);
     }
 
     @Test
