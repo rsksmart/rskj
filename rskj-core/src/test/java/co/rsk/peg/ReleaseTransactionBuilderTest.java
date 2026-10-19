@@ -2470,7 +2470,7 @@ class ReleaseTransactionBuilderTest {
                 retiringFederationAddress = retiringFederation.getAddress();
                 retiringFederationOutputScript = retiringFederation.getP2SHScript();
                 retiringFederationRedeemScript = retiringFederation.getRedeemScript();
-                List<BtcECKey> newFederationMembersKeys = BitcoinTestUtils.getBtcEcKeys(20, "seed");
+                List<BtcECKey> newFederationMembersKeys = BitcoinTestUtils.getBtcEcKeys(20);
                 Federation newFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(newFederationMembersKeys).build();
                 newFederationAddress =  newFederation.getAddress();
 

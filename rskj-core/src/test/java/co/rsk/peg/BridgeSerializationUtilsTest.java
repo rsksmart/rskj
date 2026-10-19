@@ -838,7 +838,7 @@ class BridgeSerializationUtilsTest {
                 .isCoinbase(true)
                 .withScriptPubKey(ScriptBuilder.createOutputScript(OTHER_ADDRESS))
                 .build();
-            Script p2shOutputScript = ScriptBuilder.createP2SHOutputScript(2, BitcoinTestUtils.getBtcEcKeys(3, "seed"));
+            Script p2shOutputScript = ScriptBuilder.createP2SHOutputScript(2, BitcoinTestUtils.getBtcEcKeys(3));
             UTXO multisigUtxoWithHighIndexAndHeight = UTXOBuilder.builder()
                 .withTransactionHash(BitcoinTestUtils.createHash(3))
                 .withOutpointIndex(Integer.MAX_VALUE)

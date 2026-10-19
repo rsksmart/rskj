@@ -1208,7 +1208,7 @@ class BitcoinUtilsTest {
     @Test
     void removeSignaturesFromMultiSigTransaction_whenTransactionIsSegwit_shouldReturnExpectedTx() {
         // arrange
-        List<BtcECKey> federationBtcKeys = BitcoinTestUtils.getBtcEcKeys(20, "seed");
+        List<BtcECKey> federationBtcKeys = BitcoinTestUtils.getBtcEcKeys(20);
         Federation federation = P2shP2wshErpFederationBuilder.builder()
             .withMembersBtcPublicKeys(federationBtcKeys)
             .build();
@@ -1270,12 +1270,12 @@ class BitcoinUtilsTest {
     @Test
     void removeSignaturesFromMultiSigTransaction_withLegacyAndSegwitInputs_shouldReturnExpectedTx() {
         // arrange
-        List<BtcECKey> p2shFederationBtcKeys = BitcoinTestUtils.getBtcEcKeys(9, "seed");
+        List<BtcECKey> p2shFederationBtcKeys = BitcoinTestUtils.getBtcEcKeys(9);
         Federation p2shFederation = P2shErpFederationBuilder.builder()
             .withMembersBtcPublicKeys(p2shFederationBtcKeys)
             .build();
 
-        List<BtcECKey> p2wshFederationBtcKeys = BitcoinTestUtils.getBtcEcKeys(20, "seed");
+        List<BtcECKey> p2wshFederationBtcKeys = BitcoinTestUtils.getBtcEcKeys(20);
         Federation p2wshFederation = P2shP2wshErpFederationBuilder.builder()
             .withMembersBtcPublicKeys(p2wshFederationBtcKeys)
             .build();
