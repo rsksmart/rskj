@@ -246,7 +246,11 @@ class BridgeSupportRegisterPegoutTransactionTest {
     void registerPegoutTransaction_withActiveAndRetiringFedsSharingScript_shouldRegisterChangeOnlyInActiveFed() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         // arrange
         BtcTransaction pegout = setupPegoutFromActiveFedPayingToUser();
-        setUpBridgeAndFederationSupportWithActiveFederationAsAlsoRetiring();
+
+        // the same federation stored as old and new makes the active and retiring federations share the script
+        federationStorageProvider.setOldFederation(activeFederation);
+        setUpBridgeAndFederationSupportWithActivations(PEGOUT_REGISTRATION_BLOCK_NUMBER, allActivations);
+
         PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
             bridgeStorageProvider,
             bridgeMainnetConstants,
@@ -1184,12 +1188,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
         federationStorageProvider.setOldFederation(activeFederation);
         federationStorageProvider.setNewFederation(proposedFederation);
         setUpBridgeAndFederationSupportWithActivations(PEGOUT_REGISTRATION_WHILE_RETIRING_BLOCK_NUMBER, allActivations);
-    }
-
-    private void setUpBridgeAndFederationSupportWithActiveFederationAsAlsoRetiring() {
-        // the same federation stored as old and new makes the active and retiring federations share the script
-        federationStorageProvider.setOldFederation(activeFederation);
-        setUpBridgeAndFederationSupportWithActivations(PEGOUT_REGISTRATION_BLOCK_NUMBER, allActivations);
     }
 
     private void setUpBridgeAndFederationSupportWithActivations(long executionBlockNumber, ActivationConfig.ForBlock activations) {
