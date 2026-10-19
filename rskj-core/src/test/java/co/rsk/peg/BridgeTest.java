@@ -1032,7 +1032,6 @@ class BridgeTest {
             btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters, 100, 100);
             btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, allActivations);
 
-            setUpPegoutFromActiveFedPayingToUser();
             setUpBridgeAndFederationSupport(pegoutRegistrationBlockNumber);
             bridge = bridgeBuilder
                 .activationConfig(allActivationsConfig)
@@ -1114,9 +1113,17 @@ class BridgeTest {
             // act & assert
             assertThrows(VMException.class, () -> bridge.execute(invalidData));
         }
+
         @Test
-        void registerPegoutTransaction_withPegoutWithChange_forCardamom_shouldRegisterChangeInActiveFed() throws BlockStoreException, IOException, VMException {
+        void registerPegoutTransaction_withPegoutWithChange_shouldRegisterChangeInActiveFed() throws BlockStoreException, IOException, VMException {
             // arrange
+            setUpPegoutFromActiveFedPayingToUser();
+            setUpBridgeAndFederationSupport(pegoutRegistrationBlockNumber);
+            bridge = bridgeBuilder
+                .activationConfig(allActivationsConfig)
+                .bridgeSupport(bridgeSupport)
+                .executionBlock(rskExecutionBlock)
+                .build();
             BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
             PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
                 bridgeStorageProvider,
