@@ -1117,7 +1117,7 @@ class BridgeTest {
         @Test
         void registerPegoutTransaction_withPegoutWithChange_shouldRegisterChangeInActiveFed() throws BlockStoreException, IOException, VMException {
             // arrange
-            setUpPegoutFromActiveFedPayingToUser();
+            setUpPegoutFromActiveFed();
             setUpBridgeAndFederationSupport(pegoutRegistrationBlockNumber);
             bridge = bridgeBuilder
                 .activationConfig(allActivationsConfig)
@@ -1162,7 +1162,7 @@ class BridgeTest {
             );
         }
 
-        private void setUpPegoutFromActiveFedPayingToUser() throws IOException {
+        private void setUpPegoutFromActiveFed() throws IOException {
             setUpBridgeAndFederationSupport(pegoutCreationBlockNumber);
 
             UTXO activeFederationUtxo = UTXOBuilder.builder()
