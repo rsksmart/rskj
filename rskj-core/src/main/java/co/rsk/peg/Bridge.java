@@ -604,12 +604,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public void registerPegoutTransaction(Object[] args) {
+    public void registerPegoutTransaction(Object[] args) throws VMException {
         logger.trace("registerPegoutTransaction");
 
         Sha256Hash btcTxHash = Sha256Hash.wrap((byte[]) args[0]);
         int height = ((BigInteger)args[1]).intValue();
         byte[] pmtSerialized = (byte[]) args[2];
+        try {
+            logger.trace("[registerPegoutTransaction] btcTxHash: {} rskTxhash: {}", btcTxHash, rskTx.getHash());
+            bridgeSupport.registerPegoutTransaction(btcTxHash, height, pmtSerialized);
+        } catch (IOException | BlockStoreException e) {
+            logger.warn("Exception in registerPegoutTransaction", e);
+            throw new VMException("Exception in registerPegoutTransaction", e);
+        }
     }
 
     public void releaseBtc(Object[] args) throws VMException {
