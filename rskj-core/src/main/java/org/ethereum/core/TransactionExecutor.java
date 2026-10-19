@@ -701,19 +701,23 @@ public class TransactionExecutor {
         logger.trace("tx finalization done");
     }
 
-    /**
-     * RSKIP701: an account marked by SELFDESTRUCT is deleted when it was created in this transaction or when its
-     * nonce is zero, as before activation. Otherwise it is cleared: code, storage and balance are removed and the
-     * account node keeps its nonce.
-     */
     private void processMarkedAccount(RskAddress address) {
-        if (!activations.isActive(ConsensusRule.RSKIP701) || isCreatedInTransaction(address)
-                || track.getNonce(address).signum() == 0) {
+        if (isDeletedBySelfdestruct(address)) {
             track.delete(address);
-            return;
+        } else {
+            track.clearAccount(address);
         }
+    }
 
-        track.clearAccount(address);
+    /**
+     * RSKIP701: an account marked by SELFDESTRUCT is deleted when the RSKIP is not active, when it was created in
+     * this transaction or when its nonce is zero. Otherwise it is cleared instead: code, storage and balance are
+     * removed and the account node keeps its nonce.
+     */
+    private boolean isDeletedBySelfdestruct(RskAddress address) {
+        return !activations.isActive(ConsensusRule.RSKIP701)
+                || isCreatedInTransaction(address)
+                || track.getNonce(address).signum() == 0;
     }
 
     private boolean isCreatedInTransaction(RskAddress address) {

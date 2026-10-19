@@ -43,7 +43,6 @@ import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.MessageCall;
@@ -427,14 +426,11 @@ public class Program {
 
             addInternalTx(null, null, owner, obtainer, balance, null, "suicide");
 
-            if (FastByteComparisons.compareTo(owner.getBytes(), 0, 20, obtainer.getBytes(), 0, 20) == 0) {
-                // if owner == obtainer just zeroing account according to Yellow Paper,
-                // unless the account survives (RSKIP701), in which case its balance is unchanged
-                if (!accountSurvivesSelfdestruct) {
-                    getStorage().addBalance(owner, balance.negate());
-                }
-            } else {
+            if (!owner.equals(obtainer)) {
                 getStorage().transfer(owner, obtainer, balance);
+            } else if (!accountSurvivesSelfdestruct) {
+                // owner == obtainer: just zero the account according to Yellow Paper
+                getStorage().addBalance(owner, balance.negate());
             }
         }
 

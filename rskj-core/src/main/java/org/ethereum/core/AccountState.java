@@ -130,6 +130,16 @@ public class AccountState {
         return accountState;
     }
 
+    /**
+     * Returns the state an account is left with once it is cleared: the nonce and the state flags survive,
+     * the balance is zero. The receiver is not modified.
+     */
+    public AccountState cleared() {
+        AccountState accountState = new AccountState(nonce, Coin.ZERO);
+        accountState.setStateFlags(this.stateFlags);
+        return accountState;
+    }
+
     public String toString() {
         String ret = "  Nonce: " + this.getNonce().toString() + "\n" +
                 "  Balance: " + getBalance().asBigInteger() + "\n" +
