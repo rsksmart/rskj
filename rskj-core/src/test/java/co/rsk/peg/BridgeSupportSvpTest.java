@@ -76,15 +76,12 @@ class BridgeSupportSvpTest {
         Coin.valueOf(500_000),
         Coin.valueOf(300_000)
     );
-    private static final Federation SEGWIT_ACTIVE_FEDERATION = P2shP2wshErpFederationBuilder.builder()
-        .withMembersBtcPublicKeys(BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
-            "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
-            "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19"
-        }, true))
+    private static final Federation segwitActiveFederation = P2shP2wshErpFederationBuilder.builder()
+        .withMembersBtcPublicKeys(BitcoinTestUtils.getBtcEcKeys(20, "active"))
         .build();
-    private static final List<UTXO> SEGWIT_ACTIVE_FEDERATION_UTXOS = getSegwitActiveFedUtxos();
-    private static final UTXO UTXO_TO_FUND_ANOTHER_SVP_FUND_TX = UTXOBuilder.builder()
-        .withScriptPubKey(SEGWIT_ACTIVE_FEDERATION.getP2SHScript())
+    private static final List<UTXO> segwitActiveFederationUtxos = getSegwitActiveFedUtxos();
+    private static final UTXO utxosToFundANewSpendTx = UTXOBuilder.builder()
+        .withScriptPubKey(segwitActiveFederation.getP2SHScript())
         .withTransactionHash(createHash(999))
         .build();
     private static final Coin svpFundTxOutputsValue = bridgeMainNetConstants.getSvpFundTxOutputsValue();
@@ -224,7 +221,7 @@ class BridgeSupportSvpTest {
 
     private static List<UTXO> getSegwitActiveFedUtxos() {
         List<UTXO> segwitActiveFederationUtxos = new ArrayList<>();
-        Script outputScript = SEGWIT_ACTIVE_FEDERATION.getP2SHScript();
+        Script outputScript = segwitActiveFederation.getP2SHScript();
         for (int i = 0; i < svpFundTxOutpointsValues.size(); i++) {
             Sha256Hash transactionHash = createHash(i + 1);
             UTXO utxo = UTXOBuilder.builder()
@@ -472,35 +469,7 @@ class BridgeSupportSvpTest {
 
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints
             assertSvpFundTransactionInputsAreFromLegacyActiveFederation();
-            assertSvpFundTransactionHasExpectedOutputs();
-        }
-
-        private void assertSvpFundTransactionHasExpectedOutputs() {
-            int svpFundTransactionUnsignedOutputsExpectedSize = 3;
-            assertEquals(svpFundTransactionUnsignedOutputsExpectedSize, svpFundTransaction.getOutputs().size());
-
-            // assert outputs are the expected ones in the expected order
-            TransactionOutput outputToProposedFed = svpFundTransaction.getOutput(0);
-            assertEquals(outputToProposedFed.getScriptPubKey(), proposedFederation.getP2SHScript());
-            assertEquals(outputToProposedFed.getValue(), bridgeMainNetConstants.getSvpFundTxOutputsValue());
-
-            TransactionOutput outputToFlyoverProposedFed = svpFundTransaction.getOutput(1);
-            Script proposedFederationWithFlyoverPrefixScriptPubKey =
-                PegUtils.getFlyoverFederationScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation);
-            assertEquals(outputToFlyoverProposedFed.getScriptPubKey(), proposedFederationWithFlyoverPrefixScriptPubKey);
-            assertEquals(outputToFlyoverProposedFed.getValue(), bridgeMainNetConstants.getSvpFundTxOutputsValue());
-
-            TransactionOutput changeOutput = svpFundTransaction.getOutput(2);
-            assertEquals(changeOutput.getScriptPubKey(), activeFederation.getP2SHScript());
-        }
-
-        private void assertSvpFundTransactionInputsAreFromLegacyActiveFederation() {
-            Script activeFederationScriptSig = createBaseInputScriptThatSpendsFromRedeemScript(activeFederation.getRedeemScript());
-            List<TransactionInput> inputs = svpFundTransaction.getInputs();
-
-            for (TransactionInput input : inputs) {
-                assertEquals(activeFederationScriptSig, input.getScriptSig());
-            }
+            assertSvpFundTransactionHasExpectedOutputs(activeFederation);
         }
 
         @Test
@@ -565,14 +534,42 @@ class BridgeSupportSvpTest {
             assertSvpFundTxWasCreated(activeFederationUtxosSizeBeforeCreatingFundTx);
         }
 
+        private void assertSvpFundTransactionHasExpectedOutputs(Federation activeFederation) {
+            int svpFundTransactionUnsignedOutputsExpectedSize = 3;
+            assertEquals(svpFundTransactionUnsignedOutputsExpectedSize, svpFundTransaction.getOutputs().size());
+
+            // assert outputs are the expected ones in the expected order
+            TransactionOutput outputToProposedFed = svpFundTransaction.getOutput(0);
+            assertEquals(outputToProposedFed.getScriptPubKey(), proposedFederation.getP2SHScript());
+            assertEquals(outputToProposedFed.getValue(), bridgeMainNetConstants.getSvpFundTxOutputsValue());
+
+            TransactionOutput outputToFlyoverProposedFed = svpFundTransaction.getOutput(1);
+            Script proposedFederationWithFlyoverPrefixScriptPubKey =
+                PegUtils.getFlyoverFederationScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation);
+            assertEquals(outputToFlyoverProposedFed.getScriptPubKey(), proposedFederationWithFlyoverPrefixScriptPubKey);
+            assertEquals(outputToFlyoverProposedFed.getValue(), bridgeMainNetConstants.getSvpFundTxOutputsValue());
+
+            TransactionOutput changeOutput = svpFundTransaction.getOutput(2);
+            assertEquals(changeOutput.getScriptPubKey(), activeFederation.getP2SHScript());
+        }
+
+        private void assertSvpFundTransactionInputsAreFromLegacyActiveFederation() {
+            Script activeFederationScriptSig = createBaseInputScriptThatSpendsFromRedeemScript(activeFederation.getRedeemScript());
+            List<TransactionInput> inputs = svpFundTransaction.getInputs();
+
+            for (TransactionInput input : inputs) {
+                assertEquals(activeFederationScriptSig, input.getScriptSig());
+            }
+        }
+
         private void assertSvpFundTxWasCreated(int activeFederationUtxosSizeBeforeCreatingFundTx) {
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints
             assertSvpFundTransactionInputsAreFromSegwitCompatibleActiveFederation();
-            assertSvpFundTransactionHasExpectedOutputs();
+            assertSvpFundTransactionHasExpectedOutputs(segwitActiveFederation);
         }
 
         private void assertSvpFundTransactionInputsAreFromSegwitCompatibleActiveFederation() {
-            TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(activeFederation.getRedeemScript());
+            TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(segwitActiveFederation.getRedeemScript());
 
             for (int i = 0; i < svpFundTransaction.getInputs().size(); i++) {
                 assertEquals(witness, svpFundTransaction.getWitness(i));
@@ -613,7 +610,7 @@ class BridgeSupportSvpTest {
             bridgeSupport.updateCollections(rskTx);
 
             // so another fund tx could be created if the bridge did not wait for the first one to be registered
-            federationSupport.getActiveFederationBtcUTXOs().add(UTXO_TO_FUND_ANOTHER_SVP_FUND_TX);
+            federationSupport.getActiveFederationBtcUTXOs().add(utxosToFundANewSpendTx);
 
             // clears the log to catch only the log of the second call to updateCollections
             logs.clear();
@@ -621,7 +618,7 @@ class BridgeSupportSvpTest {
 
         private void assertFundTxWasNotCreatedAgain(Sha256Hash svpFundTxHashUnsigned) {
             assertEquals(Optional.of(svpFundTxHashUnsigned), bridgeStorageProvider.getSvpFundTxHashUnsigned());
-            assertUtxosAreEqual(List.of(UTXO_TO_FUND_ANOTHER_SVP_FUND_TX), federationSupport.getActiveFederationBtcUTXOs()); // not spent
+            assertUtxosAreEqual(List.of(utxosToFundANewSpendTx), federationSupport.getActiveFederationBtcUTXOs()); // not spent
             assertJustUpdateCollectionsWasLogged();
         }
 
@@ -709,8 +706,8 @@ class BridgeSupportSvpTest {
         }
 
         private void setupSegwitActiveFederationWithUtxos() {
-            federationStorageProvider.setNewFederation(SEGWIT_ACTIVE_FEDERATION);
-            bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), SEGWIT_ACTIVE_FEDERATION_UTXOS, BridgeSerializationUtils::serializeUTXOList);
+            federationStorageProvider.setNewFederation(segwitActiveFederation);
+            bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), segwitActiveFederationUtxos, BridgeSerializationUtils::serializeUTXOList);
         }
 
         private void assertJustUpdateCollectionsWasLogged() {
