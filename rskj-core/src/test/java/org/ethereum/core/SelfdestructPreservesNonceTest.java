@@ -108,8 +108,18 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     private static final long GAS_LIMIT = 100_000;
     private static final long NESTED_CREATION_GAS_LIMIT = 500_000;
 
-    @Test
-    void contractWithNonZeroNonceIsClearedAndKeepsItsNonce() {
+    static Stream<Arguments> activationStates() {
+        return Stream.of(
+                Arguments.of("after activation", true),
+                Arguments.of("before activation", false));
+    }
+
+    @ParameterizedTest(name = "RSKIP701 case 7: contract with non-zero nonce {0}")
+    @MethodSource("activationStates")
+    void contractWithNonZeroNonceIsClearedAndKeepsItsNonceOnlyAfterActivation(String phase, boolean activated) {
+        if (!activated) {
+            activateAllBut(ConsensusRule.RSKIP701);
+        }
         MutableRepository repository = createRepository();
         installContract(repository, CONTRACT_C, BigInteger.ONE, CODE_D, BALANCE_C);
         createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
@@ -119,10 +129,14 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         Transaction tx = signedCall(CONTRACT_C, beneficiaryWord(BENEFICIARY_B));
         TransactionExecutor executor = execute(repository, tx);
 
-        assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
+        if (activated) {
+            assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
+            assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_C.getBytes())),
+                    "A cleared account is still recorded as deleted for the same-block creation check");
+        } else {
+            assertFalse(repository.isExist(CONTRACT_C));
+        }
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
-        assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_C.getBytes())),
-                "A cleared account is still recorded as deleted for the same-block creation check");
     }
 
     // -------------------------------------------------------------------------
@@ -303,8 +317,12 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         assertEquals(0, delegated.getResult().getDeductedRefund());
     }
 
-    @Test
-    void balanceReceivedAfterMarkingIsRemovedWithTheRest() {
+    @ParameterizedTest(name = "RSKIP701 case 12: balance received after marking {0}")
+    @MethodSource("activationStates")
+    void balanceReceivedAfterMarkingIsRemovedWithTheRestOnlyAfterActivation(String phase, boolean activated) {
+        if (!activated) {
+            activateAllBut(ConsensusRule.RSKIP701);
+        }
         MutableRepository repository = createRepository();
         installContract(repository, CONTRACT_C, BigInteger.ONE, CODE_D, BALANCE_C);
         installContract(repository, CONTRACT_Y, BigInteger.ZERO, codeDestructingTo(CONTRACT_C), BALANCE_Y);
@@ -315,14 +333,22 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
 
         TransactionExecutor executor = execute(repository, signedCall(CONTRACT_X, beneficiaryWord(BENEFICIARY_B)));
 
-        assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_Y.getBytes())));
-        assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
+        if (activated) {
+            assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_Y.getBytes())));
+            assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
+        } else {
+            assertFalse(repository.isExist(CONTRACT_C));
+        }
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
         assertFalse(repository.isExist(CONTRACT_Y));
     }
 
-    @Test
-    void contractRaisingItsNonceBeforeSelfdestructIsClearedWithTheRaisedNonce() {
+    @ParameterizedTest(name = "RSKIP701 case 11: contract raising its nonce before SELFDESTRUCT {0}")
+    @MethodSource("activationStates")
+    void contractRaisingItsNonceBeforeSelfdestructIsClearedWithTheRaisedNonceOnlyAfterActivation(String phase, boolean activated) {
+        if (!activated) {
+            activateAllBut(ConsensusRule.RSKIP701);
+        }
         MutableRepository repository = createRepository();
         installContract(repository, CONTRACT_G, BigInteger.ZERO, CODE_G, BALANCE_C);
         createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
@@ -332,43 +358,14 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
 
         TransactionExecutor executor = execute(repository, signedCall(CONTRACT_G, beneficiaryWord(BENEFICIARY_B)));
 
-        assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_G.getBytes())));
-        assertClearedAccount(repository, CONTRACT_G, BigInteger.ONE);
-        assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
-        assertTrue(repository.isExist(child));
-        assertEquals(BigInteger.ONE, repository.getNonce(child));
-    }
-
-    @Test
-    void beforeActivationContractRaisingItsNonceBeforeSelfdestructIsDeleted() {
-        activateAllBut(ConsensusRule.RSKIP701);
-        MutableRepository repository = createRepository();
-        installContract(repository, CONTRACT_G, BigInteger.ZERO, CODE_G, BALANCE_C);
-        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
-        fundSender(repository, SENDER_BALANCE);
-        mockExecutionBlockForRealVm();
-
-        execute(repository, signedCall(CONTRACT_G, beneficiaryWord(BENEFICIARY_B)));
-
-        assertFalse(repository.isExist(CONTRACT_G));
-        assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
-    }
-
-    @Test
-    void beforeActivationBalanceReceivedAfterMarkingIsRemovedWithTheAccount() {
-        activateAllBut(ConsensusRule.RSKIP701);
-        MutableRepository repository = createRepository();
-        installContract(repository, CONTRACT_C, BigInteger.ONE, CODE_D, BALANCE_C);
-        installContract(repository, CONTRACT_Y, BigInteger.ZERO, codeDestructingTo(CONTRACT_C), BALANCE_Y);
-        installContract(repository, CONTRACT_X, BigInteger.ONE, codeCallingThenCalling(CONTRACT_C, CONTRACT_Y), 0);
-        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
-        fundSender(repository, SENDER_BALANCE);
-        mockExecutionBlockForRealVm();
-
-        execute(repository, signedCall(CONTRACT_X, beneficiaryWord(BENEFICIARY_B)));
-
-        assertFalse(repository.isExist(CONTRACT_C));
-        assertFalse(repository.isExist(CONTRACT_Y));
+        if (activated) {
+            assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_G.getBytes())));
+            assertClearedAccount(repository, CONTRACT_G, BigInteger.ONE);
+            assertTrue(repository.isExist(child));
+            assertEquals(BigInteger.ONE, repository.getNonce(child));
+        } else {
+            assertFalse(repository.isExist(CONTRACT_G));
+        }
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
     }
 
@@ -490,22 +487,6 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         RskAddress grandchild = new RskAddress(marked.iterator().next().getLast20Bytes());
         assertFalse(repository.isExist(grandchild), "A contract created by a nested CREATE is still created in this transaction");
         assertEquals(Coin.valueOf(BALANCE_B), repository.getBalance(BENEFICIARY_B));
-    }
-
-    @Test
-    void beforeActivationContractWithNonZeroNonceIsDeleted() {
-        activateAllBut(ConsensusRule.RSKIP701);
-        MutableRepository repository = createRepository();
-        installContract(repository, CONTRACT_C, BigInteger.ONE, CODE_D, BALANCE_C);
-        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
-        fundSender(repository, SENDER_BALANCE);
-        mockExecutionBlockForRealVm();
-
-        Transaction tx = signedCall(CONTRACT_C, beneficiaryWord(BENEFICIARY_B));
-        execute(repository, tx);
-
-        assertFalse(repository.isExist(CONTRACT_C));
-        assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
     }
 
     // -------------------------------------------------------------------------
