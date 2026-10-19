@@ -184,14 +184,13 @@ public final class BridgeSupportTestUtil {
         BtcTransaction transaction,
         BtcBlockStoreWithCache btcBlockStore
     ) throws BlockStoreException {
-        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
-
-        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(transaction), networkParameters);
-        int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
-        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockToRegisterHeight, networkParameters);
-        bridgeStorageProvider.save();
-
-        return pmtWithTransactions;
+        return buildPMTAndRecreateChainForHashRegistration(
+            bridgeStorageProvider,
+            bridgeConstants,
+            btcBlockToRegisterHeight,
+            getHashConsideringWitness(transaction),
+            btcBlockStore
+        );
     }
 
     /**
@@ -206,14 +205,30 @@ public final class BridgeSupportTestUtil {
         BtcTransaction transaction,
         BtcBlockStoreWithCache btcBlockStore
     ) throws BlockStoreException {
+        return buildPMTAndRecreateChainForHashRegistration(
+            bridgeStorageProvider,
+            bridgeConstants,
+            btcBlockToRegisterHeight,
+            transaction.getHash(false),
+            btcBlockStore
+        );
+    }
+
+    private static PartialMerkleTree buildPMTAndRecreateChainForHashRegistration(
+        BridgeStorageProvider bridgeStorageProvider,
+        BridgeConstants bridgeConstants,
+        int btcBlockToRegisterHeight,
+        Sha256Hash hashToRegister,
+        BtcBlockStoreWithCache btcBlockStore
+    ) throws BlockStoreException {
         NetworkParameters networkParameters = bridgeConstants.getBtcParams();
 
-        PartialMerkleTree pmtWithTxId = createValidPmtForTransactionsHashes(List.of(transaction.getHash(false)), networkParameters);
+        PartialMerkleTree pmt = createValidPmtForTransactionsHashes(List.of(hashToRegister), networkParameters);
         int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
-        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTxId, btcBlockToRegisterHeight, networkParameters);
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmt, btcBlockToRegisterHeight, networkParameters);
         bridgeStorageProvider.save();
 
-        return pmtWithTxId;
+        return pmt;
     }
 
     /**

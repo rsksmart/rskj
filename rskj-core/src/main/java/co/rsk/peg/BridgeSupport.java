@@ -427,10 +427,6 @@ public class BridgeSupport {
     ) throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Context.propagate(btcContext);
         try {
-            if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
-                throw new RegisterBtcTransactionException("Transaction already processed");
-            }
-
             if (!federationSupport.hasFederationsPendingBtcUTXOs(btcTxHash)) {
                 throw new RegisterBtcTransactionException("Transaction has no pending UTXOs to register");
             }
@@ -439,6 +435,10 @@ public class BridgeSupport {
             // since the full SVP tx is needed to build the SVP spend tx.
             if (isTheSvpFundTx(btcTxHash)) {
                 throw new RegisterBtcTransactionException("Transaction is the SVP fund tx");
+            }
+
+            if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
+                throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
             validatePegoutTxRegistration(btcTxHash, height, pmtSerialized);
