@@ -116,7 +116,7 @@ public final class BlockBodyCodec {
     }
 
     public static void validateRemascGasLimitIsEncoded(Transaction tx) {
-        if (tx.getGasLimit().length == 0) {
+        if (tx.isLegacyGasLimitEncodedEmpty()) {
             throw new IllegalArgumentException("Remasc transaction gasLimit must not be empty");
         }
     }
