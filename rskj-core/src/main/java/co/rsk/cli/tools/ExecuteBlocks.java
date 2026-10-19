@@ -182,6 +182,7 @@ public class ExecuteBlocks extends PicoCliToolRskContextAware {
                 // One chunk at a time is the intended access pattern: a chunk is self-contained
                 // for its own range, including the state root of the block before its first.
                 segbuildStore.positionAt(n);
+                segbuildStore.walkingStateRoot(parent.getStateRoot());
             }
 
             BlockResult blockResult = blockExecutor.execute(null, 0, block, parent.getHeader(), false, false, saveState);
@@ -222,6 +223,8 @@ public class ExecuteBlocks extends PicoCliToolRskContextAware {
                     executed, fromBlockNumber, toBlockNumber);
             if (segbuildStore != null) {
                 printInfo("Segbuild chunks opened: {}", segbuildStore.getChunkOpenCount());
+                printInfo("Segbuild node reads: {} ({} served from the node cache)",
+                        segbuildStore.getReadCount(), segbuildStore.getCacheHitCount());
                 if (segbuildStore.hasFallback()) {
                     printInfo("Segbuild reads served by the fallback: {} (timings are not "
                             + "representative of segbuild alone)", segbuildStore.getFallbackHitCount());

@@ -20,6 +20,7 @@ package co.rsk.trie.segbuild;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieDTO;
 import co.rsk.trie.TrieStore;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
@@ -35,7 +36,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -92,6 +95,25 @@ public class SegbuildTrieStore implements TrieStore {
 
     private long fallbackHitCount;
 
+    /** Every read asked of this store, so a cache hit rate can be read as a proportion. */
+    private long readCount;
+
+    private long cacheHitCount;
+
+    /**
+     * Bounded, least-recently-used cache of node messages, keyed by node hash.
+     *
+     * <p>Without one, every step of every trie walk is a RocksDB lookup: a JNI crossing, an index
+     * binary search, a data block scan and a decompression -- for a node that may be the trie root
+     * being read for the thousandth time. The upper levels of a trie are common to every path, so a
+     * modest cache absorbs a disproportionate share of the reads.
+     *
+     * <p>Cleared when the store moves to another chunk. Node hashes are content-addressed so the
+     * entries would stay valid, but a chunk switch means the working set has moved on.
+     */
+    @Nullable
+    private final Map<ByteArrayWrapper, byte[]> nodeCache;
+
     /**
      * The last miss this store refused to serve.
      *
@@ -102,6 +124,18 @@ public class SegbuildTrieStore implements TrieStore {
      */
     @Nullable
     private SegbuildMissingNodeException lastMiss;
+
+    /** The state root the caller is executing from, reported alongside a miss. */
+    @Nullable
+    private byte[] currentStateRoot;
+
+    /**
+     * Records which state root is being walked, so a miss can be reported as the triple a repair
+     * pass needs: the node hash, the state root, and the key being walked.
+     */
+    public void walkingStateRoot(byte[] stateRoot) {
+        this.currentStateRoot = stateRoot;
+    }
 
     @Nullable
     private SegbuildChunk openChunk;
@@ -120,8 +154,30 @@ public class SegbuildTrieStore implements TrieStore {
     }
 
     public SegbuildTrieStore(@Nonnull SegbuildChunkIndex index, @Nullable TrieStore fallback) {
+        this(index, fallback, 0);
+    }
+
+    /**
+     * @param cacheSize how many node messages to keep in memory, or 0 for no cache
+     */
+    public SegbuildTrieStore(@Nonnull SegbuildChunkIndex index, @Nullable TrieStore fallback, int cacheSize) {
         this.index = index;
         this.fallback = fallback;
+        this.nodeCache = cacheSize > 0 ? newLruCache(cacheSize) : null;
+    }
+
+    private static Map<ByteArrayWrapper, byte[]> newLruCache(int maxEntries) {
+        return new LinkedHashMap<ByteArrayWrapper, byte[]>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, byte[]> eldest) {
+                return size() > maxEntries;
+            }
+        };
+    }
+
+    /** Node reads served from memory rather than from the chunk. */
+    public long getCacheHitCount() {
+        return cacheHitCount;
     }
 
     private SegbuildMissingNodeException recordMiss(SegbuildMissingNodeException e) {
@@ -158,6 +214,9 @@ public class SegbuildTrieStore implements TrieStore {
         }
 
         closeCurrentChunk();
+        if (nodeCache != null) {
+            nodeCache.clear();
+        }
         openChunkStore(chunk);
     }
 
@@ -228,15 +287,34 @@ public class SegbuildTrieStore implements TrieStore {
         openChunk = null;
     }
 
+    /** Every read asked of this store, whether the chunk served it or the cache did. */
+    public long getReadCount() {
+        return readCount;
+    }
+
     @Nullable
     private byte[] get(byte[] key) {
+        readCount++;
         if (db == null || trieNodes == null) {
             throw new IllegalStateException(
                     "Segbuild store is not positioned on a chunk; call positionAt(blockNumber) first");
         }
 
+        ByteArrayWrapper cacheKey = nodeCache == null ? null : new ByteArrayWrapper(key);
+        if (cacheKey != null) {
+            byte[] cached = nodeCache.get(cacheKey);
+            if (cached != null) {
+                cacheHitCount++;
+                return cached;
+            }
+        }
+
         try {
-            return db.get(trieNodes, key);
+            byte[] value = db.get(trieNodes, key);
+            if (value != null && cacheKey != null) {
+                nodeCache.put(cacheKey, value);
+            }
+            return value;
         } catch (RocksDBException e) {
             throw new IllegalStateException(String.format(
                     "Segbuild lookup failed in %s for key %s", openChunk, ByteUtil.toHexString(key)), e);
@@ -249,7 +327,7 @@ public class SegbuildTrieStore implements TrieStore {
 
         if (message == null) {
             if (fallback == null) {
-                throw recordMiss(new SegbuildMissingNodeException(openChunk, hash, "node"));
+                throw recordMiss(new SegbuildMissingNodeException(openChunk, hash, "node", currentStateRoot));
             }
             fallbackHitCount++;
             return fallback.retrieve(hash);
@@ -264,7 +342,7 @@ public class SegbuildTrieStore implements TrieStore {
 
         if (value == null) {
             if (fallback == null) {
-                throw recordMiss(new SegbuildMissingNodeException(openChunk, hash, "long value"));
+                throw recordMiss(new SegbuildMissingNodeException(openChunk, hash, "long value", currentStateRoot));
             }
             fallbackHitCount++;
             return fallback.retrieveValue(hash);
@@ -279,7 +357,7 @@ public class SegbuildTrieStore implements TrieStore {
 
         if (message == null) {
             if (fallback == null) {
-                throw recordMiss(new SegbuildMissingNodeException(openChunk, hash, "node"));
+                throw recordMiss(new SegbuildMissingNodeException(openChunk, hash, "node", currentStateRoot));
             }
             fallbackHitCount++;
             return fallback.retrieveDTO(hash);
@@ -348,12 +426,26 @@ public class SegbuildTrieStore implements TrieStore {
         private static final long serialVersionUID = 1L;
 
         public SegbuildMissingNodeException(@Nullable SegbuildChunk chunk, byte[] hash, String kind) {
+            this(chunk, hash, kind, null);
+        }
+
+        public SegbuildMissingNodeException(@Nullable SegbuildChunk chunk, byte[] hash, String kind,
+                                            @Nullable byte[] stateRoot) {
             super(String.format(
                     "Segbuild %s does not contain %s %s. Inside a chunk's range this means the chunk "
-                            + "is damaged or incomplete; it must not be read as an absent key.",
+                            + "is damaged or incomplete; it must not be read as an absent key. "
+                            + "To have it repaired, report: node=%s stateRoot=%s key=%s",
                     chunk == null ? "(no chunk open)" : chunk.toString(),
                     kind,
-                    ByteUtil.toHexString(Arrays.copyOf(hash, hash.length))));
+                    ByteUtil.toHexString(Arrays.copyOf(hash, hash.length)),
+                    ByteUtil.toHexString(Arrays.copyOf(hash, hash.length)),
+                    stateRoot == null ? "(unknown)" : ByteUtil.toHexString(stateRoot),
+                    describeKey()));
+        }
+
+        private static String describeKey() {
+            byte[] key = co.rsk.trie.TrieReadContext.currentKey();
+            return key == null ? "(none recorded)" : ByteUtil.toHexString(key);
         }
     }
 }

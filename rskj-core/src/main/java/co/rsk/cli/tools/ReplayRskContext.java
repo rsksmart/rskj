@@ -119,7 +119,9 @@ public class ReplayRskContext extends RskContext {
                 throw new IllegalStateException("A segbuild root directory is required for the segbuild backend");
             }
             TrieStore fallback = segbuildFallback ? buildUnitrieStore(trieStorePath) : null;
-            segbuildTrieStore = new SegbuildTrieStore(SegbuildChunkIndex.scan(segbuildRoot), fallback);
+            // Same node-cache budget the unitrie backend gets, so the two are comparable.
+            segbuildTrieStore = new SegbuildTrieStore(SegbuildChunkIndex.scan(segbuildRoot), fallback,
+                    getRskSystemProperties().getStatesCacheSize());
             return segbuildTrieStore;
         }
 
