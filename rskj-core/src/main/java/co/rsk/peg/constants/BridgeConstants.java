@@ -24,12 +24,18 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapConstants;
+import co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public abstract class BridgeConstants {
+    protected static final int THREE_MINUTES_IN_MILLIS = 3 * 60 * 1000;
+    protected static final int FIVE_MINUTES_IN_SECONDS = 5 * 60;
+    protected static final int THIRTY_DAYS_IN_BTC_BLOCKS = 30 * 24 * 6; // 1 block every 10 minutes, 6 blocks per hour
+    protected static final int THREE_HOURS_IN_RSK_BLOCKS = 3 * 60 * 2; // 1 block every 30 seconds, 2 blocks per minute
+
     protected String btcParamsString;
 
     protected FeePerKbConstants feePerKbConstants;
@@ -37,26 +43,30 @@ public abstract class BridgeConstants {
     protected FederationConstants federationConstants;
     protected LockingCapConstants lockingCapConstants;
     protected UnionBridgeConstants unionBridgeConstants;
+    protected HistoricalPegoutSelectionsConstants historicalPegoutSelectionsConstants;
+
+    protected int updateBridgeExecutionPeriod;
+    protected long minSecondsBetweenCallsReceiveHeader;
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int rsk2BtcMinimumAcceptableConfirmations;
-
-    protected int updateBridgeExecutionPeriod;
 
     protected Coin legacyMinimumPeginTxValue;
     protected Coin minimumPeginTxValue;
     protected Coin legacyMinimumPegoutTxValue;
     protected Coin minimumPegoutTxValue;
 
+    protected int legacyMaxInputsPerMigrationTransaction;
+    protected int maxInputsPerMigrationTransaction;
+    protected int maxOutputsPerMigrationTransaction;
+    protected Coin migrationValueForMultipleOutputs;
+
     protected int btcHeightWhenBlockIndexActivates;
     protected int maxDepthToSearchBlocksBelowIndexActivation;
-    protected long minSecondsBetweenCallsReceiveHeader;
 
     protected int maxDepthBlockchainAccepted;
 
     protected int minimumPegoutValuePercentageToReceiveAfterFee;
-
-    protected int maxInputsPerPegoutTransaction;
 
     protected int numberOfBlocksBetweenPegouts;
 
@@ -68,6 +78,10 @@ public abstract class BridgeConstants {
         return NetworkParameters.fromID(btcParamsString);
     }
 
+    public String getBtcParamsString() {
+        return btcParamsString;
+    }
+
     public FeePerKbConstants getFeePerKbConstants() { return feePerKbConstants; }
 
     public WhitelistConstants getWhitelistConstants() { return whitelistConstants; }
@@ -76,13 +90,15 @@ public abstract class BridgeConstants {
 
     public LockingCapConstants getLockingCapConstants() { return lockingCapConstants; }
 
+    public HistoricalPegoutSelectionsConstants getHistoricalPegoutSelectionsConstants() { return historicalPegoutSelectionsConstants; }
+
     public UnionBridgeConstants getUnionBridgeConstants() {
         return unionBridgeConstants;
     }
 
-    public String getBtcParamsString() {
-        return btcParamsString;
-    }
+    public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
+
+    public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
         return btc2RskMinimumAcceptableConfirmations;
@@ -91,8 +107,6 @@ public abstract class BridgeConstants {
     public int getRsk2BtcMinimumAcceptableConfirmations() {
         return rsk2BtcMinimumAcceptableConfirmations;
     }
-
-    public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
 
     public Coin getMinimumPeginTxValue(ActivationConfig.ForBlock activations) {
         return activations.isActive(ConsensusRule.RSKIP219) ? minimumPeginTxValue : legacyMinimumPeginTxValue;
@@ -106,22 +120,25 @@ public abstract class BridgeConstants {
 
     public Keccak256 getProposedFederationFlyoverPrefix() { return new Keccak256("0000000000000000000000000000000000000000000000000000000000000001"); }
 
+    public int getMaxInputsPerMigrationTransaction(ActivationConfig.ForBlock activations) {
+        return !activations.isActive(ConsensusRule.RSKIP455) ? legacyMaxInputsPerMigrationTransaction
+            : maxInputsPerMigrationTransaction;
+    }
+
+    public int getMaxOutputsPerMigrationTransaction() { return maxOutputsPerMigrationTransaction; }
+
+    public Coin getMigrationValueForMultipleOutputs() { return migrationValueForMultipleOutputs; }
+
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 
     public int getBtcHeightWhenBlockIndexActivates() { return btcHeightWhenBlockIndexActivates; }
 
     public int getMaxDepthToSearchBlocksBelowIndexActivation() { return maxDepthToSearchBlocksBelowIndexActivation; }
 
-    public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
-
     public int getMaxDepthBlockchainAccepted() { return maxDepthBlockchainAccepted; }
 
     public int getMinimumPegoutValuePercentageToReceiveAfterFee() {
         return minimumPegoutValuePercentageToReceiveAfterFee;
-    }
-
-    public int getMaxInputsPerPegoutTransaction() {
-        return maxInputsPerPegoutTransaction;
     }
 
     public int getNumberOfBlocksBetweenPegouts() {

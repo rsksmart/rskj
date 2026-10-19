@@ -68,42 +68,43 @@ Replace `<PATH-TO-THE-RSKJ-JAR>` with the actual path to your JAR file. For exam
 
 ## Using Import Sync
 
-Instead of the default synchronization, you can use import sync to import a pre-synchronized database from a trusted origin, which is significantly faster.
+Instead of syncing the whole chain from peers, a **new** node can be bootstrapped from published bootstrap data — a pre-synchronized database, signed by its publishers. RSKj downloads and verifies it for you; there is no file to fetch yourself and no path to pass to the flag.
+
+:::danger[Import sync erases the database every time it runs]
+
+Every time a node starts with import enabled, it **deletes its database directory** and downloads the bootstrap data again — even if the node was fully synced a minute earlier. Run it as a one-off from the command line, and never leave `database.import.enabled = true` in a configuration file.
+
+:::
+
+In short:
+
+1. Check that you are on **Java 17** and RSKj **`VETIVER-9.0.4` or later** — earlier versions cannot read the bootstrap data published today.
+2. Make sure you have room for a full node's database, per the [minimum requirements](/node-operators/setup/requirements/), plus about three times the size of the bootstrap archive in temporary space.
+3. Run the node **once** with `--import`. RSKj downloads the published bootstrap data, checks that enough trusted signers agree on it, and loads it into a fresh database.
+4. Stop the node and start it again **without** `--import`. It continues syncing from the imported height.
+5. Remove the leftover archive and extracted file from the temporary directory.
 
 <Tabs>
   <TabItem value="3" label="Linux, Mac OSX" default>
     ```shell
-    java -cp <PATH-TO-THE-RSKJ-JAR> co.rsk.Start --import
-    ```
-  </TabItem>
-  <TabItem value="4" label="Windows">
-    ```shell
-    java -cp <PATH-TO-THE-RSKJ-JAR> co.rsk.Start --import
-    ```
-  </TabItem>
-</Tabs>
-
-### Resolving memory issues
-
-**Memory Issues?** If you encounter memory errors and meet the [minimum hardware requirements](/node-operators/setup/requirements/), consider using `-Xmx4G` flag to allocate more memory as shown below:
-
-<Tabs>
-  <TabItem value="5" label="Linux, Mac OSX" default>
-    ```shell
     java -Xmx4G -cp <PATH-TO-THE-RSKJ-JAR> co.rsk.Start --import
     ```
   </TabItem>
-  <TabItem value="6" label="Windows">
+  <TabItem value="4" label="Windows">
     ```shell
     C:\> java -Xmx4G -cp <PATH-TO-THE-RSKJ-JAR> co.rsk.Start --import
     ```
   </TabItem>
 </Tabs>
 
+Set `-Xmx4G` on this command. Left out, the JVM sizes the heap from the machine's physical RAM instead, so what the import gets depends on the host rather than on what the import needs — and it runs out only after the download has already finished. If the import still fails with `OutOfMemoryError`, raise it further.
+
 :::tip[Tip]
 
 Replace `<PATH-TO-THE-RSKJ-JAR>` with your JAR file path. For configuration details, see [`database.import` setting](/node-operators/setup/configuration/reference#databaseimport).
 :::
+
+For the full procedure — checking which height the import will land you on before committing to the download, confirming it worked, cleaning up, and what each failure message means — see [Bootstrap a node using Import Sync](/node-operators/setup/import-sync/).
 
 ## Check the RPC
 

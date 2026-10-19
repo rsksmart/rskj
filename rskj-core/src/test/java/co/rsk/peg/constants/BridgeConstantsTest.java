@@ -34,7 +34,7 @@ class BridgeConstantsTest {
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("minimumPeginTxValueArgProvider")
     void getMinimumPeginTxValue(BridgeConstants bridgeConstants, boolean isRSKIP219Active){
         // Arrange
@@ -52,15 +52,55 @@ class BridgeConstantsTest {
         }
     }
 
-    private static Stream<Arguments> minimumPegoutTxValueArgProvider() {
+    private static Stream<Arguments> testnet2MinimumPeginTxValueArgProvider() {
         return Stream.of(
-            Arguments.of(BridgeMainNetConstants.getInstance(), Coin.valueOf(400_000)),
-            Arguments.of(BridgeTestNetConstants.getInstance(), Coin.valueOf(250_000)),
-            Arguments.of(new BridgeRegTestConstants(), Coin.valueOf(250_000))
+            Arguments.of(true, Coin.valueOf(500_000)),
+            // testnet2 activates RSKIP219 at genesis, so it never sets a legacy minimum
+            Arguments.of(false, null)
         );
     }
 
     @ParameterizedTest()
+    @MethodSource("testnet2MinimumPeginTxValueArgProvider")
+    void getMinimumPeginTxValue_forTestnet2_shouldReturnNetworkValue(boolean isRSKIP219Active, Coin expectedMinimumPeginTxValue) {
+        // Arrange
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(isRSKIP219Active);
+
+        // Act
+        Coin minimumPeginTxValue = BridgeTestNet2Constants.getInstance().getMinimumPeginTxValue(activations);
+
+        // Assert
+        assertEquals(expectedMinimumPeginTxValue, minimumPeginTxValue);
+    }
+
+    private static Stream<Arguments> legacyMinimumPegoutTxValueArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), Coin.valueOf(800_000)),
+            Arguments.of(BridgeTestNetConstants.getInstance(), Coin.valueOf(500_000)),
+            // testnet2 activates RSKIP219 at genesis, so it never sets a legacy minimum
+            Arguments.of(BridgeTestNet2Constants.getInstance(), null),
+            Arguments.of(new BridgeRegTestConstants(), Coin.valueOf(500_000))
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("legacyMinimumPegoutTxValueArgProvider")
+    void getLegacyMinimumPegoutTxValue(BridgeConstants bridgeConstants, Coin expectedLegacyMinimumPegoutTxValue) {
+        Coin legacyMinimumPegoutTxValue = bridgeConstants.getLegacyMinimumPegoutTxValue();
+        assertEquals(expectedLegacyMinimumPegoutTxValue, legacyMinimumPegoutTxValue);
+    }
+
+    private static Stream<Arguments> minimumPegoutTxValueArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), Coin.valueOf(400_000)),
+            Arguments.of(BridgeTestNetConstants.getInstance(), Coin.valueOf(250_000)),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), Coin.valueOf(400_000)),
+            Arguments.of(new BridgeRegTestConstants(), Coin.valueOf(250_000))
+        );
+    }
+
+    @ParameterizedTest
     @MethodSource("minimumPegoutTxValueArgProvider")
     void getMinimumPegoutTxValue(BridgeConstants bridgeConstants, Coin expectedMinimumPegoutTxValue) {
         Coin minimumPegoutTxValue = bridgeConstants.getMinimumPegoutTxValue();
@@ -70,15 +110,17 @@ class BridgeConstantsTest {
     private static Stream<Arguments> svpFundTxOutputsValueArgProvider() {
         BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
         BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
+        BridgeConstants bridgeTestnet2Constants = BridgeTestNet2Constants.getInstance();
         BridgeConstants bridgeRegtestConstants = new BridgeRegTestConstants();
         return Stream.of(
             Arguments.of(bridgeMainnetConstants, bridgeMainnetConstants.getMinimumPegoutTxValue().multiply(2)),
             Arguments.of(bridgeTestnetConstants, bridgeTestnetConstants.getMinimumPegoutTxValue().multiply(2)),
+            Arguments.of(bridgeTestnet2Constants, Coin.valueOf(800_000)),
             Arguments.of(bridgeRegtestConstants, bridgeRegtestConstants.getMinimumPegoutTxValue().multiply(2))
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("svpFundTxOutputsValueArgProvider")
     void getSvpFundTxOutputsValue(BridgeConstants bridgeConstants, Coin expectedSvpFundTxOutputsValue) {
         assertEquals(expectedSvpFundTxOutputsValue, bridgeConstants.getSvpFundTxOutputsValue());
@@ -87,12 +129,13 @@ class BridgeConstantsTest {
     private static Stream<BridgeConstants> bridgeConstantsArgProvider() {
         BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
         BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
+        BridgeConstants bridgeTestnet2Constants = BridgeTestNet2Constants.getInstance();
         BridgeConstants bridgeRegtestConstants = new BridgeRegTestConstants();
 
-        return Stream.of(bridgeMainnetConstants, bridgeTestnetConstants, bridgeRegtestConstants);
+        return Stream.of(bridgeMainnetConstants, bridgeTestnetConstants, bridgeTestnet2Constants, bridgeRegtestConstants);
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("bridgeConstantsArgProvider")
     void getProposedFederationFlyoverPrefix(BridgeConstants bridgeConstants) {
         Keccak256 expectedProposedFederationFlyoverPrefix = new Keccak256("0000000000000000000000000000000000000000000000000000000000000001");
@@ -100,15 +143,32 @@ class BridgeConstantsTest {
         assertEquals(expectedProposedFederationFlyoverPrefix, bridgeConstants.getProposedFederationFlyoverPrefix());
     }
 
+    @ParameterizedTest
+    @MethodSource("bridgeConstantsArgProvider")
+    void getMigrationValueForMultipleOutputsInBtc(BridgeConstants bridgeConstants) {
+        Coin expectedMigrationOutputValueInBtc = Coin.COIN.multiply(20);
+
+        assertEquals(expectedMigrationOutputValueInBtc, bridgeConstants.getMigrationValueForMultipleOutputs());
+    }
+
+    @ParameterizedTest
+    @MethodSource("bridgeConstantsArgProvider")
+    void getMaxOutputsPerMigrationTransaction(BridgeConstants bridgeConstants) {
+        int expectedMaxOutputsPerMigrationTransaction = 50;
+
+        assertEquals(expectedMaxOutputsPerMigrationTransaction, bridgeConstants.getMaxOutputsPerMigrationTransaction());
+    }
+
     private static Stream<Arguments> getBtcHeightWhenPegoutTxIndexActivatesArgProvider() {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), 837589),
             Arguments.of(BridgeTestNetConstants.getInstance(), 2589553),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), 0),
             Arguments.of(new BridgeRegTestConstants(), 250)
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("getBtcHeightWhenPegoutTxIndexActivatesArgProvider")
     void getBtcHeightWhenPegoutTxIndexActivates(BridgeConstants bridgeConstants, int expectedValue){
         // Act
@@ -122,11 +182,12 @@ class BridgeConstantsTest {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), 4_320),
             Arguments.of(BridgeTestNetConstants.getInstance(), 1_440),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), 0),
             Arguments.of(new BridgeRegTestConstants(), 100)
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("getPegoutTxIndexGracePeriodInBtcBlocksArgProvider")
     void getPegoutTxIndexGracePeriodInBtcBlocks(BridgeConstants bridgeConstants, int expectedValue){
         // Act
@@ -134,6 +195,44 @@ class BridgeConstantsTest {
 
         // assert
         assertEquals(expectedValue, pegoutTxIndexGracePeriodInBtcBlocks);
+    }
+
+    private static Stream<Arguments> getBtcHeightWhenBlockIndexActivatesArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), 696_022),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 2_039_594),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), 143_136),
+            Arguments.of(new BridgeRegTestConstants(), 10)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("getBtcHeightWhenBlockIndexActivatesArgProvider")
+    void getBtcHeightWhenBlockIndexActivates_shouldReturnNetworkValue(BridgeConstants bridgeConstants, int expectedValue) {
+        // Act
+        int btcHeightWhenBlockIndexActivates = bridgeConstants.getBtcHeightWhenBlockIndexActivates();
+
+        // assert
+        assertEquals(expectedValue, btcHeightWhenBlockIndexActivates);
+    }
+
+    private static Stream<Arguments> getMaxDepthToSearchBlocksBelowIndexActivationArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), 4_320),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 4_320),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), 0),
+            Arguments.of(new BridgeRegTestConstants(), 5)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("getMaxDepthToSearchBlocksBelowIndexActivationArgProvider")
+    void getMaxDepthToSearchBlocksBelowIndexActivation_shouldReturnNetworkValue(BridgeConstants bridgeConstants, int expectedValue) {
+        // Act
+        int maxDepthToSearchBlocksBelowIndexActivation = bridgeConstants.getMaxDepthToSearchBlocksBelowIndexActivation();
+
+        // assert
+        assertEquals(expectedValue, maxDepthToSearchBlocksBelowIndexActivation);
     }
 
     @ParameterizedTest()
@@ -150,11 +249,12 @@ class BridgeConstantsTest {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), FeePerKbMainNetConstants.getInstance()),
             Arguments.of(BridgeTestNetConstants.getInstance(), FeePerKbTestNetConstants.getInstance()),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), FeePerKbTestNetConstants.getInstance()),
             Arguments.of(new BridgeRegTestConstants(), FeePerKbRegTestConstants.getInstance())
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("getWhitelistConstantsProvider")
     void getWhitelistConstants(BridgeConstants bridgeConstants, WhitelistConstants expectedValue) {
         // Act
@@ -168,11 +268,12 @@ class BridgeConstantsTest {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), WhitelistMainNetConstants.getInstance()),
             Arguments.of(BridgeTestNetConstants.getInstance(), WhitelistTestNetConstants.getInstance()),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), WhitelistTestNetConstants.getInstance()),
             Arguments.of(new BridgeRegTestConstants(), WhitelistRegTestConstants.getInstance())
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("getFederationConstantsProvider")
     void getFederationConstants(BridgeConstants bridgeConstants, FederationConstants expectedValue) {
         // Act
@@ -188,11 +289,12 @@ class BridgeConstantsTest {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), FederationMainNetConstants.getInstance()),
             Arguments.of(BridgeTestNetConstants.getInstance(), FederationTestNetConstants.getInstance()),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), FederationTestNet2Constants.getInstance()),
             Arguments.of(bridgeRegTestConstants, FederationRegTestConstants.getInstance(federationRegTestConstants.getGenesisFederationPublicKeys()))
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("getLockingCapConstantsProvider")
     void getLockingCapConstants(BridgeConstants bridgeConstants, LockingCapConstants expectedValue){
         // Act
@@ -206,6 +308,7 @@ class BridgeConstantsTest {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), LockingCapMainNetConstants.getInstance()),
             Arguments.of(BridgeTestNetConstants.getInstance(), LockingCapTestNetConstants.getInstance()),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), LockingCapTestNetConstants.getInstance()),
             Arguments.of(new BridgeRegTestConstants(), LockingCapRegTestConstants.getInstance())
         );
     }
@@ -225,6 +328,8 @@ class BridgeConstantsTest {
             Arguments.of(BridgeMainNetConstants.getInstance(),
                 UnionBridgeMainNetConstants.getInstance()),
             Arguments.of(BridgeTestNetConstants.getInstance(),
+                UnionBridgeTestNetConstants.getInstance()),
+            Arguments.of(BridgeTestNet2Constants.getInstance(),
                 UnionBridgeTestNetConstants.getInstance()),
             Arguments.of(new BridgeRegTestConstants(), UnionBridgeRegTestConstants.getInstance())
         );
