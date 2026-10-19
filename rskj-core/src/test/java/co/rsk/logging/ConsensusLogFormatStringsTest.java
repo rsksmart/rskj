@@ -69,7 +69,9 @@ class ConsensusLogFormatStringsTest {
             Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] execution was interrupted because of an invalid transaction\""),
             // per-block outcome, local pre-execution refusal, node error
             Arguments.of(BLOCK_CHAIN, "getLogger(\"blockchain\")"),
-            Arguments.of(BLOCK_CHAIN, "\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
+            // pinned per call: INFO for a normal block, WARN for a slow one, and the scraper reads both
+            Arguments.of(BLOCK_CHAIN, "logger.info(\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
+            Arguments.of(BLOCK_CHAIN, "logger.warn(\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
             Arguments.of(BLOCK_CHAIN, "\"Invalid block with number: {}\""),
             Arguments.of(BLOCK_CHAIN, "\"Unexpected error: \""),
             // pre-execution rule attribution (classifier: FAIL, validation branch)
