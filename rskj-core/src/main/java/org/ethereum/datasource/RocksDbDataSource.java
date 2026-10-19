@@ -44,6 +44,11 @@ import static java.lang.System.getProperty;
 public class RocksDbDataSource implements KeyValueDataSource {
 
     private static final Long GENERAL_SIZE = 10L * 1024L * 1024L;
+
+    /**
+     * The block-based table format version this node writes. See {@link #createTableConfig()}.
+     */
+    private static final int WRITE_FORMAT_VERSION = 5;
     private static final int MAX_RETRIES = 2;
 
     private static final Logger logger = LoggerFactory.getLogger("db");
@@ -53,7 +58,14 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private final String databaseDir;
     private final String name;
 
-    private final Options options = createOptions();
+    /**
+     * When true the database is opened through RocksDB's read-only path, which does not replay the
+     * write-ahead log or rewrite any file, and every mutating method throws. Used to read an
+     * archival database -- a snapshot or a sealed artifact -- without altering it in any way.
+     */
+    private final boolean readOnly;
+
+    private final Options options;
     private RocksDB db;
     private boolean alive;
 
@@ -66,9 +78,19 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
     public RocksDbDataSource(String name, String databaseDir) {
+        this(name, databaseDir, false);
+    }
+
+    public RocksDbDataSource(String name, String databaseDir, boolean readOnly) {
         this.databaseDir = databaseDir;
         this.name = name;
-        logger.info("New RocksDbDataSource: {}", name);
+        this.readOnly = readOnly;
+        this.options = createOptions(readOnly);
+        logger.info("New RocksDbDataSource: {}{}", name, readOnly ? " (read-only)" : "");
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
     }
 
     @Override
@@ -88,7 +110,14 @@ public class RocksDbDataSource implements KeyValueDataSource {
             logger.debug("Opening database");
             Path dbPath = getPathForName(name, databaseDir);
 
-            Files.createDirectories(dbPath.getParent());
+            if (readOnly) {
+                if (!Files.isDirectory(dbPath)) {
+                    throw new IllegalArgumentException(
+                            "Cannot open a read-only database that does not exist: " + dbPath);
+                }
+            } else {
+                Files.createDirectories(dbPath.getParent());
+            }
 
             logger.debug("Initializing new or existing database: '{}'", name);
             openDb(dbPath);
@@ -109,7 +138,11 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
 
     private void openDb(Path dbPath) throws RocksDBException {
-        db = RocksDB.open(options, dbPath.toString());
+        // openReadOnly leaves the files untouched; a read-write open would replay the write-ahead
+        // log and rewrite files, which must not happen to a database being read for verification.
+        db = readOnly
+                ? RocksDB.openReadOnly(options, dbPath.toString())
+                : RocksDB.open(options, dbPath.toString());
 
         alive = true;
     }
@@ -189,6 +222,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     public byte[] put(byte[] key, byte[] value) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
+        refuseIfReadOnly("put");
 
         Metric metric = profiler.start(MetricKind.DB_WRITE);
         resetDbLock.readLock().lock();
@@ -216,6 +250,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
     @Override
     public void delete(byte[] key) {
+        refuseIfReadOnly("delete");
         Metric metric = profiler.start(MetricKind.DB_WRITE);
         resetDbLock.readLock().lock();
 
@@ -297,6 +332,13 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
     @Override
     public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
+        if (rows.isEmpty() && deleteKeys.isEmpty()) {
+            // An empty batch writes nothing. Write-buffering caches flush unconditionally when
+            // they are closed, and refusing a flush that has nothing in it would turn an ordinary
+            // shutdown into an error without anything having been written.
+            return;
+        }
+        refuseIfReadOnly("updateBatch");
         if (rows.containsKey(null)) {
             throw new IllegalArgumentException("Cannot update null values");
         }
@@ -363,13 +405,39 @@ public class RocksDbDataSource implements KeyValueDataSource {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
 
-    private static Options createOptions() {
+    private void refuseIfReadOnly(String operation) {
+        if (readOnly) {
+            throw new UnsupportedOperationException(String.format(
+                    "Cannot %s: database '%s' was opened read-only", operation, name));
+        }
+    }
+
+    private static Options createOptions(boolean readOnly) {
         Options options = new Options();
-        options.setCreateIfMissing(true);
+        options.setCreateIfMissing(!readOnly);
         options.setCompressionType(CompressionType.NO_COMPRESSION);
         options.setArenaBlockSize(GENERAL_SIZE);
         options.setWriteBufferSize(GENERAL_SIZE);
         options.setParanoidChecks(true);
+        options.setTableFormatConfig(createTableConfig());
         return options;
+    }
+
+    /**
+     * Pins the table format this node writes.
+     *
+     * <p>RocksDB reads older table formats but not newer ones, so the format a build writes decides
+     * which other builds can read its databases. Left to the library's default this moves with the
+     * library: databases written after an upgrade become unreadable by the version before it, and
+     * the upgrade is one-way for anyone running a node.
+     *
+     * <p>Pinning keeps that decision explicit and separate from the choice of library version.
+     * {@link #WRITE_FORMAT_VERSION} is the format this node has always written; raising it is a
+     * deliberate change that stops older builds reading any database written afterwards.
+     */
+    private static BlockBasedTableConfig createTableConfig() {
+        BlockBasedTableConfig tableConfig = new BlockBasedTableConfig();
+        tableConfig.setFormatVersion(WRITE_FORMAT_VERSION);
+        return tableConfig;
     }
 }
