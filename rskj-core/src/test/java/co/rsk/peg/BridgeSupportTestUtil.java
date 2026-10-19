@@ -114,7 +114,7 @@ public final class BridgeSupportTestUtil {
         return btcTransaction.getHash(true);
     }
 
-    private static PartialMerkleTree createValidPmtForTransactionsHashes(List<Sha256Hash> hashesToAdd, NetworkParameters networkParameters) {
+    public static PartialMerkleTree createValidPmtForTransactionsHashes(List<Sha256Hash> hashesToAdd, NetworkParameters networkParameters) {
         byte[] relevantNodesBits = new byte[(int)Math.ceil(hashesToAdd.size() / 8.0)];
         for (int i = 0; i < hashesToAdd.size(); i++) {
             Utils.setBitLE(relevantNodesBits, i);
@@ -184,14 +184,51 @@ public final class BridgeSupportTestUtil {
         BtcTransaction transaction,
         BtcBlockStoreWithCache btcBlockStore
     ) throws BlockStoreException {
+        return buildPMTAndRecreateChainForHashRegistration(
+            bridgeStorageProvider,
+            bridgeConstants,
+            btcBlockToRegisterHeight,
+            getHashConsideringWitness(transaction),
+            btcBlockStore
+        );
+    }
+
+    /**
+     * Builds a registration scenario for a transaction registered by its txid, as releases are through
+     * registerPegoutTransaction: the PMT proves the txid against the block header's merkle root,
+     * which is always computed over txids, even for segwit transactions.
+     */
+    public static PartialMerkleTree buildPMTAndRecreateChainForTxIdRegistration(
+        BridgeStorageProvider bridgeStorageProvider,
+        BridgeConstants bridgeConstants,
+        int btcBlockToRegisterHeight,
+        BtcTransaction transaction,
+        BtcBlockStoreWithCache btcBlockStore
+    ) throws BlockStoreException {
+        return buildPMTAndRecreateChainForHashRegistration(
+            bridgeStorageProvider,
+            bridgeConstants,
+            btcBlockToRegisterHeight,
+            transaction.getHash(false),
+            btcBlockStore
+        );
+    }
+
+    private static PartialMerkleTree buildPMTAndRecreateChainForHashRegistration(
+        BridgeStorageProvider bridgeStorageProvider,
+        BridgeConstants bridgeConstants,
+        int btcBlockToRegisterHeight,
+        Sha256Hash hashToRegister,
+        BtcBlockStoreWithCache btcBlockStore
+    ) throws BlockStoreException {
         NetworkParameters networkParameters = bridgeConstants.getBtcParams();
 
-        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(transaction), networkParameters);
+        PartialMerkleTree pmt = createValidPmtForTransactionsHashes(List.of(hashToRegister), networkParameters);
         int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
-        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockToRegisterHeight, networkParameters);
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmt, btcBlockToRegisterHeight, networkParameters);
         bridgeStorageProvider.save();
 
-        return pmtWithTransactions;
+        return pmt;
     }
 
     /**
@@ -215,15 +252,9 @@ public final class BridgeSupportTestUtil {
         // header's merkle root directly and isBlockMerkleRootValid would never take its coinbase path.
         assertTrue(transaction.hasWitness());
 
+        buildPMTAndRecreateChainForTxIdRegistration(bridgeStorageProvider, bridgeConstants, btcBlockToRegisterHeight, transaction, btcBlockStore);
+
         NetworkParameters networkParameters = bridgeConstants.getBtcParams();
-
-        PartialMerkleTree pmtForBlockHeader = createValidPmtForTransactionsHashes(List.of(transaction.getHash(false)), networkParameters);
-        int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
-        recreateChainFromPmt(btcBlockStore, chainHeight, pmtForBlockHeader, btcBlockToRegisterHeight, networkParameters);
-        // setMainChainBlock only updates the provider's in-memory height index; save() is required
-        // before it can be read back via getBtcBestBlockHashByHeight/getStoredBlockAtMainChainHeight
-        bridgeStorageProvider.save();
-
         PartialMerkleTree pmtWithWitness = createValidPmtForTransactionsHashes(List.of(transaction.getHash(true)), networkParameters);
         Sha256Hash witnessMerkleRoot = pmtWithWitness.getTxnHashAndMerkleRoot(new ArrayList<>());
 
@@ -625,6 +656,31 @@ public final class BridgeSupportTestUtil {
         assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
 
         assertEquals(executionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
+    }
+
+    public static void assertReleaseWasRegistered(
+        BridgeStorageProvider bridgeStorageProvider,
+        FederationSupport federationSupport,
+        List<LogInfo> logs,
+        int executionBlockNumber,
+        BtcTransaction releaseTransaction,
+        List<Coin> expectedValues,
+        List<Long> expectedOutputIndexes,
+        Address expectedFederationAddress
+    ) throws IOException {
+        assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(releaseTransaction.getHash()));
+        assertTransactionWasProcessed(
+            bridgeStorageProvider,
+            releaseTransaction.getHash(),
+            executionBlockNumber
+        );
+        assertLogUtxosRegistered(
+            logs,
+            releaseTransaction.getHash(),
+            expectedValues,
+            expectedOutputIndexes,
+            expectedFederationAddress
+        );
     }
 
     private static void assertLogAddSignature(List<LogInfo> logs, FederationMember federationMember, byte[] rskTxHash) {
