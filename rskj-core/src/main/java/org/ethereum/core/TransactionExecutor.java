@@ -546,7 +546,6 @@ public class TransactionExecutor {
             gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
             if (tx.isContractCreation() && !result.isRevert()) {
-                result.addCreatedAccount(DataWord.valueOf(tx.getContractAddress().getBytes()));
                 createContract();
             }
 
@@ -573,6 +572,10 @@ public class TransactionExecutor {
     }
 
     private void createContract() {
+        // Recorded first so every path records it. The early returns below set an exception on the program,
+        // so the caller clears the result's fields (clearFieldsOnException) and rolls back.
+        result.addCreatedAccount(DataWord.valueOf(tx.getContractAddress().getBytes()));
+
         byte[] code = program.getResult().getHReturn();
         int codeSize = getLength(code);
         long storageCost = GasCost.multiply(GasCost.CREATE_DATA, codeSize);
