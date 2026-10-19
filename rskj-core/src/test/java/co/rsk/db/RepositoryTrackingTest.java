@@ -77,7 +77,8 @@ public class RepositoryTrackingTest {
 
         repository.delete(COW);
 
-        assertRepositoryHasSize(0, 1);
+        // The account key and the storage prefix key
+        assertRepositoryHasSize(0, 2);
     }
 
     @Test
@@ -99,7 +100,8 @@ public class RepositoryTrackingTest {
 
         repository.getStorageBytes(COW, DataWord.valueOf(cowKey));
 
-        assertRepositoryHasSize(1, 0);
+        // The storage cell key and the storage prefix key
+        assertRepositoryHasSize(2, 0);
     }
 
     @Test
