@@ -443,8 +443,7 @@ public class BridgeSupport {
 
             validatePegoutTxRegistration(btcTxHash, height, pmtSerialized);
 
-            registerNewUTXOsByTxId(btcTxHash, height);
-            markBtcTxHashAsProcessed(btcTxHash);
+            executeRegisterPegoutTransaction(btcTxHash, height);
         } catch (RegisterBtcTransactionException e) {
             logger.warn(
                 "[registerPegoutTransaction] Could not register Btc tx {}. Message: {}",
@@ -452,6 +451,11 @@ public class BridgeSupport {
                 e.getMessage()
             );
         }
+    }
+
+    private void executeRegisterPegoutTransaction(Sha256Hash btcTxId, int height) throws IOException {
+        registerNewUTXOsByTxId(btcTxId, height);
+        markBtcTxHashAsProcessed(btcTxId);
     }
 
     private boolean isTheSvpFundTx(Sha256Hash btcTxHash) {
