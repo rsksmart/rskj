@@ -576,8 +576,9 @@ class BridgeSupportSvpTest {
         }
 
         @Test
-        void updateCollections_whenWaitingForFundTxToBeRegistered_shouldNotCreateFundTransactionAgain() throws Exception {
+        void updateCollections_whenWaitingForFundTxToBeRegistered_forVetiver_shouldNotCreateFundTransactionAgain() throws Exception {
             // arrange
+            setUpBridgeSupportForVetiver();
             setupSegwitActiveFederationWithUtxos();
             setupUnsignedFundTxToBeRegistered();
             Sha256Hash svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned().orElseThrow();
@@ -590,9 +591,8 @@ class BridgeSupportSvpTest {
         }
 
         @Test
-        void updateCollections_whenWaitingForFundTxToBeRegistered_forVetiver_shouldNotCreateFundTransactionAgain() throws Exception {
+        void updateCollections_whenWaitingForFundTxToBeRegistered_shouldNotCreateFundTransactionAgain() throws Exception {
             // arrange
-            setUpBridgeSupportForVetiver();
             setupSegwitActiveFederationWithUtxos();
             setupUnsignedFundTxToBeRegistered();
             Sha256Hash svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned().orElseThrow();
