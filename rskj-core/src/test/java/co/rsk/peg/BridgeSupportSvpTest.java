@@ -1399,6 +1399,7 @@ class BridgeSupportSvpTest {
             setUpBridgeSupportForVetiver();
 
             List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1423,7 +1424,7 @@ class BridgeSupportSvpTest {
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1450,6 +1451,7 @@ class BridgeSupportSvpTest {
             setUpForTransactionRegistration(pegout);
 
             List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1475,7 +1477,7 @@ class BridgeSupportSvpTest {
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1507,6 +1509,7 @@ class BridgeSupportSvpTest {
                 .build();
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1532,7 +1535,7 @@ class BridgeSupportSvpTest {
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1574,6 +1577,7 @@ class BridgeSupportSvpTest {
                 .build();
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1599,7 +1603,7 @@ class BridgeSupportSvpTest {
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1636,6 +1640,7 @@ class BridgeSupportSvpTest {
                 .build();
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1662,7 +1667,7 @@ class BridgeSupportSvpTest {
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1708,6 +1713,7 @@ class BridgeSupportSvpTest {
                 .build();
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1734,7 +1740,7 @@ class BridgeSupportSvpTest {
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1770,6 +1776,7 @@ class BridgeSupportSvpTest {
                 .build();
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1794,7 +1801,7 @@ class BridgeSupportSvpTest {
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1811,6 +1818,7 @@ class BridgeSupportSvpTest {
             setUpForTransactionRegistration(svpSpendTransaction);
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1829,7 +1837,7 @@ class BridgeSupportSvpTest {
             assertTxIsRejectedPeginAndMarkedAsProcessed(svpSpendTransaction);
 
             // svp success was not processed
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1912,6 +1920,7 @@ class BridgeSupportSvpTest {
         void registerBtcTransaction_whenIsTheSpendTransaction_withAmountBelowMinPeginValue_shouldProcessSpendTxAndSvpSuccess() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             createSpendTransaction();
+            recreateSvpFundTransactionSignedByLegacyActiveFederation();
             addSpendTransactionInputs();
             Coin amountToSend = bridgeMainNetConstants.getMinimumPeginTxValue(allActivations).minus(Coin.valueOf(1));
             addSpendTransactionOutput(amountToSend);
@@ -2012,9 +2021,9 @@ class BridgeSupportSvpTest {
             assertNewActiveFederationCreationBlockHeightWasSet();
         }
 
-        private void assertNoHandoverToNewFederation() {
+        private void assertNoHandoverToNewFederation(Federation expectedActiveFederation) {
             assertUTXOsWereNotMovedToOldFederation();
-            assertNewAndOldFederationsWereNotSet();
+            assertNewAndOldFederationsWereNotSet(expectedActiveFederation);
             assertLastRetiredFederationScriptWasNotSet();
             assertNewActiveFederationCreationBlockHeightWasNotSet();
         }
@@ -2049,14 +2058,14 @@ class BridgeSupportSvpTest {
             assertEquals(proposedFederation, newFederation);
         }
 
-        private void assertNewAndOldFederationsWereNotSet() {
+        private void assertNewAndOldFederationsWereNotSet(Federation expectedActiveFederation) {
             // assert old federation is still null
             Federation oldFederation = federationStorageProvider.getOldFederation(federationMainNetConstants, allActivations);
             assertNull(oldFederation);
 
             // assert new federation is still the active federation
             Federation newFederation = federationStorageProvider.getNewFederation(federationMainNetConstants, allActivations);
-            assertEquals(federationSupport.getActiveFederation(), newFederation);
+            assertEquals(expectedActiveFederation, newFederation);
         }
 
         private void assertLastRetiredFederationScriptWasSet() {
