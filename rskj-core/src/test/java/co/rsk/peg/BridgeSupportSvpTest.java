@@ -97,8 +97,6 @@ class BridgeSupportSvpTest {
     private static final Coin SVP_SPEND_TX_OUTPUT_VALUE = Coin.valueOf(1762);
     // svp fund tx change output comes after the proposed and flyover proposed federation outputs
     private static final long OUTPUT_INDEX_FOR_SVP_FUND_TX_CHANGE = 2;
-    // pegout change output comes after the user output
-    private static final long OUTPUT_INDEX_FOR_PEGOUT_CHANGE = 1;
     // pegin output to the active federation is the first one
     private static final long OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED = 0;
     // svp spend tx output to the active federation is the only one
@@ -1329,8 +1327,9 @@ class BridgeSupportSvpTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("Spend transaction registration tests")
     class SpendTxRegistrationTests {
+        // TODO(juli): once registerBtcTransaction redirects pegouts to registerPegoutTransaction add this test for allActivations
         @Test
-        void registerBtcTransaction_forPegout_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegout_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_forPegout_whenWaitingForSvpSpendTx_forVetiver_shouldProcessAndRegisterPegout_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
@@ -1344,6 +1343,7 @@ class BridgeSupportSvpTest {
 
             savePegoutIndex(pegout);
             setUpForTransactionRegistration(pegout);
+            setUpBridgeSupportForVetiver();
 
             List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
 
@@ -1361,10 +1361,9 @@ class BridgeSupportSvpTest {
             List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
                 pegout,
                 activeFederation,
-                btcBlockWithPmtHeight
+                UTXO_HEIGHT_BEFORE_CARDAMOM
             );
             assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
-            assertLogUtxosRegisteredForPegoutChange(pegout);
             assertTransactionWasProcessed(pegout.getHash());
 
             // spend tx was not registered nor processed
@@ -2124,16 +2123,6 @@ class BridgeSupportSvpTest {
         List<UTXO> expectedActiveFederationUtxos = new ArrayList<>(activeFederationUtxosBeforeRegisteringTx);
         expectedActiveFederationUtxos.addAll(expectedUtxosRegistered);
         assertUtxosAreEqual(expectedActiveFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
-    }
-
-    private void assertLogUtxosRegisteredForPegoutChange(BtcTransaction pegout) {
-        assertLogUtxosRegistered(
-            logs,
-            pegout.getHash(),
-            List.of(CHANGE_VALUE),
-            List.of(OUTPUT_INDEX_FOR_PEGOUT_CHANGE),
-            activeFederation.getAddress()
-        );
     }
 
     private void assertUtxosRegisteredWasNotEmitted() {
