@@ -385,10 +385,11 @@ public class BridgeSupport {
 
             BtcTransaction btcTx = new BtcTransaction(networkParameters, btcTxSerialized);
             btcTx.verify();
-            logger.debug("[registerBtcTransaction][rsk tx {}] Btc tx hash without witness {}", rskTxHash, btcTx.getHash(false));
+
+            Sha256Hash btcTxId = btcTx.getHash(false);
+            logger.debug("[registerBtcTransaction][rsk tx {}] Btc tx hash without witness {}", rskTxHash, btcTxId);
 
             // Check again that the tx was not already processed but making sure to use the txid (no witness)
-            Sha256Hash btcTxId = btcTx.getHash(false);
             if (isAlreadyBtcTxHashProcessed(btcTxId)) {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
