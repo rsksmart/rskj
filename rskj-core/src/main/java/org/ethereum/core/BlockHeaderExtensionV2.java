@@ -91,9 +91,7 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
         List<byte[]> fieldsToEncode = Lists.newArrayList(
                 RLP.encodeElement(HashUtil.keccak256(this.logsBloom)),
                 RLP.encodeElement(Objects.requireNonNullElseGet(this.baseEvent, () -> EMPTY_BYTE_ARRAY)));
-        if (this.txExecutionSublistsEdges != null) {
-            fieldsToEncode.add(ByteUtil.shortsToRLP(this.txExecutionSublistsEdges));
-        }
+        appendEdgesIfPresent(fieldsToEncode);
         return HashUtil.keccak256(RLP.encodeList(fieldsToEncode.toArray(new byte[][]{})));
     }
 
@@ -102,10 +100,14 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
         List<byte[]> fieldsToEncode = Lists.newArrayList(
                 RLP.encodeElement(this.logsBloom),
                 RLP.encodeElement(Objects.requireNonNullElseGet(this.baseEvent, () -> EMPTY_BYTE_ARRAY)));
+        appendEdgesIfPresent(fieldsToEncode);
+        return RLP.encodeList(fieldsToEncode.toArray(new byte[][]{}));
+    }
+
+    private void appendEdgesIfPresent(List<byte[]> fieldsToEncode) {
         if (this.txExecutionSublistsEdges != null) {
             fieldsToEncode.add(ByteUtil.shortsToRLP(this.txExecutionSublistsEdges));
         }
-        return RLP.encodeList(fieldsToEncode.toArray(new byte[][]{}));
     }
 
     public byte[] getBaseEvent() {
@@ -119,6 +121,7 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
         return new BlockHeaderExtensionV2(this.logsBloom, this.txExecutionSublistsEdges, baseEvent);
     }
 
+    @Override
     public byte[] getLogsBloom() {
         return this.logsBloom != null ? Arrays.copyOf(this.logsBloom, this.logsBloom.length) : null;
     }
@@ -130,6 +133,7 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
                 Objects.requireNonNull(logsBloom, "logsBloom"), this.txExecutionSublistsEdges, this.baseEvent);
     }
 
+    @Override
     public short[] getTxExecutionSublistsEdges() {
         return this.txExecutionSublistsEdges != null
                 ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length)
