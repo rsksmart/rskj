@@ -955,6 +955,27 @@ class BridgeSupportSvpTest {
             assertSvpFundTransactionValuesWereUpdated();
         }
 
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_withFundTxCreatedBeforeRSKIP643_shouldRegisterTransactionAndUpdateSvpFundTransactionValues() throws Exception {
+            // arrange
+            setupSegwitActiveFederationWithUtxos();
+            // the fund tx was created before RSKIP643, so its pegout index was saved instead of its pending utxos
+            arrangeSvpFundTransactionUnsignedForVetiver();
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(svpFundTransaction.getHash()));
+
+            signInputs(segwitActiveFederation, segwitActiveFederationKeys, svpFundTransaction);
+            // and it is registered after RSKIP643
+            setUpForTransactionRegistration(svpFundTransaction);
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(activeFederationUtxosBeforeRegisteringTx);
+            assertSvpFundTransactionValuesWereUpdated();
+        }
+
         private void arrangeSvpFundTransactionFromSegwitActiveFederationToBeRegistered() throws BlockStoreException {
             setupSegwitActiveFederationWithUtxos();
             arrangeSvpFundTransactionUnsigned();
