@@ -91,7 +91,7 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
         List<byte[]> fieldsToEncode = Lists.newArrayList(
                 RLP.encodeElement(HashUtil.keccak256(this.logsBloom)),
                 RLP.encodeElement(Objects.requireNonNullElseGet(this.baseEvent, () -> EMPTY_BYTE_ARRAY)));
-        appendEdgesIfPresent(fieldsToEncode);
+        addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
         return HashUtil.keccak256(RLP.encodeList(fieldsToEncode.toArray(new byte[][]{})));
     }
 
@@ -100,11 +100,11 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
         List<byte[]> fieldsToEncode = Lists.newArrayList(
                 RLP.encodeElement(this.logsBloom),
                 RLP.encodeElement(Objects.requireNonNullElseGet(this.baseEvent, () -> EMPTY_BYTE_ARRAY)));
-        appendEdgesIfPresent(fieldsToEncode);
+        addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
         return RLP.encodeList(fieldsToEncode.toArray(new byte[][]{}));
     }
 
-    private void appendEdgesIfPresent(List<byte[]> fieldsToEncode) {
+    private void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
         if (this.txExecutionSublistsEdges != null) {
             fieldsToEncode.add(ByteUtil.shortsToRLP(this.txExecutionSublistsEdges));
         }
@@ -128,7 +128,8 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
 
     @Override
     public BlockHeaderExtensionV2 withLogsBloom(byte[] logsBloom) {
-        // Rejects a null logsBloom with NullPointerException; the constructor accepts null.
+        // Pinned quirk: a null logsBloom throws NullPointerException here, while the
+        // constructor accepts null.
         return new BlockHeaderExtensionV2(
                 Objects.requireNonNull(logsBloom, "logsBloom"), this.txExecutionSublistsEdges, this.baseEvent);
     }

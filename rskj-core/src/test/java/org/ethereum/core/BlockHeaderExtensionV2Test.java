@@ -113,7 +113,7 @@ class BlockHeaderExtensionV2Test {
 
     @Test
     void withLogsBloomRejectsNull() {
-        // withLogsBloom rejects null with NullPointerException; the constructor accepts null.
+        // Pinned quirk: the constructor accepts a null logsBloom, withLogsBloom does not.
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(new byte[32], EDGES, null);
 
         assertThrows(NullPointerException.class, () -> ext.withLogsBloom(null));
