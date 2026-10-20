@@ -5121,7 +5121,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withPegoutWithChange_shouldRegisterChangeInActiveFed() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            BtcTransaction pegout = setupPegoutFromActiveFedPayingToUser();
+            BtcTransaction pegout = createPegoutFromActiveFedPayingToUser(PEGOUT_REQUEST_VALUE);
             setUpBridgeAndFederationSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
 
             // act
@@ -5144,6 +5144,24 @@ class BridgeSupportRegisterBtcTransactionTest {
                 List.of(OUTPUT_INDEX_FOR_PEGOUT_CHANGE),
                 segwitActiveFederation.getAddress()
             );
+        }
+
+        @Test
+        void registerBtcTransaction_withPegoutWithoutChange_shouldNotRegister() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            // with no output sent to the live federations, no federations pending utxos are saved
+            // requesting the whole input value leaves no change
+            BtcTransaction pegout = createPegoutFromActiveFedPayingToUser(INPUT_VALUE);
+            setUpBridgeAndFederationSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
+
+            // act
+            signAndRegisterReleaseTransaction(pegout);
+
+            // assert
+            assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
+            assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(pegout.getHash()).isEmpty());
+            assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
         }
 
         private void setUpBridgeAndFederationSupport(long executionBlockNumber) {
@@ -5169,7 +5187,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 .build();
         }
 
-        private BtcTransaction setupPegoutFromActiveFedPayingToUser() throws IOException {
+        private BtcTransaction createPegoutFromActiveFedPayingToUser(Coin pegoutRequestValue) throws IOException {
             setUpBridgeAndFederationSupport(PEGOUT_CREATION_BLOCK_NUMBER);
             UTXO activeFederationUtxo = UTXOBuilder.builder()
                 .withTransactionHash(BitcoinTestUtils.createHash(1))
@@ -5180,7 +5198,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             bridgeStorageProvider.getReleaseRequestQueue().add(
                 userAddress,
-                PEGOUT_REQUEST_VALUE,
+                pegoutRequestValue,
                 PEGOUT_REQUEST_RSK_TX_HASH
             );
 
