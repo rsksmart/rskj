@@ -840,6 +840,35 @@ class BridgeSupportSvpTest {
             assertSvpFundTransactionValuesWereNotUpdated();
         }
 
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_shouldRegisterChangeUtxo() throws Exception {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            arrangeSvpFundTransactionToBeRegistered();
+            arrangeSvpValuesWereClearedAfterValidationPeriodEnded();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(activeFederationUtxosBeforeRegisteringTx);
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_forVetiver_shouldRegisterChangeUtxo() throws Exception {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            arrangeSvpFundTransactionToBeRegisteredForVetiver();
+            arrangeSvpValuesWereClearedAfterValidationPeriodEnded();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredForVetiver(activeFederationUtxosBeforeRegisteringTx);
+        }
 
         @Test
         void registerBtcTransaction_forNormalPegout_whenSvpPeriodIsOngoing_forVetiver_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
@@ -955,6 +984,15 @@ class BridgeSupportSvpTest {
             signInputs(activeFederation, activeFederationKeys, svpFundTransaction);
             setUpForTransactionRegistration(svpFundTransaction);
             setUpBridgeSupportForVetiver();
+        }
+
+        private void arrangeSvpValuesWereClearedAfterValidationPeriodEnded() throws IOException {
+            // the svp failed, so the next updateCollections clears the svp values
+            bridgeSupport.updateCollections(rskTx);
+            bridgeStorageProvider.save();
+            assertNoProposedFederation();
+            assertNoSvpFundTxHashUnsigned();
+            logs.clear();
         }
 
         private void registerBtcTransaction(BtcTransaction transaction) throws Exception {
