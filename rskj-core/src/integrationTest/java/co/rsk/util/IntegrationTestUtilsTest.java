@@ -46,9 +46,11 @@ class IntegrationTestUtilsTest {
     void findFreePortsHoldsEverySocketUntilAllPortsArePicked() {
         // Models an OS that reuses a port as soon as its socket closes: each
         // open hands out the lowest port that no open socket holds.
+        int count = 5;
+        int firstPort = 40000;
         Set<Integer> heldPorts = new HashSet<>();
         IntegrationTestUtils.SocketOpener reusingOpener = () -> {
-            int port = 40000;
+            int port = firstPort;
             while (heldPorts.contains(port)) {
                 port++;
             }
@@ -56,9 +58,9 @@ class IntegrationTestUtilsTest {
             return new FakeServerSocket(port, heldPorts);
         };
 
-        int[] ports = IntegrationTestUtils.findFreePorts(5, reusingOpener);
+        int[] ports = IntegrationTestUtils.findFreePorts(count, reusingOpener);
 
-        assertEquals(5, Arrays.stream(ports).distinct().count());
+        assertEquals(count, Arrays.stream(ports).distinct().count());
         assertTrue(heldPorts.isEmpty(), "sockets still open: " + heldPorts);
     }
 

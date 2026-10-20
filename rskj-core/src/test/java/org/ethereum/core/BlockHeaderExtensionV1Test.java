@@ -15,6 +15,10 @@ class BlockHeaderExtensionV1Test {
     // encodings and hashes byte for byte.
     private static final String GOLDEN_V1_BLOOM =
             "6a66323a9e4d08c68b9591d3216c5b8d18eb631fdf0fecb3ca9f08656eb25317e851ef7dec705b1252743c7ff56b37ded80afdf6ba729c877070060c416faeb515cba865daffc0f74f2a7365452a7141b168c15f222fab57d2958896a1c82c5a923dfe638c9d9f21a422891023fa8c9aad4533295d0289d18c2702148f1d3dd8746cec9489619e6b052f0583a2d38a118dbd6bf955804f3f0df9d00f543e70aac36c8d923e8071e03d4628ea5e706cc341e9cf3919c4dfdb19c0e1aafbd0f4d5fc6fedd27b836389a9921d5af177b26d71d157975ab0f6bc488b42eed2c56ae7905ebeaef4129d13bbd0ad817fbca236f730d128efbf586684881d08eddb0036";
+    private static final String GOLDEN_V1_ENCODED_WITH_EDGES =
+            "f9010c" + "b90100" + GOLDEN_V1_BLOOM + "880100020003000400";
+    private static final String GOLDEN_V1_HASH_WITH_EDGES =
+            "f26c14ea90289d65601ee7304730c0eea1e5bec5777d12d0c8f240279434149f";
 
     @Test
     void createWithLogsBloomAndEdges() {
@@ -49,7 +53,7 @@ class BlockHeaderExtensionV1Test {
 
     @Test
     void withLogsBloomRejectsNull() {
-        // withLogsBloom rejects null with NullPointerException; the constructor accepts null.
+        // Pinned quirk: the constructor accepts a null logsBloom, withLogsBloom does not.
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
 
         Assertions.assertThrows(NullPointerException.class, () -> extension.withLogsBloom(null));
@@ -121,9 +125,9 @@ class BlockHeaderExtensionV1Test {
     }
 
     private static void assertGoldenEncodingAndHashWithEdges(BlockHeaderExtensionV1 extension) {
-        Assertions.assertArrayEquals(Hex.decode("f9010c" + "b90100" + GOLDEN_V1_BLOOM + "880100020003000400"),
+        Assertions.assertArrayEquals(Hex.decode(GOLDEN_V1_ENCODED_WITH_EDGES),
                 extension.getEncoded());
-        Assertions.assertArrayEquals(Hex.decode("f26c14ea90289d65601ee7304730c0eea1e5bec5777d12d0c8f240279434149f"),
+        Assertions.assertArrayEquals(Hex.decode(GOLDEN_V1_HASH_WITH_EDGES),
                 extension.getHash());
     }
 
@@ -196,7 +200,7 @@ class BlockHeaderExtensionV1Test {
     void goldenEncodingWithEdges() {
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(Hex.decode(GOLDEN_V1_BLOOM), EDGES);
 
-        Assertions.assertArrayEquals(Hex.decode("f9010c" + "b90100" + GOLDEN_V1_BLOOM + "880100020003000400"),
+        Assertions.assertArrayEquals(Hex.decode(GOLDEN_V1_ENCODED_WITH_EDGES),
                 extension.getEncoded());
     }
 
@@ -204,7 +208,7 @@ class BlockHeaderExtensionV1Test {
     void goldenHashWithEdges() {
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(Hex.decode(GOLDEN_V1_BLOOM), EDGES);
 
-        Assertions.assertArrayEquals(Hex.decode("f26c14ea90289d65601ee7304730c0eea1e5bec5777d12d0c8f240279434149f"),
+        Assertions.assertArrayEquals(Hex.decode(GOLDEN_V1_HASH_WITH_EDGES),
                 extension.getHash());
     }
 
