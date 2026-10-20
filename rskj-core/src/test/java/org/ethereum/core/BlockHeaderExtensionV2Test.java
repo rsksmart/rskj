@@ -112,6 +112,14 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
+    void withLogsBloomRejectsNull() {
+        // withLogsBloom rejects null with NullPointerException; the constructor accepts null.
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(new byte[32], EDGES, null);
+
+        assertThrows(NullPointerException.class, () -> ext.withLogsBloom(null));
+    }
+
+    @Test
     void constructorCopiesLogsBloom() {
         // The caller keeps its arrays, so the constructor must copy each one in.
         byte[] logsBloom = Hex.decode(GOLDEN_V2_BLOOM);

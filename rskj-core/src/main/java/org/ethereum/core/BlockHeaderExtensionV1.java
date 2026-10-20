@@ -26,6 +26,7 @@ import org.ethereum.util.RLPList;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * RSKIP-351 block header extension, version 1.
@@ -81,10 +82,9 @@ public final class BlockHeaderExtensionV1 implements BlockHeaderExtension {
 
     @Override
     public BlockHeaderExtensionV1 withLogsBloom(byte[] logsBloom) {
-        // Pinned quirk, kept from the old setter: a null logsBloom throws
-        // NullPointerException (Arrays.copyOf) while the constructor accepts null.
-        byte[] copy = Arrays.copyOf(logsBloom, logsBloom.length);
-        return new BlockHeaderExtensionV1(copy, this.txExecutionSublistsEdges);
+        // Rejects a null logsBloom with NullPointerException; the constructor accepts null.
+        return new BlockHeaderExtensionV1(
+                Objects.requireNonNull(logsBloom, "logsBloom"), this.txExecutionSublistsEdges);
     }
 
     public short[] getTxExecutionSublistsEdges() {
