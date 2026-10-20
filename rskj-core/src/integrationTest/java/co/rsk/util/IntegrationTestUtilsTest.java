@@ -19,7 +19,11 @@ package co.rsk.util;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,15 +31,56 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class IntegrationTestUtilsTest {
 
     @Test
-    void findFreePortsReturnsTheRequestedNumberOfDistinctPorts() {
+    void findFreePortsReturnsTheRequestedNumberOfValidPorts() {
         int count = 5;
 
         int[] ports = IntegrationTestUtils.findFreePorts(count);
 
         assertEquals(count, ports.length);
-        assertEquals(count, Arrays.stream(ports).distinct().count());
         for (int port : ports) {
             assertTrue(port > 0 && port <= 65535, "invalid port " + port);
+        }
+    }
+
+    @Test
+    void findFreePortsHoldsEverySocketUntilAllPortsArePicked() {
+        // Models an OS that reuses a port as soon as its socket closes: each
+        // open hands out the lowest port that no open socket holds.
+        Set<Integer> heldPorts = new HashSet<>();
+        IntegrationTestUtils.SocketOpener reusingOpener = () -> {
+            int port = 40000;
+            while (heldPorts.contains(port)) {
+                port++;
+            }
+            heldPorts.add(port);
+            return new FakeServerSocket(port, heldPorts);
+        };
+
+        int[] ports = IntegrationTestUtils.findFreePorts(5, reusingOpener);
+
+        assertEquals(5, Arrays.stream(ports).distinct().count());
+        assertTrue(heldPorts.isEmpty(), "sockets still open: " + heldPorts);
+    }
+
+    private static final class FakeServerSocket extends ServerSocket {
+        private final int port;
+        private final Set<Integer> heldPorts;
+
+        // the no-arg super constructor leaves the socket unbound
+        FakeServerSocket(int port, Set<Integer> heldPorts) throws IOException {
+            this.port = port;
+            this.heldPorts = heldPorts;
+        }
+
+        @Override
+        public int getLocalPort() {
+            return port;
+        }
+
+        @Override
+        public void close() throws IOException {
+            heldPorts.remove(port);
+            super.close();
         }
     }
 }

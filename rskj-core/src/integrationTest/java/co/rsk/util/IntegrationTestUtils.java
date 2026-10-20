@@ -41,11 +41,21 @@ public final class IntegrationTestUtils {
      * socket is released before the next bind, and the OS may reuse it.
      */
     public static int[] findFreePorts(int count) {
+        return findFreePorts(count, () -> new ServerSocket(0));
+    }
+
+    /** Opens a socket on a port the OS picks. Tests pass a fake to model port reuse. */
+    @FunctionalInterface
+    interface SocketOpener {
+        ServerSocket open() throws IOException;
+    }
+
+    static int[] findFreePorts(int count, SocketOpener opener) {
         ServerSocket[] sockets = new ServerSocket[count];
         try {
             int[] ports = new int[count];
             for (int i = 0; i < count; i++) {
-                sockets[i] = new ServerSocket(0);
+                sockets[i] = opener.open();
                 ports[i] = sockets[i].getLocalPort();
             }
             return ports;
