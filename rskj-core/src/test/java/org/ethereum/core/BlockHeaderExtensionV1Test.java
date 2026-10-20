@@ -49,8 +49,7 @@ class BlockHeaderExtensionV1Test {
 
     @Test
     void withLogsBloomRejectsNull() {
-        // Pinned quirk, kept from the old setter: null throws NullPointerException
-        // (Arrays.copyOf) while the constructor accepts null.
+        // withLogsBloom rejects null with NullPointerException; the constructor accepts null.
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
 
         Assertions.assertThrows(NullPointerException.class, () -> extension.withLogsBloom(null));

@@ -125,10 +125,9 @@ public final class BlockHeaderExtensionV2 implements BlockHeaderExtension {
 
     @Override
     public BlockHeaderExtensionV2 withLogsBloom(byte[] logsBloom) {
-        // Pinned quirk, kept from the old setter: a null logsBloom throws
-        // NullPointerException (Arrays.copyOf) while the constructor accepts null.
-        byte[] copy = Arrays.copyOf(logsBloom, logsBloom.length);
-        return new BlockHeaderExtensionV2(copy, this.txExecutionSublistsEdges, this.baseEvent);
+        // Rejects a null logsBloom with NullPointerException; the constructor accepts null.
+        return new BlockHeaderExtensionV2(
+                Objects.requireNonNull(logsBloom, "logsBloom"), this.txExecutionSublistsEdges, this.baseEvent);
     }
 
     public short[] getTxExecutionSublistsEdges() {
