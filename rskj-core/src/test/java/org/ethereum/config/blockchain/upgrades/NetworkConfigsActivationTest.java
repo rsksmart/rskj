@@ -124,7 +124,7 @@ class NetworkConfigsActivationTest {
         assertTrue(missing.isEmpty(), network + " is missing hardforkActivationHeights for " + missing);
     }
 
-    // twoToThree shipped before papyrus200 on main, testnet and testnet2
+    // twoToThree shipped before papyrus200 on main and testnet
     private static final String PAPYRUS200_TWO_TO_THREE = "papyrus200>twoToThree";
 
     /**
@@ -133,10 +133,8 @@ class NetworkConfigsActivationTest {
      */
     private static final Map<String, Set<String>> KNOWN_ENUM_ORDER_INVERSIONS = Map.of(
         "main", Set.of(PAPYRUS200_TWO_TO_THREE),
-        // orchid, orchid060 and wasabi100 are active from genesis on testnet/testnet2; afterBridgeSync is not
+        // orchid, orchid060 and wasabi100 are active from genesis on testnet; afterBridgeSync is not
         "testnet", Set.of(PAPYRUS200_TWO_TO_THREE,
-            "afterBridgeSync>orchid", "afterBridgeSync>orchid060", "afterBridgeSync>wasabi100"),
-        "testnet2", Set.of(PAPYRUS200_TWO_TO_THREE,
             "afterBridgeSync>orchid", "afterBridgeSync>orchid060", "afterBridgeSync>wasabi100"));
 
     @ParameterizedTest(name = "{0}")
@@ -174,7 +172,7 @@ class NetworkConfigsActivationTest {
     /**
      * Tip height per network at the time the golden was last blessed. Heights at or below asOf have been mined
      * and must never change. asOf < 0 means the network's history is not pinned: regtest heights are dev knobs,
-     * and testnet2 is a config profile on testnet's networkId/genesis rather than a chain with its own history.
+     * and testnet2 is a new network (its own networkId and genesis) whose history is not pinned yet.
      * Bump main/testnet at release time, then run ./gradlew :rskj-core:updateActivationGolden.
      */
     private static final Map<String, Long> AS_OF = Map.of(
