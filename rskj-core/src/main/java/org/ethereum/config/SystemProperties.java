@@ -22,7 +22,8 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.params.MainNetParams;
 import co.rsk.bitcoinj.params.RegTestParams;
-import co.rsk.bitcoinj.params.TestNet2Params;
+import co.rsk.bitcoinj.params.TestNet3Params;
+import co.rsk.bitcoinj.params.TestNet4Params;
 import co.rsk.config.ConfigLoader;
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import co.rsk.metrics.profilers.ProfilerFactory;
@@ -187,25 +188,14 @@ public abstract class SystemProperties {
 
     public Constants getNetworkConstants() {
         if (constants == null) {
-            final var networkName = NetworkName.getByName(netName());
-            switch (networkName) {
-                case MAINNET:
-                    constants = Constants.mainnet();
-                    break;
-                case TESTNET:
-                    constants = Constants.testnet(getActivationConfig());
-                    break;
-                case TESTNET2:
-                    constants = Constants.testnet2(getActivationConfig());
-                    break;
-                case REGTEST:
-                    constants = getGenesisFederationPublicKeys()
-                            .map(Constants::regtestWithFederation)
-                            .orElseGet(Constants::regtest);
-                    break;
-                default:
-                    throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
-            }
+            constants = switch (NetworkName.getByName(netName())) {
+                case MAINNET -> Constants.mainnet();
+                case TESTNET -> Constants.testnet(getActivationConfig());
+                case TESTNET2 -> Constants.testnet2(getActivationConfig());
+                case REGTEST -> getGenesisFederationPublicKeys()
+                        .map(Constants::regtestWithFederation)
+                        .orElseGet(Constants::regtest);
+            };
         }
 
         return constants;
@@ -213,20 +203,12 @@ public abstract class SystemProperties {
 
     public NetworkParameters getBitcoinjNetworkConstants() {
         if (networkParameters == null) {
-            final var networkName = NetworkName.getByName(netName());
-            switch (networkName) {
-                case MAINNET:
-                    networkParameters = MainNetParams.get();
-                    break;
-                case TESTNET, TESTNET2:
-                    networkParameters = TestNet2Params.get();
-                    break;
-                case REGTEST:
-                    networkParameters = RegTestParams.get();
-                    break;
-                default:
-                    throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
-            }
+            networkParameters = switch (NetworkName.getByName(netName())) {
+                case MAINNET -> MainNetParams.get();
+                case TESTNET -> TestNet3Params.get();
+                case TESTNET2 -> TestNet4Params.get();
+                case REGTEST -> RegTestParams.get();
+            };
         }
 
         return networkParameters;

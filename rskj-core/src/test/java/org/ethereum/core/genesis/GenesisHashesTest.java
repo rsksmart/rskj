@@ -18,17 +18,16 @@
 
 package org.ethereum.core.genesis;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 import co.rsk.RskContext;
 import co.rsk.crypto.Keccak256;
+import java.nio.file.Path;
 import org.ethereum.core.Genesis;
 import org.ethereum.util.RskTestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
-import java.nio.file.Path;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 class GenesisHashesTest {
 
@@ -51,6 +50,16 @@ class GenesisHashesTest {
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();
         assertThat(genesis.getHash(), is(new Keccak256("cabb7fbe88cd6d922042a32ffc08ce8b1fbb37d650b9d4e7dbfe2a7469adfa42")));
+
+        rskContext.close();
+    }
+
+    @Test
+    void testnet2HashTest() {
+        RskContext rskContext = new RskTestContext(tempDir, "--testnet2" );
+        rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
+        Genesis genesis = rskContext.getGenesis();
+        assertThat(genesis.getHash(), is(new Keccak256("c381e4eff05da028cb92143627f08b6850355ae995b1f749c97ad2e74dfc0875")));
 
         rskContext.close();
     }
