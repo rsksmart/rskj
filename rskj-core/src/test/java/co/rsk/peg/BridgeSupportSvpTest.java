@@ -781,7 +781,7 @@ class BridgeSupportSvpTest {
         @Test
         void registerBtcTransaction_forSvpFundTransactionChange_whenProposedFederationDoesNotExist_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
             // arrange
-            arrangeSvpFundTransactionToBeRegistered();
+            arrangeSvpFundTransactionFromSegwitActiveFederationToBeRegistered();
             federationStorageProvider.setProposedFederation(null);
             List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
 
@@ -812,7 +812,7 @@ class BridgeSupportSvpTest {
         void registerBtcTransaction_forSvpFundTransactionChange_whenValidationPeriodEnded_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
             // arrange
             arrangeExecutionBlockIsAfterValidationPeriodEnded();
-            arrangeSvpFundTransactionToBeRegistered();
+            arrangeSvpFundTransactionFromSegwitActiveFederationToBeRegistered();
             List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
 
             // act
@@ -944,7 +944,7 @@ class BridgeSupportSvpTest {
         @Test
         void registerBtcTransaction_forSvpFundTransactionChange_whenSvpPeriodIsOngoing_shouldRegisterTransactionAndUpdateSvpFundTransactionValues() throws Exception {
             // arrange
-            arrangeSvpFundTransactionToBeRegistered();
+            arrangeSvpFundTransactionFromSegwitActiveFederationToBeRegistered();
             List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
 
             // act
@@ -955,7 +955,7 @@ class BridgeSupportSvpTest {
             assertSvpFundTransactionValuesWereUpdated();
         }
 
-        private void arrangeSvpFundTransactionToBeRegistered() throws BlockStoreException {
+        private void arrangeSvpFundTransactionFromSegwitActiveFederationToBeRegistered() throws BlockStoreException {
             setupSegwitActiveFederationWithUtxos();
             arrangeSvpFundTransactionUnsigned();
             assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(svpFundTransaction.getHash()));
