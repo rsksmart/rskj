@@ -460,10 +460,10 @@ public class BridgeSupport {
         }
     }
 
-    private void executeRegisterPegoutTransaction(Sha256Hash btcTxId, int height) throws IOException {
-        logger.debug("[executeRegisterPegoutTransaction] Btc tx hash without witness {}", btcTxId);
-        registerNewUTXOsByTxId(btcTxId, height);
-        markBtcTxHashAsProcessed(btcTxId);
+    private void executeRegisterPegoutTransaction(Sha256Hash btcTxHash, int height) throws IOException {
+        logger.debug("[executeRegisterPegoutTransaction] Btc tx hash without witness {}", btcTxHash);
+        registerNewUTXOsByTxId(btcTxHash, height);
+        markBtcTxHashAsProcessed(btcTxHash);
     }
 
     private boolean isTheSvpFundTx(Sha256Hash btcTxHash) {
