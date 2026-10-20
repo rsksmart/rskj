@@ -837,6 +837,23 @@ class BridgeSupportSvpTest {
         }
 
         @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_shouldRegisterChangeUtxo() throws Exception {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            arrangeSvpFundTransactionFromSegwitActiveFederationToBeRegistered();
+            arrangeSvpValuesWereClearedAfterValidationPeriodEnded();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(activeFederationUtxosBeforeRegisteringTx);
+            assertNoSvpFundTxHashUnsigned();
+            assertNoSvpFundTxSigned();
+        }
+
+        @Test
         void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_forVetiver_shouldRegisterChangeUtxo() throws Exception {
             // arrange
             arrangeExecutionBlockIsAfterValidationPeriodEnded();
