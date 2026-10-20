@@ -393,7 +393,7 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
-            if (federationSupport.hasFederationsPendingBtcUTXOs(btcTxId)) {
+            if (federationSupport.hasFederationsPendingBtcUTXOs(btcTxId) && !isTheSvpFundTx(btcTxId)) {
                 executeRegisterPegoutTransaction(btcTxId, height);
                 return;
             }
