@@ -825,6 +825,8 @@ class BridgeSupportSvpTest {
             assertSvpFundTransactionValuesWereNotUpdated();
         }
 
+
+        // TODO(juli): once registerBtcTransaction redirects pegouts to registerPegoutTransaction add this test for allActivations
         @Test
         void registerBtcTransaction_forSvpFundTransactionChange_whenValidationPeriodEnded_forVetiver_shouldRegisterChangeUtxoButNotUpdateSvpFundTransactionValues() throws Exception {
             // arrange
@@ -838,21 +840,6 @@ class BridgeSupportSvpTest {
             // assert
             assertSvpFundTxChangeWasRegisteredForVetiver(activeFederationUtxosBeforeRegisteringTx);
             assertSvpFundTransactionValuesWereNotUpdated();
-        }
-
-        @Test
-        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_shouldRegisterChangeUtxo() throws Exception {
-            // arrange
-            arrangeExecutionBlockIsAfterValidationPeriodEnded();
-            arrangeSvpFundTransactionToBeRegistered();
-            arrangeSvpValuesWereClearedAfterValidationPeriodEnded();
-            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
-
-            // act
-            registerBtcTransaction(svpFundTransaction);
-
-            // assert
-            assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(activeFederationUtxosBeforeRegisteringTx);
         }
 
         @Test
@@ -870,6 +857,7 @@ class BridgeSupportSvpTest {
             assertSvpFundTxChangeWasRegisteredForVetiver(activeFederationUtxosBeforeRegisteringTx);
         }
 
+        // TODO(juli): once registerBtcTransaction redirects pegouts to registerPegoutTransaction add this test for allActivations
         @Test
         void registerBtcTransaction_forNormalPegout_whenSvpPeriodIsOngoing_forVetiver_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
             // arrange
