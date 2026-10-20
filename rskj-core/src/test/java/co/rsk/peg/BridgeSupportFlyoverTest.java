@@ -46,7 +46,7 @@ import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
-import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCode;
 import co.rsk.peg.lockingcap.*;
 import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
@@ -793,7 +793,7 @@ class BridgeSupportFlyoverTest {
             shouldTransferToContract
         );
 
-        if (result.longValue() == FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value() || result.longValue() == FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()){
+        if (result.longValue() == FlyoverTxResponseCode.REFUNDED_LP_ERROR.getCode() || result.longValue() == FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode()){
             List<BtcTransaction> pegoutsWaitingForConfirmationsEntries = provider.getPegoutsWaitingForConfirmations().getEntries(allActivations)
                 .stream()
                 .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
@@ -815,7 +815,7 @@ class BridgeSupportFlyoverTest {
                 btcContext,
                 releaseTx,
                 Collections.singletonList(
-                    result.longValue() == FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value() ? lpBtcAddress : userRefundBtcAddress
+                    result.longValue() == FlyoverTxResponseCode.REFUNDED_LP_ERROR.getCode() ? lpBtcAddress : userRefundBtcAddress
                 ));
 
             // For simplicity of this test we are using as estimated fee of 10% of the amount sent in order to check
@@ -893,8 +893,8 @@ class BridgeSupportFlyoverTest {
 
         private static Stream<Arguments> flyoverExpectedResponseCodeArgs() {
             return Stream.of(
-                Arguments.of(true, FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value()),
-                Arguments.of(false, FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value())
+                Arguments.of(true, FlyoverTxResponseCode.REFUNDED_LP_ERROR.getCode()),
+                Arguments.of(false, FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode())
             );
         }
 
@@ -1009,7 +1009,7 @@ class BridgeSupportFlyoverTest {
             BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
 
             // we should get refund liq provider response
-            assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+            assertEquals(FlyoverTxResponseCode.REFUNDED_LP_ERROR.getCode(), result.longValue());
 
             // pegout should have two inputs, one related to the active fed and one to the retiring fed
             assertEquals(2, pegout.getInputs().size());
@@ -1064,7 +1064,7 @@ class BridgeSupportFlyoverTest {
             BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
 
             // we should get refund liq provider response
-            assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+            assertEquals(FlyoverTxResponseCode.REFUNDED_LP_ERROR.getCode(), result.longValue());
 
             // pegout should have two inputs, one related to the active fed and one to the retiring fed
             assertEquals(2, pegout.getInputs().size());
@@ -1462,7 +1462,7 @@ class BridgeSupportFlyoverTest {
         );
 
         assertEquals(
-            FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(),
+            FlyoverTxResponseCode.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.getCode(),
             result.longValue()
         );
     }
@@ -1488,7 +1488,7 @@ class BridgeSupportFlyoverTest {
         );
 
         assertEquals(
-            FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(),
+            FlyoverTxResponseCode.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.getCode(),
             result.longValue()
         );
     }
@@ -1602,7 +1602,7 @@ class BridgeSupportFlyoverTest {
         );
 
         Assertions.assertEquals(
-            FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR.value()
+            FlyoverTxResponseCode.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR.getCode()
             , result.longValue());
     }
 
@@ -1630,7 +1630,7 @@ class BridgeSupportFlyoverTest {
         );
 
         assertEquals(
-            FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR.value(),
+            FlyoverTxResponseCode.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR.getCode(),
             result.longValue()
         );
     }
@@ -1659,7 +1659,7 @@ class BridgeSupportFlyoverTest {
         );
 
         assertEquals(
-            FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR.value(),
+            FlyoverTxResponseCode.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR.getCode(),
             result.longValue()
         );
     }
@@ -1704,7 +1704,7 @@ class BridgeSupportFlyoverTest {
             valueToSend
         );
 
-        Assertions.assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCode.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.getCode(), result.longValue());
     }
 
     @Test
@@ -1782,7 +1782,7 @@ class BridgeSupportFlyoverTest {
             },
             true
         );
-        assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+        assertEquals(FlyoverTxResponseCode.REFUNDED_LP_ERROR.getCode(), result.longValue());
     }
 
     @Test
@@ -1798,7 +1798,7 @@ class BridgeSupportFlyoverTest {
             },
             false
         );
-        Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode(), result.longValue());
     }
 
     @Test
@@ -1813,7 +1813,7 @@ class BridgeSupportFlyoverTest {
             },
             false
         );
-        Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode(), result.longValue());
     }
 
     @Test
@@ -1829,7 +1829,7 @@ class BridgeSupportFlyoverTest {
             },
             true
         );
-        Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCode.REFUNDED_LP_ERROR.getCode(), result.longValue());
     }
 
     @Test
@@ -1862,7 +1862,7 @@ class BridgeSupportFlyoverTest {
             },
             false
         );
-        Assertions.assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCode.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.getCode(), result.longValue());
     }
 
     @Test
@@ -2023,7 +2023,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value(), result.longValue());
+        assertEquals(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode(), result.longValue());
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(true), derivationHash);
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
@@ -2178,7 +2178,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+        assertEquals(FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode(), result.longValue());
 
         // Transaction includes a witness making its txId != wTxId
         assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
@@ -2214,7 +2214,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value(), result.longValue());
+        assertEquals(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode(), result.longValue());
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(true), derivationHash);
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
@@ -2364,7 +2364,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+        assertEquals(FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode(), result.longValue());
 
         // Transaction includes a witness making its txId != wTxId
         assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
@@ -2405,7 +2405,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value(), result.longValue());
+        assertEquals(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
         assertEquals(btcTx.getHash(), btcTx.getHash(true));
@@ -2543,7 +2543,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+        assertEquals(FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
         Assertions.assertEquals(btcTx.getHash(), btcTx.getHash(true));
@@ -2572,7 +2572,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value(), result.longValue());
+        assertEquals(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode(), result.longValue());
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2708,7 +2708,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+        assertEquals(FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
         Assertions.assertEquals(btcTx.getHash(), btcTx.getHash(true));
@@ -2753,7 +2753,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value(), result.longValue());
+        assertEquals(FlyoverTxResponseCode.UNPROCESSABLE_TX_VALIDATIONS_ERROR.getCode(), result.longValue());
 
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2900,7 +2900,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value(), result.longValue());
+        assertEquals(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode(), result.longValue());
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2929,7 +2929,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.value()), result);
+        assertEquals(BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.getCode()), result);
     }
 
     @Test
@@ -2960,7 +2960,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.value()), result);
+        assertEquals(BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.getCode()), result);
     }
 
     @Test
@@ -2996,7 +2996,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value()), result);
+        assertEquals(BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_VALIDATIONS_ERROR.getCode()), result);
     }
 
     @Test
@@ -3059,7 +3059,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value()), result);
+        assertEquals(BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.getCode()), result);
     }
 
     @Test
@@ -3140,7 +3140,7 @@ class BridgeSupportFlyoverTest {
             true
         );
 
-        assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value()), result);
+        assertEquals(BigInteger.valueOf(FlyoverTxResponseCode.REFUNDED_LP_ERROR.getCode()), result);
     }
 
     @Test
@@ -3222,7 +3222,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()), result);
+        assertEquals(BigInteger.valueOf(FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode()), result);
     }
 
     @Test
@@ -3308,7 +3308,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()), result);
+        assertEquals(BigInteger.valueOf(FlyoverTxResponseCode.REFUNDED_USER_ERROR.getCode()), result);
 
         // Update repository
         bridgeSupport.save();
@@ -3325,7 +3325,7 @@ class BridgeSupportFlyoverTest {
             false
         );
 
-        assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value()), result);
+        assertEquals(BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode()), result);
     }
 
     @Test
@@ -3437,7 +3437,7 @@ class BridgeSupportFlyoverTest {
             true
         );
 
-        assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value()), result);
+        assertEquals(BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode()), result);
     }
 
     @Test

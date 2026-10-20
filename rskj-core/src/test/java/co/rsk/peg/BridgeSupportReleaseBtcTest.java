@@ -1674,6 +1674,8 @@ class BridgeSupportReleaseBtcTest {
         private final Coin NON_DUST_CHANGE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.add(Coin.SATOSHI);
         private final Coin DUST_BUMP = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(DUST_CHANGE);
         private final int PEGOUT_REQUESTS_BASE_COUNT = 2;
+        private final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER = 2438;
+        private final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 204;
         private final Coin PEGOUT_REQUEST_BASE_VALUE_VETIVER = Coin.COIN
             .multiply(P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER)
             .div(PEGOUT_REQUESTS_BASE_COUNT); // we will subtract dust/non-dust value from it
@@ -1963,18 +1965,7 @@ class BridgeSupportReleaseBtcTest {
      *********************************/
 
     private Transaction buildReleaseRskTx(co.rsk.core.Coin coin) {
-        Transaction releaseTransaction = Transaction.builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(BRIDGE_ADDRESS)
-            .data(Hex.decode(DATA))
-            .chainId(Constants.MAINNET_CHAIN_ID)
-            .value(coin)
-            .build();
-        releaseTransaction.sign(SENDER.getPrivKeyBytes());
-
-        return releaseTransaction;
+        return buildPegoutRequestTransaction(coin, NONCE.longValue(), SENDER);
     }
 
     private Transaction buildReleaseRskTx_fromContract(co.rsk.core.Coin pegoutRequestValue) {

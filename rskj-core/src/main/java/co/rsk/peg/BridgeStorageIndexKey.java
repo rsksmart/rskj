@@ -4,16 +4,16 @@ import org.ethereum.vm.DataWord;
 
 public enum BridgeStorageIndexKey {
 
-    BTC_TX_HASHES_ALREADY_PROCESSED_KEY("btcTxHashesAP"),
+    BTC_TX_HASHES_ALREADY_PROCESSED("btcTxHashesAP"),
     RELEASE_REQUEST_QUEUE("releaseRequestQueue"),
     PEGOUTS_WAITING_FOR_CONFIRMATIONS("releaseTransactionSet"),
     RELEASES_OUTPOINTS_VALUES("releasesOutpointsValues"),
     PEGOUTS_WAITING_FOR_SIGNATURES("rskTxsWaitingFS"),
     RELEASE_REQUEST_QUEUE_WITH_TXHASH("releaseRequestQueueWithTxHash"),
-    PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY("releaseTransactionSetWithTxHash"),
+    PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH("releaseTransactionSetWithTxHash"),
     RECEIVE_HEADERS_TIMESTAMP("receiveHeadersLastTimestamp"),
     // Version keys and versions
-    NEXT_PEGOUT_HEIGHT_KEY("nextPegoutHeight"),
+    NEXT_PEGOUT_HEIGHT("nextPegoutHeight"),
 
     // Compound keys
     BTC_TX_HASH_AP("btcTxHashAP"),
