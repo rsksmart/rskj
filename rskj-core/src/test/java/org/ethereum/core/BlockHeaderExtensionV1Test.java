@@ -99,6 +99,36 @@ class BlockHeaderExtensionV1Test {
     }
 
     @Test
+    void constructorCopiesLogsBloom() {
+        // The caller keeps its array, so the constructor must copy it in.
+        byte[] logsBloom = Hex.decode(GOLDEN_V1_BLOOM);
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(logsBloom, EDGES);
+
+        logsBloom[0] ^= (byte) 0xFF;
+
+        Assertions.assertArrayEquals(Hex.decode(GOLDEN_V1_BLOOM), extension.getLogsBloom());
+        assertGoldenEncodingAndHashWithEdges(extension);
+    }
+
+    @Test
+    void constructorCopiesEdges() {
+        short[] edges = EDGES.clone();
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(Hex.decode(GOLDEN_V1_BLOOM), edges);
+
+        edges[0] = 99;
+
+        Assertions.assertArrayEquals(EDGES, extension.getTxExecutionSublistsEdges());
+        assertGoldenEncodingAndHashWithEdges(extension);
+    }
+
+    private static void assertGoldenEncodingAndHashWithEdges(BlockHeaderExtensionV1 extension) {
+        Assertions.assertArrayEquals(Hex.decode("f9010c" + "b90100" + GOLDEN_V1_BLOOM + "880100020003000400"),
+                extension.getEncoded());
+        Assertions.assertArrayEquals(Hex.decode("f26c14ea90289d65601ee7304730c0eea1e5bec5777d12d0c8f240279434149f"),
+                extension.getHash());
+    }
+
+    @Test
     void withEdgesAcceptsNull() {
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
 
