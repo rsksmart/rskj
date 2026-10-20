@@ -61,21 +61,24 @@ public final class BlockHeaderExtensionV1 implements BlockHeaderExtension {
     @Override
     public byte[] getHash() {
         List<byte[]> fieldsToEncode = Lists.newArrayList(RLP.encodeElement(HashUtil.keccak256(this.logsBloom)));
-        if (this.txExecutionSublistsEdges != null) {
-            fieldsToEncode.add(ByteUtil.shortsToRLP(this.txExecutionSublistsEdges));
-        }
+        appendEdgesIfPresent(fieldsToEncode);
         return HashUtil.keccak256(RLP.encodeList(fieldsToEncode.toArray(new byte[][]{})));
     }
 
     @Override
     public byte[] getEncoded() {
         List<byte[]> fieldsToEncode = Lists.newArrayList(RLP.encodeElement(this.logsBloom));
-        if (this.txExecutionSublistsEdges != null) {
-            fieldsToEncode.add(ByteUtil.shortsToRLP(this.txExecutionSublistsEdges));
-        }
+        appendEdgesIfPresent(fieldsToEncode);
         return RLP.encodeList(fieldsToEncode.toArray(new byte[][]{}));
     }
 
+    private void appendEdgesIfPresent(List<byte[]> fieldsToEncode) {
+        if (this.txExecutionSublistsEdges != null) {
+            fieldsToEncode.add(ByteUtil.shortsToRLP(this.txExecutionSublistsEdges));
+        }
+    }
+
+    @Override
     public byte[] getLogsBloom() {
         return this.logsBloom != null ? Arrays.copyOf(this.logsBloom, this.logsBloom.length) : null;
     }
@@ -87,6 +90,7 @@ public final class BlockHeaderExtensionV1 implements BlockHeaderExtension {
                 Objects.requireNonNull(logsBloom, "logsBloom"), this.txExecutionSublistsEdges);
     }
 
+    @Override
     public short[] getTxExecutionSublistsEdges() {
         return this.txExecutionSublistsEdges != null
                 ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length)
