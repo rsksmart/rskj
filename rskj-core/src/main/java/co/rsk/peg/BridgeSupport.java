@@ -388,8 +388,14 @@ public class BridgeSupport {
             logger.debug("[registerBtcTransaction][rsk tx {}] Btc tx hash without witness {}", rskTxHash, btcTx.getHash(false));
 
             // Check again that the tx was not already processed but making sure to use the txid (no witness)
-            if (isAlreadyBtcTxHashProcessed(btcTx.getHash(false))) {
+            Sha256Hash btcTxId = btcTx.getHash(false);
+            if (isAlreadyBtcTxHashProcessed(btcTxId)) {
                 throw new RegisterBtcTransactionException("Transaction already processed");
+            }
+
+            if (federationSupport.hasFederationsPendingBtcUTXOs(btcTxId)) {
+                executeRegisterPegoutTransaction(btcTxId, height);
+                return;
             }
 
             FederationContext federationContext = federationSupport.getFederationContext();
@@ -454,6 +460,7 @@ public class BridgeSupport {
     }
 
     private void executeRegisterPegoutTransaction(Sha256Hash btcTxId, int height) throws IOException {
+        logger.debug("[executeRegisterPegoutTransaction] Btc tx hash without witness {}", btcTxId);
         registerNewUTXOsByTxId(btcTxId, height);
         markBtcTxHashAsProcessed(btcTxId);
     }
