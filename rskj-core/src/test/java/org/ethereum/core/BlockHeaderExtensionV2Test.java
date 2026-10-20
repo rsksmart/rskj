@@ -112,6 +112,41 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
+    void constructorCopiesLogsBloom() {
+        // The caller keeps its arrays, so the constructor must copy each one in.
+        byte[] logsBloom = Hex.decode(GOLDEN_V2_BLOOM);
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, EDGES, Hex.decode(GOLDEN_V2_BASE_EVENT));
+
+        logsBloom[0] ^= (byte) 0xFF;
+
+        assertArrayEquals(Hex.decode(GOLDEN_V2_BLOOM), ext.getLogsBloom());
+        assertGoldenEncodingAndHashWithEdgesAndBaseEvent(ext);
+    }
+
+    @Test
+    void constructorCopiesEdges() {
+        short[] edges = EDGES.clone();
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(
+                Hex.decode(GOLDEN_V2_BLOOM), edges, Hex.decode(GOLDEN_V2_BASE_EVENT));
+
+        edges[0] = 99;
+
+        assertArrayEquals(EDGES, ext.getTxExecutionSublistsEdges());
+        assertGoldenEncodingAndHashWithEdgesAndBaseEvent(ext);
+    }
+
+    @Test
+    void constructorCopiesBaseEvent() {
+        byte[] baseEvent = Hex.decode(GOLDEN_V2_BASE_EVENT);
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(Hex.decode(GOLDEN_V2_BLOOM), EDGES, baseEvent);
+
+        baseEvent[0] ^= (byte) 0xFF;
+
+        assertArrayEquals(Hex.decode(GOLDEN_V2_BASE_EVENT), ext.getBaseEvent());
+        assertGoldenEncodingAndHashWithEdgesAndBaseEvent(ext);
+    }
+
+    @Test
     void encodingAndDecoding() {
         byte[] logsBloom = new byte[256];
         Arrays.fill(logsBloom, (byte) 0x01);
@@ -383,6 +418,10 @@ class BlockHeaderExtensionV2Test {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(
                 Hex.decode(GOLDEN_V2_BLOOM), EDGES, Hex.decode(GOLDEN_V2_BASE_EVENT));
 
+        assertGoldenEncodingAndHashWithEdgesAndBaseEvent(extension);
+    }
+
+    private static void assertGoldenEncodingAndHashWithEdgesAndBaseEvent(BlockHeaderExtensionV2 extension) {
         assertArrayEquals(Hex.decode("f9012d" + "b90100" + GOLDEN_V2_BLOOM + "a0" + GOLDEN_V2_BASE_EVENT + "880100020003000400"),
                 extension.getEncoded());
         assertArrayEquals(Hex.decode("83ad17bbc2bbe2dd8cff717f99c97445da62a0d1fd575192707b09f6e9858a14"),
