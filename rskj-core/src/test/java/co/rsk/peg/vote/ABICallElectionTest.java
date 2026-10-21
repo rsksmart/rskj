@@ -18,18 +18,24 @@
 
 package co.rsk.peg.vote;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.core.RskAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.*;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class ABICallElectionTest {
     private ABICallSpec spec_fna;
@@ -40,28 +46,28 @@ class ABICallElectionTest {
 
     @BeforeEach
     void createVotesAuthorizerAndElection() {
-        authorizer = new AddressBasedAuthorizer(Arrays.asList(
-                createMockKeyForAddress("aa"),
-                createMockKeyForAddress("bb"),
-                createMockKeyForAddress("cc"),
-                createMockKeyForAddress("dd"),
-                createMockKeyForAddress("ee")
-        ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
+        authorizer = AddressBasedAuthorizerFactory.buildMajorityAuthorizer(Stream.of(
+            createMockKeyForAddress("aa"),
+            createMockKeyForAddress("bb"),
+            createMockKeyForAddress("cc"),
+            createMockKeyForAddress("dd"),
+            createMockKeyForAddress("ee")
+        ).map(ECKey::getAddress).map(RskAddress::new).collect(Collectors.toSet()));
 
         spec_fna = new ABICallSpec("fn-a", new byte[][]{});
         spec_fnb = new ABICallSpec("fn-b", new byte[][]{ Hex.decode("11"), Hex.decode("2233") });
 
         votes = new HashMap<>();
         votes.put(
-                spec_fna,
-                new ArrayList<>(Collections.emptyList())
+            spec_fna,
+            new ArrayList<>(Collections.emptyList())
         );
         votes.put(
-                spec_fnb,
-                new ArrayList<>(Arrays.asList(
-                        createVoter("aa"),
-                        createVoter("bb")
-                ))
+            spec_fnb,
+            new ArrayList<>(Arrays.asList(
+                createVoter("aa"),
+                createVoter("bb")
+            ))
         );
 
         election = new ABICallElection(authorizer, votes);
