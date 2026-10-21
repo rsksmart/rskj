@@ -32,11 +32,17 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.util.TimeProvider;
+import co.rsk.validators.BlockHeaderCompositeRule;
 import co.rsk.validators.BlockHeaderParentDependantValidationRule;
+import co.rsk.validators.BlockHeaderVersionRule;
 import co.rsk.validators.ProofOfWorkRule;
 import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -51,7 +57,11 @@ import java.util.List;
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
@@ -769,5 +779,63 @@ class BlockValidatorTest {
                 .thenReturn((System.currentTimeMillis() / 1000) + 2000);
 
         Assertions.assertTrue(validator.isValid(block));
+    }
+
+    @Test
+    void validBlockWithTheHeaderVersionItsHeightRequires() {
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
+        // regtest activates RSKIP351 and RSKIP535 at block 1, so block 1 must be version 2
+        Assertions.assertEquals((byte) 0x2, block1.getHeader().getVersion());
+
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockHeaderVersionRule()
+                .build();
+
+        Assertions.assertTrue(validator.isValid(block1));
+    }
+
+    @Test
+    void invalidBlockWithAHeaderVersionBelowTheOneItsHeightRequires() {
+        Block block1 = headerVersion1BlockGenerator().createChildBlock(new BlockGenerator().getGenesisBlock());
+        Assertions.assertEquals((byte) 0x1, block1.getHeader().getVersion());
+
+        // nothing else about the block is wrong: only the version rule rejects it
+        Assertions.assertTrue(new BlockValidatorBuilder().addBlockRootValidationRule().build().isValid(block1));
+        Assertions.assertFalse(new BlockValidatorBuilder().addBlockRootValidationRule().addBlockHeaderVersionRule().build().isValid(block1));
+    }
+
+    @Test
+    void invalidUncleWithAHeaderVersionBelowTheOneItsHeightRequires() {
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block uncleWithTheRequiredVersion = blockGenerator.createChildBlock(genesis);
+        Block uncleWithVersion1 = headerVersion1BlockGenerator().createChildBlock(genesis);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(uncleWithTheRequiredVersion, TEST_DIFFICULTY, false);
+        store.saveBlock(uncleWithVersion1, TEST_DIFFICULTY, false);
+
+        BlockHeaderParentDependantValidationRule parentRule = mock(BlockHeaderParentDependantValidationRule.class);
+        when(parentRule.isValid(any(), any(Block.class))).thenReturn(true);
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(store, new BlockHeaderCompositeRule(new BlockHeaderVersionRule(config.getActivationConfig())), parentRule)
+                .blockStore(store)
+                .build();
+
+        Block block2 = blockGenerator.createChildBlock(block1, null, Collections.singletonList(uncleWithTheRequiredVersion.getHeader()), 1, null);
+        Assertions.assertTrue(validator.isValid(block2));
+
+        Block block2WithVersion1Uncle = blockGenerator.createChildBlock(block1, null, Collections.singletonList(uncleWithVersion1.getHeader()), 1, null);
+        Assertions.assertFalse(validator.isValid(block2WithVersion1Uncle));
+    }
+
+    /** Builds blocks the way a miner without RSKIP535 would: version 1 headers where regtest requires version 2. */
+    private static BlockGenerator headerVersion1BlockGenerator() {
+        ActivationConfig version1Config = spy(ActivationConfigsForTest.regtest());
+        doReturn(false).when(version1Config).isActive(eq(ConsensusRule.RSKIP535), anyLong());
+        return new BlockGenerator(Constants.regtest(), version1Config);
     }
 }

@@ -32,12 +32,16 @@ import co.rsk.trie.MultiTrieStore;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockDifficultyRule;
+import co.rsk.validators.BlockHeaderValidationRule;
+import co.rsk.validators.BlockHeaderVersionRule;
 import co.rsk.validators.BlockParentCompositeRule;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import co.rsk.validators.BlockParentGasLimitRule;
 import co.rsk.validators.BlockParentNumberRule;
 import co.rsk.validators.BlockTxsFieldsValidationRule;
 import co.rsk.validators.BlockTxsValidationRule;
+import co.rsk.validators.BlockUnclesValidationRule;
+import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.PrevMinGasPriceRule;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
@@ -374,6 +378,36 @@ class RskContextTest {
                 BlockParentGasLimitRule.class,
                 PrevMinGasPriceRule.class,
                 BlockTxsFieldsValidationRule.class);
+    }
+
+    @Test
+    void blockValidationEnforcesTheHeaderVersionOnBlocksAndOnUncles() {
+        // RSKIP-351 makes the header version consensus: the rule must sit in the block composite and in the
+        // header composite that validates uncles
+        BlockValidationRule blockRules = rskContext.getBlockValidationRule();
+        assertNotNull(findRule(blockRules, BlockHeaderVersionRule.class));
+
+        BlockUnclesValidationRule unclesRule = findRule(blockRules, BlockUnclesValidationRule.class);
+        BlockHeaderValidationRule uncleHeaderRules = TestUtils.getInternalState(unclesRule, "validations");
+        assertNotNull(findRule(uncleHeaderRules, BlockHeaderVersionRule.class));
+    }
+
+    @Test
+    void snapBlockValidationEnforcesTheHeaderVersion() {
+        assertNotNull(findRule(rskContext.getSnapBlockValidationRule(), BlockHeaderVersionRule.class));
+    }
+
+    /** The first rule of {@code ruleClass} inside a composite, whether it keeps its rules in a list or an array. */
+    private static <T> T findRule(Object composite, Class<T> ruleClass) {
+        Object rules = TestUtils.getInternalState(composite, "rules");
+        List<?> ruleList = rules instanceof Object[] ? Arrays.asList((Object[]) rules) : (List<?>) rules;
+
+        return ruleList.stream()
+                .filter(ruleClass::isInstance)
+                .map(ruleClass::cast)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(composite.getClass().getSimpleName()
+                        + " does not contain " + ruleClass.getSimpleName()));
     }
 
     /**
