@@ -16,6 +16,7 @@ import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static co.rsk.peg.federation.FederationTestUtils.signInputs;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
+import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -76,6 +77,8 @@ class BridgeSupportSvpTest {
     // past the grace period, so releases created before RSKIP643 are no longer looked up in the pegout index
     private static final int HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD = bridgeMainNetConstants.getBtcHeightWhenFederationsPendingBtcUTXOsActivates()
         + bridgeMainNetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+    // still past the pegout index start, and releases created before RSKIP643 are still looked up in it
+    private static final int HEIGHT_WITHIN_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD = HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD - 1;
     private static final FederationConstants federationMainNetConstants = bridgeMainNetConstants.getFederationConstants();
     private static final List<Coin> svpFundTxOutpointsValues = Arrays.asList(
         Coin.valueOf(1_000_000),
@@ -875,6 +878,42 @@ class BridgeSupportSvpTest {
         }
 
         @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_withFundTxCreatedForVetiver_withinGracePeriod_shouldRegisterChangeUtxo() throws Exception {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            arrangeSvpFundTransactionCreatedForVetiverFromSegwitActiveFederationToBeRegistered(HEIGHT_WITHIN_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD);
+            arrangeSvpValuesWereClearedAfterValidationPeriodEnded();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(activeFederationUtxosBeforeRegisteringTx);
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_withFundTxCreatedForVetiver_afterGracePeriod_shouldRejectAsUnrefundablePegin() throws Exception {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            arrangeSvpFundTransactionCreatedForVetiverFromSegwitActiveFederationToBeRegistered(HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD);
+            arrangeSvpValuesWereClearedAfterValidationPeriodEnded();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            // the pegout index is no longer looked up, so the change sent from the federation is evaluated as a legacy pegin,
+            // and since the redeem script of a p2sh-p2wsh erp federation is not a plain multisig, the sender can't be determined
+            assertLogRejectedPegin(logs, svpFundTransaction, LEGACY_PEGIN_UNDETERMINED_SENDER);
+            assertLogNonRefundablePegin(logs, svpFundTransaction, NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+            assertUtxosAreEqual(activeFederationUtxosBeforeRegisteringTx, federationSupport.getActiveFederationBtcUTXOs());
+            assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
+            assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(svpFundTransaction.getHash()).isEmpty());
+        }
+
+        @Test
         void registerBtcTransaction_forNormalPegout_whenSvpPeriodIsOngoing_forVetiver_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
             // arrange
             arrangeSvpFundTransactionUnsignedForVetiver();
@@ -1039,6 +1078,16 @@ class BridgeSupportSvpTest {
 
             signInputs(segwitActiveFederation, segwitActiveFederationKeys, svpFundTransaction);
             setUpForTransactionRegistration(svpFundTransaction, HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD);
+        }
+
+        private void arrangeSvpFundTransactionCreatedForVetiverFromSegwitActiveFederationToBeRegistered(int btcBlockWithTransactionHeight) throws BlockStoreException {
+            setupSegwitActiveFederationWithUtxos();
+            arrangeSvpFundTransactionUnsignedForVetiver();
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(svpFundTransaction.getHash()));
+
+            signInputs(segwitActiveFederation, segwitActiveFederationKeys, svpFundTransaction);
+            // and it is registered after RSKIP643
+            setUpForTransactionRegistration(svpFundTransaction, btcBlockWithTransactionHeight);
         }
 
         private void arrangeSvpFundTransactionToBeRegisteredForVetiver() throws BlockStoreException {
