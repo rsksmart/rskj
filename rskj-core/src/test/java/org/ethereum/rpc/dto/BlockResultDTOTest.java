@@ -23,6 +23,8 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockTxSignatureCache;
@@ -47,6 +49,8 @@ import java.util.stream.Collectors;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -179,6 +183,39 @@ class BlockResultDTOTest {
         return blockResultDTO.getTransactions().stream()
                 .map(Objects::toString)
                 .collect(Collectors.toList());
+    }
+
+    @Test
+    void getBlockResultDTO_returnsBaseFeePerGasAsZeroWhenRskip546Active() {
+        ActivationConfig activationConfig = mock(ActivationConfig.class);
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP546), anyLong())).thenReturn(true);
+
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, false, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()), activationConfig);
+
+        Assertions.assertEquals("0x0", blockResultDTO.getBaseFeePerGas(),
+                "post-RSKIP546 baseFeePerGas must be 0x0: RSK has no dynamic base fee");
+    }
+
+    @Test
+    void getBlockResultDTO_omitsBaseFeePerGasBeforeRskip546() {
+        ActivationConfig activationConfig = mock(ActivationConfig.class);
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP546), anyLong())).thenReturn(false);
+
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, false, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()), activationConfig);
+
+        Assertions.assertNull(blockResultDTO.getBaseFeePerGas(),
+                "pre-RSKIP546 blocks must not expose baseFeePerGas");
+    }
+
+    @Test
+    void getBlockResultDTO_omitsBaseFeePerGasWhenActivationConfigUnavailable() {
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, false, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertNull(blockResultDTO.getBaseFeePerGas(),
+                "without activation context, baseFeePerGas must be omitted rather than reported as zero");
     }
 
     private Block buildBlockWithTransactions(List<Transaction> transactions) {

@@ -25,7 +25,10 @@ import co.rsk.core.Wallet;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -34,12 +37,13 @@ import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDurationParam;
 import org.ethereum.rpc.parameters.HexKeyParam;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.TransactionArgumentsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
@@ -199,25 +203,27 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     private String sendTransaction(CallArguments args, Account senderAccount) throws Exception {
-
         if (senderAccount == null) {
             throw new Exception("From address private key could not be found in this node");
         }
+        String txHash;
 
-        TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, config.getNetworkConstants().getChainId());
+        synchronized (transactionPool) {
+            Transaction tx = Transaction.fromCallArguments(args, getAccountNextNonce(senderAccount),  constants.getChainId());
+            tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
+            tx.checkInvalidChain(constants, ""+tx.getChainId());
 
-        Transaction tx = Transaction.builder().withTransactionArguments(txArgs).build();
-
-        tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
-
-        if (!tx.acceptTransactionSignature(constants.getChainId())) {
-            throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
+            TransactionPoolAddResult result = eth.submitTransaction(tx);
+            if (!result.transactionsWereAdded()) {
+                throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
+            }
+            txHash = tx.getHash().toJsonString();
         }
+        return txHash;
+    }
 
-        TransactionPoolAddResult result = eth.submitTransaction(tx);
-        if (!result.transactionsWereAdded()) {
-            throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
-        }
-        return tx.getHash().toJsonString();
+    @Nonnull
+    private Supplier<String> getAccountNextNonce(Account senderAccount) {
+        return () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress()).toString();
     }
 }

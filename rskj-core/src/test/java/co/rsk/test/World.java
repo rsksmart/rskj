@@ -294,6 +294,10 @@ public class World {
         return blockStore;
     }
 
+    public ReceiptStore getReceiptStore() {
+        return receiptStore;
+    }
+
     public BlockTxSignatureCache getBlockTxSignatureCache() { return blockTxSignatureCache; }
 
     public ReceivedTxSignatureCache getReceivedTxSignatureCache() { return receivedTxSignatureCache; }

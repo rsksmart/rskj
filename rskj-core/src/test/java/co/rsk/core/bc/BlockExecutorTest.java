@@ -58,9 +58,12 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionReceipt;
+import org.ethereum.core.transaction.SetCodeAuthorization;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.cryptohash.Keccak256;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.listener.TestCompositeEthereumListener;
@@ -165,7 +168,7 @@ public class BlockExecutorTest {
                 .nonce(nonce)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(gasLimitData)
-                .destination(to)
+                .receiveAddress(to)
                 .value(valueData)
                 .build(); // no data
         tx.sign(privateKeyBytes);
@@ -520,7 +523,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -531,7 +534,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account3.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -607,7 +610,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -618,7 +621,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account3.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -924,7 +927,7 @@ public class BlockExecutorTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(sequentialSublistGasLimit + 1))
-                .destination(receiver.getAddress())
+                .receiveAddress(receiver.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -1195,6 +1198,1627 @@ public class BlockExecutorTest {
         Assertions.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
+    @Test
+    void executeAndFillBlockWithIndependentLegacyAndType4Transactions() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account legacySender = createAccount("legacySender", track, Coin.valueOf(600_000));
+        Account legacyReceiver = createAccount("legacyReceiver", track, Coin.ZERO);
+        Account type4Sender = createAccount("type4Sender", track, Coin.valueOf(600_000));
+        Account type4Receiver = createAccount("type4Receiver", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction legacyTx = createLegacyTx(
+                legacySender,
+                legacyReceiver.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        Transaction type4Tx = createType4Tx(
+                type4Sender,
+                type4Receiver.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                new ECKey());
+
+        List<Transaction> txs = Arrays.asList(legacyTx, type4Tx);
+
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(2, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 1, 2 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 1, 2 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        Assertions.assertEquals(legacyTx, result.getExecutedTransactions().get(0));
+        Assertions.assertEquals(type4Tx, result.getExecutedTransactions().get(1));
+        Assertions.assertArrayEquals(
+                BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), true),
+                block.getReceiptsRoot());
+    }
+
+    @Test
+    void executeAndFillBlockWithLegacyAndType4DependencyKeepsBothTxsInSameSublist() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account authorityAndLegacySender = createAccount("authorityAndLegacySender", track, Coin.valueOf(1_000_000));
+        Account type4Sender = createAccount("type4Sender", track, Coin.valueOf(1_000_000));
+        Account receiver = createAccount("receiver", track, Coin.ZERO);
+        Account independentSender = createAccount("independentSender", track, Coin.valueOf(1_000_000));
+        Account independentReceiver = createAccount("independentReceiver", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        RskAddress delegatedAddress = new RskAddress(new ECKey().getAddress());
+
+        Transaction type4Tx = createType4Tx(
+                type4Sender,
+                receiver.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                delegatedAddress,
+                BigInteger.ZERO,
+                authorityAndLegacySender.getEcKey());
+
+        Transaction legacyTxDependingOnType4Authority = createLegacyTx(
+                authorityAndLegacySender,
+                receiver.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        Transaction independentLegacyTx = createLegacyTx(
+                independentSender,
+                independentReceiver.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        List<Transaction> txs = Arrays.asList(
+                type4Tx,
+                legacyTxDependingOnType4Authority,
+                independentLegacyTx);
+
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(3, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2, 3 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 2, 3 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        List<Transaction> executed = result.getExecutedTransactions();
+
+        Assertions.assertEquals(type4Tx, executed.get(0));
+        Assertions.assertEquals(legacyTxDependingOnType4Authority, executed.get(1));
+        Assertions.assertEquals(independentLegacyTx, executed.get(2));
+    }
+
+    @Test
+    void executeAndFillBlockWithTwoType4DifferentAuthoritiesDependentLegacyTxsAndSequentialTx() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+
+        Account authorityA = createAccount("authorityA", track, Coin.valueOf(1_000_000));
+        Account authorityB = createAccount("authorityB", track, Coin.valueOf(1_000_000));
+        Account type4SenderA = createAccount("type4SenderA", track, Coin.valueOf(1_000_000));
+        Account type4SenderB = createAccount("type4SenderB", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("receiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("receiverB", track, Coin.ZERO);
+
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        RskAddress delegatedAddressA = new RskAddress(new ECKey().getAddress());
+        RskAddress delegatedAddressB = new RskAddress(new ECKey().getAddress());
+
+        Transaction type4TxA = createType4Tx(
+                type4SenderA,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                delegatedAddressA,
+                BigInteger.ZERO,
+                authorityA.getEcKey());
+
+        Transaction type4TxB = createType4Tx(
+                type4SenderB,
+                receiverB.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                delegatedAddressB,
+                BigInteger.ZERO,
+                authorityB.getEcKey());
+
+        Transaction legacyDependingOnType4A = createLegacyTx(
+                authorityA,
+                receiverA.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        Transaction legacyDependingOnType4B = createLegacyTx(
+                authorityB,
+                receiverB.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        Transaction sequentialTx = new RemascTransaction(1L);
+
+        List<Transaction> txs = Arrays.asList(
+                type4TxA,
+                type4TxB,
+                legacyDependingOnType4A,
+                legacyDependingOnType4B,
+                sequentialTx);
+
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(5, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2, 4 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 2, 4 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        List<Transaction> executed = result.getExecutedTransactions();
+
+        Assertions.assertEquals(type4TxA, executed.get(0));
+        Assertions.assertEquals(legacyDependingOnType4A, executed.get(1));
+        Assertions.assertEquals(type4TxB, executed.get(2));
+        Assertions.assertEquals(legacyDependingOnType4B, executed.get(3));
+        Assertions.assertTrue(executed.get(4).isRemascTransaction(4, 5));
+    }
+
+    @Test
+    void executeAndFillBlockWithTwoType4SameAuthorityGoToSameParallelSublist() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+
+        Account authority = createAccount("sameAuthority", track, Coin.valueOf(1_000_000));
+        Account type4SenderA = createAccount("type4SameAuthoritySenderA", track, Coin.valueOf(1_000_000));
+        Account type4SenderB = createAccount("type4SameAuthoritySenderB", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("receiverSameAuthorityA", track, Coin.ZERO);
+        Account receiverB = createAccount("receiverSameAuthorityB", track, Coin.ZERO);
+
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        RskAddress delegatedAddressA = new RskAddress(new ECKey().getAddress());
+        RskAddress delegatedAddressB = new RskAddress(new ECKey().getAddress());
+
+        Transaction type4TxA = createType4Tx(
+                type4SenderA,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                delegatedAddressA,
+                BigInteger.ZERO,
+                authority.getEcKey());
+
+        Transaction type4TxB = createType4Tx(
+                type4SenderB,
+                receiverB.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                delegatedAddressB,
+                BigInteger.ONE,
+                authority.getEcKey());
+
+        List<Transaction> txs = Arrays.asList(type4TxA, type4TxB);
+
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(2, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 2 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        List<Transaction> executed = result.getExecutedTransactions();
+
+        Assertions.assertEquals(type4TxA, executed.get(0));
+        Assertions.assertEquals(type4TxB, executed.get(1));
+    }
+
+    @Test
+    void executeAndFillBlockWithTwoType4DifferentAuthoritiesSameOuterSenderGoToSameSublist() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+
+        Account outerSender = createAccount("sameOuterSender", track, Coin.valueOf(2_000_000));
+        Account authorityA = createAccount("sameSenderAuthorityA", track, Coin.valueOf(1_000_000));
+        Account authorityB = createAccount("sameSenderAuthorityB", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("sameSenderReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("sameSenderReceiverB", track, Coin.ZERO);
+
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        RskAddress delegatedAddressA = new RskAddress(new ECKey().getAddress());
+        RskAddress delegatedAddressB = new RskAddress(new ECKey().getAddress());
+
+        Transaction type4TxA = createType4Tx(
+                outerSender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                delegatedAddressA,
+                BigInteger.ZERO,
+                authorityA.getEcKey());
+
+        Transaction type4TxB = createType4Tx(
+                outerSender,
+                receiverB.getAddress(),
+                BigInteger.ONE,
+                chainId,
+                delegatedAddressB,
+                BigInteger.ZERO,
+                authorityB.getEcKey());
+
+        List<Transaction> txs = Arrays.asList(type4TxA, type4TxB);
+
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(2, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 2 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        List<Transaction> executed = result.getExecutedTransactions();
+
+        Assertions.assertEquals(type4TxA, executed.get(0));
+        Assertions.assertEquals(type4TxB, executed.get(1));
+    }
+
+    @Test
+    void type4ThatDoesNotFitParallelSublistFallsBackToSequentialSublist() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account legacySender = createAccount("parallelLegacySender", track, Coin.valueOf(1_000_000));
+        Account type4Sender = createAccount("hugeType4Sender", track, Coin.valueOf(10_000_000));
+        Account receiverA = createAccount("parallelLegacyReceiver", track, Coin.ZERO);
+        Account receiverB = createAccount("hugeType4Receiver", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction legacyTx = createLegacyTx(
+                legacySender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        byte[] gasLimit = getParallelTestGasLimit(parent);
+
+        Block gasProbeBlock = new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlockUsingCoinbase(
+                        parent,
+                        Collections.singletonList(legacyTx),
+                        Collections.emptyList(),
+                        1,
+                        null,
+                        gasLimit,
+                        parent.getCoinbase(),
+                        null);
+
+        long parallelSublistGasLimit =
+                BlockUtils.getSublistGasLimit(gasProbeBlock, false, MIN_SEQUENTIAL_SET_GAS_LIMIT);
+
+        long sequentialSublistGasLimit =
+                BlockUtils.getSublistGasLimit(gasProbeBlock, true, MIN_SEQUENTIAL_SET_GAS_LIMIT);
+
+        Assertions.assertTrue(parallelSublistGasLimit > 0);
+        Assertions.assertTrue(sequentialSublistGasLimit > parallelSublistGasLimit);
+
+        long type4GasLimit = parallelSublistGasLimit + 1;
+
+        Transaction hugeType4Tx = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(chainId)
+                .nonce(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(type4GasLimit))
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(1))
+                .receiveAddress(receiverB.getAddress())
+                .value(BigInteger.TEN)
+                .data(EMPTY_BYTE_ARRAY)
+                .authorizationList(List.of(createValidAuthorizationTuple(
+                        new RskAddress(new ECKey().getAddress()),
+                        BigInteger.ZERO,
+                        chainId,
+                        new ECKey())))
+                .build();
+        hugeType4Tx.sign(type4Sender.getEcKey().getPrivKeyBytes());
+
+        List<Transaction> txs = Arrays.asList(legacyTx, hugeType4Tx);
+
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlockUsingCoinbase(
+                        parent,
+                        txs,
+                        Collections.emptyList(),
+                        1,
+                        null,
+                        gasLimit,
+                        parent.getCoinbase(),
+                        null);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(2, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 1 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 1 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        List<Transaction> executed = result.getExecutedTransactions();
+
+        Assertions.assertEquals(legacyTx, executed.get(0));
+        Assertions.assertEquals(hugeType4Tx, executed.get(1));
+    }
+
+    @Test
+    void twoType4WithDifferentAuthoritiesAndSameReceiverGoToSameParallelSublist() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+
+        Account authorityA = createAccount("receiverCollisionAuthorityA", track, Coin.valueOf(1_000_000));
+        Account authorityB = createAccount("receiverCollisionAuthorityB", track, Coin.valueOf(1_000_000));
+        Account type4SenderA = createAccount("receiverCollisionType4SenderA", track, Coin.valueOf(1_000_000));
+        Account type4SenderB = createAccount("receiverCollisionType4SenderB", track, Coin.valueOf(1_000_000));
+        Account sameReceiver = createAccount("sameReceiverForType4Txs", track, Coin.ZERO);
+
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction type4TxA = createType4Tx(
+                type4SenderA,
+                sameReceiver.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                authorityA.getEcKey());
+
+        Transaction type4TxB = createType4Tx(
+                type4SenderB,
+                sameReceiver.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                authorityB.getEcKey());
+
+        List<Transaction> txs = Arrays.asList(type4TxA, type4TxB);
+
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(2, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 2 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        List<Transaction> executed = result.getExecutedTransactions();
+
+        Assertions.assertEquals(type4TxA, executed.get(0));
+        Assertions.assertEquals(type4TxB, executed.get(1));
+    }
+
+    @Test
+    void type4WithMultipleAuthoritiesShouldGroupLegacyTxsDependingOnAnyAuthority() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account type4Sender = createAccount("multiAuthType4Sender", track, Coin.valueOf(2_000_000));
+        Account authorityA = createAccount("multiAuthAuthorityA", track, Coin.valueOf(1_000_000));
+        Account authorityB = createAccount("multiAuthAuthorityB", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("multiAuthReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("multiAuthReceiverB", track, Coin.ZERO);
+        Account receiverC = createAccount("multiAuthReceiverC", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        SetCodeAuthorization authorizationA = createValidAuthorizationTuple(
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                chainId,
+                authorityA.getEcKey());
+
+        SetCodeAuthorization authorizationB = createValidAuthorizationTuple(
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                chainId,
+                authorityB.getEcKey());
+
+        Transaction type4Tx = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(chainId)
+                .nonce(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(100_000))
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(1))
+                .receiveAddress(receiverA.getAddress())
+                .value(BigInteger.TEN)
+                .data(EMPTY_BYTE_ARRAY)
+                .authorizationList(Arrays.asList(authorizationA, authorizationB))
+                .build();
+        type4Tx.sign(type4Sender.getEcKey().getPrivKeyBytes());
+
+        Transaction legacyDependingOnAuthorityA = createLegacyTx(
+                authorityA,
+                receiverB.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        Transaction legacyDependingOnAuthorityB = createLegacyTx(
+                authorityB,
+                receiverC.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        List<Transaction> txs = Arrays.asList(
+                type4Tx,
+                legacyDependingOnAuthorityA,
+                legacyDependingOnAuthorityB);
+
+        Block block = createParallelTestBlock(parent, txs);
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(3, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 3 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 3 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        List<Transaction> executed = result.getExecutedTransactions();
+        Assertions.assertEquals(type4Tx, executed.get(0));
+        Assertions.assertEquals(legacyDependingOnAuthorityA, executed.get(1));
+        Assertions.assertEquals(legacyDependingOnAuthorityB, executed.get(2));
+    }
+
+    @Test
+    void type4AuthorityThatWasPreviousOuterSenderShouldStayInSameSublist() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account sharedAccount = createAccount("outerSenderThenAuthority", track, Coin.valueOf(2_000_000));
+        Account secondType4Sender = createAccount("secondType4Sender", track, Coin.valueOf(1_000_000));
+        Account authorityB = createAccount("authorityBForCrossDependency", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("crossDependencyReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("crossDependencyReceiverB", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction firstType4Tx = createType4Tx(
+                sharedAccount,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                authorityB.getEcKey());
+
+        Transaction secondType4Tx = createType4Tx(
+                secondType4Sender,
+                receiverB.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ONE,
+                sharedAccount.getEcKey());
+
+        List<Transaction> txs = Arrays.asList(firstType4Tx, secondType4Tx);
+
+        Block block = createParallelTestBlock(parent, txs);
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(2, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 2 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        List<Transaction> executed = result.getExecutedTransactions();
+        Assertions.assertEquals(firstType4Tx, executed.get(0));
+        Assertions.assertEquals(secondType4Tx, executed.get(1));
+    }
+
+    @Test
+    void legacyAndType4WithSameReceiverShouldStayInSameParallelSublist() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account legacySender = createAccount("receiverCollisionLegacySender", track, Coin.valueOf(1_000_000));
+        Account type4Sender = createAccount("receiverCollisionType4Sender", track, Coin.valueOf(1_000_000));
+        Account authority = createAccount("receiverCollisionAuthority", track, Coin.valueOf(1_000_000));
+        Account sameReceiver = createAccount("receiverCollisionSameReceiver", track, Coin.ZERO);
+        Account independentSender = createAccount("receiverCollisionIndependentSender", track, Coin.valueOf(1_000_000));
+        Account independentReceiver = createAccount("receiverCollisionIndependentReceiver", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction legacyTx = createLegacyTx(
+                legacySender,
+                sameReceiver.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        Transaction type4Tx = createType4Tx(
+                type4Sender,
+                sameReceiver.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                authority.getEcKey());
+
+        Transaction independentLegacyTx = createLegacyTx(
+                independentSender,
+                independentReceiver.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        List<Transaction> txs = Arrays.asList(legacyTx, type4Tx, independentLegacyTx);
+
+        Block block = createParallelTestBlock(parent, txs);
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(3, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2, 3 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 2, 3 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        List<Transaction> executed = result.getExecutedTransactions();
+        Assertions.assertEquals(legacyTx, executed.get(0));
+        Assertions.assertEquals(type4Tx, executed.get(1));
+        Assertions.assertEquals(independentLegacyTx, executed.get(2));
+    }
+
+    @Test
+    void type4MiningScheduleShouldBeValidForParallelExecution() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account authority = createAccount("scheduleAuthority", track, Coin.valueOf(1_000_000));
+        Account type4Sender = createAccount("scheduleType4Sender", track, Coin.valueOf(1_000_000));
+        Account legacySender = createAccount("scheduleLegacySender", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("scheduleReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("scheduleReceiverB", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction type4Tx = createType4Tx(
+                type4Sender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                authority.getEcKey());
+
+        Transaction dependentLegacyTx = createLegacyTx(
+                authority,
+                receiverA.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        Transaction independentLegacyTx = createLegacyTx(
+                legacySender,
+                receiverB.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        Transaction remascTx = new RemascTransaction(1L);
+
+        List<Transaction> txs = Arrays.asList(
+                type4Tx,
+                dependentLegacyTx,
+                independentLegacyTx,
+                remascTx);
+
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult miningResult = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, miningResult);
+        Assertions.assertArrayEquals(new short[] { 2, 3 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        List<Transaction> minedTransactions = miningResult.getExecutedTransactions();
+        Assertions.assertEquals(type4Tx, minedTransactions.get(0));
+        Assertions.assertEquals(dependentLegacyTx, minedTransactions.get(1));
+        Assertions.assertEquals(independentLegacyTx, minedTransactions.get(2));
+        Assertions.assertTrue(minedTransactions.get(3).isRemascTransaction(3, 4));
+
+        BlockResult parallelResult = executor.execute(
+                null,
+                0,
+                block,
+                parent.getHeader(),
+                false,
+                false,
+                false);
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, parallelResult);
+
+        Assertions.assertEquals(
+                miningResult.getExecutedTransactions(),
+                parallelResult.getExecutedTransactions());
+
+        Assertions.assertEquals(
+                miningResult.getGasUsed(),
+                parallelResult.getGasUsed());
+
+        Assertions.assertEquals(
+                miningResult.getPaidFees(),
+                parallelResult.getPaidFees());
+
+        Assertions.assertArrayEquals(
+                miningResult.getFinalState().getHash().getBytes(),
+                parallelResult.getFinalState().getHash().getBytes());
+    }
+
+    @Test
+    void type4WithPartiallyInvalidAuthorizationListShouldStillTrackValidAuthorityDependency() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account type4Sender = createAccount("partialInvalidType4Sender", track, Coin.valueOf(2_000_000));
+        Account validAuthority = createAccount("partialInvalidValidAuthority", track, Coin.valueOf(1_000_000));
+        Account invalidAuthority = createAccount("partialInvalidInvalidAuthority", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("partialInvalidReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("partialInvalidReceiverB", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        SetCodeAuthorization validAuthorization = createValidAuthorizationTuple(
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                chainId,
+                validAuthority.getEcKey());
+
+        SetCodeAuthorization invalidAuthorization = createValidAuthorizationTuple(
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ONE,
+                chainId,
+                invalidAuthority.getEcKey());
+
+        Transaction type4Tx = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(chainId)
+                .nonce(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(100_000))
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(1))
+                .receiveAddress(receiverA.getAddress())
+                .value(BigInteger.TEN)
+                .data(EMPTY_BYTE_ARRAY)
+                .authorizationList(Arrays.asList(validAuthorization, invalidAuthorization))
+                .build();
+        type4Tx.sign(type4Sender.getEcKey().getPrivKeyBytes());
+
+        Transaction legacyDependingOnValidAuthority = createLegacyTx(
+                validAuthority,
+                receiverB.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        List<Transaction> txs = Arrays.asList(type4Tx, legacyDependingOnValidAuthority);
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(2, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 2 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        Assertions.assertEquals(type4Tx, result.getExecutedTransactions().get(0));
+        Assertions.assertEquals(legacyDependingOnValidAuthority, result.getExecutedTransactions().get(1));
+    }
+
+    @Test
+    void type4ClearingDelegationShouldCollideWithLegacyFromAuthority() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account authority = createAccount("clearDelegationAuthority", track, Coin.valueOf(1_000_000));
+        Account type4Sender = createAccount("clearDelegationType4Sender", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("clearDelegationReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("clearDelegationReceiverB", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction type4ClearingDelegation = createType4Tx(
+                type4Sender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                RskAddress.nullAddress(),
+                BigInteger.ZERO,
+                authority.getEcKey());
+
+        Transaction legacyDependingOnAuthority = createLegacyTx(
+                authority,
+                receiverB.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        List<Transaction> txs = Arrays.asList(type4ClearingDelegation, legacyDependingOnAuthority);
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertArrayEquals(new short[] { 2 }, result.getTxEdges());
+
+        Assertions.assertEquals(type4ClearingDelegation, result.getExecutedTransactions().get(0));
+        Assertions.assertEquals(legacyDependingOnAuthority, result.getExecutedTransactions().get(1));
+    }
+
+    @Test
+    void type4WithRepeatedSameAuthorityInAuthorizationListShouldKeepAllDependentTxsTogether() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account authority = createAccount("repeatedAuthority", track, Coin.valueOf(1_000_000));
+        Account type4Sender = createAccount("repeatedAuthorityType4Sender", track, Coin.valueOf(2_000_000));
+        Account receiverA = createAccount("repeatedAuthorityReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("repeatedAuthorityReceiverB", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        SetCodeAuthorization authorizationNonce0 = createValidAuthorizationTuple(
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                chainId,
+                authority.getEcKey());
+
+        SetCodeAuthorization authorizationNonce1 = createValidAuthorizationTuple(
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ONE,
+                chainId,
+                authority.getEcKey());
+
+        Transaction type4Tx = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(chainId)
+                .nonce(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(100_000))
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(1))
+                .receiveAddress(receiverA.getAddress())
+                .value(BigInteger.TEN)
+                .data(EMPTY_BYTE_ARRAY)
+                .authorizationList(Arrays.asList(authorizationNonce0, authorizationNonce1))
+                .build();
+        type4Tx.sign(type4Sender.getEcKey().getPrivKeyBytes());
+
+        Transaction legacyDependingOnAuthority = createLegacyTx(
+                authority,
+                receiverB.getAddress(),
+                BigInteger.valueOf(2),
+                chainId);
+
+        List<Transaction> txs = Arrays.asList(type4Tx, legacyDependingOnAuthority);
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(2, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2 }, result.getTxEdges());
+        Assertions.assertEquals(type4Tx, result.getExecutedTransactions().get(0));
+        Assertions.assertEquals(legacyDependingOnAuthority, result.getExecutedTransactions().get(1));
+    }
+
+    @Test
+    void parallelBlockWithWrongEdgesSplittingDependentType4AndLegacyShouldBeRejected() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account authority = createAccount("wrongEdgesAuthority", track, Coin.valueOf(1_000_000));
+        Account type4Sender = createAccount("wrongEdgesType4Sender", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("wrongEdgesReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("wrongEdgesReceiverB", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction type4Tx = createType4Tx(
+                type4Sender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                authority.getEcKey());
+
+        Transaction legacyDependingOnAuthority = createLegacyTx(
+                authority,
+                receiverB.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        List<Transaction> txs = Arrays.asList(type4Tx, legacyDependingOnAuthority);
+
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlockUsingCoinbase(
+                        parent,
+                        txs,
+                        Collections.emptyList(),
+                        1,
+                        null,
+                        getParallelTestGasLimit(parent),
+                        parent.getCoinbase(),
+                        new short[] { 1, 2 });
+
+        BlockResult result = executor.execute(
+                null,
+                0,
+                block,
+                parent.getHeader(),
+                true,
+                false,
+                true);
+
+        Assertions.assertSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+    }
+
+    @Test
+    void type4WithAlreadyDelegatedAuthorityShouldStillCollideWithLegacyFromAuthority() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account authority = createAccount("alreadyDelegatedAuthority", track, Coin.valueOf(1_000_000));
+        Account type4Sender = createAccount("alreadyDelegatedType4Sender", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("alreadyDelegatedReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("alreadyDelegatedReceiverB", track, Coin.ZERO);
+
+        track.saveCode(
+                authority.getAddress(),
+                org.ethereum.core.DelegationCodeResolver.createDelegatedCode(new RskAddress(new ECKey().getAddress())));
+
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction type4Tx = createType4Tx(
+                type4Sender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                authority.getEcKey());
+
+        Transaction legacyDependingOnAuthority = createLegacyTx(
+                authority,
+                receiverB.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        List<Transaction> txs = Arrays.asList(type4Tx, legacyDependingOnAuthority);
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(2, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2 }, result.getTxEdges());
+        Assertions.assertEquals(type4Tx, result.getExecutedTransactions().get(0));
+        Assertions.assertEquals(legacyDependingOnAuthority, result.getExecutedTransactions().get(1));
+    }
+
+    @Test
+    void invalidType4DiscardedShouldNotForceLaterTransactionsIntoSameSublist() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account invalidType4Sender = createAccount("discardedInvalidType4Sender", track, Coin.valueOf(0));
+        Account authority = createAccount("discardedInvalidAuthority", track, Coin.valueOf(1_000_000));
+        Account legacySender = createAccount("legacyAfterDiscardedInvalid", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("discardedInvalidReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("discardedInvalidReceiverB", track, Coin.ZERO);
+        Account receiverC = createAccount("discardedInvalidReceiverC", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction invalidType4Tx = createType4Tx(
+                invalidType4Sender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ONE,
+                authority.getEcKey());
+
+        Transaction legacyFromSameAuthority = createLegacyTx(
+                authority,
+                receiverB.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        Transaction independentLegacyTx = createLegacyTx(
+                legacySender,
+                receiverC.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        List<Transaction> txs = Arrays.asList(
+                invalidType4Tx,
+                legacyFromSameAuthority,
+                independentLegacyTx);
+
+        Block block = createParallelTestBlock(parent, txs);
+
+        BlockResult result = executor.executeForMining(
+                block,
+                parent.getHeader(),
+                true,
+                false,
+                true);
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(2, result.getExecutedTransactions().size());
+
+        Assertions.assertFalse(result.getExecutedTransactions().contains(invalidType4Tx));
+        Assertions.assertEquals(legacyFromSameAuthority, result.getExecutedTransactions().get(0));
+        Assertions.assertEquals(independentLegacyTx, result.getExecutedTransactions().get(1));
+
+        Assertions.assertArrayEquals(new short[] { 1, 2 }, result.getTxEdges());
+    }
+
+    @Test
+    void validOuterType4WithInvalidAuthorizationShouldStillTrackAuthorityReadDependency() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account type4Sender = createAccount("validOuterInvalidAuthoritySender", track, Coin.valueOf(1_000_000));
+        Account authority = createAccount("invalidAuthorityForValidOuter", track, Coin.valueOf(1_000_000));
+        Account independentSender = createAccount("independentAfterInvalidAuthority", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("validOuterInvalidAuthorityReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("validOuterInvalidAuthorityReceiverB", track, Coin.ZERO);
+        Account receiverC = createAccount("validOuterInvalidAuthorityReceiverC", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction type4Tx = createType4Tx(
+                type4Sender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ONE, // invalid authorization nonce
+                authority.getEcKey());
+
+        Transaction legacyFromAuthority = createLegacyTx(
+                authority,
+                receiverB.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        Transaction independentLegacyTx = createLegacyTx(
+                independentSender,
+                receiverC.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        Block block = createParallelTestBlock(parent, Arrays.asList(type4Tx, legacyFromAuthority, independentLegacyTx));
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(3, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2, 3 }, result.getTxEdges());
+
+        Assertions.assertEquals(type4Tx, result.getExecutedTransactions().get(0));
+        Assertions.assertEquals(legacyFromAuthority, result.getExecutedTransactions().get(1));
+        Assertions.assertEquals(independentLegacyTx, result.getExecutedTransactions().get(2));
+    }
+
+    @Test
+    void type4WithValidAndInvalidAuthorizationsShouldTrackBothWriteAndReadDependencies() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account type4Sender = createAccount("mixedAuthType4Sender", track, Coin.valueOf(2_000_000));
+        Account validAuthority = createAccount("mixedAuthValidAuthority", track, Coin.valueOf(1_000_000));
+        Account invalidAuthority = createAccount("mixedAuthInvalidAuthority", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("mixedAuthReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("mixedAuthReceiverB", track, Coin.ZERO);
+        Account receiverC = createAccount("mixedAuthReceiverC", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        SetCodeAuthorization validAuthorization = createValidAuthorizationTuple(
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                chainId,
+                validAuthority.getEcKey());
+
+        SetCodeAuthorization invalidAuthorization = createValidAuthorizationTuple(
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ONE,
+                chainId,
+                invalidAuthority.getEcKey());
+
+        Transaction type4Tx = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(chainId)
+                .nonce(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(100_000))
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(1))
+                .receiveAddress(receiverA.getAddress())
+                .value(BigInteger.TEN)
+                .data(EMPTY_BYTE_ARRAY)
+                .authorizationList(Arrays.asList(validAuthorization, invalidAuthorization))
+                .build();
+        type4Tx.sign(type4Sender.getEcKey().getPrivKeyBytes());
+
+        Transaction legacyFromValidAuthority = createLegacyTx(
+                validAuthority,
+                receiverB.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        Transaction legacyFromInvalidAuthority = createLegacyTx(
+                invalidAuthority,
+                receiverC.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        Block block = createParallelTestBlock(parent, Arrays.asList(
+                type4Tx,
+                legacyFromValidAuthority,
+                legacyFromInvalidAuthority));
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(3, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 3 }, result.getTxEdges());
+
+        Assertions.assertEquals(type4Tx, result.getExecutedTransactions().get(0));
+        Assertions.assertEquals(legacyFromValidAuthority, result.getExecutedTransactions().get(1));
+        Assertions.assertEquals(legacyFromInvalidAuthority, result.getExecutedTransactions().get(2));
+    }
+
+    @Test
+    void type4DependencyGroupShouldRemainParallelAndRemascShouldRemainSequential() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account authority = createAccount("type4RemascAuthority", track, Coin.valueOf(1_000_000));
+        Account type4Sender = createAccount("type4RemascSender", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("type4RemascReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("type4RemascReceiverB", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction type4Tx = createType4Tx(
+                type4Sender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                authority.getEcKey());
+
+        Transaction legacyDependingOnAuthority = createLegacyTx(
+                authority,
+                receiverB.getAddress(),
+                BigInteger.ONE,
+                chainId);
+
+        Transaction remascTx = new RemascTransaction(1L);
+
+        Block block = createParallelTestBlock(parent, Arrays.asList(
+                type4Tx,
+                legacyDependingOnAuthority,
+                remascTx));
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(3, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 2 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 2 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        Assertions.assertEquals(type4Tx, result.getExecutedTransactions().get(0));
+        Assertions.assertEquals(legacyDependingOnAuthority, result.getExecutedTransactions().get(1));
+        Assertions.assertTrue(result.getExecutedTransactions().get(2).isRemascTransaction(2, 3));
+    }
+
+    @Test
+    void parallelBlockWithWrongEdgesSplittingFailedAuthorizationReadDependencyShouldBeRejected() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account type4Sender = createAccount("wrongEdgesInvalidAuthType4Sender", track, Coin.valueOf(1_000_000));
+        Account authority = createAccount("wrongEdgesInvalidAuthAuthority", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("wrongEdgesInvalidAuthReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("wrongEdgesInvalidAuthReceiverB", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction type4Tx = createType4Tx(
+                type4Sender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ONE,
+                authority.getEcKey());
+
+        Transaction legacyFromAuthority = createLegacyTx(
+                authority,
+                receiverB.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlockUsingCoinbase(
+                        parent,
+                        Arrays.asList(type4Tx, legacyFromAuthority),
+                        Collections.emptyList(),
+                        1,
+                        null,
+                        getParallelTestGasLimit(parent),
+                        parent.getCoinbase(),
+                        new short[] { 1, 2 });
+
+        BlockResult result = executor.execute(
+                null,
+                0,
+                block,
+                parent.getHeader(),
+                true,
+                false,
+                true);
+
+        Assertions.assertSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+    }
+
+    @Test
+    void parallelExecutionWithInvalidAuthorizationReadDependencyShouldMatchMiningState() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account type4Sender = createAccount("parallelInvalidAuthType4Sender", track, Coin.valueOf(1_000_000));
+        Account authority = createAccount("parallelInvalidAuthAuthority", track, Coin.valueOf(1_000_000));
+        Account independentSender = createAccount("parallelInvalidAuthIndependent", track, Coin.valueOf(1_000_000));
+        Account receiverA = createAccount("parallelInvalidAuthReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("parallelInvalidAuthReceiverB", track, Coin.ZERO);
+        Account receiverC = createAccount("parallelInvalidAuthReceiverC", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Transaction type4Tx = createType4Tx(
+                type4Sender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId,
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ONE,
+                authority.getEcKey());
+
+        Transaction legacyFromAuthority = createLegacyTx(
+                authority,
+                receiverB.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        Transaction independentLegacyTx = createLegacyTx(
+                independentSender,
+                receiverC.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        Transaction remascTx = new RemascTransaction(1L);
+
+        Block block = createParallelTestBlock(parent, Arrays.asList(
+                type4Tx,
+                legacyFromAuthority,
+                independentLegacyTx,
+                remascTx));
+
+        BlockResult miningResult = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, miningResult);
+        Assertions.assertArrayEquals(new short[] { 2, 3 }, miningResult.getTxEdges());
+
+        BlockResult parallelResult = executor.execute(
+                null,
+                0,
+                block,
+                parent.getHeader(),
+                false,
+                false,
+                false);
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, parallelResult);
+        Assertions.assertEquals(miningResult.getExecutedTransactions(), parallelResult.getExecutedTransactions());
+        Assertions.assertEquals(miningResult.getGasUsed(), parallelResult.getGasUsed());
+        Assertions.assertEquals(miningResult.getPaidFees(), parallelResult.getPaidFees());
+
+        Assertions.assertArrayEquals(
+                miningResult.getFinalState().getHash().getBytes(),
+                parallelResult.getFinalState().getHash().getBytes());
+    }
+
+    @Test
+    void parallelExecutionWithRepeatedAuthorityAuthorizationsShouldMatchMiningState() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account authority = createAccount("parallelRepeatedAuthority", track, Coin.valueOf(1_000_000));
+        Account type4Sender = createAccount("parallelRepeatedType4Sender", track, Coin.valueOf(2_000_000));
+        Account receiverA = createAccount("parallelRepeatedReceiverA", track, Coin.ZERO);
+        Account receiverB = createAccount("parallelRepeatedReceiverB", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        SetCodeAuthorization authorizationNonce0 = createValidAuthorizationTuple(
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ZERO,
+                chainId,
+                authority.getEcKey());
+
+        SetCodeAuthorization authorizationNonce1 = createValidAuthorizationTuple(
+                new RskAddress(new ECKey().getAddress()),
+                BigInteger.ONE,
+                chainId,
+                authority.getEcKey());
+
+        Transaction type4Tx = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(chainId)
+                .nonce(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(100_000))
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(1))
+                .receiveAddress(receiverA.getAddress())
+                .value(BigInteger.TEN)
+                .data(EMPTY_BYTE_ARRAY)
+                .authorizationList(Arrays.asList(authorizationNonce0, authorizationNonce1))
+                .build();
+        type4Tx.sign(type4Sender.getEcKey().getPrivKeyBytes());
+
+        Transaction legacyDependingOnAuthority = createLegacyTx(
+                authority,
+                receiverB.getAddress(),
+                BigInteger.valueOf(2),
+                chainId);
+
+        Transaction remascTx = new RemascTransaction(1L);
+
+        Block block = createParallelTestBlock(parent, Arrays.asList(
+                type4Tx,
+                legacyDependingOnAuthority,
+                remascTx));
+
+        BlockResult miningResult = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, miningResult);
+        Assertions.assertArrayEquals(new short[] { 2 }, miningResult.getTxEdges());
+
+        BlockResult parallelResult = executor.execute(
+                null,
+                0,
+                block,
+                parent.getHeader(),
+                false,
+                false,
+                false);
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, parallelResult);
+        Assertions.assertEquals(miningResult.getExecutedTransactions(), parallelResult.getExecutedTransactions());
+        Assertions.assertEquals(miningResult.getGasUsed(), parallelResult.getGasUsed());
+        Assertions.assertEquals(miningResult.getPaidFees(), parallelResult.getPaidFees());
+
+        Assertions.assertArrayEquals(
+                miningResult.getFinalState().getHash().getBytes(),
+                parallelResult.getFinalState().getHash().getBytes());
+    }
+
+    @Test
+    void type4ThatDoesNotFitParallelSublistAndRemascShouldBothExecuteSequentially() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        byte chainId = config.getNetworkConstants().getChainId();
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        Repository track = repository.startTracking();
+        Account legacySender = createAccount("parallelLegacyBeforeHugeType4", track, Coin.valueOf(1_000_000));
+        Account type4Sender = createAccount("hugeType4WithRemascSender", track, Coin.valueOf(10_000_000));
+        Account receiverA = createAccount("parallelLegacyBeforeHugeType4Receiver", track, Coin.ZERO);
+        Account receiverB = createAccount("hugeType4WithRemascReceiver", track, Coin.ZERO);
+        track.commit();
+
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        byte[] gasLimit = getParallelTestGasLimit(parent);
+
+        Block gasProbeBlock = new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlockUsingCoinbase(
+                        parent,
+                        Collections.emptyList(),
+                        Collections.emptyList(),
+                        1,
+                        null,
+                        gasLimit,
+                        parent.getCoinbase(),
+                        null);
+
+        long parallelSublistGasLimit =
+                BlockUtils.getSublistGasLimit(gasProbeBlock, false, MIN_SEQUENTIAL_SET_GAS_LIMIT);
+
+        long sequentialSublistGasLimit =
+                BlockUtils.getSublistGasLimit(gasProbeBlock, true, MIN_SEQUENTIAL_SET_GAS_LIMIT);
+
+        Assertions.assertTrue(parallelSublistGasLimit > 0);
+        Assertions.assertTrue(sequentialSublistGasLimit > parallelSublistGasLimit);
+
+        Transaction parallelLegacyTx = createLegacyTx(
+                legacySender,
+                receiverA.getAddress(),
+                BigInteger.ZERO,
+                chainId);
+
+        Transaction hugeType4Tx = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(chainId)
+                .nonce(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(parallelSublistGasLimit + 1))
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(1))
+                .receiveAddress(receiverB.getAddress())
+                .value(BigInteger.TEN)
+                .data(EMPTY_BYTE_ARRAY)
+                .authorizationList(List.of(createValidAuthorizationTuple(
+                        new RskAddress(new ECKey().getAddress()),
+                        BigInteger.ZERO,
+                        chainId,
+                        new ECKey())))
+                .build();
+        hugeType4Tx.sign(type4Sender.getEcKey().getPrivKeyBytes());
+
+        Transaction remascTx = new RemascTransaction(1L);
+
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlockUsingCoinbase(
+                        parent,
+                        Arrays.asList(parallelLegacyTx, hugeType4Tx, remascTx),
+                        Collections.emptyList(),
+                        1,
+                        null,
+                        gasLimit,
+                        parent.getCoinbase(),
+                        null);
+
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertEquals(3, result.getExecutedTransactions().size());
+
+        Assertions.assertArrayEquals(new short[] { 1 }, result.getTxEdges());
+        Assertions.assertArrayEquals(new short[] { 1 }, block.getHeader().getTxExecutionSublistsEdges());
+
+        Assertions.assertEquals(parallelLegacyTx, result.getExecutedTransactions().get(0));
+        Assertions.assertEquals(hugeType4Tx, result.getExecutedTransactions().get(1));
+        Assertions.assertTrue(result.getExecutedTransactions().get(2).isRemascTransaction(2, 3));
+    }
+
+
+
+    private Transaction createLegacyTx(Account sender, RskAddress receiver, BigInteger nonce, byte chainId) {
+        Transaction tx = Transaction.builder()
+                .nonce(nonce)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21_000))
+                .receiveAddress(receiver)
+                .chainId(chainId)
+                .value(BigInteger.TEN)
+                .build();
+
+        tx.sign(sender.getEcKey().getPrivKeyBytes());
+        return tx;
+    }
+
+    private Transaction createType4Tx(
+            Account sender,
+            RskAddress receiver,
+            BigInteger nonce,
+            byte chainId,
+            RskAddress delegatedAddress,
+            BigInteger authorizationNonce,
+            ECKey authorityKey) {
+
+        Transaction tx = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(chainId)
+                .nonce(nonce)
+                .gasLimit(BigInteger.valueOf(100_000))
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(1))
+                .receiveAddress(receiver)
+                .value(BigInteger.TEN)
+                .data(EMPTY_BYTE_ARRAY)
+                .authorizationList(List.of(createValidAuthorizationTuple(
+                        delegatedAddress,
+                        authorizationNonce,
+                        chainId,
+                        authorityKey)))
+                .build();
+
+        tx.sign(sender.getEcKey().getPrivKeyBytes());
+        return tx;
+    }
+
+    private Block createParallelTestBlock(Block parent, List<Transaction> txs) {
+        byte[] gasLimit = getParallelTestGasLimit(parent);
+
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlockUsingCoinbase(
+                        parent,
+                        txs,
+                        Collections.emptyList(),
+                        1,
+                        null,
+                        gasLimit,
+                        parent.getCoinbase(),
+                        null);
+
+        Assertions.assertTrue(
+                BlockUtils.getSublistGasLimit(block, false, MIN_SEQUENTIAL_SET_GAS_LIMIT) > 0,
+                "Test setup must enable parallel sublists");
+
+        return block;
+    }
+
     private TestObjects generateBlockWithOneTransaction(Boolean activeRskip144, boolean rskip126IsActive) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
@@ -1215,7 +2839,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -1262,7 +2886,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -1295,7 +2919,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()).add(BigInteger.ONE))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -1305,7 +2929,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -1339,7 +2963,7 @@ public class BlockExecutorTest {
                     .nonce(BigInteger.ZERO)
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(BigInteger.valueOf(21000))
-                    .destination(accounts.get((i + 1) % 2).getAddress())
+                    .receiveAddress(accounts.get((i + 1) % 2).getAddress())
                     .chainId(config.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();
@@ -1361,7 +2985,6 @@ public class BlockExecutorTest {
                         edges);
     }
 
-    /// ///////////////////////////////////////////
     // Testing strange Txs
     private Block getBlockWithTenTransactions(short[] edges) {
         int nTxs = 10;
@@ -1383,7 +3006,7 @@ public class BlockExecutorTest {
                     .nonce(BigInteger.ZERO)
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(BigInteger.valueOf(21000))
-                    .destination(accounts.get(i + nTxs).getAddress())
+                    .receiveAddress(accounts.get(i + nTxs).getAddress())
                     .chainId(config.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();
@@ -1490,7 +3113,7 @@ public class BlockExecutorTest {
                     .nonce(BigInteger.ZERO)
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(txGasLimit)
-                    .destination(accounts.get(i + numberOfTxs).getAddress())
+                    .receiveAddress(accounts.get(i + numberOfTxs).getAddress())
                     .chainId(config.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();
@@ -1939,6 +3562,34 @@ public class BlockExecutorTest {
         public Account getAccount() {
             return this.account;
         }
+    }
+
+    protected SetCodeAuthorization createValidAuthorizationTuple(
+            RskAddress delegatedAddress,
+            BigInteger nonce,
+            byte chainId,
+            ECKey authorityKey
+    ) {
+        byte[] rlpEncoded = RLP.encodeList(
+                RLP.encodeBigInteger(BigInteger.valueOf(chainId)),
+                RLP.encodeElement(delegatedAddress.getBytes()),
+                RLP.encodeElement(nonce.toByteArray())
+        );
+
+        byte[] payload = new byte[1 + rlpEncoded.length];
+        payload[0] = 0x05;
+
+        System.arraycopy(rlpEncoded, 0, payload, 1, rlpEncoded.length);
+
+        ECDSASignature signature =
+                ECDSASignature.fromSignature(authorityKey.sign(HashUtil.keccak256(payload)));
+
+        return new SetCodeAuthorization(
+                BigInteger.valueOf(chainId),
+                delegatedAddress,
+                nonce.toByteArray(),
+                signature
+        );
     }
 
     public static class SimpleEthereumListener extends TestCompositeEthereumListener {

@@ -60,7 +60,7 @@ public class CallTransaction {
                 .nonce(longToBytesNoLeadZeroes(nonce))
                 .gasPrice(longToBytesNoLeadZeroes(gasPrice))
                 .gasLimit(longToBytesNoLeadZeroes(gasLimit))
-                .destination(toAddress.equals(RskAddress.nullAddress()) ? null : toAddress.getBytes())
+                .receiveAddress(toAddress.equals(RskAddress.nullAddress()) ? null : toAddress.getBytes())
                 .value(longToBytesNoLeadZeroes(value))
                 .data(data)
                 .chainId(chainId)

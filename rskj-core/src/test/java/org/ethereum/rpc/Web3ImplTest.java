@@ -87,7 +87,7 @@ import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
-import org.ethereum.core.TransactionType;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -2442,7 +2442,7 @@ class Web3ImplTest {
         // ***** Verifies tx hash
         Transaction expectedTx = Transaction
                 .builder()
-                .destination(toAddress.substring(2))
+                .receiveAddress(toAddress.substring(2))
                 .value(value)
                 .nonce(nonce)
                 .gasPrice(gasPrice)
@@ -2493,7 +2493,7 @@ class Web3ImplTest {
 
         Transaction expectedTx = Transaction
                 .builder()
-                .destination(toAddress.substring(2))
+                .receiveAddress(toAddress.substring(2))
                 .value(value)
                 .nonce(nonce)
                 .gasPrice(gasPrice)
@@ -2664,7 +2664,7 @@ class Web3ImplTest {
                 .nonce(nonce)
                 .gasPrice(gasPrice)
                 .gasLimit(gasLimit)
-                .destination(Hex.decode(to))
+                .receiveAddress(Hex.decode(to))
                 .data(args.getData() == null ? null : Hex.decode(args.getData().substring(2)))
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(value)

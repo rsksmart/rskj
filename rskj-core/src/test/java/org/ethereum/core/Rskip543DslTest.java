@@ -25,6 +25,7 @@ import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import com.typesafe.config.ConfigValueFactory;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
@@ -657,8 +658,9 @@ class Rskip543DslTest {
         TransactionReceipt decoded = new TransactionReceipt(encoded);
 
         assertArrayEquals(original.getStatus(), decoded.getStatus());
-        assertArrayEquals(original.getGasUsed(), decoded.getGasUsed());
         assertArrayEquals(original.getCumulativeGas(), decoded.getCumulativeGas());
+        // RSKIP-546 Type 1 receipt body omits per-tx gasUsed; it is not recoverable from RLP alone.
+        assertArrayEquals(new byte[0], decoded.getGasUsed());
     }
 
     @Test

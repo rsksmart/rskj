@@ -56,7 +56,9 @@ class Blake2fNullDataTest {
 
         Transaction tx01 = world.getTransactionByName("tx01");
         Assertions.assertNotNull(tx01);
-        Assertions.assertNull(tx01.getData(), "ImmutableTransaction with empty calldata should produce null data");
+        byte[] tx01Data = tx01.getData();
+        Assertions.assertTrue(tx01Data == null || tx01Data.length == 0,
+                "Transaction with empty calldata should have null or empty data");
 
         TransactionReceipt tx01Receipt = world.getTransactionReceiptByName("tx01");
         Assertions.assertNotNull(tx01Receipt, "Blake2F tx receipt should exist (block was not invalidated)");
