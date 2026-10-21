@@ -2950,7 +2950,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             federationStorageProvider.setNewFederation(activeFederation);
         }
 
-        private void setupSegwitActiveFed() {
+        private void setupSegwitActiveFed(ForBlock activations) {
             activeFederation = P2shP2wshErpFederationBuilder.builder()
                 .withNetworkParameters(btcMainnetParams)
                 .withMembersBtcPublicKeys(activeFederationKeys)
@@ -2959,7 +2959,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 .withCreationBlockNumber(HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX)
                 .build();
 
-            setUpBridgeSupport(allActivations, bridgeMainnetConstants, activeFederation.getCreationBlockNumber());
+            setUpBridgeSupport(activations, bridgeMainnetConstants, activeFederation.getCreationBlockNumber());
 
             federationStorageProvider.setNewFederation(activeFederation);
         }
@@ -3062,9 +3062,23 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
+            void registerBtcTransaction_withNoChangeOutput_withoutRetiringFed_withSegwitActiveFed_forVetiver_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupSegwitActiveFed(vetiver900Activations);
+                BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
+                registerPegoutTxSigHash(btcTransaction);
+
+                // act
+                registerReleaseTransaction(btcTransaction);
+
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
+
+            @Test
             void registerBtcTransaction_withNoChangeOutput_withoutRetiringFed_withSegwitActiveFed_shouldNotRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupSegwitActiveFed();
+                setupSegwitActiveFed(allActivations);
                 BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
                 // with no output sent to the live federations, no federations pending utxos are saved
 
@@ -3276,7 +3290,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupSegwitActiveFed();
+                setupSegwitActiveFed(allActivations);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
                 registerPegoutTxInFederationsPending(btcTransaction);
 
@@ -3448,7 +3462,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutRetiringFed_withSegwitActiveFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupSegwitActiveFed();
+                setupSegwitActiveFed(allActivations);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
                 registerPegoutTxInFederationsPending(btcTransaction);
 
@@ -3578,7 +3592,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneOutputAndManyInputs_withoutRetiringFed_withSegwitActiveFed_shouldNotRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupSegwitActiveFed();
+                setupSegwitActiveFed(allActivations);
                 BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
 
                 // act
@@ -4596,7 +4610,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_fromRetiredFederationNotInStorage_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupSegwitActiveFed();
+                setupSegwitActiveFed(allActivations);
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
                 registerPegoutTxInFederationsPending(migrationTx);
 
