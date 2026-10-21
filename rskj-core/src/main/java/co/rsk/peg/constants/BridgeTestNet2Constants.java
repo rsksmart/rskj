@@ -74,7 +74,7 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         btcHeightWhenPegoutTxIndexActivates = 0;
         pegoutTxIndexGracePeriodInBtcBlocks = 0;
         // TODO: estimate the BTC height for the RSKIP643 activation date once it is scheduled
-        btcHeightWhenFederationsPendingBtcUTXOsActivates = btcHeightWhenPegoutTxIndexActivates + 10;
+        btcHeightWhenFederationsPendingBtcUTXOsActivates = 10_000_000;
 
         blockWithTooMuchChainWorkHeight = Integer.MAX_VALUE;
     }

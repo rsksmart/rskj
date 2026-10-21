@@ -199,9 +199,9 @@ class BridgeConstantsTest {
 
     private static Stream<Arguments> getBtcHeightWhenFederationsPendingBtcUTXOsActivatesArgProvider() {
         return Stream.of(
-            Arguments.of(BridgeMainNetConstants.getInstance(), 837_599),
-            Arguments.of(BridgeTestNetConstants.getInstance(), 2_589_563),
-            Arguments.of(BridgeTestNet2Constants.getInstance(), 10),
+            Arguments.of(BridgeMainNetConstants.getInstance(), 10_000_000),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 10_000_000),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), 10_000_000),
             Arguments.of(new BridgeRegTestConstants(), 260)
         );
     }
