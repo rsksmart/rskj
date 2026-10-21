@@ -461,7 +461,13 @@ public class BridgeSupport {
     }
 
     private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
-        registerNewUtxos(btcTx, btcTxHeight); // Need to register the change UTXO
+        Sha256Hash btcTxId = btcTx.getHash(false);
+        if (activations.isActive(RSKIP643) && federationSupport.hasFederationsPendingBtcUTXOs(btcTxId)) {
+            registerNewUTXOsByTxId(btcTxId, btcTxHeight);
+            markTxAsProcessed(btcTx);
+        } else {
+            registerNewUtxos(btcTx, btcTxHeight);
+        }
 
         // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
         // In that case, the fundTx will be identified as a regular peg-out tx and processed via #registerPegoutTransaction
