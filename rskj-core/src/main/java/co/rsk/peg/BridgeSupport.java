@@ -462,6 +462,10 @@ public class BridgeSupport {
 
     private void executeRegisterPegoutTransaction(Sha256Hash btcTxHash, int height) throws IOException {
         logger.debug("[executeRegisterPegoutTransaction] Btc tx hash without witness {}", btcTxHash);
+        registerNewUTXOsAndMarkBtcTxHashAsProcessed(btcTxHash, height);
+    }
+
+    private void registerNewUTXOsAndMarkBtcTxHashAsProcessed(Sha256Hash btcTxHash, int height) throws IOException {
         registerNewUTXOsByTxId(btcTxHash, height);
         markBtcTxHashAsProcessed(btcTxHash);
     }
@@ -475,8 +479,7 @@ public class BridgeSupport {
     private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
         Sha256Hash btcTxId = btcTx.getHash(false);
         if (activations.isActive(RSKIP643) && federationSupport.hasFederationsPendingBtcUTXOs(btcTxId)) {
-            registerNewUTXOsByTxId(btcTxId, btcTxHeight);
-            markTxAsProcessed(btcTx);
+            registerNewUTXOsAndMarkBtcTxHashAsProcessed(btcTxId, btcTxHeight);
         } else {
             registerNewUtxos(btcTx, btcTxHeight);
         }
