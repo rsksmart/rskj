@@ -395,7 +395,7 @@ public class BridgeSupport {
             }
 
             if (federationSupport.hasFederationsPendingBtcUTXOs(btcTxId) && !isTheSvpFundTx(btcTxId)) {
-                executeRegisterPegoutTransaction(btcTxId, height);
+                registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxId, height);
                 return;
             }
 
@@ -450,7 +450,7 @@ public class BridgeSupport {
 
             validatePegoutTxRegistration(btcTxHash, height, pmtSerialized);
 
-            executeRegisterPegoutTransaction(btcTxHash, height);
+            registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxHash, height);
         } catch (RegisterBtcTransactionException e) {
             logger.warn(
                 "[registerPegoutTransaction] Could not register Btc tx {}. Message: {}",
@@ -460,12 +460,8 @@ public class BridgeSupport {
         }
     }
 
-    private void executeRegisterPegoutTransaction(Sha256Hash btcTxHash, int height) throws IOException {
-        logger.debug("[executeRegisterPegoutTransaction] Btc tx hash without witness {}", btcTxHash);
-        registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxHash, height);
-    }
-
     private void registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(Sha256Hash btcTxHash, int height) throws IOException {
+        logger.debug("[registerNewUTXOsByTxIdAndMarkTxHashAsProcessed] Btc tx hash without witness {} at height {}", btcTxHash, height);
         registerNewUTXOsByTxId(btcTxHash, height);
         markBtcTxHashAsProcessed(btcTxHash);
     }
