@@ -5127,6 +5127,9 @@ class BridgeSupportRegisterBtcTransactionTest {
         // once the new federation is active, the federation that created the pegout is the retiring one
         private static final long PEGOUT_REGISTRATION_WHILE_RETIRING_BLOCK_NUMBER = NEW_ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER
             + federationMainnetConstants.getFederationActivationAge(allActivations);
+        // once the migration period ends, the federation that created the pegout is retired
+        private static final long PEGOUT_REGISTRATION_AFTER_RETIRED_BLOCK_NUMBER = PEGOUT_REGISTRATION_WHILE_RETIRING_BLOCK_NUMBER
+            + federationMainnetConstants.getFundsMigrationAgeSinceActivationEnd(allActivations);
         // the migration starts once the active federation has been active for the funds migration age
         private static final long MIGRATION_CREATION_BLOCK_NUMBER = PEGOUT_CREATION_BLOCK_NUMBER
             + federationMainnetConstants.getFundsMigrationAgeSinceActivationBegin() + 1;
@@ -5335,6 +5338,33 @@ class BridgeSupportRegisterBtcTransactionTest {
                 List.of(OUTPUT_INDEX_FOR_PEGOUT_CHANGE),
                 segwitActiveFederation.getAddress()
             );
+        }
+
+        @Test
+        void registerBtcTransaction_withPegoutToActiveFed_afterChangingToRetiredFed_shouldMarkAsProcessedWithoutRegisteringChange() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            BtcTransaction pegout = createPegoutFromActiveFedPayingToUser(PEGOUT_REQUEST_VALUE);
+            // the federation that created the pegout is no longer a live federation, so its change matches no live federation script
+            federationStorageProvider.setNewFederation(newActiveFederation);
+            setUpBridgeAndFederationSupport(PEGOUT_REGISTRATION_AFTER_RETIRED_BLOCK_NUMBER);
+
+            // act
+            signAndRegisterReleaseTransaction(
+                pegout,
+                segwitActiveFederation,
+                segwitActiveFederationKeys
+            );
+
+            // assert
+            assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
+            assertTrue(federationSupport.getRetiringFederation().isEmpty());
+            assertTransactionWasProcessed(
+                bridgeStorageProvider,
+                pegout.getHash(),
+                (int) rskExecutionBlock.getNumber()
+            );
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+            assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
         }
 
         @Test
