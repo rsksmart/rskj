@@ -234,7 +234,7 @@ public enum MessageType {
             }
 
             BlockHeaderExtension blockHeaderExtension = message.size() == 3
-                    ? BlockHeaderExtension.fromEncoded(message.get(2).getRLPData())
+                    ? BlockHeaderExtensionCodec.fromEncoded(message.get(2).getRLPData())
                     : null;
 
             return new BodyResponseMessage(id, transactions, uncles, blockHeaderExtension);
