@@ -26,9 +26,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static co.rsk.RskTestUtils.generateAddress;
 import static co.rsk.peg.PegTestUtils.createFederation;
-import static co.rsk.peg.PegTxType.*;
+import static co.rsk.peg.PegTxType.PEGIN;
 import static co.rsk.peg.PegTxType.PEGOUT_OR_MIGRATION;
+import static co.rsk.peg.PegTxType.UNKNOWN;
 import static co.rsk.peg.PegUtils.*;
 import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
 import static org.junit.jupiter.api.Assertions.*;
@@ -73,7 +75,7 @@ class PegUtilsTest {
         // arrange
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(5);
+        Keccak256 derivationArgumentsHash = RskTestUtils.createHash(5);
         RskAddress lbcAddress = new RskAddress("461750b4824b14c3d9b7702bc6fbb82469082b23");
 
         // act
@@ -700,8 +702,8 @@ class PegUtilsTest {
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+        Keccak256 derivationArgumentsHash = RskTestUtils.createHash(0);
+        RskAddress lbcAddress = generateAddress("lbcAddress");
 
         Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
