@@ -412,7 +412,7 @@ public class BridgeSupport {
             logger.info("[registerBtcTransaction][btctx: {}] This is a {} transaction type", btcTx.getHash(), pegTxType);
             switch (pegTxType) {
                 case PEGIN -> registerPegIn(btcTx, rskTxHash, height);
-                case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx, height);
+                case PEGOUT_OR_MIGRATION -> registerNewUTXOsAndMarkTxAsProcessed(btcTx, height);
                 case SVP_FUND_TX -> registerSvpFundTx(btcTx, height);
                 case SVP_SPEND_TX -> registerSvpSpendTx(btcTx, height);
                 case UNKNOWN -> logger.warn("[registerBtcTransaction] Unknown peg tx type won't be registered.");
@@ -462,10 +462,10 @@ public class BridgeSupport {
 
     private void executeRegisterPegoutTransaction(Sha256Hash btcTxHash, int height) throws IOException {
         logger.debug("[executeRegisterPegoutTransaction] Btc tx hash without witness {}", btcTxHash);
-        registerNewUTXOsAndMarkBtcTxHashAsProcessed(btcTxHash, height);
+        registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxHash, height);
     }
 
-    private void registerNewUTXOsAndMarkBtcTxHashAsProcessed(Sha256Hash btcTxHash, int height) throws IOException {
+    private void registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(Sha256Hash btcTxHash, int height) throws IOException {
         registerNewUTXOsByTxId(btcTxHash, height);
         markBtcTxHashAsProcessed(btcTxHash);
     }
@@ -479,9 +479,9 @@ public class BridgeSupport {
     private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
         Sha256Hash btcTxId = btcTx.getHash(false);
         if (activations.isActive(RSKIP643) && federationSupport.hasFederationsPendingBtcUTXOs(btcTxId)) {
-            registerNewUTXOsAndMarkBtcTxHashAsProcessed(btcTxId, btcTxHeight);
+            registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxId, btcTxHeight);
         } else {
-            registerNewUtxos(btcTx, btcTxHeight);
+            registerNewUTXOsAndMarkTxAsProcessed(btcTx, btcTxHeight);
         }
 
         // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
@@ -493,7 +493,7 @@ public class BridgeSupport {
     }
 
     private void registerSvpSpendTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
-        registerNewUtxos(btcTx, btcTxHeight);
+        registerNewUTXOsAndMarkTxAsProcessed(btcTx, btcTxHeight);
         provider.clearSvpSpendTxHashUnsigned();
 
         logger.info("[registerSvpSpendTx] Going to commit the proposed federation.");
@@ -795,7 +795,7 @@ public class BridgeSupport {
         }
 
         // Save UTXOs from the federation(s) only if we actually locked the funds
-        registerNewUtxos(btcTx, btcTxHeight);
+        registerNewUTXOsAndMarkTxAsProcessed(btcTx, btcTxHeight);
     }
 
     private void refundTxSender(
@@ -898,7 +898,7 @@ public class BridgeSupport {
     so they can be used as inputs in future peg-out transactions.
     Finally, mark the btcTx as processed.
      */
-    private void registerNewUtxos(BtcTransaction btcTx, int btcTxHeight) throws IOException {
+    private void registerNewUTXOsAndMarkTxAsProcessed(BtcTransaction btcTx, int btcTxHeight) throws IOException {
         int heightForNewUtxos = getHeightForNewUtxos(activations, btcTxHeight);
 
         Wallet activeFederationWallet = getActiveFederationWallet(false);
