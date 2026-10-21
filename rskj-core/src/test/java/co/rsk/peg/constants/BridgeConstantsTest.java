@@ -199,11 +199,10 @@ class BridgeConstantsTest {
 
     private static Stream<Arguments> getBtcHeightWhenFederationsPendingBtcUTXOsActivatesArgProvider() {
         return Stream.of(
-            // RSKIP643 has no mainnet/testnet activation height yet, so the gate stays closed
-            Arguments.of(BridgeMainNetConstants.getInstance(), Integer.MAX_VALUE),
-            Arguments.of(BridgeTestNetConstants.getInstance(), Integer.MAX_VALUE),
-            Arguments.of(BridgeTestNet2Constants.getInstance(), Integer.MAX_VALUE),
-            Arguments.of(new BridgeRegTestConstants(), 300)
+            Arguments.of(BridgeMainNetConstants.getInstance(), 837_599),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 2_589_563),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), 10),
+            Arguments.of(new BridgeRegTestConstants(), 260)
         );
     }
 
