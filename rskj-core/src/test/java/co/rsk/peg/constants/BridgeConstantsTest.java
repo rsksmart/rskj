@@ -197,6 +197,26 @@ class BridgeConstantsTest {
         assertEquals(expectedValue, pegoutTxIndexGracePeriodInBtcBlocks);
     }
 
+    private static Stream<Arguments> getBtcHeightWhenFederationsPendingBtcUTXOsActivatesArgProvider() {
+        return Stream.of(
+            // RSKIP643 has no mainnet/testnet activation height yet, so the gate stays closed
+            Arguments.of(BridgeMainNetConstants.getInstance(), Integer.MAX_VALUE),
+            Arguments.of(BridgeTestNetConstants.getInstance(), Integer.MAX_VALUE),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), Integer.MAX_VALUE),
+            Arguments.of(new BridgeRegTestConstants(), 300)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getBtcHeightWhenFederationsPendingBtcUTXOsActivatesArgProvider")
+    void getBtcHeightWhenFederationsPendingBtcUTXOsActivates_shouldReturnNetworkValue(BridgeConstants bridgeConstants, int expectedValue) {
+        // act
+        int btcHeightWhenFederationsPendingBtcUTXOsActivates = bridgeConstants.getBtcHeightWhenFederationsPendingBtcUTXOsActivates();
+
+        // assert
+        assertEquals(expectedValue, btcHeightWhenFederationsPendingBtcUTXOsActivates);
+    }
+
     private static Stream<Arguments> getBtcHeightWhenBlockIndexActivatesArgProvider() {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), 696_022),

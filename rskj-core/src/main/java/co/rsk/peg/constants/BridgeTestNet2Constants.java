@@ -74,6 +74,8 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         btcHeightWhenPegoutTxIndexActivates = 0;
         pegoutTxIndexGracePeriodInBtcBlocks = 0;
 
+        btcHeightWhenFederationsPendingBtcUTXOsActivates = Integer.MAX_VALUE;
+
         blockWithTooMuchChainWorkHeight = Integer.MAX_VALUE;
     }
 
