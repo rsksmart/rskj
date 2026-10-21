@@ -58,6 +58,35 @@ public class AddressBasedAuthorizerFactory {
         if (hasNullAddress) {
             throw new IllegalArgumentException("Cannot build a majority authorizer with a null address");
         }
+
         return AddressBasedAuthorizer.of(authorizedAddresses, MinimumRequiredCalculation.MAJORITY);
+    }
+
+    /**
+     * Builds an authorizer that requires the vote of only one of the provided addresses.
+     * <p>
+     * Validation and behavior:
+     * - authorizedAddresses must not be null
+     * - authorizedAddresses must contain at least 1 address; otherwise, IllegalArgumentException is thrown.
+     * - authorizedAddresses must not contain null elements; otherwise, IllegalArgumentException is thrown.
+     * - ZERO_ADDRESS is allowed as a member of the set.
+     *</p>
+     * @param authorizedAddresses set of addresses where any single one is enough to authorize (size >= 1, no nulls)
+     * @return an AddressBasedAuthorizer configured to require the approval of one address
+     * @throws NullPointerException if the set is null
+     * @throws IllegalArgumentException if the set is empty, or contains null elements
+     */
+    public static AddressBasedAuthorizer buildOneOfManyAuthorizer(@Nonnull Set<RskAddress> authorizedAddresses) {
+        Objects.requireNonNull(authorizedAddresses, "Cannot build an authorizer with a null set of authorized addresses");
+
+        if (authorizedAddresses.isEmpty()) {
+            throw new IllegalArgumentException("One-of-many authorizer requires at least 1 authorized address");
+        }
+        boolean hasNullAddress = authorizedAddresses.stream().anyMatch(Objects::isNull);
+        if (hasNullAddress) {
+            throw new IllegalArgumentException("Cannot build a one-of-many authorizer with a null address");
+        }
+
+        return AddressBasedAuthorizer.of(authorizedAddresses, MinimumRequiredCalculation.ONE);
     }
 }

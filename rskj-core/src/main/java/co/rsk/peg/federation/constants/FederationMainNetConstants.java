@@ -2,10 +2,12 @@ package co.rsk.peg.federation.constants;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.federation.FederationFormatVersion;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
+import co.rsk.peg.vote.AddressBasedAuthorizerFactory;
 import java.time.ZonedDateTime;
-import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
@@ -37,12 +39,12 @@ public class FederationMainNetConstants extends FederationConstants {
         genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant();
         genesisFederationType = FederationFormatVersion.STANDARD_MULTISIG_FEDERATION;
 
-        List<ECKey> federationChangeAuthorizedKeys = Stream.of(
+        Set<RskAddress> federationChangeAuthorizedAddresses = Stream.of(
             "04e593d4cde25137b13f19462bc4c02e97ba2ed5a3860813497abf9b4eeb9259e37e0384d12cfd2d9a7a0ba606b31ee34317a9d7f4a8591c6bcf5dfd5563248b2f",
             "045e7f2563e73d44d149c19cffca36e1898597dc759d76166b8104103c0d3f351a8a48e3a224544e9a649ad8ebcfdbd6c39744ddb85925f19c7e3fd48f07fc1c06",
             "0441945e4e272936106f6200b36162f3510e8083535c15e175ac82deaf828da955b85fd72b7534f2a34cedfb45fa63b728cc696a2bd3c5d39ec799ec2618e9aa9f"
-        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
-        federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
+        ).map(hex -> new RskAddress(ECKey.fromPublicOnly(Hex.decode(hex)).getAddress())).collect(Collectors.toSet());
+        federationChangeAuthorizer = AddressBasedAuthorizerFactory.buildMajorityAuthorizer(federationChangeAuthorizedAddresses);
 
         validationPeriodDurationInBlocks = 20_000L;
 
