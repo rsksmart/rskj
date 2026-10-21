@@ -394,7 +394,7 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
-            if (federationSupport.hasFederationsPendingBtcUTXOs(btcTxId) && !isTheSvpFundTx(btcTxId)) {
+            if (shouldRegisterNewUTXOsByTxId(btcTxId)) {
                 registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxId, height);
                 return;
             }
@@ -425,6 +425,10 @@ public class BridgeSupport {
                 e.getMessage()
             );
         }
+    }
+
+    private boolean shouldRegisterNewUTXOsByTxId(Sha256Hash btcTxId) {
+        return activations.isActive(RSKIP643) && federationSupport.hasFederationsPendingBtcUTXOs(btcTxId) && !isTheSvpFundTx(btcTxId);
     }
 
     public void registerPegoutTransaction(
