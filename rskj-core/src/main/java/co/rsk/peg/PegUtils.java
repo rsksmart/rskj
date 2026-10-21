@@ -34,8 +34,10 @@ public class PegUtils {
     static PegTxType getTransactionTypeUsingPegoutIndex(
         ActivationConfig.ForBlock activations,
         BridgeStorageProvider provider,
+        BridgeConstants bridgeConstants,
         Wallet liveFederationsWallet,
-        BtcTransaction btcTransaction
+        BtcTransaction btcTransaction,
+        long btcTransactionHeight
     ) {
         if (!activations.isActive(ConsensusRule.RSKIP379)) {
             throw new IllegalStateException("Can't call this method before RSKIP379 activation");
@@ -43,7 +45,12 @@ public class PegUtils {
 
         List<TransactionOutput> liveFederationOutputs = btcTransaction.getWalletOutputs(liveFederationsWallet);
 
-        Optional<Sha256Hash> inputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTransaction);
+        Optional<Sha256Hash> inputSigHash = getSigHashToLookUpInPegoutIndex(
+            bridgeConstants,
+            activations,
+            btcTransaction,
+            btcTransactionHeight
+        );
         if (inputSigHash.isPresent() && provider.hasPegoutTxSigHash(inputSigHash.get())){
             return PegTxType.PEGOUT_OR_MIGRATION;
         } else if (!liveFederationOutputs.isEmpty()){
@@ -51,6 +58,20 @@ public class PegUtils {
         } else {
             return PegTxType.UNKNOWN;
         }
+    }
+
+    private static Optional<Sha256Hash> getSigHashToLookUpInPegoutIndex(
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        BtcTransaction btcTransaction,
+        long btcTransactionHeight
+    ) {
+        // Once the grace period ends, releases are only identified by their federations pending btc utxos,
+        // so the sighash is no longer computed to look it up in the pegout index
+        if (isFederationsPendingBtcUTXOsEnabled(bridgeConstants, activations, btcTransactionHeight)) {
+            return Optional.empty();
+        }
+        return BitcoinUtils.getSigHashForPegoutIndex(btcTransaction);
     }
 
     /**
@@ -126,8 +147,10 @@ public class PegUtils {
         return getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
+            bridgeConstants,
             liveFederationsWallet,
-            btcTransaction
+            btcTransaction,
+            btcTransactionHeight
         );
     }
 
