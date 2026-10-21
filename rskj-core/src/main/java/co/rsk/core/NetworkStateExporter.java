@@ -122,7 +122,7 @@ public class NetworkStateExporter {
         return contractNode;
     }
 
-    private ObjectNode createAccountNode(ObjectNode mainNode, RskAddress addr, AccountInformationProvider accountInformation,
+    private ObjectNode createAccountNode(ObjectNode mainNode, RskAddress addr, RepositorySnapshot accountInformation,
                                          boolean exportStorageKeys,
                                          boolean exportCode) {
         ObjectNode accountNode = mainNode.objectNode();
@@ -131,7 +131,11 @@ public class NetworkStateExporter {
         BigInteger nonce = accountInformation.getNonce(addr);
         accountNode.put("nonce", nonce.toString());
 
-        if (accountInformation.isContract(addr)) {
+        if (accountInformation.hasDelegationAuthority(addr)) {
+            accountNode.put("delegatedAuthority", true);
+        }
+
+        if (accountInformation.hasInitializedStorage(addr)) {
             Iterator<DataWord> contractKeys = null;
             if (exportStorageKeys) {
                 contractKeys = accountInformation.getStorageKeys(addr);

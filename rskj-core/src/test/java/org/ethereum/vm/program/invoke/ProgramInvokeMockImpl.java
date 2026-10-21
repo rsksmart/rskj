@@ -67,7 +67,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         //Defaults to defaultContractAddress constant defined in this mock
         this.contractAddress = contractAddress!=null?contractAddress:this.defaultContractAddress;
         this.repository.createAccount(this.contractAddress);
-        this.repository.setupContract(this.contractAddress);
+        this.repository.initializeStorage(this.contractAddress);
         this.repository.saveCode(this.contractAddress, contractCode);
         this.txindex = DataWord.ZERO;
     }

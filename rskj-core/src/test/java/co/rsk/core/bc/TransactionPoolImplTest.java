@@ -1018,25 +1018,6 @@ class TransactionPoolImplTest {
     }
 
     @Test
-    void delegatedAccount_replacementTransactionRejectedWhenAlreadyHasPendingTransaction() {
-        createTestAccounts(2,  Coin.valueOf(1000000));
-        makeAccountDelegated(1,2);
-
-        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 1);
-        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 2000, 0, 2);
-
-        Assertions.assertTrue(transactionPool.addTransaction(tx1).transactionsWereAdded());
-
-        TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
-
-        Assertions.assertFalse(result.transactionsWereAdded());
-        Assertions.assertEquals("delegated account already has a transaction in the pool", result.getErrorMessage());
-        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
-        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx1));
-        Assertions.assertEquals(0, transactionPool.getQueuedTransactions().size());
-    }
-
-    @Test
     void delegatedAccounts_eachAccountCanHaveOneTransaction() {
         createTestAccounts(3, Coin.valueOf(1000000));
 
@@ -1071,6 +1052,167 @@ class TransactionPoolImplTest {
     }
 
     @Test
+    void delegatedAccount_replacementTransactionWithValidGasBumpAcceptedAndOnlyOneTransactionRemainsInPool() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        makeAccountDelegated(1, 2);
+
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 1);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 2000, 0, 2);
+
+        TransactionPoolAddResult result1 = transactionPool.addTransaction(tx1);
+        TransactionPoolAddResult result2 = transactionPool.addTransaction(tx2);
+
+        Assertions.assertTrue(result1.transactionsWereAdded());
+        Assertions.assertTrue(result2.transactionsWereAdded());
+
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx2));
+        Assertions.assertFalse(transactionPool.getPendingTransactions().contains(tx1));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void delegatedAccount_replacementTransactionWithInsufficientGasBumpRejected() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        makeAccountDelegated(1, 2);
+
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 10);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 2000, 0, 10);
+
+        Assertions.assertTrue(transactionPool.addTransaction(tx1).transactionsWereAdded());
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
+
+        Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertEquals("gas price not enough to bump transaction", result.getErrorMessage());
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx1));
+        Assertions.assertFalse(transactionPool.getPendingTransactions().contains(tx2));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void delegatedAccount_replacementAcceptedButDifferentNonceStillRejected() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        makeAccountDelegated(1, 2);
+
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 1);
+        Transaction tx1Replacement = createSampleTransactionWithGasPrice(1, 2, 2000, 0, 2);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 3000, 1, 3);
+
+        Assertions.assertTrue(transactionPool.addTransaction(tx1).transactionsWereAdded());
+        Assertions.assertTrue(transactionPool.addTransaction(tx1Replacement).transactionsWereAdded());
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
+
+        Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertEquals("delegated account already has a transaction in the pool", result.getErrorMessage());
+
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx1Replacement));
+        Assertions.assertFalse(transactionPool.getPendingTransactions().contains(tx1));
+        Assertions.assertFalse(transactionPool.getPendingTransactions().contains(tx2));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void delegatedAccount_replacementTransactionChecksQuotaAsReplacement() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        makeAccountDelegated(1, 2);
+
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 1);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 2000, 0, 2);
+
+        Assertions.assertTrue(transactionPool.addTransaction(tx1).transactionsWereAdded());
+        Assertions.assertTrue(transactionPool.addTransaction(tx2).transactionsWereAdded());
+
+        verify(quotaChecker).acceptTx(eq(tx1), isNull(), any());
+        verify(quotaChecker).acceptTx(eq(tx2), eq(tx1), any());
+
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx2));
+        Assertions.assertFalse(transactionPool.getPendingTransactions().contains(tx1));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void delegatedAccount_staleTransactionWithConsumedNonceDoesNotBlockNextNonce() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        Account sender = createAccount(1);
+
+        Transaction staleTx = createSampleTransaction(1, 2, 1000, 0);
+        Assertions.assertTrue(transactionPool.addTransaction(staleTx).pendingTransactionsWereAdded());
+
+        // a sponsor's authorization tuple consumes nonce 0 and delegates the account;
+        // the account's own nonce-0 tx is never mined and stays in the pool
+        repository.increaseNonce(sender.getAddress());
+        makeAccountDelegated(1, 2);
+
+        Transaction nextTx = createSampleTransaction(1, 2, 1000, 1);
+        TransactionPoolAddResult result = transactionPool.addTransaction(nextTx);
+
+        Assertions.assertTrue(result.pendingTransactionsWereAdded(), result.getErrorMessage());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(nextTx));
+    }
+
+    @Test
+    void delegatedAccount_staleQueuedTransactionWithConsumedNonceDoesNotBlockNextNonce() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        Account sender = createAccount(1);
+
+        Transaction staleQueuedTx = createSampleTransaction(1, 2, 1000, 1);
+        Assertions.assertTrue(transactionPool.addTransaction(staleQueuedTx).queuedTransactionsWereAdded());
+
+        repository.increaseNonce(sender.getAddress());
+        repository.increaseNonce(sender.getAddress());
+        makeAccountDelegated(1, 2);
+
+        Transaction nextTx = createSampleTransaction(1, 2, 1000, 2);
+        TransactionPoolAddResult result = transactionPool.addTransaction(nextTx);
+
+        Assertions.assertTrue(result.pendingTransactionsWereAdded(), result.getErrorMessage());
+    }
+
+    @Test
+    void delegatedAccount_liveQueuedTransactionStillOccupiesSlot() {
+        createTestAccounts(2, Coin.valueOf(1_000_000));
+        Transaction queued = createSampleTransaction(1, 2, 1000, 2);
+        Assertions.assertTrue(transactionPool.addTransaction(queued).queuedTransactionsWereAdded());
+        makeAccountDelegated(1, 2);
+
+        TransactionPoolAddResult r = transactionPool.addTransaction(createSampleTransaction(1, 2, 1000, 0));
+        Assertions.assertFalse(r.transactionsWereAdded());
+        Assertions.assertEquals("delegated account already has a transaction in the pool", r.getErrorMessage());
+    }
+
+    @Test
+    void delegatedAccount_staleCostIsNotCountedInBalanceCheck() {
+        createTestAccounts(2, Coin.valueOf(1_000_000));
+        Account sender = createAccount(1);
+        Transaction stale = createSampleTransaction(1, 2, 479_000, 0); // costs 500,000
+        Assertions.assertTrue(transactionPool.addTransaction(stale).pendingTransactionsWereAdded());
+        repository.increaseNonce(sender.getAddress());
+        makeAccountDelegated(1, 2);
+
+        // costs 500,001, which the balance covers on its own
+        TransactionPoolAddResult r = transactionPool.addTransaction(createSampleTransaction(1, 2, 479_001, 1));
+        Assertions.assertTrue(r.pendingTransactionsWereAdded(), r.getErrorMessage());
+    }
+
+    @Test
+    void nonDelegatedAccount_staleCostIsNotCountedInBalanceCheck() {
+        createTestAccounts(2, Coin.valueOf(1_000_000));
+        Account sender = createAccount(1);
+        Transaction stale = createSampleTransaction(1, 2, 479_000, 0); // costs 500,000
+        Assertions.assertTrue(transactionPool.addTransaction(stale).pendingTransactionsWereAdded());
+        repository.increaseNonce(sender.getAddress());
+
+        // costs 500,001, which the balance covers on its own
+        TransactionPoolAddResult r = transactionPool.addTransaction(createSampleTransaction(1, 2, 479_001, 1));
+        Assertions.assertTrue(r.pendingTransactionsWereAdded(), r.getErrorMessage());
+    }
+
+    @Test
     void addTransaction_withNonCanonicalNonce_isRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
@@ -1078,15 +1220,31 @@ class TransactionPoolImplTest {
         Account sender = createAccount(1);
         Account receiver = createAccount(2);
 
-        Transaction tx = Transaction.builder()
-                .nonce(new byte[9])
-                .gasPrice(BigInteger.ONE)
-                .gasLimit(BigInteger.valueOf(21000))
-                .receiveAddress(receiver.getAddress())
-                .value(BigInteger.valueOf(1000))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .build();
-        tx.sign(sender.getEcKey().getPrivKeyBytes());
+        // Structured ingress minimises the nonce (TransactionInput.resolveNonceBytes), so the
+        // builder can no longer express a non-canonical one. The validator under test guards raw
+        // ingress, where such a nonce still arrives on the legacy path, so the fixture is signed
+        // with the raw field and then round-tripped through Transaction.fromRaw — the same entry
+        // point eth_sendRawTransaction and the P2P handler use.
+        Transaction signed = new Transaction(
+                new byte[9],
+                Coin.valueOf(1),
+                BigInteger.valueOf(21000).toByteArray(),
+                receiver.getAddress(),
+                Coin.valueOf(1000),
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                false,
+                TransactionTypePrefix.legacy(),
+                null,
+                null,
+                null,
+                null);
+        signed.sign(sender.getEcKey().getPrivKeyBytes());
+
+        Transaction tx = Transaction.fromRaw(signed.getEncoded());
+
+        // Legacy raw ingress accepts the non-minimal nonce; rejecting it is the pool's job.
+        Assertions.assertArrayEquals(new byte[9], tx.getNonce());
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 

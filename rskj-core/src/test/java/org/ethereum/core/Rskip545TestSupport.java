@@ -23,6 +23,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
@@ -33,7 +34,6 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Shared fixtures for RSKIP-545 (Type 4 / EIP-7702) unit tests.
@@ -62,10 +62,11 @@ public final class Rskip545TestSupport {
             BigInteger nonce,
             byte chainId
     ) {
+        byte[] nonceBytes = CommonParsingUtils.unsignedBytes(nonce);
         byte[] rlpEncoded = RLP.encodeList(
                 RLP.encodeBigInteger(BigInteger.valueOf(chainId & 0xFF)),
                 RLP.encodeElement(delegate.getBytes()),
-                RLP.encodeElement(nonce.toByteArray())
+                RLP.encodeElement(nonceBytes)
         );
         byte[] payload = new byte[1 + rlpEncoded.length];
         payload[0] = 0x05;
@@ -75,7 +76,7 @@ public final class Rskip545TestSupport {
         return new SetCodeAuthorization(
                 BigInteger.valueOf(chainId & 0xFF),
                 delegate,
-                nonce.toByteArray(),
+                nonceBytes,
                 signature
         );
     }
@@ -105,7 +106,7 @@ public final class Rskip545TestSupport {
         return new SetCodeAuthorization(
                 chainId,
                 base.getAddress(),
-                base.getNonce(),
+                base.getNonceBytes(),
                 base.getSignature());
     }
 
@@ -153,13 +154,6 @@ public final class Rskip545TestSupport {
         return Transaction.fromRaw(buildRawType4Bytes(fields));
     }
 
-    /**
-     * Builds an unsigned Type 4 transaction from JSON-RPC-shaped arguments ({@link Transaction#fromCallArguments}).
-     */
-    public static Transaction unsignedType4FromCallArguments(byte[] data, Supplier<String> nonceSupplier) {
-        return Transaction.fromCallArguments(defaultType4CallArguments(data), nonceSupplier, REGTEST_CHAIN_ID);
-    }
-
     public static CallArguments defaultType4CallArguments(byte[] data) {
         CallArguments args = new CallArguments();
         args.setTo(DEFAULT_RECEIVER.toJsonString());
@@ -187,10 +181,6 @@ public final class Rskip545TestSupport {
         return entry;
     }
 
-    public static RLPList buildType4RlpList(byte[] authListBytes) {
-        return buildType4RlpList(DEFAULT_RECEIVER, authListBytes);
-    }
-
     public static RLPList buildType4RlpList(RskAddress to, byte[] authListBytes) {
         return RLP.decodeList(RLP.encodeList(defaultSignedType4Fields(to, authListBytes)));
     }
@@ -208,8 +198,8 @@ public final class Rskip545TestSupport {
                 EMPTY_ACCESS_LIST,
                 authListBytes,
                 RLP.encodeByte((byte) 0),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(Rskip546TestSupport.signatureWord()),
+                RLP.encodeElement(Rskip546TestSupport.signatureWord())
         };
     }
 
@@ -226,7 +216,7 @@ public final class Rskip545TestSupport {
 
     /**
      * Builds a valid authorization then replaces {@code s} with the high-{@code s} malleated counterpart
-     * ({@code n - s}), which must be rejected per EIP-2 during tuple processing.
+     * ({@code n - s}), which must be rejected per EIP-2 / RSKIP-545 during tuple processing.
      */
     public static SetCodeAuthorization createHighSAuthorization(
             ECKey authorityKey,
@@ -241,7 +231,7 @@ public final class Rskip545TestSupport {
                 org.bouncycastle.util.BigIntegers.asUnsignedByteArray(highS),
                 valid.getSignature().getV()
         );
-        return new SetCodeAuthorization(valid.getChainId(), valid.getAddress(), valid.getNonce(), highSig);
+        return new SetCodeAuthorization(valid.getChainId(), valid.getAddress(), valid.getNonceBytes(), highSig);
     }
 
     /**
@@ -262,10 +252,11 @@ public final class Rskip545TestSupport {
     ) {
         byte[][] fields = new byte[][]{
                 RLP.encodeByte(REGTEST_CHAIN_ID),
-                RLP.encodeElement(BigInteger.ZERO.toByteArray()),
+                RLP.encodeElement(new byte[0]),
                 RLP.encodeCoinNonNullZero(DEFAULT_MAX_PRIORITY),
                 RLP.encodeCoinNonNullZero(DEFAULT_MAX_FEE),
-                RLP.encodeElement(gasLimit.toByteArray()),
+                // minimal big-endian: the typed raw parser rejects a non-canonical gas limit
+                RLP.encodeElement(ByteUtil.stripLeadingZeroes(gasLimit.toByteArray(), ByteUtil.EMPTY_BYTE_ARRAY)),
                 RLP.encodeRskAddress(to),
                 RLP.encodeBigInteger(BigInteger.ZERO),
                 RLP.encodeElement(new byte[0]),

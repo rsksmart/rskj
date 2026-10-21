@@ -22,12 +22,19 @@ import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+/**
+ * Shared field checks for the transaction parsers. {@code requireCanonical*} checks are typed-only:
+ * received RLP is validated, never rewritten, since the signature commits to its bytes.
+ * Each {@code requireCanonical*ScalarFields} mirrors a bounds sibling; keep their fields in step.
+ */
 public final class CommonParsingUtils {
 
     private CommonParsingUtils() {}
@@ -38,6 +45,33 @@ public final class CommonParsingUtils {
 
     public static boolean exceedsDataWordLength(Coin coin) {
         return coin != null && coin.getBytes().length > Transaction.DATAWORD_LENGTH;
+    }
+
+    /** Inclusive upper bound of a typed transaction chainId; RSKj carries it in a single byte. */
+    public static final int MAX_TYPED_CHAIN_ID = 255;
+
+    /** Deepest list nesting in a typed envelope: envelope, access list, entry, storage keys. */
+    private static final int MAX_TYPED_LIST_DEPTH = 4;
+
+    /** Typed chainId value rule, {@code [1, MAX_TYPED_CHAIN_ID]}; each ingress path raises its own error. */
+    public static boolean isValidTypedChainId(BigInteger chainId) {
+        return chainId != null
+                && chainId.signum() > 0
+                && chainId.compareTo(BigInteger.valueOf(MAX_TYPED_CHAIN_ID)) <= 0;
+    }
+
+    public static void requireValidTypedChainId(BigInteger chainId) {
+        if (!isValidTypedChainId(chainId)) {
+            throw new IllegalArgumentException(invalidTypedChainIdMessage(chainId));
+        }
+    }
+
+    public static void requireValidTypedChainId(byte chainId) {
+        requireValidTypedChainId(BigInteger.valueOf(Byte.toUnsignedInt(chainId)));
+    }
+
+    public static String invalidTypedChainIdMessage(BigInteger chainId) {
+        return "Typed transaction chainId must be between 1 and " + MAX_TYPED_CHAIN_ID + ", got: " + chainId;
     }
 
     public static void requireDataWordBytes(byte[] field, String message) {
@@ -52,7 +86,52 @@ public final class CommonParsingUtils {
         }
     }
 
-    public static void requireSignatureComponent(byte[] component, String message) {
+    /**
+     * Rejects a scalar field that was received with a leading zero byte.
+     *
+     * <p>{@code null} and empty are canonical: a zero-length item is how zero, or an absent field,
+     * is spelled, so call sites may pass {@code getRLPData()} straight through.
+     */
+    public static void requireCanonicalScalar(byte[] field, String fieldLabel) {
+        if (field != null && field.length > 0 && field[0] == 0) {
+            throw new IllegalArgumentException(
+                    fieldLabel + " must not have leading zero bytes; zero is encoded as the empty string");
+        }
+    }
+
+    /**
+     * Canonical y_parity parse shared by the typed envelope and the authorization tuple: empty is
+     * zero, a leading zero or a payload wider than one byte is rejected, and the value must be 0 or 1.
+     */
+    public static byte parseCanonicalYParity(byte[] yParityData, String fieldLabel) {
+        if (yParityData == null || yParityData.length == 0) {
+            return 0;
+        }
+        requireCanonicalScalar(yParityData, fieldLabel);
+        if (yParityData.length > 1) {
+            throw new IllegalArgumentException(fieldLabel + " must fit in a single byte");
+        }
+        byte yParity = yParityData[0];
+        if (yParity != 0 && yParity != 1) {
+            throw new IllegalArgumentException(fieldLabel + " must be 0 or 1, got: " + (yParity & 0xFF));
+        }
+        return yParity;
+    }
+
+    /**
+     * Bounds and encoding check for an r/s component on a canonical-RLP path. The strict
+     * counterpart of {@link #requireNormalizedSignatureComponent}.
+     */
+    public static void requireCanonicalSignatureComponent(byte[] component, String fieldLabel) {
+        requireDataWordBytes(component, fieldLabel + " is not valid");
+        requireCanonicalScalar(component, fieldLabel);
+    }
+
+    /**
+     * Checks the component's numeric value, ignoring leading zeros, so it accepts non-minimal
+     * encodings. On a canonical-RLP path use {@link #requireCanonicalSignatureComponent} instead.
+     */
+    public static void requireNormalizedSignatureComponent(byte[] component, String message) {
         if (component == null) {
             return;
         }
@@ -78,6 +157,24 @@ public final class CommonParsingUtils {
         requireDataWordCoin(value, "Value is not valid");
     }
 
+    /** Encoding counterpart of {@link #requireLegacyScalarFields}, used by Type-1 only. Fields may be {@code null}. */
+    public static void requireCanonicalGasPriceScalarFields(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] value) {
+        requireCanonicalScalar(nonce, "Nonce");
+        requireCanonicalScalar(gasPrice, "Gas Price");
+        requireCanonicalScalar(gasLimit, "Gas Limit");
+        requireCanonicalScalar(value, "Value");
+    }
+
+    /** Encoding counterpart of {@link #requireTypedScalarFields}, for Type-2 and Type-4. */
+    public static void requireCanonicalTypedScalarFields(byte[] nonce, byte[] gasLimit, byte[] value,
+                                                         byte[] maxPriorityFeePerGas, byte[] maxFeePerGas) {
+        requireCanonicalScalar(nonce, "Nonce");
+        requireCanonicalScalar(gasLimit, "Gas Limit");
+        requireCanonicalScalar(value, "Value");
+        requireCanonicalScalar(maxPriorityFeePerGas, "Max priority fee per gas");
+        requireCanonicalScalar(maxFeePerGas, "Max fee per gas");
+    }
+
     public static void requireTypedScalarFields(byte[] nonce, byte[] gasLimit, Coin value, Coin... feeFields) {
         requireDataWordBytes(nonce, "Nonce is not valid");
         requireDataWordBytes(gasLimit, "Gas Limit is not valid");
@@ -91,6 +188,58 @@ public final class CommonParsingUtils {
         if (txFields.size() != expected) {
             throw new IllegalArgumentException(typeName + " transaction must have exactly " + expected + " elements");
         }
+    }
+
+    /** Requires a list-valued field (access or authorization list) to be framed as an RLP list. */
+    public static void requireListFramed(RLPElement field, String fieldLabel) {
+        if (!(field instanceof RLPList)) {
+            throw new IllegalArgumentException(fieldLabel + " must be encoded as an RLP list");
+        }
+    }
+
+    /** Requires every non-list envelope field to be framed as an RLP byte string. */
+    public static void requireByteStringFields(RLPList txFields, int... listFieldIndices) {
+        for (int i = 0; i < txFields.size(); i++) {
+            if (isListField(i, listFieldIndices)) {
+                continue;
+            }
+            requireByteStringFramed(txFields.get(i), "Transaction field at index " + i);
+        }
+    }
+
+    /** Single-element {@link #requireByteStringFields}; a length check alone cannot tell a list from a byte string. */
+    public static void requireByteStringFramed(RLPElement field, String fieldLabel) {
+        if (field instanceof RLPList) {
+            throw new IllegalArgumentException(fieldLabel + " must be encoded as an RLP byte string");
+        }
+    }
+
+    private static boolean isListField(int index, int... listFieldIndices) {
+        for (int listFieldIndex : listFieldIndices) {
+            if (listFieldIndex == index) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Re-encodes a decoded element minimally, for comparison with the bytes received. */
+    public static byte[] reencodeCanonical(RLPElement element) {
+        return reencodeCanonical(element, 1);
+    }
+
+    private static byte[] reencodeCanonical(RLPElement element, int depth) {
+        if (element instanceof RLPList list) {
+            if (depth > MAX_TYPED_LIST_DEPTH) {
+                throw new IllegalArgumentException("RLP lists are nested too deeply");
+            }
+            byte[][] items = new byte[list.size()][];
+            for (int i = 0; i < list.size(); i++) {
+                items[i] = reencodeCanonical(list.get(i), depth + 1);
+            }
+            return RLP.encodeList(items);
+        }
+        return RLP.encodeElement(element.getRLPData());
     }
 
     public static byte[] nullToEmpty(byte[] value) {

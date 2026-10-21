@@ -257,7 +257,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
         // second we create contracts whom only have code modifying the preexisting ContractDetails instance
         for (Map.Entry<RskAddress, byte[]> codeEntry : genesis.getCodes().entrySet()) {
             RskAddress contractAddress = codeEntry.getKey();
-            repository.setupContract(contractAddress);
+            repository.initializeStorage(contractAddress);
             repository.saveCode(contractAddress, codeEntry.getValue());
             Map<DataWord, byte[]> contractStorage = genesis.getStorages().get(contractAddress);
             for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {

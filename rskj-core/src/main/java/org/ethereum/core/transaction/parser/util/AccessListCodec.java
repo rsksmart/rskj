@@ -26,8 +26,13 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import static org.ethereum.core.transaction.parser.util.CommonParsingUtils.reencodeCanonical;
+import static org.ethereum.core.transaction.parser.util.CommonParsingUtils.requireByteStringFramed;
+import static org.ethereum.core.transaction.parser.util.CommonParsingUtils.requireListFramed;
 
 public final class AccessListCodec {
 
@@ -38,7 +43,8 @@ public final class AccessListCodec {
 
     /**
      * Validates that the access list field contains well-formed RLP and normalizes a missing
-     * value to the canonical empty-list encoding.
+     * value to the canonical empty-list encoding. Structured ingress only; raw ingress uses
+     * {@link #requireRawAccessListBytes}.
      *
      * <p>Per RSKIP-546, Type 1 and standard Type 2 transactions reserve an access-list slot in
      * their RLP layout. That slot must always be a (possibly empty) RLP list — the canonical
@@ -48,44 +54,59 @@ public final class AccessListCodec {
         if (accessListBytes == null || accessListBytes.length == 0) {
             return EMPTY_ACCESS_LIST_RLP.clone();
         }
-        try {
+        rethrowingMalformedRlp(() -> {
             RLPElement decoded = RLP.decode2(accessListBytes).get(0);
             if (!(decoded instanceof RLPList accessList)) {
                 throw new IllegalArgumentException("Access list must be an RLP list");
             }
             validateAccessListEntries(accessList);
+            if (!Arrays.equals(accessListBytes, reencodeCanonical(accessList))) {
+                throw new IllegalArgumentException("Access list is not canonically encoded");
+            }
+        });
+        return accessListBytes;
+    }
+
+    /** Raw-ingress form of {@link #defaultAccessListBytes}; canonical framing is left to the envelope check. */
+    public static byte[] requireRawAccessListBytes(RLPElement accessListField) {
+        requireListFramed(accessListField, "Access list");
+        rethrowingMalformedRlp(() -> validateAccessListEntries((RLPList) accessListField));
+        return accessListField.getRLPRawData();
+    }
+
+    /** Runs a check, reporting a decoder failure as malformed access-list RLP. */
+    private static void rethrowingMalformedRlp(Runnable check) {
+        try {
+            check.run();
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
             throw new IllegalArgumentException("Access list contains invalid RLP encoding", e);
         }
-        return accessListBytes;
     }
 
+    /** Checks each {@code [address, [storageKey, ...]]} entry while its elements are still typed. */
     private static void validateAccessListEntries(RLPList accessList) {
         for (int i = 0; i < accessList.size(); i++) {
             RLPElement entryElement = accessList.get(i);
-            byte[] entryBytes = entryElement.getRLPRawData();
-            if (entryBytes == null || entryBytes.length == 0) {
-                throw new IllegalArgumentException("Access list entry at index " + i + " must not be empty");
-            }
-            RLPList entry = RLP.decodeList(entryBytes);
+            requireListFramed(entryElement, "Access list entry at index " + i);
+            RLPList entry = (RLPList) entryElement;
             if (entry.size() != 2) {
                 throw new IllegalArgumentException("Access list entry at index " + i + " must have exactly 2 elements");
             }
 
+            requireByteStringFramed(entry.get(0), "Access list entry address at index " + i);
             byte[] addressData = entry.get(0).getRLPData();
             if (addressData == null || addressData.length != RskAddress.LENGTH_IN_BYTES) {
                 throw new IllegalArgumentException(
                         "Access list entry address at index " + i + " must be exactly 20 bytes");
             }
 
-            byte[] storageKeyListBytes = entry.get(1).getRLPRawData();
-            if (storageKeyListBytes == null) {
-                throw new IllegalArgumentException("Access list storage keys at index " + i + " must be an RLP list");
-            }
-            RLPList storageKeys = RLP.decodeList(storageKeyListBytes);
+            requireListFramed(entry.get(1), "Access list storage keys at index " + i);
+            RLPList storageKeys = (RLPList) entry.get(1);
             for (int k = 0; k < storageKeys.size(); k++) {
+                requireByteStringFramed(
+                        storageKeys.get(k), "Access list storage key at entry " + i + ", key " + k);
                 byte[] keyData = storageKeys.get(k).getRLPData();
                 if (keyData == null || keyData.length != Transaction.DATAWORD_LENGTH) {
                     throw new IllegalArgumentException(

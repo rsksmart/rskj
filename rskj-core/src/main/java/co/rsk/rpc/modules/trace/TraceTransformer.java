@@ -28,7 +28,6 @@ import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.InvokeData;
 import org.ethereum.vm.trace.SummarizedProgramTrace;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,21 +36,22 @@ public class TraceTransformer {
 
     }
 
-    public static List<TransactionTrace> toTraces(SummarizedProgramTrace trace, TransactionInfo txInfo, long blockNumber) {
+    /** {@code rootGasUsed} is the tx's total gas; typed receipts no longer carry it. */
+    public static List<TransactionTrace> toTraces(SummarizedProgramTrace trace, TransactionInfo txInfo, long blockNumber, long rootGasUsed) {
         List<TransactionTrace> traces = new ArrayList<>();
 
-        addTrace(traces, trace, txInfo, blockNumber, new TraceAddress());
+        addTrace(traces, trace, txInfo, blockNumber, new TraceAddress(), rootGasUsed);
 
         return traces;
     }
 
-    private static void addTrace(List<TransactionTrace> traces, SummarizedProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
+    private static void addTrace(List<TransactionTrace> traces, SummarizedProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, long rootGasUsed) {
         boolean isContractCreation = txInfo.getReceipt().getTransaction().isContractCreation();
         CallType callType = isContractCreation ? CallType.NONE : CallType.CALL;
         byte[] creationInput = isContractCreation ? txInfo.getReceipt().getTransaction().getData() : null;
 
         ProgramResult programResult = ProgramResult.empty();
-        programResult.spendGas(new BigInteger(1, txInfo.getReceipt().getGasUsed()).longValue());
+        programResult.spendGas(rootGasUsed);
 
         if (trace.getReverted()) {
             programResult.setRevert();

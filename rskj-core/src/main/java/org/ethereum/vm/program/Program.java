@@ -588,7 +588,7 @@ public class Program {
         }
 
         track.createAccount(contractAddress, existingAccount);
-        track.setupContract(contractAddress);
+        track.initializeStorage(contractAddress);
 
         if (getActivations().isActive(ConsensusRule.RSKIP125)) {
             track.increaseNonce(contractAddress);
@@ -856,8 +856,9 @@ public class Program {
         }
 
         // FETCH THE CODE
-        byte[] programCode = getExecutionCode(codeAddress);
-        // programCode can be null
+        byte[] programCode = DelegationCodeResolver
+                .getExecutionCode(getStorage(), codeAddress, this::isPrecompile, this.activations);
+        // programCode is never null; empty array means no executable code
 
         // Always first remove funds from sender
         track.addBalance(senderAddress, endowment.negate());
@@ -910,33 +911,6 @@ public class Program {
         } else {
             stackPushZero();
         }
-    }
-
-    private byte[] getExecutionCode(RskAddress codeAddress) {
-        if (!getStorage().isExist(codeAddress)) {
-            return EMPTY_BYTE_ARRAY;
-        }
-        byte[] code = getStorage().getCode(codeAddress);
-
-        if (code == null || code.length == 0) {
-            return EMPTY_BYTE_ARRAY;
-        }
-
-        if (!DelegationCodeResolver.isDelegatedCode(code)) {
-            return code;
-        }
-
-        RskAddress delegatedAddress = DelegationCodeResolver.extractDelegatedAddress(code);
-
-        if (isPrecompile(delegatedAddress)) {
-            return EMPTY_BYTE_ARRAY;
-        }
-
-        byte[] delegatedCode = getStorage().isExist(delegatedAddress)
-                ? getStorage().getCode(delegatedAddress)
-                : EMPTY_BYTE_ARRAY;
-
-        return delegatedCode == null ? EMPTY_BYTE_ARRAY : delegatedCode;
     }
 
     private boolean isPrecompile(RskAddress address) {
@@ -1290,7 +1264,7 @@ public class Program {
 
             RskAddress ownerAddress = new RskAddress(getOwnerAddress());
             StringBuilder storageData = new StringBuilder();
-            if (getStorage().isContract(ownerAddress)) {
+            if (getStorage().hasInitializedStorage(ownerAddress)) {
                 Iterator<DataWord> it = getStorage().getStorageKeys(ownerAddress);
                 while (it.hasNext()) {
                     DataWord key = it.next();
@@ -1541,8 +1515,8 @@ public class Program {
 
         // we are assuming that transfer is already creating destination account even if
         // the amount is zero
-        if (!track.isContract(codeAddress)) {
-            track.setupContract(codeAddress);
+        if (!track.hasInitializedStorage(codeAddress)) {
+            track.initializeStorage(codeAddress);
         }
 
         if (byTestingSuite()) {

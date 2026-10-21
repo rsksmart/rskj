@@ -19,7 +19,10 @@ package org.ethereum.core;
 
 import org.ethereum.core.transaction.TransactionType;
 
-/** RSK namespace transaction: {@code 0x02 || subtype || rlpPayload}. */
+/**
+ * Reserved RSKIP-543 RSK-namespace prefix: {@code 0x02 || subtype}.
+ * Recognized for identification only; namespace transactions are currently unsupported.
+ */
 public record RskNamespacePrefix(byte subtype) implements TransactionTypePrefix {
     public RskNamespacePrefix {
         if ((subtype & 0xFF) > TransactionType.MAX_TYPE_VALUE) {

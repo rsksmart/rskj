@@ -412,17 +412,17 @@ class RepositoryImplTest {
     }
 
     @Test
-    void isContract() {
+    void hasInitializedStorage() {
         Repository repository = createRepository();
         RskAddress rskAddressA = TestUtils.generateAddress("rskAddressA");
         RskAddress rskAddressB = TestUtils.generateAddress("rskAddressB");
 
         repository.createAccount(rskAddressA);
-        repository.setupContract(rskAddressA);
+        repository.initializeStorage(rskAddressA);
         byte[] randomCode = TestUtils.generateBytes(RepositoryImplTest.class,"code",32);
         repository.saveCode(rskAddressA, randomCode);
 
-        MatcherAssert.assertThat(repository.isContract(rskAddressA), is(true));
-        MatcherAssert.assertThat(repository.isContract(rskAddressB), is(false));
+        MatcherAssert.assertThat(repository.hasInitializedStorage(rskAddressA), is(true));
+        MatcherAssert.assertThat(repository.hasInitializedStorage(rskAddressB), is(false));
     }
 }

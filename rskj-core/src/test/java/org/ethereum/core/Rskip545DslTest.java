@@ -50,6 +50,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * DSL integration tests for RSKIP-545: Type 4 (EIP-7702 set-code) transactions.
@@ -110,7 +112,7 @@ class Rskip545DslTest {
 
         assertNotNull(tx);
         assertEquals(TransactionType.TYPE_4, tx.getType());
-        assertFalse(tx.isRskNamespaceTransaction());
+        assertFalse(tx.getTypePrefix().isRskNamespace());
         assertFalse(tx.getAuthorizationList().isEmpty(),
                 "Type 4 transaction must carry a non-empty authorization list");
     }
@@ -482,16 +484,29 @@ class Rskip545DslTest {
     void type4_blockedWhenRskip545Inactive() {
         Transaction tx = world.getTransactionByName("txType4SelfAuth");
         var activations = world.getConfig().getActivationConfig().forBlock(1);
-        var without545 = org.mockito.Mockito.mock(
+        var without545 = mock(
                 org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
-        org.mockito.Mockito.when(without545.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
-        org.mockito.Mockito.when(without545.isActive(ConsensusRule.RSKIP546)).thenReturn(true);
-        org.mockito.Mockito.when(without545.isActive(ConsensusRule.RSKIP545)).thenReturn(false);
+        when(without545.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
+        when(without545.isActive(ConsensusRule.RSKIP546)).thenReturn(true);
+        when(without545.isActive(ConsensusRule.RSKIP545)).thenReturn(false);
 
         assertTrue(tx.isTypedTransactionNotAllowed(without545),
                 "Type 4 must be rejected when RSKIP-545 is inactive");
         assertFalse(tx.isTypedTransactionNotAllowed(activations),
                 "Type 4 must be allowed when RSKIP-545 is active in this world");
+    }
+
+    @Test
+    void type4_blockedWhenRskip546Inactive() {
+        Transaction tx = world.getTransactionByName("txType4SelfAuth");
+        var without546 = mock(
+                org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
+        when(without546.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
+        when(without546.isActive(ConsensusRule.RSKIP546)).thenReturn(false);
+        when(without546.isActive(ConsensusRule.RSKIP545)).thenReturn(true);
+
+        assertTrue(tx.isTypedTransactionNotAllowed(without546),
+                "Type 4 must be rejected when RSKIP-546 is inactive");
     }
 
     // =========================================================================

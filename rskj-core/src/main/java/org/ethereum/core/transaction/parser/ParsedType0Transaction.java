@@ -21,13 +21,19 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.TransactionTypePrefix;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Objects;
 
+/**
+ * @param gasPrice {@code null} when the field arrived as the RLP empty string ({@code 0x80}), {@link Coin#ZERO} when it
+ *                 arrived as a single zero byte ({@code 0x00}). Both forms can sit in the same block (REMASC always
+ *                 uses {@code 0x00}), so the two are kept apart: re-encoding must reproduce the signed bytes.
+ */
 public record ParsedType0Transaction(
         TransactionTypePrefix typePrefix,
         byte[] nonce,
-        Coin gasPrice,
+        @Nullable Coin gasPrice,
         byte[] gasLimit,
         RskAddress receiveAddress,
         Coin value,
@@ -38,7 +44,6 @@ public record ParsedType0Transaction(
     public ParsedType0Transaction {
         Objects.requireNonNull(typePrefix, "typePrefix cannot be null");
         Objects.requireNonNull(nonce, "nonce cannot be null");
-        Objects.requireNonNull(gasPrice, "gasPrice cannot be null");
         Objects.requireNonNull(gasLimit, "gasLimit cannot be null");
         Objects.requireNonNull(receiveAddress, "receiveAddress cannot be null");
         Objects.requireNonNull(value, "value cannot be null");

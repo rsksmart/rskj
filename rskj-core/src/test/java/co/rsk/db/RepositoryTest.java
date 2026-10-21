@@ -65,7 +65,7 @@ class RepositoryTest {
     @Test
     void testStorageRoot() {
         repository.createAccount(COW);
-        repository.setupContract(COW);
+        repository.initializeStorage(COW);
         byte[] stateRoot1 = repository.getStorageStateRoot(COW);
 
         byte[] cow1Key = Hex.decode("A1A2A3");
@@ -525,7 +525,7 @@ class RepositoryTest {
         track.createAccount(HORSE);
 
         //Make COW address a contract
-        track.setupContract(COW);
+        track.initializeStorage(COW);
         track.saveCode(COW, code);
 
         assertArrayEquals(code, track.getCode(COW));
@@ -574,6 +574,30 @@ class RepositoryTest {
         track.createAccount(COW, true);
         Coin newBalance = track.getBalance(COW);
         assertEquals(tenCoins, newBalance);
+    }
+
+    @Test
+    void setDelegationAuthorityInTrackAndRollback() {
+        repository.createAccount(COW);
+
+        Repository track = repository.startTracking();
+        track.setDelegationAuthority(COW);
+        assertTrue(track.hasDelegationAuthority(COW));
+
+        track.rollback();
+
+        assertFalse(repository.hasDelegationAuthority(COW));
+    }
+
+    @Test
+    void setDelegationAuthorityInTrackAndCommit() {
+        repository.createAccount(COW);
+
+        Repository track = repository.startTracking();
+        track.setDelegationAuthority(COW);
+        track.commit();
+
+        assertTrue(repository.hasDelegationAuthority(COW));
     }
 
     private static Keccak256 getKeccak256Hash(byte[] emptyCode) {
