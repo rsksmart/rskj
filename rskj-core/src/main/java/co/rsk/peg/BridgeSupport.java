@@ -911,7 +911,7 @@ public class BridgeSupport {
         registerUtxosToTheRetiringFederation(btcTx.getHash(), utxosToTheRetiringFederation);
 
         markTxAsProcessed(btcTx);
-        logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
+        logger.info("[registerNewUTXOsAndMarkTxAsProcessed] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
     }
 
     /*
