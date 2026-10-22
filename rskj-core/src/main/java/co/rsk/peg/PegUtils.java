@@ -68,12 +68,12 @@ public class PegUtils {
         long btcTransactionHeight
     ) {
         // Once the grace period ends, releases are only identified by their federations pending btc utxos
-        boolean shouldUsePegoutIndex = !isFederationsPendingBtcUTXOsEnabled(bridgeConstants, activations, btcTransactionHeight);
-        boolean isInPegoutIndex = BitcoinUtils.getSigHashForPegoutIndex(btcTransaction)
+        if (isFederationsPendingBtcUTXOsEnabled(bridgeConstants, activations, btcTransactionHeight)) {
+            return false;
+        }
+        return BitcoinUtils.getSigHashForPegoutIndex(btcTransaction)
             .map(provider::hasPegoutTxSigHash)
             .orElse(false);
-
-        return shouldUsePegoutIndex && isInPegoutIndex;
     }
 
     /**
