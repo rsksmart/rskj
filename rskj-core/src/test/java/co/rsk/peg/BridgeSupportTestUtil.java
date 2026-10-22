@@ -412,6 +412,27 @@ public final class BridgeSupportTestUtil {
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
 
+    public static void assertReleaseWasRejectedAndRefundedToSpendingFederation(
+        List<LogInfo> logs,
+        BridgeStorageProvider bridgeStorageProvider,
+        BtcTransaction rejectedRelease,
+        Federation spendingFederation
+    ) throws IOException {
+        // the spending federation is detected as a multisig sender, so the funds sent to the live federations are refunded to it
+        assertLogRejectedPegin(logs, rejectedRelease, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
+        assertEventWasNotEmitted(logs, BridgeEvents.UNREFUNDABLE_PEGIN.getEvent());
+        assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(rejectedRelease.getHash(false)).isPresent());
+
+        List<BtcTransaction> refunds = bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).stream()
+            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
+            .filter(release -> release.getInputs().stream().anyMatch(input -> input.getOutpoint().getHash().equals(rejectedRelease.getHash())))
+            .toList();
+        assertEquals(1, refunds.size());
+        BtcTransaction refund = refunds.get(0);
+        assertEquals(1, refund.getOutputs().size());
+        assertEquals(spendingFederation.getAddress(), refund.getOutput(0).getScriptPubKey().getToAddress(rejectedRelease.getParams()));
+    }
+
     public static void assertLegacyReleaseRejectionWasSettled(
         BridgeStorageProvider bridgeStorageProvider,
         List<LogInfo> logs,

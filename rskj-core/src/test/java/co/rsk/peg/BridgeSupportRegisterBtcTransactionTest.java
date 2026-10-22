@@ -5348,7 +5348,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutWithChangeCreatedForVetiver_afterGracePeriod_shouldRejectAsUnrefundablePegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withPegoutWithChangeCreatedForVetiver_afterGracePeriod_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction pegout = createPegoutForVetiverFromActiveFedPayingToUser(PEGOUT_REQUEST_VALUE);
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
@@ -5366,7 +5366,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             // the pegout index is no longer looked up, so the change sent from the federation is evaluated as a legacy pegin
             assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
             assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
-            assertReleaseWasRejectedAsUnrefundablePegin(pegout);
+            assertReleaseWasRejectedAndRefundedToSpendingFederation(logs, bridgeStorageProvider, pegout, segwitActiveFederation);
         }
 
         @Test
@@ -5614,7 +5614,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationWithOneOutputCreatedForVetiver_afterGracePeriod_shouldRejectAsUnrefundablePegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withMigrationWithOneOutputCreatedForVetiver_afterGracePeriod_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction migrationTransaction = createMigrationForVetiverFromRetiringFedToActiveFed();
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(migrationTransaction.getHash()));
@@ -5633,7 +5633,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             assertEquals(1, migrationTransaction.getOutputs().size());
             assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
             assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
-            assertReleaseWasRejectedAsUnrefundablePegin(migrationTransaction);
+            assertReleaseWasRejectedAndRefundedToSpendingFederation(logs, bridgeStorageProvider, migrationTransaction, retiringFederation);
         }
 
         @Test
@@ -5732,6 +5732,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 .withRepository(repository)
                 .withEventLogger(new BridgeEventLoggerImpl(bridgeMainnetConstants, activations, logs))
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withBtcLockSenderProvider(btcLockSenderProvider)
                 .withFederationSupport(federationSupport)
                 .withFeePerKbSupport(feePerKbSupport)
                 .build();
@@ -5829,18 +5830,6 @@ class BridgeSupportRegisterBtcTransactionTest {
                 expectedOutputIndexes,
                 segwitActiveFederation.getAddress()
             );
-        }
-
-        private void assertReleaseWasRejectedAsUnrefundablePegin(BtcTransaction rejectedRelease) throws IOException {
-            // the redeem script of a p2sh-p2wsh erp federation is not a plain multisig, so the sender can't be determined
-            assertLogRejectedPegin(logs, rejectedRelease, RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
-            assertLogNonRefundablePegin(logs, rejectedRelease, LEGACY_PEGIN_UNDETERMINED_SENDER);
-            assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(rejectedRelease.getHash()).isEmpty());
-            boolean anyReleaseSpendsRejectedRelease = bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(allActivations).stream()
-                .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
-                .flatMap(release -> release.getInputs().stream())
-                .anyMatch(input -> input.getOutpoint().getHash().equals(rejectedRelease.getHash()));
-            assertFalse(anyReleaseSpendsRejectedRelease);
         }
 
         private void signAndRegisterReleaseTransaction(

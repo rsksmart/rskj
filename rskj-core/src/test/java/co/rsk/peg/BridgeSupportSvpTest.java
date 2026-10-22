@@ -16,7 +16,6 @@ import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static co.rsk.peg.federation.FederationTestUtils.signInputs;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
-import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -80,6 +79,8 @@ class BridgeSupportSvpTest {
     // still past the pegout index start, and releases created before RSKIP643 are still looked up in it
     private static final int HEIGHT_WITHIN_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD = HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD - 1;
     private static final FederationConstants federationMainNetConstants = bridgeMainNetConstants.getFederationConstants();
+    private static final BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
+    private static final PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
     private static final List<Coin> svpFundTxOutpointsValues = Arrays.asList(
         Coin.valueOf(1_000_000),
         Coin.valueOf(500_000),
@@ -893,7 +894,7 @@ class BridgeSupportSvpTest {
         }
 
         @Test
-        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_withFundTxCreatedForVetiver_afterGracePeriod_shouldRejectAsUnrefundablePegin() throws Exception {
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_withFundTxCreatedForVetiver_afterGracePeriod_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws Exception {
             // arrange
             arrangeExecutionBlockIsAfterValidationPeriodEnded();
             arrangeSvpFundTransactionCreatedForVetiverFromSegwitActiveFederationToBeRegistered(HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD);
@@ -905,12 +906,10 @@ class BridgeSupportSvpTest {
 
             // assert
             // the pegout index is no longer looked up, so the change sent from the federation is evaluated as a legacy pegin,
-            // and since the redeem script of a p2sh-p2wsh erp federation is not a plain multisig, the sender can't be determined
-            assertLogRejectedPegin(logs, svpFundTransaction, LEGACY_PEGIN_UNDETERMINED_SENDER);
-            assertLogNonRefundablePegin(logs, svpFundTransaction, NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+            // and since the active federation is detected as a multisig sender, the change is refunded to it
             assertUtxosAreEqual(activeFederationUtxosBeforeRegisteringTx, federationSupport.getActiveFederationBtcUTXOs());
             assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
-            assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(svpFundTransaction.getHash()).isEmpty());
+            assertReleaseWasRejectedAndRefundedToSpendingFederation(logs, bridgeStorageProvider, svpFundTransaction, segwitActiveFederation);
         }
 
         @Test
@@ -1561,19 +1560,6 @@ class BridgeSupportSvpTest {
             pegin.addOutput(amountToSend, activeFederation.getAddress());
             setUpForTransactionRegistration(pegin, HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD);
 
-            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
-            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .build();
-
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
             Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
@@ -1629,19 +1615,6 @@ class BridgeSupportSvpTest {
             pegin.addOutput(amountToSend, activeFederation.getAddress());
             setUpForTransactionRegistration(pegin, HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD);
 
-            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
-            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .build();
-
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
             Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
@@ -1691,19 +1664,6 @@ class BridgeSupportSvpTest {
             Coin amountToSend = Coin.COIN;
             pegin.addOutput(amountToSend, activeFederation.getAddress());
             setUpForTransactionRegistration(pegin, HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD);
-
-            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
-            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .build();
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
             Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
@@ -1765,19 +1725,6 @@ class BridgeSupportSvpTest {
             pegin.addOutput(amountToSend, activeFederation.getAddress());
             setUpForTransactionRegistration(pegin, HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD);
 
-            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
-            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .build();
-
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
             Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
@@ -1825,21 +1772,6 @@ class BridgeSupportSvpTest {
             Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, bridgeContractAddress, Optional.empty());
             pegin.addOutput(Coin.ZERO, opReturnScript);
             setUpForTransactionRegistration(pegin, HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD);
-
-            // recreate bridge support with real btcLockSenderProvider and peginInstructionsProvider instead of a mock to be able to parse pegin v1
-            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-            PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .withPeginInstructionsProvider(peginInstructionsProvider)
-                .build();
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
             Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
@@ -2305,6 +2237,8 @@ class BridgeSupportSvpTest {
             .withFeePerKbSupport(feePerKbSupport)
             .withExecutionBlock(rskExecutionBlock)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withBtcLockSenderProvider(btcLockSenderProvider)
+            .withPeginInstructionsProvider(peginInstructionsProvider)
             .withRepository(repository)
             .build();
     }
