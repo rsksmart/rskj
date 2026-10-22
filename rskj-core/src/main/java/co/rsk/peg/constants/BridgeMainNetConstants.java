@@ -24,8 +24,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         updateBridgeExecutionPeriod = THREE_MINUTES_IN_MILLIS;
         minSecondsBetweenCallsReceiveHeader = FIVE_MINUTES_IN_SECONDS;
 
-        btc2RskMinimumAcceptableConfirmations = 100;
-        rsk2BtcMinimumAcceptableConfirmations = 4000;
+        btc2RskMinimumAcceptableConfirmations = 5;
+        rsk2BtcMinimumAcceptableConfirmations = 10;
 
         legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         legacyMinimumPegoutTxValue = Coin.valueOf(800_000);
