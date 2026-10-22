@@ -14,6 +14,8 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.test.builders.MigrationTransactionBuilder;
+import co.rsk.test.builders.PegoutTransactionBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -972,29 +974,22 @@ class PegUtilsTest {
         }
 
         private BtcTransaction buildPegoutWithChangeFromActiveFed() {
-            BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
-            pegout.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            addSpendingFederationBaseScript(pegout, activeFederation);
-            pegout.addOutput(Coin.COIN, userAddress);
-            pegout.addOutput(Coin.COIN, activeFederation.getAddress());
-            return pegout;
+            return PegoutTransactionBuilder.builder()
+                .withNetworkParameters(btcMainnetParams)
+                .withActiveFederation(activeFederation)
+                .withInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withOutput(Coin.COIN, userAddress)
+                .withChangeAmount(Coin.COIN)
+                .build();
         }
 
         private BtcTransaction buildMigrationTransaction() {
-            BtcTransaction migration = new BtcTransaction(btcMainnetParams);
-            migration.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            addSpendingFederationBaseScript(migration, retiringFederation);
-            migration.addOutput(Coin.COIN, activeFederation.getAddress());
-            return migration;
-        }
-
-        private void addSpendingFederationBaseScript(BtcTransaction releaseTransaction, Federation spendingFederation) {
-            BitcoinUtils.addSpendingFederationBaseScript(
-                releaseTransaction,
-                FIRST_INPUT_INDEX,
-                spendingFederation.getRedeemScript(),
-                spendingFederation.getFormatVersion()
-            );
+            return MigrationTransactionBuilder.builder()
+                .withNetworkParameters(btcMainnetParams)
+                .withRetiringFederation(retiringFederation)
+                .withActiveFederation(activeFederation)
+                .withOutput(Coin.COIN)
+                .build();
         }
 
         private void savePegoutSigHashInPegoutIndex(BtcTransaction releaseTransaction) {
