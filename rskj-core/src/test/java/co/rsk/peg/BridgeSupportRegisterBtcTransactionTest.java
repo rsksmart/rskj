@@ -4681,7 +4681,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerPegoutTxInFederationsPendingBtcUtxos(migrationTx);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD, bridgeMainnetConstants);
+                registerReleaseTransaction(migrationTx, HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD);
 
                 // assert
                 List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
