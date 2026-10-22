@@ -5433,7 +5433,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             // before RSKIP643 the pegout sighash is saved in the pegout index instead of its change as federations pending utxos
             // requesting the whole input value leaves no change
-            BtcTransaction pegout = createPegoutForVetiverFromActiveFedPayingToUser(PEGOUT_REQUEST_VALUE);
+            BtcTransaction pegout = createPegoutForVetiverFromActiveFedPayingToUser(INPUT_VALUE);
             assertNotPendingUtxos(pegout);
             setUpBridgeAndFederationSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
 
