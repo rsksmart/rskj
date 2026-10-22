@@ -143,6 +143,18 @@ public class PegUtils {
             btcTransactionHeight >= heightAtWhichToStartUsingPegoutIndex;
     }
 
+    private static boolean isFederationsPendingBtcUTXOsEnabled(
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        long btcTransactionHeight
+    ) {
+        int btcHeightWhenFederationsPendingBtcUTXOsActivates = bridgeConstants.getBtcHeightWhenFederationsPendingBtcUTXOsActivates();
+        int gracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int heightAtWhichToStartUsingFederationsPendingBtcUTXOs = btcHeightWhenFederationsPendingBtcUTXOsActivates + gracePeriodInBtcBlocks;
+        return activations.isActive(ConsensusRule.RSKIP643) &&
+            btcTransactionHeight >= heightAtWhichToStartUsingFederationsPendingBtcUTXOs;
+    }
+
     private static boolean isTheSvpFundTransaction(
         BridgeStorageProvider provider,
         ActivationConfig.ForBlock activations,
