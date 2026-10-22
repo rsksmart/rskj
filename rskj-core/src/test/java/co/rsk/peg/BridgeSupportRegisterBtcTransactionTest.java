@@ -5782,7 +5782,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(rejectedRelease.getHash()).isEmpty());
             boolean anyReleaseSpendsRejectedRelease = bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(allActivations).stream()
                 .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
-                .anyMatch(release -> release.getInput(FIRST_INPUT_INDEX).getOutpoint().getHash().equals(rejectedRelease.getHash()));
+                .flatMap(release -> release.getInputs().stream())
+                .anyMatch(input -> input.getOutpoint().getHash().equals(rejectedRelease.getHash()));
             assertFalse(anyReleaseSpendsRejectedRelease);
         }
 
