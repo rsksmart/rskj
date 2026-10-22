@@ -369,6 +369,33 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
     }
 
+    @ParameterizedTest(name = "RSKIP701: nonce raised after marking {0}")
+    @MethodSource("activationStates")
+    void contractRaisingItsNonceAfterBeingMarkedIsClearedWithTheNonceAtTheEndOfTheTransaction(String phase, boolean activated) {
+        if (!activated) {
+            activateAllBut(ConsensusRule.RSKIP701);
+        }
+        // CALLDATASIZE ISZERO PUSH1 9 JUMPI | PUSH1 0 CALLDATALOAD SELFDESTRUCT | JUMPDEST CREATE(0, 0, 0) POP STOP
+        byte[] codeC = Hex.decode("3615600957600035ff5b600060006000f05000");
+        MutableRepository repository = createRepository();
+        installContract(repository, CONTRACT_C, BigInteger.ZERO, codeC, BALANCE_C);
+        // The first call marks C, the second runs its CREATE and raises its nonce to 1
+        installContract(repository, CONTRACT_X, BigInteger.ONE, codeCallingThenCalling(CONTRACT_C, CONTRACT_C), 0);
+        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
+        fundSender(repository, SENDER_BALANCE);
+        mockExecutionBlockForRealVm();
+
+        TransactionExecutor executor = execute(repository, signedCall(CONTRACT_X, beneficiaryWord(BENEFICIARY_B)));
+
+        assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_C.getBytes())));
+        if (activated) {
+            assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
+        } else {
+            assertFalse(repository.isExist(CONTRACT_C));
+        }
+        assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
+    }
+
     @Test
     void contractWithDelegationIndicatorCodeAndNoFlagIsCleared() {
         MutableRepository repository = createRepository();
@@ -423,6 +450,25 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
                 "The created contract must have executed SELFDESTRUCT");
         assertFalse(repository.isExist(created));
         assertEquals(Coin.valueOf(BALANCE_B), repository.getBalance(BENEFICIARY_B));
+    }
+
+    @Test
+    void contractCreatedByCreate2AtAPrefundedAddressAndDestroyedInTheSameTransactionIsDeleted() {
+        MutableRepository repository = createRepository();
+        installContract(repository, FACTORY_F, BigInteger.ONE, CODE_FACTORY_F, 0);
+        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
+        RskAddress created = new RskAddress(HashUtil.calcSaltAddr(FACTORY_F, Bytes.of(INIT_CODE_D), CREATE2_SALT));
+        long prefund = 7;
+        createAccountWithBalance(repository, created, prefund);
+        fundSender(repository, SENDER_BALANCE);
+        mockExecutionBlockForRealVm();
+
+        TransactionExecutor executor = execute(repository, signedCall(FACTORY_F, beneficiaryWord(BENEFICIARY_B)));
+
+        assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(created.getBytes())),
+                "The created contract must have executed SELFDESTRUCT");
+        assertFalse(repository.isExist(created), "An address that held a balance is still created in this transaction");
+        assertEquals(Coin.valueOf(BALANCE_B + prefund), repository.getBalance(BENEFICIARY_B));
     }
 
     @Test
