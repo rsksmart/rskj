@@ -1,0 +1,48 @@
+comment
+
+RSKIP701 case 10. A contract creation transaction deploys C, whose runtime stores 42 in slot 0 and then
+executes SELFDESTRUCT with the beneficiary taken from the call data, so C has nonce 0. A later transaction
+calls C naming accB.
+
+end
+
+block_chain g00
+account_new acc1 10000000
+account_new accB 1000
+
+transaction_build deployC
+    sender acc1
+    nonce 0
+    value 0
+    data 68602a600055600035ff60005260096017f3
+    gas 200000
+    build
+
+transaction_build destroyC
+    sender acc1
+    contract deployC
+    nonce 1
+    value 1000
+    data 000000000000000000000000b88c95fb184c1a6e33aa447c12561777de55e376
+    gas 200000
+    build
+
+block_build b01
+    parent g00
+    gasLimit 6800000
+    transactions deployC
+    build
+
+block_connect b01
+
+block_build b02
+    parent b01
+    gasLimit 6800000
+    transactions destroyC
+    build
+
+block_connect b02
+
+assert_tx_success deployC
+assert_tx_success destroyC
+assert_balance accB 2000
