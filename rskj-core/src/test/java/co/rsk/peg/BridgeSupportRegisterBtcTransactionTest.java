@@ -3271,7 +3271,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 // arrange
                 setupSegwitActiveAndSegwitRetiringFeds(allActivations);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
-                registerPegoutTxInFederationsPending(btcTransaction);
+                registerPegoutTxInFederationsPendingBtcUtxos(btcTransaction);
 
                 // act
                 registerReleaseTransaction(btcTransaction);
@@ -3292,7 +3292,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 // arrange
                 setupSegwitActiveFed(allActivations);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
-                registerPegoutTxInFederationsPending(btcTransaction);
+                registerPegoutTxInFederationsPendingBtcUtxos(btcTransaction);
 
                 // act
                 registerReleaseTransaction(btcTransaction);
@@ -3443,7 +3443,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 // arrange
                 setupSegwitActiveAndSegwitRetiringFeds(allActivations);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
-                registerPegoutTxInFederationsPending(btcTransaction);
+                registerPegoutTxInFederationsPendingBtcUtxos(btcTransaction);
 
                 // act
                 registerReleaseTransaction(btcTransaction);
@@ -3464,7 +3464,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 // arrange
                 setupSegwitActiveFed(allActivations);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
-                registerPegoutTxInFederationsPending(btcTransaction);
+                registerPegoutTxInFederationsPendingBtcUtxos(btcTransaction);
 
                 // act
                 registerReleaseTransaction(btcTransaction);
@@ -3818,7 +3818,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 // arrange
                 setupSegwitActiveAndSegwitRetiringFeds(allActivations);
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
-                registerPegoutTxInFederationsPending(migrationTx);
+                registerPegoutTxInFederationsPendingBtcUtxos(migrationTx);
 
                 // act
                 registerReleaseTransaction(migrationTx);
@@ -4007,7 +4007,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 // arrange
                 setupSegwitActiveAndSegwitRetiringFeds(allActivations);
                 BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndInputs();
-                registerPegoutTxInFederationsPending(migrationTx);
+                registerPegoutTxInFederationsPendingBtcUtxos(migrationTx);
 
                 // act
                 registerReleaseTransaction(migrationTx);
@@ -4123,7 +4123,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 // arrange
                 setupSegwitActiveAndSegwitRetiringFeds(allActivations);
                 BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndOneInput();
-                registerPegoutTxInFederationsPending(migrationTx);
+                registerPegoutTxInFederationsPendingBtcUtxos(migrationTx);
 
                 // act
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
@@ -4239,7 +4239,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 // arrange
                 setupSegwitActiveAndSegwitRetiringFeds(allActivations);
                 BtcTransaction migrationTx = getMigrationTxWithOneOutputAndManyInputs();
-                registerPegoutTxInFederationsPending(migrationTx);
+                registerPegoutTxInFederationsPendingBtcUtxos(migrationTx);
 
                 // act
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
@@ -4379,7 +4379,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 // arrange
                 setupSegwitActiveAndSegwitRetiringFeds(allActivations);
                 BtcTransaction migrationTx = getMigrationTxWithFlyoverUtxo(allActivations);
-                registerPegoutTxInFederationsPending(migrationTx);
+                registerPegoutTxInFederationsPendingBtcUtxos(migrationTx);
 
                 // act
                 registerReleaseTransaction(migrationTx);
@@ -4612,7 +4612,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 // arrange
                 setupSegwitActiveFed(allActivations);
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
-                registerPegoutTxInFederationsPending(migrationTx);
+                registerPegoutTxInFederationsPendingBtcUtxos(migrationTx);
 
                 // act
                 registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
@@ -5048,7 +5048,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             bridgeSupport.save();
         }
 
-        private void registerPegoutTxInFederationsPending(BtcTransaction releaseTx) {
+        private void registerPegoutTxInFederationsPendingBtcUtxos(BtcTransaction releaseTx) {
             // after RSKIP643 the bridge saves the release outputs sent to the live federations instead of the pegout tx sighash.
             // these releases only send outputs to the active federation
             List<UTXO> utxosSentToActiveFederation = buildExpectedUtxosRegistered(
