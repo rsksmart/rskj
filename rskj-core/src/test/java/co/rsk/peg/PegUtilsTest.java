@@ -11,16 +11,12 @@ import co.rsk.RskTestUtils;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.test.builders.MigrationTransactionBuilder;
-import co.rsk.test.builders.PegoutTransactionBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Arrays;
@@ -45,7 +41,6 @@ class PegUtilsTest {
     private static final FederationConstants federationMainNetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final Context context = new Context(bridgeMainnetConstants.getBtcParams());
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
-    private static final ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0);
     private static final int HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates()
         + bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
 
@@ -817,187 +812,5 @@ class PegUtilsTest {
 
         // Assert
         assertFalse(isTheSvpFundTransaction);
-    }
-
-    @Nested
-    class FederationsPendingBtcUTXOsGracePeriod {
-        private static final int HEIGHT_AT_WHICH_TO_START_USING_FEDERATIONS_PENDING_BTC_UTXOS = bridgeMainnetConstants.getBtcHeightWhenFederationsPendingBtcUTXOsActivates()
-            + bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-        // while in the grace period, releases created before RSKIP643 are still looked up in the pegout index
-        private static final int HEIGHT_WITHIN_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD = HEIGHT_AT_WHICH_TO_START_USING_FEDERATIONS_PENDING_BTC_UTXOS - 1;
-
-        private BridgeStorageProvider bridgeStorageProvider;
-
-        @BeforeEach
-        void setUp() {
-            activeFederation = P2shP2wshErpFederationBuilder.builder().build();
-        }
-
-        @Test
-        void getTransactionType_withPegoutInPegoutIndex_forVetiver_shouldBePegoutOrMigration() {
-            // arrange
-            setUpBridgeStorageProvider(vetiverActivations);
-            Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
-            BtcTransaction pegout = buildPegoutWithChangeFromActiveFed();
-            savePegoutSigHashInPegoutIndex(pegout);
-
-            // act
-            PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-                vetiverActivations,
-                bridgeStorageProvider,
-                bridgeMainnetConstants,
-                liveFederationWallet,
-                pegout,
-                HEIGHT_AT_WHICH_TO_START_USING_FEDERATIONS_PENDING_BTC_UTXOS
-            );
-
-            // assert
-            assertEquals(PEGOUT_OR_MIGRATION, pegTxType);
-        }
-
-        @Test
-        void getTransactionType_withPegoutInPegoutIndex_withinGracePeriod_shouldBePegoutOrMigration() {
-            // arrange
-            setUpBridgeStorageProvider(allActivations);
-            Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
-            BtcTransaction pegout = buildPegoutWithChangeFromActiveFed();
-            savePegoutSigHashInPegoutIndex(pegout);
-
-            // act
-            PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-                allActivations,
-                bridgeStorageProvider,
-                bridgeMainnetConstants,
-                liveFederationWallet,
-                pegout,
-                HEIGHT_WITHIN_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD
-            );
-
-            // assert
-            assertEquals(PEGOUT_OR_MIGRATION, pegTxType);
-        }
-
-        @Test
-        void getTransactionType_withPegoutInPegoutIndex_afterGracePeriod_shouldBePegin() {
-            // arrange
-            setUpBridgeStorageProvider(allActivations);
-            Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
-            BtcTransaction pegout = buildPegoutWithChangeFromActiveFed();
-            savePegoutSigHashInPegoutIndex(pegout);
-
-            // act
-            PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-                allActivations,
-                bridgeStorageProvider,
-                bridgeMainnetConstants,
-                liveFederationWallet,
-                pegout,
-                HEIGHT_AT_WHICH_TO_START_USING_FEDERATIONS_PENDING_BTC_UTXOS
-            );
-
-            // assert
-            assertEquals(PEGIN, pegTxType);
-        }
-
-        @Test
-        void getTransactionType_withMigrationInPegoutIndex_forVetiver_shouldBePegoutOrMigration() {
-            // arrange
-            setUpBridgeStorageProvider(vetiverActivations);
-            Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFederation, activeFederation));
-            BtcTransaction migration = buildMigrationTransaction();
-            savePegoutSigHashInPegoutIndex(migration);
-
-            // act
-            PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-                vetiverActivations,
-                bridgeStorageProvider,
-                bridgeMainnetConstants,
-                liveFederationWallet,
-                migration,
-                HEIGHT_AT_WHICH_TO_START_USING_FEDERATIONS_PENDING_BTC_UTXOS
-            );
-
-            // assert
-            assertEquals(PEGOUT_OR_MIGRATION, pegTxType);
-        }
-
-        @Test
-        void getTransactionType_withMigrationInPegoutIndex_withinGracePeriod_shouldBePegoutOrMigration() {
-            // arrange
-            setUpBridgeStorageProvider(allActivations);
-            Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFederation, activeFederation));
-            BtcTransaction migration = buildMigrationTransaction();
-            savePegoutSigHashInPegoutIndex(migration);
-
-            // act
-            PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-                allActivations,
-                bridgeStorageProvider,
-                bridgeMainnetConstants,
-                liveFederationWallet,
-                migration,
-                HEIGHT_WITHIN_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD
-            );
-
-            // assert
-            assertEquals(PEGOUT_OR_MIGRATION, pegTxType);
-        }
-
-        @Test
-        void getTransactionType_withMigrationInPegoutIndex_afterGracePeriod_shouldBePegin() {
-            // arrange
-            setUpBridgeStorageProvider(allActivations);
-            Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFederation, activeFederation));
-            BtcTransaction migration = buildMigrationTransaction();
-            savePegoutSigHashInPegoutIndex(migration);
-
-            // act
-            PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-                allActivations,
-                bridgeStorageProvider,
-                bridgeMainnetConstants,
-                liveFederationWallet,
-                migration,
-                HEIGHT_AT_WHICH_TO_START_USING_FEDERATIONS_PENDING_BTC_UTXOS
-            );
-
-            // assert
-            assertEquals(PEGIN, pegTxType);
-        }
-
-        private void setUpBridgeStorageProvider(ActivationConfig.ForBlock activations) {
-            bridgeStorageProvider = new BridgeStorageProvider(
-                RskTestUtils.createRepository(),
-                btcMainnetParams,
-                activations
-            );
-        }
-
-        private BtcTransaction buildPegoutWithChangeFromActiveFed() {
-            return PegoutTransactionBuilder.builder()
-                .withNetworkParameters(btcMainnetParams)
-                .withActiveFederation(activeFederation)
-                .withInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, Coin.COIN)
-                .withOutput(Coin.COIN, userAddress)
-                .withChangeAmount(Coin.COIN)
-                .build();
-        }
-
-        private BtcTransaction buildMigrationTransaction() {
-            return MigrationTransactionBuilder.builder()
-                .withNetworkParameters(btcMainnetParams)
-                .withRetiringFederation(retiringFederation)
-                .withActiveFederation(activeFederation)
-                .withOutput(Coin.COIN)
-                .build();
-        }
-
-        private void savePegoutSigHashInPegoutIndex(BtcTransaction releaseTransaction) {
-            // the same sighash the bridge saves in the pegout index when creating the release
-            Sha256Hash pegoutTxSigHash = BitcoinUtils.getSigHashForPegoutIndex(releaseTransaction).orElseThrow();
-            bridgeStorageProvider.setPegoutTxSigHash(pegoutTxSigHash);
-            // the sighash is only buffered until saved, while the lookup reads it from the repository
-            bridgeStorageProvider.save();
-        }
     }
 }
