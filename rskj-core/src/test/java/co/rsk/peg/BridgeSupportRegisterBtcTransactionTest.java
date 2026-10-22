@@ -3095,13 +3095,69 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_withLegacyActiveAndRetiringFeds_forVetiver_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(allActivations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
+                setupLegacyActiveAndLegacyRetiringFeds(vetiver900Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithOneInputAndOutputWithChange();
 
                 // act
                 registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
+
+                // assert
+                assertLogRejectedPegin(logs, btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
+
+                BtcTransaction refundPegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+                assertReleaseRejectionWasSettled(
+                    repository,
+                    bridgeStorageProvider,
+                    logs,
+                    currentBlock.getNumber(),
+                    rskTx.getHash(),
+                    refundPegout,
+                    List.of(changeValue),
+                    changeValue
+                );
+
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+                assertUtxosRegisteredWasNotEmitted();
+            }
+
+            @Test
+            void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_withSegwitActiveAndRetiringFeds_forVetiver_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupSegwitActiveAndSegwitRetiringFeds(vetiver900Activations);
+                BtcTransaction btcTransaction = getPegoutTxWithOneInputAndOutputWithChange();
+
+                // act
+                registerReleaseTransaction(btcTransaction);
+
+                // assert
+                assertLogRejectedPegin(logs, btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
+
+                BtcTransaction refundPegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+                assertReleaseRejectionWasSettled(
+                    repository,
+                    bridgeStorageProvider,
+                    logs,
+                    currentBlock.getNumber(),
+                    rskTx.getHash(),
+                    refundPegout,
+                    List.of(changeValue),
+                    changeValue
+                );
+
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+                assertUtxosRegisteredWasNotEmitted();
+            }
+
+            @Test
+            void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_withSegwitActiveAndRetiringFeds_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupSegwitActiveAndSegwitRetiringFeds(allActivations);
+                BtcTransaction btcTransaction = getPegoutTxWithOneInputAndOutputWithChange();
+
+                // act
+                registerReleaseTransaction(btcTransaction);
 
                 // assert
                 assertLogRejectedPegin(logs, btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
@@ -4130,7 +4186,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerPegoutTxInFederationsPendingBtcUtxos(migrationTx);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
+                registerReleaseTransaction(migrationTx);
 
                 // assert
                 List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
@@ -4246,7 +4302,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerPegoutTxInFederationsPendingBtcUtxos(migrationTx);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
+                registerReleaseTransaction(migrationTx);
 
                 // assert
                 List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
@@ -4334,7 +4390,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_forReed_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
-                BtcTransaction migrationTx = getMigrationTxWithFlyoverUtxo(allActivations);
+                BtcTransaction migrationTx = getMigrationTxWithFlyoverUtxo(reed800Activations);
 
                 // act
                 registerPegoutTxSigHash(migrationTx);
@@ -4474,7 +4530,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_forReed_withSegwitActiveFed_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndLegacyRetiringFeds();
-                BtcTransaction migrationTx = getMigrationTxWithManyInputsAndOutputsWithFlyoverUtxo(allActivations);
+                BtcTransaction migrationTx = getMigrationTxWithManyInputsAndOutputsWithFlyoverUtxo(reed800Activations);
 
                 // act
                 registerPegoutTxSigHash(migrationTx);
@@ -5016,6 +5072,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
         }
 
+        // For releases spent by legacy federations, which have no witness, so the block header commits to their hash.
+        // Releases spent by segwit federations go through registerReleaseTransaction, proven through the coinbase witness root.
         private void registerLegacyReleaseTransaction(BtcTransaction releaseTx, int height, BridgeConstants bridgeConstants) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             PartialMerkleTree pmtWithTransactions = buildPMTAndRecreateChainForTransactionRegistration(
                 bridgeStorageProvider,
