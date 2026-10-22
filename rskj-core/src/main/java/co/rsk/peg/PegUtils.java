@@ -45,7 +45,13 @@ public class PegUtils {
 
         List<TransactionOutput> liveFederationOutputs = btcTransaction.getWalletOutputs(liveFederationsWallet);
 
-        if (isIdentifiedByPegoutIndex(provider, bridgeConstants, activations, btcTransaction, btcTransactionHeight)){
+        if (isIdentifiedByPegoutIndex(
+            provider,
+            bridgeConstants,
+            activations,
+            btcTransaction,
+            btcTransactionHeight
+        )) {
             return PegTxType.PEGOUT_OR_MIGRATION;
         } else if (!liveFederationOutputs.isEmpty()){
             return PegTxType.PEGIN;
