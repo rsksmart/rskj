@@ -558,13 +558,13 @@ class ConsensusReplayTest {
      * less gas, so fees cannot be derived from receipts and a mismatch there is valid history.
      */
     @Test
-    void feeInvariantIsNotEvaluatedBeforeRskip560() throws FileNotFoundException, DslProcessorException, IOException {
+    void feeInvariantIsNotEvaluatedBeforeRskip692() throws FileNotFoundException, DslProcessorException, IOException {
         World world = buildWorld();
-        Path report = tempDir.resolve("invariant-fees-pre560.jsonl");
-        ActivationConfig pre560 = spy(world.getConfig().getActivationConfig());
-        doReturn(false).when(pre560).isActive(eq(ConsensusRule.RSKIP560), anyLong());
+        Path report = tempDir.resolve("invariant-fees-pre692.jsonl");
+        ActivationConfig pre692 = spy(world.getConfig().getActivationConfig());
+        doReturn(false).when(pre692).isActive(eq(ConsensusRule.RSKIP692), anyLong());
 
-        NodeStopper stopper = run(new ConsensusReplay(), pre560, world, world.getBlockStore(),
+        NodeStopper stopper = run(new ConsensusReplay(), pre692, world, world.getBlockStore(),
                 executorReturning(world, 1, result -> doReturn(Coin.valueOf(12345L)).when(result).getPaidFees()),
                 report, "DIGEST");
 

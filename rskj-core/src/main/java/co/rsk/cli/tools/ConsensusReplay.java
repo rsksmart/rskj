@@ -775,10 +775,10 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
             expectedFees = expectedFees.add(receipt.getTransaction().getGasPrice().asBigInteger().multiply(gasUsed));
         }
 
-        // Pre-RSKIP560 a failed precompile call is charged the full limit while its receipt reports
+        // Pre-RSKIP692 a failed precompile call is charged the full limit while its receipt reports
         // less gas, so the fee is not derivable from receipts and a mismatch is valid history.
         BigInteger paidFees = result.getPaidFees().asBigInteger();
-        if (activationConfig.isActive(ConsensusRule.RSKIP560, number) && !paidFees.equals(expectedFees)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP692, number) && !paidFees.equals(expectedFees)) {
             sb.append(violation(number, "fees", paidFees.toString(), expectedFees.toString()));
         }
 
