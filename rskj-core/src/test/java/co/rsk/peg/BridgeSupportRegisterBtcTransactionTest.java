@@ -3579,7 +3579,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withOneOutputAndManyInputs_withRetiringFed_withSegwitActiveFed_shouldNotRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withNoChangeOutputAndManyInputs_withRetiringFed_withSegwitActiveFed_shouldNotRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndSegwitRetiringFeds(allActivations);
                 BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
@@ -3594,7 +3594,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_withOneOutputAndManyInputs_withoutRetiringFed_withSegwitActiveFed_shouldNotRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_withNoChangeOutputAndManyInputs_withoutRetiringFed_withSegwitActiveFed_shouldNotRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveFed(allActivations);
                 BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
