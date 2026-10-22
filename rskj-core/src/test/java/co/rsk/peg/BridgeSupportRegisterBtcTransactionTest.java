@@ -375,6 +375,10 @@ class BridgeSupportRegisterBtcTransactionTest {
         assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
     }
 
+    private void assertNotPendingUtxos(BtcTransaction releaseTx) {
+        assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(releaseTx.getHash()));
+    }
+
     @Nested
     class UnknownTransaction {
 
@@ -3284,7 +3288,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
                 assertLogUtxosRegisteredForPegoutChange(btcTransaction);
-                assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTransaction.getHash()));
+                assertNotPendingUtxos(btcTransaction);
             }
 
             @Test
@@ -3305,7 +3309,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
                 assertLogUtxosRegisteredForPegoutChange(btcTransaction);
-                assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTransaction.getHash()));
+                assertNotPendingUtxos(btcTransaction);
             }
 
             @Test
@@ -3456,7 +3460,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
                 assertLogUtxosRegisteredForPegoutChange(btcTransaction);
-                assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTransaction.getHash()));
+                assertNotPendingUtxos(btcTransaction);
             }
 
             @Test
@@ -3477,7 +3481,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 assertPegoutWithChangeWasProcessed(btcTransaction, expectedUtxosRegistered);
                 assertLogUtxosRegisteredForPegoutChange(btcTransaction);
-                assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(btcTransaction.getHash()));
+                assertNotPendingUtxos(btcTransaction);
             }
 
             @Test
@@ -3835,7 +3839,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     expectedUtxosRegistered
                 );
                 assertLogUtxosRegisteredForMigration(migrationTx);
-                assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(migrationTx.getHash()));
+                assertNotPendingUtxos(migrationTx);
             }
 
             @Test
@@ -4024,7 +4028,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     expectedUtxosRegistered
                 );
                 assertLogUtxosRegisteredForMigration(migrationTx);
-                assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(migrationTx.getHash()));
+                assertNotPendingUtxos(migrationTx);
             }
 
             @Test
@@ -4140,7 +4144,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     expectedUtxosRegistered
                 );
                 assertLogUtxosRegisteredForMigration(migrationTx);
-                assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(migrationTx.getHash()));
+                assertNotPendingUtxos(migrationTx);
             }
 
             @Test
@@ -4256,7 +4260,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     expectedUtxosRegistered
                 );
                 assertLogUtxosRegisteredForMigration(migrationTx);
-                assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(migrationTx.getHash()));
+                assertNotPendingUtxos(migrationTx);
             }
 
             @Test
@@ -4396,7 +4400,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     expectedUtxosRegistered
                 );
                 assertLogUtxosRegisteredForMigration(migrationTx);
-                assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(migrationTx.getHash()));
+                assertNotPendingUtxos(migrationTx);
             }
 
             @Test
@@ -4629,7 +4633,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     expectedUtxosRegistered
                 );
                 assertLogUtxosRegisteredForMigration(migrationTx);
-                assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(migrationTx.getHash()));
+                assertNotPendingUtxos(migrationTx);
             }
 
             @Test
@@ -5242,7 +5246,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
             assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(pegout.getHash()).isEmpty());
             assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
-            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+            assertNotPendingUtxos(pegout);
         }
 
         @Test
@@ -5251,7 +5255,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             // before RSKIP643 the pegout sighash is saved in the pegout index, even when the pegout has no change
             // requesting the whole input value leaves no change
             BtcTransaction pegout = createPegoutForVetiverFromActiveFedPayingToUser(INPUT_VALUE);
-            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+            assertNotPendingUtxos(pegout);
             setUpBridgeAndFederationSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
 
             // act
@@ -5276,7 +5280,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             // before RSKIP643 the pegout sighash is saved in the pegout index instead of its change as federations pending utxos
             BtcTransaction pegout = createPegoutForVetiverFromActiveFedPayingToUser(PEGOUT_REQUEST_VALUE);
-            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+            assertNotPendingUtxos(pegout);
             setUpBridgeAndFederationSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
 
             // act
@@ -5363,7 +5367,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 pegout.getHash(),
                 (int) rskExecutionBlock.getNumber()
             );
-            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+            assertNotPendingUtxos(pegout);
             assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
         }
 
@@ -5410,7 +5414,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             // assert
             assertUtxosAreEqual(activeFederationUtxosAfterFirstRegistration, federationSupport.getActiveFederationBtcUTXOs());
-            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+            assertNotPendingUtxos(pegout);
             assertEquals(logsAfterFirstRegistration, logs);
             assertArrayEquals(repositoryRootAfterFirstRegistration, repository.getRoot());
         }
