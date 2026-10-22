@@ -148,26 +148,32 @@ public class PegUtils {
         ActivationConfig.ForBlock activations,
         BtcTransaction transaction
     ) {
+        if (provider.getSvpFundTxHashUnsigned().isEmpty()) {
+            return false;
+        }
+
+        try {
+            Sha256Hash txHashWithoutSignatures;
+            if (!activations.isActive(ConsensusRule.RSKIP305)) {
+                txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignaturesBeforeRSKIP305(transaction);
+            } else {
+                txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(transaction);
+            }
+            return isTheSvpFundTransactionHash(provider, txHashWithoutSignatures);
+        } catch (IllegalArgumentException e) {
+            logger.trace(
+                "[isTheSvpFundTransaction] Btc tx {} either has witness or non p2sh-legacy-multisig inputs, so we'll assume is not the fund tx",
+                transaction.getHash(),
+                e
+            );
+            return false;
+        }
+    }
+
+    static boolean isTheSvpFundTransactionHash(BridgeStorageProvider provider, Sha256Hash btcTxHash) {
         return provider.getSvpFundTxHashUnsigned()
-            .map(svpFundTxHashUnsigned -> {
-                try {
-                    Sha256Hash txHashWithoutSignatures;
-                    if (!activations.isActive(ConsensusRule.RSKIP305)) {
-                        txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignaturesBeforeRSKIP305(transaction);
-                    } else {
-                        txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(transaction);
-                    }
-                    return svpFundTxHashUnsigned.equals(txHashWithoutSignatures);
-                } catch (IllegalArgumentException e) {
-                    logger.trace(
-                        "[isTheSvpFundTransaction] Btc tx {} either has witness or non p2sh-legacy-multisig inputs, so we'll assume is not the fund tx",
-                        transaction.getHash(),
-                        e
-                    );
-                    return false;
-                }
-            })
-            .orElse(false);
+            .filter(btcTxHash::equals)
+            .isPresent();
     }
 
     private static boolean isTheSvpSpendTransaction(

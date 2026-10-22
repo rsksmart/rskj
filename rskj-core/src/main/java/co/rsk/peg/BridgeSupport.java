@@ -394,7 +394,7 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
-            if (shouldRegisterPegoutTransaction(btcTxId) && !isTheSvpFundTx(btcTxId)) {
+            if (shouldRegisterPegoutTransaction(btcTxId) && !isTheSvpFundTransactionHash(provider, btcTxId)) {
                 registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxId, height);
                 return;
             }
@@ -444,7 +444,7 @@ public class BridgeSupport {
 
             // The SVP fund tx has to be registered through registerBtcTransaction while the SVP is ongoing,
             // since the full SVP tx is needed to build the SVP spend tx.
-            if (isTheSvpFundTx(btcTxHash)) {
+            if (isTheSvpFundTransactionHash(provider, btcTxHash)) {
                 throw new RegisterBtcTransactionException("Transaction is the SVP fund tx");
             }
 
@@ -468,12 +468,6 @@ public class BridgeSupport {
         logger.debug("[registerNewUTXOsByTxIdAndMarkTxHashAsProcessed] Btc tx hash without witness {} at height {}", btcTxHash, height);
         registerNewUTXOsByTxId(btcTxHash, height);
         markBtcTxHashAsProcessed(btcTxHash);
-    }
-
-    private boolean isTheSvpFundTx(Sha256Hash btcTxHash) {
-        return provider.getSvpFundTxHashUnsigned()
-            .filter(btcTxHash::equals)
-            .isPresent();
     }
 
     private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
