@@ -394,7 +394,7 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
-            if (shouldRegisterNewUTXOsByTxId(btcTxId)) {
+            if (shouldRegisterPegoutTransaction(btcTxId) && !isTheSvpFundTx(btcTxId)) {
                 registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxId, height);
                 return;
             }
@@ -427,8 +427,8 @@ public class BridgeSupport {
         }
     }
 
-    private boolean shouldRegisterNewUTXOsByTxId(Sha256Hash btcTxId) {
-        return activations.isActive(RSKIP643) && federationSupport.hasFederationsPendingBtcUTXOs(btcTxId) && !isTheSvpFundTx(btcTxId);
+    private boolean shouldRegisterPegoutTransaction(Sha256Hash btcTxId) {
+        return activations.isActive(RSKIP643) && federationSupport.hasFederationsPendingBtcUTXOs(btcTxId);
     }
 
     public void registerPegoutTransaction(
@@ -478,7 +478,7 @@ public class BridgeSupport {
 
     private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
         Sha256Hash btcTxId = btcTx.getHash(false);
-        if (activations.isActive(RSKIP643) && federationSupport.hasFederationsPendingBtcUTXOs(btcTxId)) {
+        if (shouldRegisterPegoutTransaction(btcTxId)) {
             registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxId, btcTxHeight);
         } else {
             registerNewUTXOsAndMarkTxAsProcessed(btcTx, btcTxHeight);
