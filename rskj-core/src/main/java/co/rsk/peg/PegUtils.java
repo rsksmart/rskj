@@ -45,13 +45,7 @@ public class PegUtils {
 
         List<TransactionOutput> liveFederationOutputs = btcTransaction.getWalletOutputs(liveFederationsWallet);
 
-        Optional<Sha256Hash> inputSigHash = getSigHashToLookUpInPegoutIndex(
-            bridgeConstants,
-            activations,
-            btcTransaction,
-            btcTransactionHeight
-        );
-        if (inputSigHash.isPresent() && provider.hasPegoutTxSigHash(inputSigHash.get())){
+        if (isIdentifiedByPegoutIndex(provider, bridgeConstants, activations, btcTransaction, btcTransactionHeight)){
             return PegTxType.PEGOUT_OR_MIGRATION;
         } else if (!liveFederationOutputs.isEmpty()){
             return PegTxType.PEGIN;
@@ -60,18 +54,20 @@ public class PegUtils {
         }
     }
 
-    private static Optional<Sha256Hash> getSigHashToLookUpInPegoutIndex(
+    private static boolean isIdentifiedByPegoutIndex(
+        BridgeStorageProvider provider,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations,
         BtcTransaction btcTransaction,
         long btcTransactionHeight
     ) {
-        // Once the grace period ends, releases are only identified by their federations pending btc utxos,
-        // so the sighash is no longer computed to look it up in the pegout index
-        if (isFederationsPendingBtcUTXOsEnabled(bridgeConstants, activations, btcTransactionHeight)) {
-            return Optional.empty();
-        }
-        return BitcoinUtils.getSigHashForPegoutIndex(btcTransaction);
+        // Once the grace period ends, releases are only identified by their federations pending btc utxos
+        boolean shouldUsePegoutIndex = !isFederationsPendingBtcUTXOsEnabled(bridgeConstants, activations, btcTransactionHeight);
+        boolean isInPegoutIndex = BitcoinUtils.getSigHashForPegoutIndex(btcTransaction)
+            .map(provider::hasPegoutTxSigHash)
+            .orElse(false);
+
+        return shouldUsePegoutIndex && isInPegoutIndex;
     }
 
     /**
