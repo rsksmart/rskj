@@ -5270,6 +5270,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         private static final Coin CHANGE_VALUE = Coin.COIN.div(4);
         // the pegout recipients pay the fees, so the change is the input value minus the requested value
         private static final Coin PEGOUT_REQUEST_VALUE = INPUT_VALUE.subtract(CHANGE_VALUE);
+        private static final Coin CHANGE_VALUE_BELOW_MINIMUM_PEGIN_VALUE = minimumPeginTxValue.subtract(Coin.SATOSHI);
+        private static final Coin PEGOUT_REQUEST_VALUE_LEAVING_CHANGE_BELOW_MINIMUM_PEGIN_VALUE = INPUT_VALUE.subtract(CHANGE_VALUE_BELOW_MINIMUM_PEGIN_VALUE);
         private static final Keccak256 PEGOUT_REQUEST_RSK_TX_HASH = RskTestUtils.createHash(2);
         // the pegout change output is added last, after the user output
         private static final long OUTPUT_INDEX_FOR_PEGOUT_CHANGE = 1L;
@@ -5367,6 +5369,36 @@ class BridgeSupportRegisterBtcTransactionTest {
             assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
             assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
             assertReleaseWasRejectedAndRefundedToSpendingFederation(logs, bridgeStorageProvider, pegout, segwitActiveFederation);
+        }
+
+        @Test
+        void registerBtcTransaction_withPegoutWithChangeBelowMinimumPeginValueCreatedForVetiver_afterGracePeriod_shouldBeRejectedWithoutRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            BtcTransaction pegout = createPegoutForVetiverFromActiveFedPayingToUser(PEGOUT_REQUEST_VALUE_LEAVING_CHANGE_BELOW_MINIMUM_PEGIN_VALUE);
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+            setUpBridgeAndFederationSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
+
+            // act
+            signAndRegisterReleaseTransaction(
+                pegout,
+                segwitActiveFederation,
+                segwitActiveFederationKeys,
+                HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD
+            );
+
+            // assert
+            // the change is evaluated as a legacy pegin, and its amount is checked before its multisig sender,
+            // so it is rejected without a refund and never reaches the federation utxos
+            assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
+            assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
+            assertLogRejectedPegin(logs, pegout, RejectedPeginReason.INVALID_AMOUNT);
+            assertLogNonRefundablePegin(logs, pegout, NonRefundablePeginReason.INVALID_AMOUNT);
+            assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(pegout.getHash()).isEmpty());
+
+            boolean wasRefunded = bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(allActivations).stream()
+                .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
+                .anyMatch(release -> release.getInputs().stream().anyMatch(input -> input.getOutpoint().getHash().equals(pegout.getHash())));
+            assertFalse(wasRefunded);
         }
 
         @Test
