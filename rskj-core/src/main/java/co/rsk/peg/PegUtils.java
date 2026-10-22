@@ -137,26 +137,10 @@ public class PegUtils {
         long btcTransactionHeight
     ) {
         int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
-        return isFeatureEnabled(
-            bridgeConstants,
-            btcHeightWhenPegoutTxIndexActivates,
-            activations,
-            ConsensusRule.RSKIP379,
-            btcTransactionHeight
-        );
-    }
-
-    private static boolean isFeatureEnabled(
-        BridgeConstants bridgeConstants,
-        int btcHeightWhenFeatureActivates,
-        ActivationConfig.ForBlock activations,
-        ConsensusRule rskipFeature,
-        long btcTransactionHeight
-    ) {
-        int gracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-        int heightAtWhichToStartUsingFeature = btcHeightWhenFeatureActivates + gracePeriodInBtcBlocks;
-        return activations.isActive(rskipFeature) &&
-            btcTransactionHeight >= heightAtWhichToStartUsingFeature;
+        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        return activations.isActive(ConsensusRule.RSKIP379) &&
+            btcTransactionHeight >= heightAtWhichToStartUsingPegoutIndex;
     }
 
     private static boolean isFederationsPendingBtcUTXOsEnabled(
@@ -165,13 +149,10 @@ public class PegUtils {
         long btcTransactionHeight
     ) {
         int btcHeightWhenFederationsPendingBtcUTXOsActivates = bridgeConstants.getBtcHeightWhenFederationsPendingBtcUTXOsActivates();
-        return isFeatureEnabled(
-            bridgeConstants,
-            btcHeightWhenFederationsPendingBtcUTXOsActivates,
-            activations,
-            ConsensusRule.RSKIP643,
-            btcTransactionHeight
-        );
+        int gracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int heightAtWhichToStartUsingFederationsPendingBtcUTXOs = btcHeightWhenFederationsPendingBtcUTXOsActivates + gracePeriodInBtcBlocks;
+        return activations.isActive(ConsensusRule.RSKIP643) &&
+            btcTransactionHeight >= heightAtWhichToStartUsingFederationsPendingBtcUTXOs;
     }
 
     private static boolean isTheSvpFundTransaction(
