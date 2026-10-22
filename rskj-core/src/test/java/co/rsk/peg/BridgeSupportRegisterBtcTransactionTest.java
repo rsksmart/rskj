@@ -3163,62 +3163,6 @@ class BridgeSupportRegisterBtcTransactionTest {
                 BtcTransaction btcTransaction = getPegoutTxWithOneInputAndOutputWithChange();
 
                 // act
-                registerReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
-
-                // assert
-                assertLogRejectedPegin(logs, btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
-
-                BtcTransaction refundPegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
-                assertReleaseRejectionWasSettled(
-                    repository,
-                    bridgeStorageProvider,
-                    logs,
-                    currentBlock.getNumber(),
-                    rskTx.getHash(),
-                    refundPegout,
-                    List.of(changeValue),
-                    changeValue
-                );
-
-                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
-                assertUtxosRegisteredWasNotEmitted();
-            }
-
-            @Test
-            void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_withSegwitActiveAndRetiringFeds_forVetiver_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-                // arrange
-                setupSegwitActiveAndSegwitRetiringFeds(vetiver900Activations);
-                BtcTransaction btcTransaction = getPegoutTxWithOneInputAndOutputWithChange();
-
-                // act
-                registerReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
-
-                // assert
-                assertLogRejectedPegin(logs, btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
-
-                BtcTransaction refundPegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
-                assertReleaseRejectionWasSettled(
-                    repository,
-                    bridgeStorageProvider,
-                    logs,
-                    currentBlock.getNumber(),
-                    rskTx.getHash(),
-                    refundPegout,
-                    List.of(changeValue),
-                    changeValue
-                );
-
-                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
-                assertUtxosRegisteredWasNotEmitted();
-            }
-
-            @Test
-            void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_withSegwitActiveAndRetiringFeds_withinGracePeriod_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-                // arrange
-                setupSegwitActiveAndSegwitRetiringFeds(allActivations);
-                BtcTransaction btcTransaction = getPegoutTxWithOneInputAndOutputWithChange();
-
-                // act
                 registerReleaseTransaction(btcTransaction, BTC_BLOCK_WITH_RELEASE_WITHIN_GRACE_PERIOD_HEIGHT);
 
                 // assert
