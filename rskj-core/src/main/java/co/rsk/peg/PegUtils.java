@@ -159,7 +159,7 @@ public class PegUtils {
             } else {
                 txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(transaction);
             }
-            return isTheSvpFundTransactionHash(provider, txHashWithoutSignatures);
+            return isTheSvpFundTxHashUnsigned(provider, txHashWithoutSignatures);
         } catch (IllegalArgumentException e) {
             logger.trace(
                 "[isTheSvpFundTransaction] Btc tx {} either has witness or non p2sh-legacy-multisig inputs, so we'll assume is not the fund tx",
@@ -170,7 +170,7 @@ public class PegUtils {
         }
     }
 
-    static boolean isTheSvpFundTransactionHash(BridgeStorageProvider provider, Sha256Hash btcTxHash) {
+    static boolean isTheSvpFundTxHashUnsigned(BridgeStorageProvider provider, Sha256Hash btcTxHash) {
         return provider.getSvpFundTxHashUnsigned()
             .filter(btcTxHash::equals)
             .isPresent();

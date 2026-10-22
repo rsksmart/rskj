@@ -394,7 +394,7 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
-            if (shouldUseFederationsPendingBtcUTXOs(btcTxId) && !isTheSvpFundTransactionHash(provider, btcTxId)) {
+            if (shouldUseFederationsPendingBtcUTXOs(btcTxId) && !isTheSvpFundTxHashUnsigned(provider, btcTxId)) {
                 registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxId, height);
                 return;
             }
@@ -444,7 +444,7 @@ public class BridgeSupport {
 
             // The SVP fund tx has to be registered through registerBtcTransaction while the SVP is ongoing,
             // since the full SVP tx is needed to build the SVP spend tx.
-            if (isTheSvpFundTransactionHash(provider, btcTxHash)) {
+            if (isTheSvpFundTxHashUnsigned(provider, btcTxHash)) {
                 throw new RegisterBtcTransactionException("Transaction is the SVP fund tx");
             }
 

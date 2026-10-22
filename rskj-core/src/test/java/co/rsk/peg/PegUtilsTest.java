@@ -723,40 +723,40 @@ class PegUtilsTest {
     }
 
     @Test
-    void isTheSvpFundTransactionHash_whenNoSvpFundTxHashUnsignedIsSaved_shouldReturnFalse() {
+    void isTheSvpFundTxHashUnsigned_whenNoSvpFundTxHashUnsignedIsSaved_shouldReturnFalse() {
         // Arrange
         Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
         when(provider.getSvpFundTxHashUnsigned()).thenReturn(Optional.empty());
 
         // Act
-        boolean isTheSvpFundTransaction = isTheSvpFundTransactionHash(provider, btcTxHash);
+        boolean isTheSvpFundTransaction = isTheSvpFundTxHashUnsigned(provider, btcTxHash);
 
         // Assert
         assertFalse(isTheSvpFundTransaction);
     }
 
     @Test
-    void isTheSvpFundTransactionHash_whenHashMatchesSvpFundTxHashUnsigned_shouldReturnTrue() {
+    void isTheSvpFundTxHashUnsigned_whenHashMatchesSvpFundTxHashUnsigned_shouldReturnTrue() {
         // Arrange
         Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
         when(provider.getSvpFundTxHashUnsigned()).thenReturn(Optional.of(btcTxHash));
 
         // Act
-        boolean isTheSvpFundTransaction = isTheSvpFundTransactionHash(provider, btcTxHash);
+        boolean isTheSvpFundTransaction = isTheSvpFundTxHashUnsigned(provider, btcTxHash);
 
         // Assert
         assertTrue(isTheSvpFundTransaction);
     }
 
     @Test
-    void isTheSvpFundTransactionHash_whenHashDoesNotMatchSvpFundTxHashUnsigned_shouldReturnFalse() {
+    void isTheSvpFundTxHashUnsigned_whenHashDoesNotMatchSvpFundTxHashUnsigned_shouldReturnFalse() {
         // Arrange
         Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
         Sha256Hash svpFundTxHashUnsigned = BitcoinTestUtils.createHash(2);
         when(provider.getSvpFundTxHashUnsigned()).thenReturn(Optional.of(svpFundTxHashUnsigned));
 
         // Act
-        boolean isTheSvpFundTransaction = isTheSvpFundTransactionHash(provider, btcTxHash);
+        boolean isTheSvpFundTransaction = isTheSvpFundTxHashUnsigned(provider, btcTxHash);
 
         // Assert
         assertFalse(isTheSvpFundTransaction);
