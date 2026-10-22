@@ -197,6 +197,25 @@ class BridgeConstantsTest {
         assertEquals(expectedValue, pegoutTxIndexGracePeriodInBtcBlocks);
     }
 
+    private static Stream<Arguments> getBtcHeightWhenFederationsPendingBtcUTXOsActivatesArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), 10_000_000),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 10_000_000),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), 10_000_000),
+            Arguments.of(new BridgeRegTestConstants(), 260)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getBtcHeightWhenFederationsPendingBtcUTXOsActivatesArgProvider")
+    void getBtcHeightWhenFederationsPendingBtcUTXOsActivates_shouldReturnNetworkValue(BridgeConstants bridgeConstants, int expectedValue) {
+        // act
+        int btcHeightWhenFederationsPendingBtcUTXOsActivates = bridgeConstants.getBtcHeightWhenFederationsPendingBtcUTXOsActivates();
+
+        // assert
+        assertEquals(expectedValue, btcHeightWhenFederationsPendingBtcUTXOsActivates);
+    }
+
     private static Stream<Arguments> getBtcHeightWhenBlockIndexActivatesArgProvider() {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), 696_022),
