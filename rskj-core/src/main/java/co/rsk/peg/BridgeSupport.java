@@ -385,11 +385,18 @@ public class BridgeSupport {
 
             BtcTransaction btcTx = new BtcTransaction(networkParameters, btcTxSerialized);
             btcTx.verify();
-            logger.debug("[registerBtcTransaction][rsk tx {}] Btc tx hash without witness {}", rskTxHash, btcTx.getHash(false));
+
+            Sha256Hash btcTxId = btcTx.getHash(false);
+            logger.debug("[registerBtcTransaction][rsk tx {}] Btc tx hash without witness {}", rskTxHash, btcTxId);
 
             // Check again that the tx was not already processed but making sure to use the txid (no witness)
-            if (isAlreadyBtcTxHashProcessed(btcTx.getHash(false))) {
+            if (isAlreadyBtcTxHashProcessed(btcTxId)) {
                 throw new RegisterBtcTransactionException("Transaction already processed");
+            }
+
+            if (shouldUseFederationsPendingBtcUTXOs(btcTxId) && !isTheSvpFundTxHashUnsigned(provider, btcTxId)) {
+                registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxId, height);
+                return;
             }
 
             FederationContext federationContext = federationSupport.getFederationContext();
@@ -405,7 +412,7 @@ public class BridgeSupport {
             logger.info("[registerBtcTransaction][btctx: {}] This is a {} transaction type", btcTx.getHash(), pegTxType);
             switch (pegTxType) {
                 case PEGIN -> registerPegIn(btcTx, rskTxHash, height);
-                case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx, height);
+                case PEGOUT_OR_MIGRATION -> registerNewUTXOsAndMarkTxAsProcessed(btcTx, height);
                 case SVP_FUND_TX -> registerSvpFundTx(btcTx, height);
                 case SVP_SPEND_TX -> registerSvpSpendTx(btcTx, height);
                 case UNKNOWN -> logger.warn("[registerBtcTransaction] Unknown peg tx type won't be registered.");
@@ -418,6 +425,10 @@ public class BridgeSupport {
                 e.getMessage()
             );
         }
+    }
+
+    private boolean shouldUseFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        return activations.isActive(RSKIP643) && federationSupport.hasFederationsPendingBtcUTXOs(btcTxId);
     }
 
     public void registerPegoutTransaction(
@@ -433,7 +444,7 @@ public class BridgeSupport {
 
             // The SVP fund tx has to be registered through registerBtcTransaction while the SVP is ongoing,
             // since the full SVP tx is needed to build the SVP spend tx.
-            if (isTheSvpFundTx(btcTxHash)) {
+            if (isTheSvpFundTxHashUnsigned(provider, btcTxHash)) {
                 throw new RegisterBtcTransactionException("Transaction is the SVP fund tx");
             }
 
@@ -443,8 +454,7 @@ public class BridgeSupport {
 
             validatePegoutTxRegistration(btcTxHash, height, pmtSerialized);
 
-            registerNewUTXOsByTxId(btcTxHash, height);
-            markBtcTxHashAsProcessed(btcTxHash);
+            registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxHash, height);
         } catch (RegisterBtcTransactionException e) {
             logger.warn(
                 "[registerPegoutTransaction] Could not register Btc tx {}. Message: {}",
@@ -454,19 +464,18 @@ public class BridgeSupport {
         }
     }
 
-    private boolean isTheSvpFundTx(Sha256Hash btcTxHash) {
-        return provider.getSvpFundTxHashUnsigned()
-            .filter(btcTxHash::equals)
-            .isPresent();
+    private void registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(Sha256Hash btcTxHash, int height) throws IOException {
+        logger.debug("[registerNewUTXOsByTxIdAndMarkTxHashAsProcessed] Btc tx hash without witness {} at height {}", btcTxHash, height);
+        registerNewUTXOsByTxId(btcTxHash, height);
+        markBtcTxHashAsProcessed(btcTxHash);
     }
 
     private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
         Sha256Hash btcTxId = btcTx.getHash(false);
-        if (activations.isActive(RSKIP643) && federationSupport.hasFederationsPendingBtcUTXOs(btcTxId)) {
-            registerNewUTXOsByTxId(btcTxId, btcTxHeight);
-            markTxAsProcessed(btcTx);
+        if (shouldUseFederationsPendingBtcUTXOs(btcTxId)) {
+            registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxId, btcTxHeight);
         } else {
-            registerNewUtxos(btcTx, btcTxHeight);
+            registerNewUTXOsAndMarkTxAsProcessed(btcTx, btcTxHeight);
         }
 
         // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
@@ -478,7 +487,7 @@ public class BridgeSupport {
     }
 
     private void registerSvpSpendTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
-        registerNewUtxos(btcTx, btcTxHeight);
+        registerNewUTXOsAndMarkTxAsProcessed(btcTx, btcTxHeight);
         provider.clearSvpSpendTxHashUnsigned();
 
         logger.info("[registerSvpSpendTx] Going to commit the proposed federation.");
@@ -780,7 +789,7 @@ public class BridgeSupport {
         }
 
         // Save UTXOs from the federation(s) only if we actually locked the funds
-        registerNewUtxos(btcTx, btcTxHeight);
+        registerNewUTXOsAndMarkTxAsProcessed(btcTx, btcTxHeight);
     }
 
     private void refundTxSender(
@@ -883,7 +892,7 @@ public class BridgeSupport {
     so they can be used as inputs in future peg-out transactions.
     Finally, mark the btcTx as processed.
      */
-    private void registerNewUtxos(BtcTransaction btcTx, int btcTxHeight) throws IOException {
+    private void registerNewUTXOsAndMarkTxAsProcessed(BtcTransaction btcTx, int btcTxHeight) throws IOException {
         int heightForNewUtxos = getHeightForNewUtxos(activations, btcTxHeight);
 
         Wallet activeFederationWallet = getActiveFederationWallet(false);
@@ -896,7 +905,7 @@ public class BridgeSupport {
         registerUtxosToTheRetiringFederation(btcTx.getHash(), utxosToTheRetiringFederation);
 
         markTxAsProcessed(btcTx);
-        logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
+        logger.info("[registerNewUTXOsAndMarkTxAsProcessed] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
     }
 
     /*
