@@ -23,15 +23,15 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
         lockingCapIncrementsMultiplier = 2;
 
         changeUnionBridgeContractAddressAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("54fdb399cf235c9b0d464ab4055af9251883bbfe")
+            new RskAddress("151455507b211303224787883daf5634a7220edc")
         );
 
         changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("1a8109af0f019ED3045Fbcdf45E5e90d6b6AAfaF")
+            new RskAddress("3f59c79f9552fc4bd66871615ac9f0b3987bdd34")
         );
 
         changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("8db1F83E8119E4Dce5bC708ec2f4390FFd910B19")
+            new RskAddress("06753cff26938034ce58863d8b4a30f4f6a92d58")
         );
     }
 

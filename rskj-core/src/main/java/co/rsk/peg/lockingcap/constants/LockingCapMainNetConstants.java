@@ -15,13 +15,13 @@ public class LockingCapMainNetConstants extends LockingCapConstants {
 
     private LockingCapMainNetConstants() {
         Set<RskAddress> increaseAuthorizedAddresses = Stream.of(
-            "0448f51638348b034995b1fd934fe14c92afde783e69f120a46ee16eb6bdc2e4f6b5e37772094c68c0dea2b1be3d96ea9651a9eebda7304914c8047f4e3e251378",
-            "0484c66f75548baf93e322574adac4e4579b6a53f8d11fab640e14c90118e6983ef24b0de349a3e88f72e81e771ae1c897cef446fd7f4da71778c532aee3b6c41b",
-            "04bb6435dc1ea12da843ebe213893d136c1624acd681fff82551498ae00bf28e9323164b00daf925fa75177463b8254a2aae8a1713e4d851a84ea369c193e9ce51"
+            "02f94dade3b1fbb7d066e6280852f33d29917a8edc4306b4a5d77c0eeb1566afa2",
+            "02c6732476e084a1d8788c2aa5f3aeb7966ce295d70e751efdab5a17a6b4d597d5",
+            "02c10071384c7766f6db4a71cb532e16177629401c27ae725c4fc7105a94a7907b"
         ).map(hex -> new RskAddress(ECKey.fromPublicOnly(Hex.decode(hex)).getAddress())).collect(Collectors.toSet());
         increaseAuthorizer = AddressBasedAuthorizerFactory.buildOneOfManyAuthorizer(increaseAuthorizedAddresses);
 
-        initialValue = Coin.COIN.multiply(300L); // 300 BTC
+        initialValue = Coin.COIN.multiply(21_000_000L); // 21 million BTC
         incrementsMultiplier = 2;
     }
 
