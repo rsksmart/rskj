@@ -1,0 +1,69 @@
+{
+  "name": "txpool_content",
+  "summary": "Returns the transactions currently in the pool, in full.",
+  "description": "Returns two maps, `pending` and `queued`, keyed by sender address and then by decimal nonce. `pending` holds transactions eligible for the next block; `queued` holds those whose nonce leaves a gap and which therefore cannot be executed yet.\n\nThe sender address appears twice in every entry, formatted two different ways: bare hex as the map key, and `0x`-prefixed as the transaction's `from`. Both name the same account. Key off the prefixed form or normalise the key before comparing.",
+  "params": [],
+  "result": {
+    "name": "content",
+    "description": "The pending and queued transactions, in full",
+    "schema": {
+      "title": "txPoolContent",
+      "type": "object",
+      "properties": {
+        "pending": {
+          "$ref": "#/components/schemas/TxPoolTransactionsBySender"
+        },
+        "queued": {
+          "$ref": "#/components/schemas/TxPoolTransactionsBySender"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "contentExample",
+      "description": "One ordinary transfer and one contract creation from the same sender. The creation carries `0x00` in `to`, which is how an empty receive address is rendered here.",
+      "params": [],
+      "result": {
+        "name": "contentResult",
+        "value": {
+          "pending": {
+            "7986b3df570230288501eea3d890bd66948c9b79": {
+              "12": [
+                {
+                  "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                  "blockNumber": null,
+                  "transactionIndex": null,
+                  "from": "0x7986b3df570230288501eea3d890bd66948c9b79",
+                  "gas": "0x5208",
+                  "gasPrice": "0x3b9aca00",
+                  "hash": "0xb903239f8543d04b5dc1ba6579132b143087c68db1b2168786408fcbce568238",
+                  "input": "0x",
+                  "nonce": "0xc",
+                  "to": "0x0dc4a4c0c5c9f1a6bb0d84b6b0a0d0b5d6b34d9d",
+                  "value": "0x2386f26fc10000"
+                }
+              ],
+              "13": [
+                {
+                  "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                  "blockNumber": null,
+                  "transactionIndex": null,
+                  "from": "0x7986b3df570230288501eea3d890bd66948c9b79",
+                  "gas": "0x33450",
+                  "gasPrice": "0x3b9aca00",
+                  "hash": "0x4b1d9f0e2b8a3c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d",
+                  "input": "0x6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea2",
+                  "nonce": "0xd",
+                  "to": "0x00",
+                  "value": "0x0"
+                }
+              ]
+            }
+          },
+          "queued": {}
+        }
+      }
+    }
+  ]
+}

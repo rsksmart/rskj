@@ -6,25 +6,7 @@
       "$ref": "#/components/contentDescriptors/TransactionCreate"
     },
     {
-      "name": "blockRefOrNumberOrTag",
-      "required": true,
-      "schema": {
-        "title": "blockRefOrNumberOrTag",
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/BlockRef"
-          },
-          {
-            "$ref": "#/components/schemas/BlockNumberHex"
-          },
-          {
-            "$ref": "#/components/schemas/BlockNumberDec"
-          },
-          {
-            "$ref": "#/components/schemas/BlockNumberTag"
-          }
-        ]
-      }
+      "$ref": "#/components/contentDescriptors/BlockRefOrExecutionNumberOrTag"
     }
   ],
   "result": {

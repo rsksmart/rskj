@@ -1,0 +1,39 @@
+{
+  "ExecutionBlockRef": {
+    "title": "executionBlockRef",
+    "type": "object",
+    "description": "A block reference for a method that executes against the block rather than reading it. It is the same object as `blockRef`, except that `blockNumber` may be given in decimal as well as in hex: the height is resolved by `ExecutionBlockRetriever`, which parses both bases, where the reading methods go through `Web3InformationRetriever` and take hex only. At least one of `blockHash` or `blockNumber` must be present; the node rejects an object carrying neither with `Invalid block input`.",
+    "properties": {
+      "blockHash": {
+        "$ref": "#/components/schemas/BlockHash"
+      },
+      "blockNumber": {
+        "title": "executionBlockNumber",
+        "description": "The block's height, in hex or in decimal",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BlockNumberHex"
+          },
+          {
+            "$ref": "#/components/schemas/BlockNumberDec"
+          }
+        ]
+      },
+      "requireCanonical": {
+        "$ref": "#/components/schemas/RequireCanonical"
+      }
+    },
+    "anyOf": [
+      {
+        "required": [
+          "blockHash"
+        ]
+      },
+      {
+        "required": [
+          "blockNumber"
+        ]
+      }
+    ]
+  }
+}

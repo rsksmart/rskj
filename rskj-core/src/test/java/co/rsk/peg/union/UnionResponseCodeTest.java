@@ -1,43 +1,34 @@
 package co.rsk.peg.union;
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class UnionResponseCodeTest {
 
-    @Test
-    void getCode_whenSuccess_shouldReturnCode() {
-        // Arrange
-        Assertions.assertEquals(0, UnionResponseCode.SUCCESS.getCode());
+    private static Stream<Arguments> responseCodeProvider() {
+        return Stream.of(
+            Arguments.of(UnionResponseCode.SUCCESS, 0),
+            Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER, -1),
+            Arguments.of(UnionResponseCode.INVALID_VALUE, -2),
+            Arguments.of(UnionResponseCode.REQUEST_DISABLED, -3),
+            Arguments.of(UnionResponseCode.RELEASE_DISABLED, -3),
+            Arguments.of(UnionResponseCode.GENERIC_ERROR, -10)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("responseCodeProvider")
+    void getCode_shouldReturnExpectedCode(UnionResponseCode responseCode, int expectedCode) {
+        assertEquals(expectedCode, responseCode.getCode());
     }
 
     @Test
-    void getCode_whenGenericError_shouldReturnCode() {
-        // Arrange
-        Assertions.assertEquals(-10, UnionResponseCode.GENERIC_ERROR.getCode());
-    }
-
-    @Test
-    void getCode_whenUnauthorizedCaller_shouldReturnCode() {
-        // Arrange
-        Assertions.assertEquals(-1, UnionResponseCode.UNAUTHORIZED_CALLER.getCode());
-    }
-
-    @Test
-    void getCode_whenInvalidValue_shouldReturnCode() {
-        // Arrange
-        Assertions.assertEquals(-2, UnionResponseCode.INVALID_VALUE.getCode());
-    }
-
-    @Test
-    void getCode_whenRequestDisabled_shouldReturnCode() {
-        // Arrange
-        Assertions.assertEquals(-3, UnionResponseCode.REQUEST_DISABLED.getCode());
-    }
-
-    @Test
-    void getCode_whenReleaseDisabled_shouldReturnCode() {
-        // Arrange
-        Assertions.assertEquals(-3, UnionResponseCode.RELEASE_DISABLED.getCode());
+    void values_shouldHaveSixResponseCodes() {
+        assertEquals(6, UnionResponseCode.values().length);
     }
 }

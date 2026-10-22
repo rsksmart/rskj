@@ -834,6 +834,165 @@ class EthModuleTest {
     }
 
     @Test
+    void sendRawTransaction_legacyChainIdWithTwoByteV_throwsInvalidParams() {
+        // Legacy EIP-155 tx signed for chainId 111: v = 111*2 + 35 + yParity = 257, which needs two bytes.
+        String raw = "0xf8638203e801825208947986b3df570230288501eea3d890bd66948c9b790180820101"
+                + "a0f2c1c4648c681c5d901bca52fdb1b7ec8148da9f0481bb38bce41c7a46dffa33"
+                + "a01d367a76e7eb2e115147a0dc07b47ff4ccc40365f9ac2e146500579d5ea79e76";
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
+                Constants.regtest(), new Wallet(new HashMapDB()), mock(TransactionPool.class), transactionGateway);
+        HexDataParam hexDataParam = new HexDataParam(raw);
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendRawTransaction(hexDataParam));
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Invalid transaction: Signature V is invalid", ex.getMessage());
+        verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
+    void sendTransaction_type2PriorityFeeAboveMaxFee_throwsInvalidParams() {
+        Constants constants = Constants.regtest();
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        args.setGasPrice(null);
+        args.setType("0x2");
+        args.setChainId("0x21");
+        args.setMaxPriorityFeePerGas("0x77359400");
+        args.setMaxFeePerGas("0x3b9aca00");
+
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, mock(TransactionPool.class), transactionGateway);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Invalid transaction: maxPriorityFeePerGas (2000000000) must not exceed maxFeePerGas (1000000000)", ex.getMessage());
+        verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
+    void sendRawTransaction_highSLegacy_reportsInvalidSignatureNotChainId() {
+        // cow, chainId 33, s replaced by n - s (and v parity flipped)
+        assertSendRawTransactionError("0xf86380843b9aca00825208940000000000000000000000000000000000001234018066a0f53d18aab36abf06f1a949c41b22e595c238359cee7b21de5f5aca46e5348643a0eeb67fbc51d66da3ac6c08a71e966a662e01e0ac81fc67afa62ac0f1121e378f",
+                "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_highSType2_reportsInvalidSignatureNotChainId() {
+        assertSendRawTransactionError("0x02f866218001843b9aca008252089400000000000000000000000000000000000012340180c001a0b92e98d144431440978c1979b1e2e6e842a2b7d2df534ca6baca121b4e365f7ea092e0bb82c67746ec8365f618a816cabd337a87104b848488750305f0f4943919",
+                "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_type2ChainId200_reportsUnsignedChainId() {
+        assertSendRawTransactionError("0x02f86781c88001843b9aca008252089400000000000000000000000000000000000012340180c001a0a048b82d4f92d1c4a4932ae046ad260993c345f96959432901d6b179f093befda07e84f07e2eb801b997baabfd57e47c318410c409ce6398118a367d1f8b34fcab",
+                "Invalid chainId: 200");
+    }
+
+    @Test
+    void sendRawTransaction_legacyWrongChainId_stillReportsChainId() {
+        assertSendRawTransactionError("0xf86380843b9aca00825208940000000000000000000000000000000000001234018061a00245b6b834cbe95175953c8483b0685483faae336fc854c2a402a31ff82c1407a02a2661345258c3b86a913ce1c2af60b005a9be82d5848037276acf3472d21a3f",
+                "Invalid chainId: 31");
+    }
+
+    @Test
+    void sendRawTransaction_highSAndWrongChain_reportsInvalidSignature() {
+        // chainId 31 (wrong for regtest) AND s > n/2: the signature problem is reported first
+        Transaction tx = Transaction.builder()
+                .nonce(new byte[]{1}).gasPrice(BigInteger.valueOf(1_000_000_000L)).gasLimit(BigInteger.valueOf(21000))
+                .receiveAddress(new RskAddress(new byte[20])).value(BigInteger.ONE).chainId((byte) 31).build();
+        tx.sign(ECKey.fromPrivate(BigInteger.ONE).getPrivKeyBytes());
+        ECDSASignature sig = tx.getSignature();
+        BigInteger highS = Constants.getSECP256K1N().subtract(sig.getS());
+        tx.setSignature(new ECDSASignature(sig.getR(), highS, sig.getV() == 27 ? (byte) 28 : (byte) 27));
+        assertSendRawTransactionError("0x" + Hex.toHexString(tx.getEncoded()),
+                "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_legacyGasLimitEncodedEmpty_reportsMissingParameterBeforeChainId() {
+        Transaction tx = new Transaction(
+                new byte[]{1},
+                Coin.valueOf(1_000_000_000L),
+                new byte[0],
+                new RskAddress(new byte[20]),
+                Coin.valueOf(1L),
+                null,
+                (byte) 31,
+                false,
+                TransactionTypePrefix.legacy(),
+                null,
+                null,
+                null,
+                null);
+        tx.sign(ECKey.fromPrivate(BigInteger.ONE).getPrivKeyBytes());
+        assertSendRawTransactionError("0x" + Hex.toHexString(tx.getEncoded()),
+                "Missing parameter, gasPrice, gas or value");
+    }
+
+    @Test
+    void sendRawTransaction_legacyGasLimitEncoded_reachesTransactionGateway() {
+        Constants constants = Constants.regtest();
+        Transaction tx = Transaction.builder()
+                .nonce(new byte[]{1}).gasPrice(BigInteger.valueOf(1_000_000_000L)).gasLimit(BigInteger.valueOf(21000))
+                .receiveAddress(new RskAddress(new byte[20])).value(BigInteger.ONE).chainId(constants.getChainId()).build();
+        tx.sign(ECKey.fromPrivate(BigInteger.ONE).getPrivKeyBytes());
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class)))
+                .thenReturn(TransactionPoolAddResult.okPendingTransaction(tx));
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
+                constants, new Wallet(new HashMapDB()), mock(TransactionPool.class), transactionGateway);
+
+        String hash = ethModuleTransaction.sendRawTransaction(new HexDataParam("0x" + Hex.toHexString(tx.getEncoded())));
+
+        assertEquals(tx.getHash().toJsonString(), hash);
+        verify(transactionGateway).receiveTransaction(any(Transaction.class));
+    }
+
+    private static void assertSendRawTransactionError(String rawHex, String expectedMessage) {
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
+                Constants.regtest(), new Wallet(new HashMapDB()), mock(TransactionPool.class), transactionGateway);
+
+        RskJsonRpcRequestException e = Assertions.assertThrows(RskJsonRpcRequestException.class,
+                () -> ethModuleTransaction.sendRawTransaction(new HexDataParam(rawHex)));
+        assertEquals(-32602, e.getCode());
+        assertEquals(expectedMessage, e.getMessage());
+        verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
+    void sendTransaction_pendingStateLookupFails_isNotReportedAsInvalidParams() {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, wallet.addAccount());
+        args.setNonce(null);
+        TransactionPool transactionPool = mock(TransactionPool.class);
+        when(transactionPool.getPendingState()).thenThrow(new IllegalArgumentException("The trie with root 0xabc is missing in this store"));
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(Constants.regtest(), wallet, transactionPool, mock(TransactionGateway.class));
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        assertThrows(IllegalArgumentException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+    }
+
+    @Test
+    void sendTransaction_poolFailsWithIllegalArgument_isNotReportedAsInvalidParams() {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, wallet.addAccount());
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenThrow(new IllegalArgumentException("The trie with root 0xabc is missing in this store"));
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(Constants.regtest(), wallet, mock(TransactionPool.class), transactionGateway);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        assertThrows(IllegalArgumentException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+    }
+
+    @Test
     void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
         // Given
         Constants constants = Constants.regtest();

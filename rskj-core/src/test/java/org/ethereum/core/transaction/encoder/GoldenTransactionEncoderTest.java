@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Map;
 import java.util.Objects;
@@ -35,7 +36,10 @@ import static org.ethereum.core.transaction.encoder.EncoderTestSupport.FIXED_V_Y
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.HIGH_CHAIN_ID;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.unsignedLegacy;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.withFixedSignature;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Pins {@code encodeForSigning} and {@code encodeSigned} output for every supported
@@ -62,16 +66,17 @@ class GoldenTransactionEncoderTest {
                         (Supplier<Transaction>) EncoderTestSupport::unsignedLegacyContractCreation, FIXED_V),
                 Arguments.of("legacy-long-data",
                         (Supplier<Transaction>) EncoderTestSupport::unsignedLegacyWithLongData, FIXED_V),
-                Arguments.of("type1-chain0", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType1((byte) 0), FIXED_V),
                 Arguments.of("type1-chain33", (Supplier<Transaction>) EncoderTestSupport::unsignedType1, FIXED_V),
                 Arguments.of("type1-chain200", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType1(HIGH_CHAIN_ID), FIXED_V),
                 Arguments.of("type1-access-list",
                         (Supplier<Transaction>) EncoderTestSupport::unsignedType1WithAccessList, FIXED_V),
-                Arguments.of("type2-chain0", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType2((byte) 0), FIXED_V),
+                Arguments.of("type1-zero-gas-price",
+                        (Supplier<Transaction>) EncoderTestSupport::unsignedType1ZeroGasPrice, FIXED_V),
                 Arguments.of("type2-chain33", (Supplier<Transaction>) EncoderTestSupport::unsignedType2, FIXED_V),
                 Arguments.of("type2-chain33-yParity0", (Supplier<Transaction>) EncoderTestSupport::unsignedType2, FIXED_V_Y_PARITY_0),
                 Arguments.of("type2-chain200", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType2(HIGH_CHAIN_ID), FIXED_V),
-                Arguments.of("type4-chain0", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType4((byte) 0), FIXED_V),
+                Arguments.of("type2-zero-fees",
+                        (Supplier<Transaction>) EncoderTestSupport::unsignedType2ZeroFees, FIXED_V),
                 Arguments.of("type4-chain33", (Supplier<Transaction>) EncoderTestSupport::unsignedType4, FIXED_V),
                 Arguments.of("type4-chain200", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType4(HIGH_CHAIN_ID), FIXED_V)
         );
@@ -95,6 +100,33 @@ class GoldenTransactionEncoderTest {
 
         assertEquals(vector(id)[1], Hex.toHexString(encoder.encodeSigned(tx)),
                 "wire encoding deviates from the canonical wire format");
+    }
+
+    private static Stream<Arguments> typedChainIdZeroCases() {
+        return Stream.of(
+                Arguments.of("type1", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType1((byte) 0)),
+                Arguments.of("type2", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType2((byte) 0)),
+                Arguments.of("type4", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType4((byte) 0))
+        );
+    }
+
+    /**
+     * A typed chainId of zero has no encoding the typed parser accepts, so it is refused before
+     * any encoder runs rather than pinned as an unparseable vector. Legacy keeps its chainId-0 vector above.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("typedChainIdZeroCases")
+    void typedTransactions_refuseChainIdZero(String id, Supplier<Transaction> transactionSupplier) {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, transactionSupplier::get);
+        assertTrue(e.getMessage().contains("chainId"), e.getMessage());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"type1-zero-gas-price", "type2-zero-fees"})
+    void zeroFeeVectors_reparseToTheSameBytes(String id) {
+        byte[] signed = Hex.decode(vector(id)[1]);
+
+        assertArrayEquals(signed, Transaction.fromRaw(signed).getEncoded());
     }
 
     @Test

@@ -106,6 +106,7 @@ public enum ConsensusRule {
     RSKIP446("rskip446"), // Transient storage opcodes addition implementing EIP-1153
     RSKIP453("rskip453"),
     RSKIP454("rskip454"),
+    RSKIP455("rskip455"), // Migration transaction with multiple UTXOs (MTMU)
     RSKIP459("rskip459"),
     RSKIP460("rskip460"),
     RSKIP502("rskip502"), // PowPeg and Union Bridge integration
@@ -121,7 +122,7 @@ public enum ConsensusRule {
     RSKIP551("rskip551"), // Disable RSKIP459
     RSKIP552("rskip552"), // Blake2F improvements in data handling
     RSKIP559("rskip559"), // Pegouts deterministic sorting
-    RSKIP560("rskip560"), // Precompiled contract exception handling on direct-call path -- number provisional pending RSKIP acceptance
+    RSKIP692("rskip692"), // Precompiled contract exception handling on direct-call path
     ;
 
     private final String configKey;

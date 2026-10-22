@@ -17,11 +17,21 @@
  */
 package org.ethereum.core.transaction.parser.util;
 
+import co.rsk.core.Coin;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +43,10 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 
 /**
  * Unit tests for {@link AccessListCodec}.
@@ -234,5 +248,114 @@ class AccessListCodecTest {
 
         assertThrows(RskJsonRpcRequestException.class,
                 () -> AccessListCodec.encodeAccessList(List.of(entry)));
+    }
+
+    // -------------------------------------------------------------------------
+    // requireRawAccessListBytes
+    // -------------------------------------------------------------------------
+
+    @Test
+    void requireRawAccessListBytes_validList_returnsItsFrame() {
+        byte[] accessList = populatedAccessList();
+
+        assertArrayEquals(accessList, AccessListCodec.requireRawAccessListBytes(RLP.decode2(accessList).get(0)));
+    }
+
+    @Test
+    void requireRawAccessListBytes_emptyList_returnsEmptyListRlp() {
+        assertArrayEquals(EMPTY_LIST_RLP, AccessListCodec.requireRawAccessListBytes(RLP.decode2(EMPTY_LIST_RLP).get(0)));
+    }
+
+    @Test
+    void requireRawAccessListBytes_stringFramedSlot_throws() {
+        RLPElement slot = RLP.decode2(RLP.encodeElement(populatedAccessList())).get(0);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> AccessListCodec.requireRawAccessListBytes(slot));
+        assertTrue(e.getMessage().contains("Access list must be encoded as an RLP list"), e.getMessage());
+    }
+
+    @Test
+    void requireRawAccessListBytes_truncatedNestedEntry_throwsAsInvalidRlp() {
+        // The outer frame is valid; the entry inside claims a 20-byte string but carries one byte,
+        // which only surfaces when the entry is decoded.
+        RLPElement slot = RLP.decode2(new byte[]{(byte) 0xc3, (byte) 0xc2, (byte) 0x94, 0x00}).get(0);
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> AccessListCodec.requireRawAccessListBytes(slot));
+        assertTrue(e.getMessage().contains("Access list contains invalid RLP encoding"), e.getMessage());
+    }
+
+    @Test
+    void requireRawAccessListBytes_malformedEntry_throws() {
+        byte[] accessList = RLP.encodeList(RLP.encodeList(RLP.encodeElement(new byte[20])));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> AccessListCodec.requireRawAccessListBytes(RLP.decode2(accessList).get(0)));
+    }
+
+    /** The raw path proves the access list's framing once, as part of the whole envelope. */
+    @Test
+    void typedRawParseReencodesTheAccessListOnce() {
+        byte[] accessList = populatedAccessList();
+        Transaction tx = Transaction.builder()
+                .type(TransactionType.TYPE_2)
+                .nonce(BigInteger.ONE)
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(2))
+                .gasLimit(BigInteger.valueOf(30_000))
+                .receiveAddress(new byte[20])
+                .value(BigInteger.ZERO)
+                .accessList(accessList)
+                .chainId((byte) 33)
+                .build();
+        tx.sign(HashUtil.keccak256("access-list-sender".getBytes()));
+        byte[] raw = tx.getEncoded();
+
+        byte[] payload = Arrays.copyOfRange(raw, 1, raw.length);
+
+        try (MockedStatic<CommonParsingUtils> utils =
+                     Mockito.mockStatic(CommonParsingUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            Transaction.fromRaw(raw);
+
+            utils.verify(() -> CommonParsingUtils.reencodeCanonical(argThat(element ->
+                    element instanceof RLPList && Arrays.equals(payload, element.getRLPRawData()))), times(1));
+            utils.verify(() -> CommonParsingUtils.reencodeCanonical(argThat(element ->
+                    element instanceof RLPList && Arrays.equals(accessList, element.getRLPRawData()))), never());
+        }
+    }
+
+    /** The parser has already validated the access list, so raw ingress does not validate it again at construction. */
+    @Test
+    void typedRawIngressDoesNotRevalidateTheAccessListAtConstruction() {
+        Transaction tx = Transaction.builder()
+                .type(TransactionType.TYPE_2)
+                .nonce(BigInteger.ONE)
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(2))
+                .gasLimit(BigInteger.valueOf(30_000))
+                .receiveAddress(new byte[20])
+                .value(BigInteger.ZERO)
+                .accessList(populatedAccessList())
+                .chainId((byte) 33)
+                .build();
+        tx.sign(HashUtil.keccak256("access-list-sender".getBytes()));
+        byte[] raw = tx.getEncoded();
+
+        try (MockedStatic<AccessListCodec> codec =
+                     Mockito.mockStatic(AccessListCodec.class, Mockito.CALLS_REAL_METHODS)) {
+            Transaction.fromRaw(raw);
+            new ImmutableTransaction(raw);
+
+            codec.verify(() -> AccessListCodec.defaultAccessListBytes(any()), never());
+        }
+    }
+
+    private static byte[] populatedAccessList() {
+        byte[] address = new byte[20];
+        address[0] = 0x55;
+        byte[] key = new byte[32];
+        key[0] = (byte) 0x80;
+        return RLP.encodeList(RLP.encodeList(RLP.encodeElement(address), RLP.encodeList(RLP.encodeElement(key))));
     }
 }

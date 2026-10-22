@@ -677,7 +677,8 @@ class Type4TransactionExecutorTests extends Type4TransactionExecutorHelperTest {
         verifyTrackerStartTrackingInvocations(2);
         verifyValidAuthorityChanges(authorizationTracker, authority, delegatedAddress);
 
-        verify(cacheTracker, never()).rollback();
+        // RSKIP692 is active: the precompiled contract's changes are rolled back, the authorization is not
+        verify(cacheTracker).rollback();
         verify(cacheTracker, never()).transfer(any(), any(), any());
 
         assertNotNull(txExecutor.getResult().getException());

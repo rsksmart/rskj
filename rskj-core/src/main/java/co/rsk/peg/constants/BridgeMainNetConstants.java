@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
+import co.rsk.peg.pegout.HistoricalPegoutSelectionsMainNetConstants;
 import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 
@@ -17,32 +18,36 @@ public class BridgeMainNetConstants extends BridgeConstants {
         whitelistConstants = WhitelistMainNetConstants.getInstance();
         federationConstants = FederationMainNetConstants.getInstance();
         lockingCapConstants = LockingCapMainNetConstants.getInstance();
+        historicalPegoutSelectionsConstants = HistoricalPegoutSelectionsMainNetConstants.getInstance();
         unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
+
+        updateBridgeExecutionPeriod = THREE_MINUTES_IN_MILLIS;
+        minSecondsBetweenCallsReceiveHeader = FIVE_MINUTES_IN_SECONDS;
 
         btc2RskMinimumAcceptableConfirmations = 100;
         rsk2BtcMinimumAcceptableConfirmations = 4000;
-
-        updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
 
         legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         legacyMinimumPegoutTxValue = Coin.valueOf(800_000);
         minimumPeginTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValue = Coin.valueOf(400_000);
 
-        btcHeightWhenBlockIndexActivates = 696_022;
-        maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
+        legacyMaxInputsPerMigrationTransaction = 50;
+        maxInputsPerMigrationTransaction = 150;
+        maxOutputsPerMigrationTransaction = 50;
+        migrationValueForMultipleOutputs = Coin.COIN.multiply(20);
 
-        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
+        btcHeightWhenBlockIndexActivates = 696_022;
+        maxDepthToSearchBlocksBelowIndexActivation = THIRTY_DAYS_IN_BTC_BLOCKS;
+
         maxDepthBlockchainAccepted = 25;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
 
-        maxInputsPerPegoutTransaction = 50;
-
-        numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
+        numberOfBlocksBetweenPegouts = THREE_HOURS_IN_RSK_BLOCKS;
 
         btcHeightWhenPegoutTxIndexActivates = 837_589; // Estimated date Wed, 03 Apr 2024 15:00:00 GMT. 832,430 was the block number at time of calculation
-        pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
+        pegoutTxIndexGracePeriodInBtcBlocks = THIRTY_DAYS_IN_BTC_BLOCKS;
 
         blockWithTooMuchChainWorkHeight = 849_138;
     }

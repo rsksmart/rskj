@@ -57,25 +57,28 @@ This can be done in two ways:
 
 ### Using RocksDB
 
-:::info[Important Notice]
-- Starting from [RSKj HOP v4.2.0](https://github.com/rsksmart/rskj/releases/tag/HOP-4.2.0), RocksDB is no longer experimental. As of the most recent version, RocksDB has now been made the default storage library, replacing LevelDB. This change was made to tackle maintainability and performance issues of LevelDB.
-- Previously, RSKj ran using [LevelDB](https://dbdb.io/db/leveldb) by default, with the option to switch to [RocksDB](http://rocksdb.org/). Now, RocksDB is the default storage option, aiming to enable higher performance within the RSKj nodes.
+:::warning[LevelDB is deprecated — migrate to RocksDB]
+
+RocksDB is the default and the recommended storage engine. **LevelDB is deprecated and will be removed in a future release.** A node opening a LevelDB database logs a warning to that effect on every start.
+
+If your node still runs on LevelDB, migrate it. Do not set `keyvalue.datasource=leveldb` on a new node.
+
 :::
+
+Starting from [RSKj HOP v4.2.0](https://github.com/rsksmart/rskj/releases/tag/HOP-4.2.0), RocksDB is no longer experimental, and it replaced [LevelDB](https://dbdb.io/db/leveldb) as the default storage library — a change made to address LevelDB's maintainability and performance issues.
 
 #### Get Started
 
-RSKj nodes run using RocksDB by default (See important info section). To switch back to LevelDB, modify the relevant RSKj config file (`*.conf`) and set the config: `keyvalue.datasource=leveldb`.
+RSKj nodes run using RocksDB by default, so a node set up from scratch needs no configuration here. The `keyvalue.datasource` property may only be either `rocksdb` or `leveldb`.
 
-The `keyvalue.datasource` property in the config
-may only be either `rocksdb` or `leveldb`.
+#### Migrating an existing node to RocksDB
 
-> If you wish to switch between the different storage options,
-for example from `leveldb` to `rocksdb` or vice versa, 
-you must **restart** the node with the import option.
+An existing database cannot be reopened under a different engine, so switching means starting the node against an empty database directory. There are two ways to get there:
 
-The following sample command shows how to do this when
-the RSKj node was previously running the default (`leveldb`),
-and wants to run with `rocksdb` next.
+- **[`DbMigrate`](/node-operators/setup/configuration/cli/#dbmigrate)** — converts the database you already have into the new engine, keeping your synced history and downloading nothing.
+- **[Import sync](/node-operators/setup/import-sync/)** — restarting with `--import` erases the database and rebuilds it from published bootstrap data under the new engine. Faster than re-syncing, but it discards your current database and comes back at the published height, so the node has to sync the difference again.
+
+The following sample command switches a node that was previously running on `leveldb` over to `rocksdb` using import sync:
 
 > Note the use of the `--import` flag, which resets and re-imports the database.
 
@@ -96,7 +99,7 @@ Switching between different types of databases in your system requires you to mo
 
 :::warning[Warning]
 
-Nodes that were already running on LevelDB will continue to use LevelDB, and the same applies to RocksDB. However, all nodes setup from scratch will use RocksDB by default.
+A node keeps whatever engine its existing database was created with — an upgrade does not move a LevelDB node to RocksDB on its own. Nodes set up from scratch use RocksDB by default. If yours is still on LevelDB, see [Migrating an existing node to RocksDB](#migrating-an-existing-node-to-rocksdb).
 
 :::
 

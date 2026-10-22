@@ -1,0 +1,14 @@
+{
+  "BlockNumberOrTag": {
+    "title": "blockNumberOrTag",
+    "description": "A block, given as its height in hex or as a tag. A height in decimal is rejected: the block is looked up by `Web3InformationRetriever`, which parses the number as hex and requires the `0x` prefix.\n\nA 32-byte block hash is also accepted in this position and resolves to that block. It is deliberately left out of the union above: the node does not distinguish a hash-length hex string from a height, so the capability is a side effect of how the identifier is parsed rather than a designed one, and publishing it would make it breaking to narrow. Look a block up by hash through the block reference object instead.",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/BlockNumberHex"
+      },
+      {
+        "$ref": "#/components/schemas/BlockNumberTag"
+      }
+    ]
+  }
+}

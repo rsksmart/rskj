@@ -1,0 +1,56 @@
+{
+  "name": "rsk_getTransactionReceiptNodesByHash",
+  "summary": "Returns the receipts-trie nodes proving a transaction receipt.",
+  "description": "Returns the encoded trie nodes on the path between the receipt of the given transaction and the receipts-trie root of the given block, so that the receipt can be proved against the block header. The path is ordered **leaf first**: element 0 is the node holding the receipt and the last element is the root. Returns `null` when the transaction is not in that block.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/BlockHash"
+    },
+    {
+      "$ref": "#/components/contentDescriptors/TransactionHash"
+    }
+  ],
+  "result": {
+    "name": "receiptNodes",
+    "description": "The encoded trie nodes proving the receipt, or `null` if the transaction is not in the block",
+    "schema": {
+      "title": "receiptNodesOrNull",
+      "oneOf": [
+        {
+          "title": "receiptNodes",
+          "type": "array",
+          "description": "The encoded trie nodes, leaf first: element 0 holds the receipt, the last element is the receipts-trie root",
+          "items": {
+            "$ref": "#/components/schemas/Bytes"
+          }
+        },
+        {
+          "$ref": "#/components/schemas/Null"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "name": "getTransactionReceiptNodesByHashExample",
+      "description": "The nodes are abridged; real trie nodes are longer",
+      "params": [
+        {
+          "name": "blockHash",
+          "value": "0x1cd0e5cbd3ba2c9b48eb6ff5bc0be6ba9d5a0e1b7c4ec9b3e6cb1d1b3f7a1e0d"
+        },
+        {
+          "name": "transactionHash",
+          "value": "0xb903239f8543d04b5dc1ba6579132b143087c68db1b2168786408fcbce568238"
+        }
+      ],
+      "result": {
+        "name": "receiptNodesResult",
+        "value": [
+          "0x2080011ca01cd0e5cbd3ba2c9b48eb6ff5bc0be6ba9d5a0e1b7c4ec9b3e6cb1d1b",
+          "0x300801b6a0c4d9a4b1a0e5a51e9c3a1f427bf47e6a5a3a3e37d4b0e0f7c0b3a4b1"
+        ]
+      }
+    }
+  ]
+}

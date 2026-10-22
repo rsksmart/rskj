@@ -42,6 +42,7 @@ import org.ethereum.core.transaction.parser.ParsedType1Transaction;
 import org.ethereum.core.transaction.parser.ParsedType2Transaction;
 import org.ethereum.core.transaction.parser.ParsedType4Transaction;
 import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
+import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.Type4TransactionValidation;
 import org.ethereum.cost.InitcodeCostCalculator;
@@ -91,6 +92,7 @@ public class Transaction {
     public static final byte CHAIN_ID_INC = 35;
     public static final byte LOWER_REAL_V = 27;
     private static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
+    private static final String ERR_INVALID_SIGNATURE = "Invalid transaction signature";
     private final TransactionTypePrefix typePrefix;
 
     protected RskAddress sender;
@@ -182,7 +184,8 @@ public class Transaction {
                 tx.accessListBytes,
                 tx.maxPriorityFeePerGas,
                 tx.maxFeePerGas,
-                tx.authorizationList
+                tx.authorizationList,
+                false
         );
 
         this.signature = tx.signature;
@@ -269,7 +272,8 @@ public class Transaction {
                     accessListBytes,
                     maxPriorityFeePerGas,
                     maxFeePerGas,
-                    authorizationList
+                    authorizationList,
+                    false
             );
             tx.signature = parsed.signature();
             return tx;
@@ -280,9 +284,21 @@ public class Transaction {
                           byte chainId, final boolean localCall, TransactionTypePrefix typePrefix, byte[] accessListBytes,
                           @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas,
                           @Nullable List<SetCodeAuthorization> authorizationList) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, localCall, typePrefix,
+                accessListBytes, maxPriorityFeePerGas, maxFeePerGas, authorizationList, true);
+    }
+
+    /** {@code checkTypedFields} is false only for fields a parser or an existing transaction already validated. */
+    private Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
+                        byte chainId, boolean localCall, TransactionTypePrefix typePrefix, byte[] accessListBytes,
+                        @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas,
+                        @Nullable List<SetCodeAuthorization> authorizationList, boolean checkTypedFields) {
 
         if (typePrefix.isRskNamespace()) {
             throw new IllegalArgumentException(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
+        }
+        if (checkTypedFields && typePrefix.isTyped()) {
+            requireCanonicalTypedFields(nonce, gasLimit, chainId, accessListBytes);
         }
 
         this.nonce = ByteUtil.cloneBytes(nonce);
@@ -299,6 +315,18 @@ public class Transaction {
         this.maxFeePerGas = maxFeePerGas;
         this.authorizationList = authorizationList == null ? null : List.copyOf(authorizationList);
 
+    }
+
+    private static void requireCanonicalTypedFields(byte[] nonce, byte[] gasLimit, byte chainId, byte[] accessListBytes) {
+        CommonParsingUtils.requireCanonicalScalar(nonce, "Nonce");
+        CommonParsingUtils.requireCanonicalScalar(gasLimit, "Gas Limit");
+        CommonParsingUtils.requireValidTypedChainId(chainId);
+        if (accessListBytes != null) {
+            if (accessListBytes.length == 0) {
+                throw new IllegalArgumentException("Access list must be an RLP list");
+            }
+            AccessListCodec.defaultAccessListBytes(accessListBytes);
+        }
     }
 
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:
@@ -379,6 +407,9 @@ public class Transaction {
         if (CommonParsingUtils.exceedsDataWordLength(gasLimit)) {
             throw new TransactionException("Gas Limit is not valid");
         }
+        if (isLegacyGasLimitEncodedEmpty()) {
+            throw new TransactionException("Gas Limit is not valid");
+        }
         if (CommonParsingUtils.exceedsDataWordLength(gasPrice)) {
             throw new TransactionException("Gas Price is not valid");
         }
@@ -409,6 +440,11 @@ public class Transaction {
                 throw new TransactionException("Sender is not valid");
             }
         }
+    }
+
+    /** Legacy validation has always rejected a gasLimit encoded as the empty string. */
+    public boolean isLegacyGasLimitEncodedEmpty() {
+        return typePrefix.type() == TransactionType.LEGACY && gasLimit.length == 0;
     }
 
     public Keccak256 getHash() {
@@ -453,6 +489,16 @@ public class Transaction {
         return gasPrice;
     }
 
+    /**
+     * The gasPrice field as decoded, for encoders: {@code null} when it was received as the RLP empty string
+     * ({@code 0x80}), as opposed to {@link Coin#ZERO} for a single zero byte ({@code 0x00}). Unlike
+     * {@link #getGasPrice()}, it keeps the two apart, so a legacy transaction re-encodes to the bytes that were signed.
+     */
+    @Nullable
+    public Coin getEncodableGasPrice() {
+        return gasPrice;
+    }
+
     @Nullable
     public Coin getMaxPriorityFeePerGas() {
         return maxPriorityFeePerGas;
@@ -481,7 +527,7 @@ public class Transaction {
     }
 
     public byte[] getGasLimit() {
-        return gasLimit == null ? null : gasLimit.clone();
+        return gasLimit.clone();
     }
 
     public byte[] getData() {
@@ -493,7 +539,7 @@ public class Transaction {
     }
 
     public boolean acceptTransactionSignature(byte currentChainId) {
-        if (signature == null || !signature.validateComponents() || signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
+        if (!hasAcceptableSignatureComponents()) {
             return false;
         }
 
@@ -659,10 +705,18 @@ public class Transaction {
                 : (byte) (this.signature.getV() - LOWER_REAL_V + CHAIN_ID_INC + this.chainId * 2);
     }
 
-    public  void checkInvalidChain(Constants constants, String chainId) {
-        if (!acceptTransactionSignature(constants.getChainId())) {
-            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + chainId);
+    private boolean hasAcceptableSignatureComponents() {
+        return signature != null && signature.validateComponents() && signature.getS().compareTo(SECP256K1N_HALF) < 0;
+    }
+
+    public void checkInvalidChain(Constants constants) {
+        if (acceptTransactionSignature(constants.getChainId())) {
+            return;
         }
+        if (!hasAcceptableSignatureComponents()) {
+            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_SIGNATURE);
+        }
+        throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + Byte.toUnsignedInt(getChainId()));
     }
 
     @Override
@@ -702,7 +756,7 @@ public class Transaction {
     }
 
     public BigInteger getGasLimitAsInteger() {
-        return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
+        return BigIntegers.fromUnsignedByteArray(gasLimit);
     }
 
     public BigInteger getNonceAsInteger() {

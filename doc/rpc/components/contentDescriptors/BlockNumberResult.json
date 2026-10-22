@@ -1,0 +1,9 @@
+{
+  "BlockNumberResult": {
+    "name": "blockNumber",
+    "description": "The height of the most recent block, in hex",
+    "schema": {
+      "$ref": "#/components/schemas/BlockNumberHex"
+    }
+  }
+}

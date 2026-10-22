@@ -147,6 +147,7 @@ class ActivationConfigTest {
         "    rskip446: lovell700",
         "    rskip453: lovell700",
         "    rskip454: lovell700",
+        "    rskip455: cardamom1000",
         "    rskip459: lovell700",
         "    rskip460: lovell700",
         "    rskip502: reed810",
@@ -155,14 +156,14 @@ class ActivationConfigTest {
         "    rskip535: vetiver900",
         "    rskip536: reed810",
         "    rskip540: vetiver900",
-        "    rskip543: vetiver900",
+        "    rskip543: cardamom1000",
         "    rskip544: vetiver900",
-        "    rskip545: vetiver900",
-        "    rskip546: vetiver900",
+        "    rskip545: cardamom1000",
+        "    rskip546: cardamom1000",
         "    rskip551: vetiver900",
         "    rskip552: vetiver900",
         "    rskip559: cardamom1000",
-        "    rskip560: vetiver900",
+        "    rskip692: cardamom1000",
         "}"
     ));
 

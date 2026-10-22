@@ -18,6 +18,8 @@
 
 package org.ethereum.rpc.converters;
 
+import co.rsk.config.TestSystemProperties;
+import co.rsk.util.HexUtils;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
@@ -32,9 +34,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
 import java.util.stream.Stream;
-
-import co.rsk.config.TestSystemProperties;
-import co.rsk.util.HexUtils;
 
 /**
  * Created by martin.medina on 3/7/17.
@@ -387,7 +386,30 @@ class CallArgumentsToByteArrayTest {
         RskJsonRpcRequestException ex = Assertions.assertThrows(RskJsonRpcRequestException.class,
                 () -> byteArrayArgs.getChainId(TransactionType.TYPE_2, (byte) 33));
         Assertions.assertEquals(-32602, ex.getCode());
-        Assertions.assertEquals("Invalid chainId: 0x0", ex.getMessage());
+        Assertions.assertEquals("Typed transaction chainId must be between 1 and 255, got: 0", ex.getMessage());
+    }
+
+    @Test
+    void getChainIdWhenValueIsNegativeForTypedTransaction_rejectsRequest() {
+        CallArguments args = new CallArguments();
+        args.setChainId("-56");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(RskJsonRpcRequestException.class,
+                () -> byteArrayArgs.getChainId(TransactionType.TYPE_2, (byte) 33));
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("Typed transaction chainId must be between 1 and 255, got: -56", ex.getMessage());
+    }
+
+    @Test
+    void getChainIdWhenValueIsNegativeForLegacyTransaction_keepsItsByteReading() {
+        CallArguments args = new CallArguments();
+        args.setChainId("-56");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertEquals((byte) 0xc8, byteArrayArgs.getChainId(TransactionType.LEGACY, (byte) 33));
     }
 
     @Test

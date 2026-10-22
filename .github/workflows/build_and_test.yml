@@ -17,13 +17,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
         with:
           # Needed so checkstyle/spotless below can ratchet against the PR base branch.
           fetch-depth: 0
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 #v5.7.0
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 #v6.0.1
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -89,12 +89,12 @@ jobs:
     needs: unit-tests-java17
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
         with:
           fetch-depth: 0
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 #v5.7.0
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 #v6.0.1
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -189,17 +189,17 @@ jobs:
         options: --name bitcoind2
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e #v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 #v7.0.0
         with:
           node-version: '12.x'
       - name: Check Node.js version
         run: node --version
 
       - name: Checkout Mining Integration Tests Repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
         with:
           repository: rsksmart/mining-integration-tests
           ref: ${{ secrets.MINING_INTEGRATION_TESTS_REF }}
@@ -222,7 +222,7 @@ jobs:
           node --unhandled-rejections=strict generateBtcBlocks.js
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 #v5.7.0
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 #v6.0.1
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -278,10 +278,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 #v5.7.0
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 #v6.0.1
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -332,10 +332,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 #v5.7.0
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 #v6.0.1
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -358,3 +358,12 @@ jobs:
       - name: Run tests
         run: |
           ./gradlew --no-daemon --stacktrace integrationTest
+
+      - name: Upload HTML Test Report
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
+        with:
+          retention-days: 7
+          name: integration-tests-html-test-report
+          path: |
+            rskj-core/build/reports/tests/integrationTest/

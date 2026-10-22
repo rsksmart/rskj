@@ -54,11 +54,18 @@ public class ReversibleTransactionExecutor {
 
     /**
      * Estimates gas against the provided snapshot using the executor's
-     * configured precompiled contracts.
+     * configured precompiled contracts. The simulated transaction is not marked as a local call,
+     * so native contracts treat it as the real transaction it estimates.
      */
     public TransactionExecutor estimateGas(Block executionBlock, RskAddress coinbase, RepositorySnapshot snapshot,
                                            ReversibleTransactionParams params) {
-        return reversibleExecution(snapshot, executionBlock, coinbase, precompiledContracts, params);
+        Repository track = snapshot.startTracking();
+        ReversibleTransaction tx = newReversibleTransaction(track, params);
+        TransactionExecutor executor = newLocalExecutor(tx, track, executionBlock, coinbase, precompiledContracts);
+        // setLocalCall also marks the transaction as a local call, which native contracts read to tell a local
+        // call apart. A gas estimate simulates the transaction as it would be sent, so that mark is removed.
+        tx.setLocalCallTransaction(false);
+        return execute(executor);
     }
 
     public ProgramResult executeTransactionAtBlock(
@@ -75,7 +82,9 @@ public class ReversibleTransactionExecutor {
             RskAddress coinbase,
             PrecompiledContracts precompiledContracts,
             ReversibleTransactionParams params) {
-        return reversibleExecution(snapshot, executionBlock, coinbase, precompiledContracts, params).getResult();
+        Repository track = snapshot.startTracking();
+        ReversibleTransaction tx = newReversibleTransaction(track, params);
+        return execute(newLocalExecutor(tx, track, executionBlock, coinbase, precompiledContracts)).getResult();
     }
 
     @SuppressWarnings("java:S6218")
@@ -94,17 +103,18 @@ public class ReversibleTransactionExecutor {
             byte[] maxFeePerGas
     ) {}
 
-    private TransactionExecutor reversibleExecution(RepositorySnapshot snapshot, Block executionBlock, RskAddress coinbase,
-                                                    PrecompiledContracts precompiledContracts,
-                                                    ReversibleTransactionParams params) {
-        Repository track = snapshot.startTracking();
+    private static ReversibleTransaction newReversibleTransaction(Repository track, ReversibleTransactionParams params) {
+        return new ReversibleTransaction(CommonParsingUtils.unsignedBytes(track.getNonce(params.fromAddress())), params);
+    }
 
-        ReversibleTransaction tx = new ReversibleTransaction(CommonParsingUtils.unsignedBytes(track.getNonce(params.fromAddress())), params);
-
-        TransactionExecutor executor = transactionExecutorFactory
+    private TransactionExecutor newLocalExecutor(ReversibleTransaction tx, Repository track, Block executionBlock,
+                                                 RskAddress coinbase, PrecompiledContracts precompiledContracts) {
+        return transactionExecutorFactory
                 .newInstance(tx, 0, coinbase, track, executionBlock, 0, precompiledContracts)
                 .setLocalCall(true);
+    }
 
+    private static TransactionExecutor execute(TransactionExecutor executor) {
         if (!executor.executeTransaction()) {
             throw new TransactionExecutionRejectedException(executor.getExecutionError());
         }

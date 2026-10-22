@@ -229,7 +229,7 @@ class TxPendingValidatorTest {
             String typeLabel, Supplier<Transaction> txSupplier) {
         long executionBlockNumber = 10L;
         TestSystemProperties config = new TestSystemProperties(baseConfig -> baseConfig.withValue(
-                "blockchain.config.hardforkActivationHeights.vetiver900",
+                "blockchain.config.hardforkActivationHeights.cardamom1000",
                 ConfigValueFactory.fromAnyRef(executionBlockNumber + 1)
         ));
         ActivationConfig activationConfig = config.getActivationConfig();

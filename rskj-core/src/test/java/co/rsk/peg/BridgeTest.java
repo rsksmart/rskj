@@ -21,7 +21,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
-import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCode;
 import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -46,6 +47,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.exception.VMException;
+import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
@@ -365,7 +367,7 @@ class BridgeTest {
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcECKey fed1Key = new BtcECKey();
-        RskAddress fed1Address = new RskAddress(ECKey.fromPublicOnly(fed1Key.getPubKey()).getAddress());
+        RskAddress fed1Address = BitcoinTestUtils.getRskAddressFromBtcPublicKey(fed1Key);
         List<BtcECKey> federationKeys = Arrays.asList(fed1Key, new BtcECKey(), new BtcECKey());
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
@@ -551,7 +553,7 @@ class BridgeTest {
         BigInteger decodedResult = (BigInteger) Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0];
 
         //Assert
-        assertEquals(FlyoverTxResponseCodes.GENERIC_ERROR.value(), decodedResult.longValue());
+        assertEquals(FlyoverTxResponseCode.GENERIC_ERROR.getCode(), decodedResult.longValue());
         verify(bridgeSupportMock, times(0)).registerFlyoverBtcTransaction(
             any(Transaction.class),
             eq(value),
@@ -654,7 +656,7 @@ class BridgeTest {
             any(RskAddress.class),
             any(Address.class),
             anyBoolean()
-        )).thenReturn(BigInteger.valueOf(FlyoverTxResponseCodes.GENERIC_ERROR.value()));
+        )).thenReturn(BigInteger.valueOf(FlyoverTxResponseCode.GENERIC_ERROR.getCode()));
 
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -682,7 +684,7 @@ class BridgeTest {
         byte[] result = bridge.execute(data);
         BigInteger decodedResult = (BigInteger)Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0];
 
-        assertEquals(FlyoverTxResponseCodes.GENERIC_ERROR.value(), decodedResult.longValue());
+        assertEquals(FlyoverTxResponseCode.GENERIC_ERROR.getCode(), decodedResult.longValue());
     }
 
     @Test
@@ -837,7 +839,7 @@ class BridgeTest {
 
         byte[] result = bridge.execute(data);
         BigInteger decodedResult = (BigInteger) Bridge.RECEIVE_HEADER.decodeResult(result)[0];
-        assertEquals(BigInteger.valueOf(-20), decodedResult);
+        assertEquals(BigInteger.valueOf(ReceiveHeaderResponseCode.HEADER_SIZE_MISMATCH.getCode()), decodedResult);
     }
 
     @Test
@@ -1012,6 +1014,110 @@ class BridgeTest {
         verify(bridgeSupportMock, times(1)).getActiveFederation();
         verify(bridgeSupportMock, times(1)).getRetiringFederation();
         verify(decorate, times(1)).execute(any(), any());
+    }
+
+    /**
+     * The Bridge functions that are only callable by federation members, each paired with the
+     * decorator that enforces the restriction. Used to validate the contract-call rejection and
+     * the federation-member happy path across every federation-only method.
+     */
+    private static Stream<Arguments> federationOnlyMethods() {
+        BiFunction<BridgeMethods.BridgeMethodExecutor, String, BridgeMethods.BridgeMethodExecutor> activeAndRetiring =
+            Bridge::activeAndRetiringFederationOnly;
+        BiFunction<BridgeMethods.BridgeMethodExecutor, String, BridgeMethods.BridgeMethodExecutor> activeRetiringAndProposed =
+            Bridge::activeRetiringAndProposedFederationOnly;
+
+        return Stream.of(
+            Arguments.of("updateCollections", activeAndRetiring),
+            Arguments.of("receiveHeaders", activeAndRetiring),
+            Arguments.of("registerBtcTransaction", activeAndRetiring),
+            Arguments.of("addSignature", activeRetiringAndProposed)
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("federationOnlyMethods")
+    void federationOnlyMethod_calledFromContract_evenWhenSenderIsFederationMember_throwsVMException(
+        String funcName,
+        BiFunction<BridgeMethods.BridgeMethodExecutor, String, BridgeMethods.BridgeMethodExecutor> decoratorFactory
+    ) throws Exception {
+        // Given
+        BridgeMethods.BridgeMethodExecutor decorate = mock(BridgeMethods.BridgeMethodExecutor.class);
+        BridgeMethods.BridgeMethodExecutor executor = decoratorFactory.apply(decorate, funcName);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+
+        // Even though the sender is a legitimate active federation member, the call must be
+        // rejected because it originates from a contract (e.g. through a delegate call)
+        // rather than an externally signed transaction.
+        Transaction contractTx = createContractTxFromFederationMember();
+
+        Bridge bridge = bridgeBuilder
+            .transaction(contractTx)
+            .activationConfig(ActivationConfigsForTest.all())
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        // When / Then
+        assertThrows(VMException.class, () -> executor.execute(bridge, null));
+
+        // The contract check short-circuits before any federation membership check runs
+        // and the decorated method is never executed.
+        verify(bridgeSupportMock, never()).getActiveFederation();
+        verify(bridgeSupportMock, never()).getRetiringFederation();
+        verify(bridgeSupportMock, never()).getProposedFederation();
+        verify(decorate, never()).execute(any(), any());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("federationOnlyMethods")
+    void federationOnlyMethod_calledFromExternalTxByFederationMember_OK(
+        String funcName,
+        BiFunction<BridgeMethods.BridgeMethodExecutor, String, BridgeMethods.BridgeMethodExecutor> decoratorFactory
+    ) throws Exception {
+        // Given
+        BridgeMethods.BridgeMethodExecutor decorate = mock(BridgeMethods.BridgeMethodExecutor.class);
+        BridgeMethods.BridgeMethodExecutor executor = decoratorFactory.apply(decorate, funcName);
+
+        Integer[] memberPKs = new Integer[]{ 100, 200, 300, 400, 500, 600 };
+        Federation activeFederation = FederationTestUtils.getFederation(memberPKs);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
+        doReturn(Optional.empty()).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.empty()).when(bridgeSupportMock).getProposedFederation();
+
+        // Sender is the RSK address of active federation member with BTC PK 100 (RSK key
+        // derived from PK 101), sending an externally signed (non-contract) transaction.
+        RskAddress txSender = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(101)).getAddress());
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(txSender).when(rskTxMock).getSender(any(SignatureCache.class));
+
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(ActivationConfigsForTest.all())
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        // When
+        executor.execute(bridge, null);
+
+        // Then
+        verify(decorate, times(1)).execute(any(), any());
+    }
+
+    /**
+     * Builds an internal (contract-originated) transaction whose sender is a legitimate
+     * active federation member. The member with BTC PK 100 has its RSK key derived from
+     * PK 101 (see {@link FederationTestUtils#getFederationMembersFromPks}), so this
+     * address belongs to the federation built from PKs {100, 200, 300, 400, 500, 600}.
+     */
+    private static Transaction createContractTxFromFederationMember() {
+        byte[] federationMemberRskAddress = ECKey.fromPrivate(BigInteger.valueOf(101)).getAddress();
+        return new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
+            federationMemberRskAddress, null, null, null, null, null
+        );
     }
 
     @Test

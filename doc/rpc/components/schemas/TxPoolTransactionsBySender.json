@@ -1,0 +1,18 @@
+{
+  "TxPoolTransactionsBySender": {
+    "title": "txPoolTransactionsBySender",
+    "type": "object",
+    "description": "Transactions keyed by sender address in bare hex, without the `0x` prefix, then by decimal nonce",
+    "additionalProperties": {
+      "title": "txPoolTransactionsByNonce",
+      "type": "object",
+      "description": "Transactions of one sender, keyed by decimal nonce",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/TxPoolTransaction"
+        }
+      }
+    }
+  }
+}

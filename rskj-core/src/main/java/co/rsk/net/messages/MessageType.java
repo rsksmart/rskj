@@ -221,6 +221,7 @@ public enum MessageType {
 
                 if (tx.isRemascTransaction(k, rlpTransactions.size())) {
                     BlockBodyCodec.validateRemascIsLegacy(tx);
+                    BlockBodyCodec.validateRemascGasLimitIsEncoded(tx);
                     tx = new RemascTransaction(txdata);
                 }
 

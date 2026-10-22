@@ -17,9 +17,11 @@
  */
 package org.ethereum.core.transaction.parser;
 
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.core.types.bytes.BytesSlice;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -45,8 +47,10 @@ public final class RawTransactionEnvelopeParser {
         rejectUnsupportedNamespace(typePrefix);
         BytesSlice payload = TransactionTypePrefix.stripPrefix(rawData, typePrefix);
         RLPList txFields = RLP.decodeList(payload);
+        ParsedRawTransaction parsed = resolveParser(typePrefix).parse(typePrefix, txFields);
+        requireCanonicalEnvelopeRlp(typePrefix, payload, txFields);
 
-        return resolveParser(typePrefix).parse(typePrefix, txFields);
+        return parsed;
     }
 
     public static ParsedRawTransaction parse(CallArguments argsParam, Supplier<String> nonceSupplier, byte defaultChainId) {
@@ -72,6 +76,20 @@ public final class RawTransactionEnvelopeParser {
             case TYPE_3 -> throw new IllegalArgumentException("Unsupported transaction type: " + typePrefix);
             case TYPE_4 -> type4Parser;
         };
+    }
+
+    /**
+     * Requires the typed payload to re-encode to itself, proving every RLP frame is minimal.
+     * Scalar minimality is checked per field; this runs after the type parser has checked the shape.
+     */
+    private static void requireCanonicalEnvelopeRlp(TransactionTypePrefix typePrefix, BytesSlice payload, RLPList txFields) {
+        if (typePrefix.type() == TransactionType.LEGACY) {
+            return;
+        }
+        if (!BytesSlice.equals(payload, Bytes.of(CommonParsingUtils.reencodeCanonical(txFields)))) {
+            throw new IllegalArgumentException(
+                    "Typed transaction envelope is not canonically encoded");
+        }
     }
 
     private static void rejectUnsupportedNamespace(TransactionTypePrefix typePrefix) {

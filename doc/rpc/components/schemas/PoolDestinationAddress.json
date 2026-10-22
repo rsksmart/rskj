@@ -1,0 +1,19 @@
+{
+  "PoolDestinationAddress": {
+    "title": "poolTo",
+    "description": "Destination address of the transaction, or `0x00` when the transaction creates a contract. A creation transaction carries an empty receive address, and the pool renders empty bytes as the sentinel `0x00` rather than as null. This is specific to the pool: `eth_getTransactionByHash` reports the same transaction's `to` as null.",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/Address"
+      },
+      {
+        "title": "contractCreationSentinel",
+        "type": "string",
+        "description": "The transaction creates a contract and has no destination address",
+        "enum": [
+          "0x00"
+        ]
+      }
+    ]
+  }
+}

@@ -23,6 +23,7 @@ import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.parser.TransactionInput;
 import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
 import org.ethereum.core.transaction.parser.util.Rskip546FeeValidation;
@@ -175,11 +176,7 @@ public class CallArgumentsToByteArray {
         if (hex == null || hex.isEmpty()) {
             return defaultChainId;
         }
-        byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
-        if (bytes.length != 1 || (bytes[0] == 0 && type != TransactionType.LEGACY)) {
-            throw invalidParamError("Invalid chainId: " + hex);
-        }
-        return bytes[0];
+        return TransactionInput.parseExplicitChainId(hex, type != TransactionType.LEGACY);
     }
 
     public byte[] gasLimitForCall(long gasCap) {

@@ -33,6 +33,8 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.GasCost;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -57,6 +59,7 @@ class TransactionRskip545InvariantTest {
 
     private static final byte CHAIN_ID = 33;
     private static final byte[] EMPTY_ACCESS_LIST = RLP.encodeList();
+    private static final byte[] GAS_LIMIT = {0x52, 0x08};
     private static final RskAddress RECEIVER =
             new RskAddress("0x0000000000000000000000000000000000000002");
     private static final BigInteger SECP256K1N_HALF =
@@ -416,6 +419,80 @@ class TransactionRskip545InvariantTest {
     }
 
     // -------------------------------------------------------------------------
+    // Constructor (typed field invariants)
+    // -------------------------------------------------------------------------
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedNonMinimalNonce_throws(TransactionType type) {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x00, 0x01}, GAS_LIMIT, CHAIN_ID, EMPTY_ACCESS_LIST));
+        assertTrue(e.getMessage().startsWith("Nonce must not have leading zero bytes"), e.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedNonMinimalGasLimit_throws(TransactionType type) {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x01}, new byte[]{0x00, (byte) 0x80}, CHAIN_ID, EMPTY_ACCESS_LIST));
+        assertTrue(e.getMessage().startsWith("Gas Limit must not have leading zero bytes"), e.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedZeroChainId_throws(TransactionType type) {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x01}, GAS_LIMIT, (byte) 0, EMPTY_ACCESS_LIST));
+        assertEquals("Typed transaction chainId must be between 1 and 255, got: 0", e.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedNonCanonicalAccessList_throws(TransactionType type) {
+        // The address in long-string form (0xb8 0x14) instead of the short 0x94.
+        byte[] address = ArrayUtils.addAll(new byte[]{(byte) 0xb8, 0x14}, new byte[20]);
+        byte[] accessList = RLP.encodeList(RLP.encodeList(address, RLP.encodeList()));
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x01}, GAS_LIMIT, CHAIN_ID, accessList));
+        assertTrue(e.getMessage().contains("not canonically encoded"), e.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedMalformedAccessList_throws(TransactionType type) {
+        byte[] notAList = RLP.encodeElement(new byte[]{0x01});
+
+        assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x01}, GAS_LIMIT, CHAIN_ID, notAList));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedEmptyAccessListBytes_throws(TransactionType type) {
+        // Zero bytes are not an RLP list; the encoders would emit the slot empty.
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x01}, GAS_LIMIT, CHAIN_ID, new byte[0]));
+        assertEquals("Access list must be an RLP list", e.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedCanonicalFields_encodesAndReparses(TransactionType type) {
+        Transaction tx = typed(type, new byte[0], GAS_LIMIT, CHAIN_ID, null);
+        tx.sign(new ECKey().getPrivKeyBytes());
+
+        assertEquals(tx, new ImmutableTransaction(tx.getEncoded()));
+    }
+
+    @Test
+    void constructor_legacyKeepsAcceptingNonMinimalNonceAndZeroChainId() {
+        assertDoesNotThrow(() -> new Transaction(
+                new byte[]{0x00, 0x01}, Coin.valueOf(1), new byte[]{0x00, (byte) 0x80}, RECEIVER, Coin.ZERO,
+                EMPTY_BYTE_ARRAY, (byte) 0, false, TransactionTypePrefix.legacy(), null, null, null, null));
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
@@ -501,6 +578,27 @@ class TransactionRskip545InvariantTest {
                 maxPriorityFeePerGas,
                 maxFeePerGas,
                 authorizationList);
+    }
+
+    private static Transaction typed(
+            TransactionType type, byte[] nonce, byte[] gasLimit, byte chainId, byte[] accessListBytes) {
+        List<SetCodeAuthorization> authorizations = type == TransactionType.TYPE_4
+                ? signedType4().getAuthorizationList()
+                : null;
+        return new Transaction(
+                nonce,
+                Coin.valueOf(1),
+                gasLimit,
+                RECEIVER,
+                Coin.ZERO,
+                EMPTY_BYTE_ARRAY,
+                chainId,
+                false,
+                TransactionTypePrefix.typed(type),
+                accessListBytes,
+                type == TransactionType.TYPE_1 ? null : Coin.valueOf(1),
+                type == TransactionType.TYPE_1 ? null : Coin.valueOf(1),
+                authorizations);
     }
 
     private static Transaction signedType4() {

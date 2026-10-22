@@ -119,6 +119,7 @@ public final class AuthorizationListCodec {
     }
 
     public static SetCodeAuthorization decodeTuple(RLPElement element) {
+        CommonParsingUtils.requireListFramed(element, "Authorization list tuple");
         byte[] tupleBytes = element.getRLPRawData();
         if (tupleBytes == null || tupleBytes.length == 0) {
             throw new IllegalArgumentException("Authorization list tuple must not be empty");
@@ -273,9 +274,7 @@ public final class AuthorizationListCodec {
     /** Decode bounds for r/s; the curve range {@code [1, secp256k1n)} is a processing step. */
     private static byte[] decodeAndValidateSignatureComponent(RLPElement field, String fieldName) {
         byte[] component = CommonParsingUtils.nullToEmpty(field.getRLPData());
-        CommonParsingUtils.requireDataWordBytes(
-                component, "Authorization signature " + fieldName + " is not valid");
-        CommonParsingUtils.requireCanonicalScalar(component, "Authorization signature " + fieldName);
+        CommonParsingUtils.requireCanonicalSignatureComponent(component, "Authorization signature " + fieldName);
         return component;
     }
 
