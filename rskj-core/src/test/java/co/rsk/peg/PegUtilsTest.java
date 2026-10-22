@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static co.rsk.peg.PegTestUtils.createFederation;
 import static co.rsk.peg.PegUtils.*;
@@ -721,4 +722,43 @@ class PegUtilsTest {
         assertEquals(PegTxType.UNKNOWN, pegTxType);
     }
 
+    @Test
+    void isTheSvpFundTxHashUnsigned_whenNoSvpFundTxHashUnsignedIsSaved_shouldReturnFalse() {
+        // Arrange
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+        when(provider.getSvpFundTxHashUnsigned()).thenReturn(Optional.empty());
+
+        // Act
+        boolean isTheSvpFundTransaction = isTheSvpFundTxHashUnsigned(provider, btcTxHash);
+
+        // Assert
+        assertFalse(isTheSvpFundTransaction);
+    }
+
+    @Test
+    void isTheSvpFundTxHashUnsigned_whenHashMatchesSvpFundTxHashUnsigned_shouldReturnTrue() {
+        // Arrange
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+        when(provider.getSvpFundTxHashUnsigned()).thenReturn(Optional.of(btcTxHash));
+
+        // Act
+        boolean isTheSvpFundTransaction = isTheSvpFundTxHashUnsigned(provider, btcTxHash);
+
+        // Assert
+        assertTrue(isTheSvpFundTransaction);
+    }
+
+    @Test
+    void isTheSvpFundTxHashUnsigned_whenHashDoesNotMatchSvpFundTxHashUnsigned_shouldReturnFalse() {
+        // Arrange
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+        Sha256Hash svpFundTxHashUnsigned = BitcoinTestUtils.createHash(2);
+        when(provider.getSvpFundTxHashUnsigned()).thenReturn(Optional.of(svpFundTxHashUnsigned));
+
+        // Act
+        boolean isTheSvpFundTransaction = isTheSvpFundTxHashUnsigned(provider, btcTxHash);
+
+        // Assert
+        assertFalse(isTheSvpFundTransaction);
+    }
 }
