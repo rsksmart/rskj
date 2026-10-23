@@ -39,8 +39,6 @@ import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
-import co.rsk.test.builders.MigrationTransactionBuilder;
-import co.rsk.test.builders.PegoutTransactionBuilder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
