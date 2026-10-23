@@ -27,6 +27,7 @@ import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Transaction;
@@ -68,7 +69,7 @@ class TypedTxBlockImportActivationTest {
         Block importerGenesis = importer.getBlockChain().getBestBlock();
         assertEquals(block.getParentHash(), importerGenesis.getHash(), "both worlds must share the genesis");
 
-        assertEquals(ImportResult.INVALID_BLOCK, importer.getBlockChain().tryToConnect(block));
+        assertEquals(ImportResult.INVALID_BLOCK, importer.getBlockChain().tryToConnect(received(importer, block)));
         assertEquals(importerGenesis.getHash(), importer.getBlockChain().getBestBlock().getHash());
     }
 
@@ -80,7 +81,7 @@ class TypedTxBlockImportActivationTest {
         World importer = newWorld(BLOCK_HEIGHT, parallel);
         assertEquals(block.getParentHash(), importer.getBlockChain().getBestBlock().getHash(), "both worlds must share the genesis");
 
-        assertEquals(ImportResult.IMPORTED_BEST, importer.getBlockChain().tryToConnect(block));
+        assertEquals(ImportResult.IMPORTED_BEST, importer.getBlockChain().tryToConnect(received(importer, block)));
         assertEquals(block.getHash(), importer.getBlockChain().getBestBlock().getHash());
     }
 
@@ -102,6 +103,10 @@ class TypedTxBlockImportActivationTest {
         assertEquals(type, block.getTransactionsList().get(0).getType());
         assertEquals(parallel, block.getHeader().getTxExecutionSublistsEdges() != null, "the block must come from the expected execution path");
         return block;
+    }
+
+    private static Block received(World importer, Block block) {
+        return new BlockFactory(importer.getConfig().getActivationConfig()).decodeBlock(block.getEncoded());
     }
 
     private static Transaction typedTx(TransactionType type, Account sender, Account authority) {
