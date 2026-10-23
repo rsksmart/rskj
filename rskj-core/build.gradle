@@ -297,7 +297,7 @@ task updateActivationGolden(type: Test) {
     useJUnitPlatform()
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
-    filter { includeTestsMatching 'org.ethereum.config.blockchain.upgrades.NetworkConfigsActivationTest.passedActivationHeightsMatchGolden' }
+    filter { includeTestsMatching 'org.ethereum.config.blockchain.upgrades.NetworkConfigsActivationTest.regenerateGolden' }
     systemProperty 'activation.golden.update', 'true'
     testLogging { showStandardStreams = true }
     outputs.upToDateWhen { false }
