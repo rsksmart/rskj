@@ -46,9 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A legacy call to a contract that runs SELFDESTRUCT earns a refund larger than half of the gas used, so the refund
- * cap applies. The refund computation was reordered on the account abstraction branch for every transaction, so a
- * legacy transaction must still get exactly these numbers, with the account abstraction rules off or on. An
- * equivalent test (rules off) passes on master 53c040f39 with the same figures.
+ * cap applies. The expected figures are the legacy refund-cap values, and they must hold with the account
+ * abstraction rules off and on.
  */
 class LegacySelfdestructRefundCapTest {
 
