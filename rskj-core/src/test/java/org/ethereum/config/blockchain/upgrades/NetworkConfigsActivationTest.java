@@ -34,7 +34,6 @@ import com.typesafe.config.ConfigValue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -43,6 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.ethereum.TestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -53,19 +53,8 @@ import org.junit.jupiter.params.provider.MethodSource;
  */
 class NetworkConfigsActivationTest {
 
-    /** Walks up from the CWD until it finds rskj-core's config resources (same idiom as JsonRpcDocCoverageTest). */
     static Path configDir() {
-        for (Path dir = Paths.get("").toAbsolutePath(); dir != null; dir = dir.getParent()) {
-            Path viaModule = dir.resolve("rskj-core/src/main/resources/config");
-            if (Files.isRegularFile(viaModule.resolve("main.conf"))) {
-                return viaModule;
-            }
-            Path direct = dir.resolve("src/main/resources/config");
-            if (Files.isRegularFile(direct.resolve("main.conf"))) {
-                return direct;
-            }
-        }
-        throw new IllegalStateException("Could not find rskj-core/src/main/resources/config above " + Paths.get("").toAbsolutePath());
+        return TestUtils.moduleRoot().resolve("src/main/resources/config");
     }
 
     static List<String> networkNames() throws IOException {
@@ -193,8 +182,8 @@ class NetworkConfigsActivationTest {
             "new enum-order inversion (add to KNOWN_ENUM_ORDER_INVERSIONS only with a documented reason): " + inversions);
     }
 
-    private static final Path GOLDEN = configDir().getParent().getParent().getParent()
-        .resolve("test/resources/config/activation-heights-golden.json");   // rskj-core/src/test/resources/config/...
+    private static final Path GOLDEN = TestUtils.moduleRoot()
+        .resolve("src/test/resources/config/activation-heights-golden.json");
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     /**
