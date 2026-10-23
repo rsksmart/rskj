@@ -60,33 +60,29 @@ class Rskip692BlockCrossingTest {
 
     @ParameterizedTest(name = "parallel={0}")
     @ValueSource(booleans = {false, true})
-    void failingBridgeCall_changesReceiptAtActivation_andANodeWithoutRskip692RejectsTheActivationBlock(boolean parallel) {
-        World miner = newWorld(ACTIVATION, parallel);
-        Account sender = miner.getAccountByName("sender");
-        Coin initialBalance = balance(miner, sender);
+    void failingBridgeCall_changesReceiptAndFeeAtActivation(boolean parallel) {
+        MinedBlocks mined = mineAcrossActivation(parallel);
 
-        Transaction preTx = bridgeCall(sender, 0);
-        Block preBlock = buildAndConnect(miner, miner.getBlockChain().getBestBlock(), preTx);
-        Coin balanceAfterPre = balance(miner, sender);
-        Transaction atTx = bridgeCall(sender, 1);
-        Block atBlock = buildAndConnect(miner, preBlock, atTx);
-        Coin balanceAfterAt = balance(miner, sender);
-
-        assertEquals(ACTIVATION - 1, preBlock.getNumber());
-        assertEquals(ACTIVATION, atBlock.getNumber());
-        assertEquals(parallel, atBlock.getHeader().getTxExecutionSublistsEdges() != null, "the block must come from the expected execution path");
-
-        TransactionReceipt preReceipt = receipt(miner, preTx);
+        TransactionReceipt preReceipt = receipt(mined.miner(), mined.preTx());
         assertTrue(preReceipt.isSuccessful(), "before RSKIP-692 the failing Bridge call keeps the legacy success status");
         assertEquals(BigInteger.valueOf(44_064), new BigInteger(1, preReceipt.getGasUsed()));
-        assertEquals(new Coin(GAS_LIMIT.multiply(GAS_PRICE)), initialBalance.subtract(balanceAfterPre),
+        assertEquals(new Coin(GAS_LIMIT.multiply(GAS_PRICE)), mined.initialBalance().subtract(mined.balanceAfterPre()),
                 "before RSKIP-692 the sender pays the full gas limit, not the reported gasUsed, and gets no refund");
 
-        TransactionReceipt atReceipt = receipt(miner, atTx);
+        TransactionReceipt atReceipt = receipt(mined.miner(), mined.atTx());
         assertFalse(atReceipt.isSuccessful(), "from RSKIP-692 the failing Bridge call is a failed tx");
         assertEquals(GAS_LIMIT, new BigInteger(1, atReceipt.getGasUsed()));
-        assertEquals(new Coin(new BigInteger(1, atReceipt.getGasUsed()).multiply(GAS_PRICE)), balanceAfterPre.subtract(balanceAfterAt),
+        assertEquals(new Coin(new BigInteger(1, atReceipt.getGasUsed()).multiply(GAS_PRICE)),
+                mined.balanceAfterPre().subtract(mined.balanceAfterAt()),
                 "from RSKIP-692 the sender pays gasUsed");
+    }
+
+    @ParameterizedTest(name = "parallel={0}")
+    @ValueSource(booleans = {false, true})
+    void aNodeWithoutRskip692_rejectsTheActivationBlock(boolean parallel) {
+        MinedBlocks mined = mineAcrossActivation(parallel);
+        Block preBlock = mined.preBlock();
+        Block atBlock = mined.atBlock();
 
         // A node without RSKIP-692 accepts the block before activation and rejects the activation block,
         // whose receipts root it cannot reproduce
@@ -101,6 +97,24 @@ class Rskip692BlockCrossingTest {
 
         assertEquals(ImportResult.INVALID_BLOCK, importer.getBlockChain().tryToConnect(atBlock));
         assertArrayEquals(preBlock.getHash().getBytes(), importer.getBlockChain().getBestBlock().getHash().getBytes());
+    }
+
+    private static MinedBlocks mineAcrossActivation(boolean parallel) {
+        World miner = newWorld(ACTIVATION, parallel);
+        Account sender = miner.getAccountByName("sender");
+        Coin initialBalance = balance(miner, sender);
+
+        Transaction preTx = bridgeCall(sender, 0);
+        Block preBlock = buildAndConnect(miner, miner.getBlockChain().getBestBlock(), preTx);
+        Coin balanceAfterPre = balance(miner, sender);
+        Transaction atTx = bridgeCall(sender, 1);
+        Block atBlock = buildAndConnect(miner, preBlock, atTx);
+        Coin balanceAfterAt = balance(miner, sender);
+
+        assertEquals(ACTIVATION - 1, preBlock.getNumber());
+        assertEquals(ACTIVATION, atBlock.getNumber());
+        assertEquals(parallel, atBlock.getHeader().getTxExecutionSublistsEdges() != null, "the block must come from the expected execution path");
+        return new MinedBlocks(miner, preTx, preBlock, atTx, atBlock, initialBalance, balanceAfterPre, balanceAfterAt);
     }
 
     private static Transaction bridgeCall(Account sender, long nonce) {
@@ -145,5 +159,9 @@ class Rskip692BlockCrossingTest {
         World world = new World(config);
         world.saveAccount("sender", new AccountBuilder(world).name("sender").balance(Coin.valueOf(1_000_000_000L)).build());
         return world;
+    }
+
+    private record MinedBlocks(World miner, Transaction preTx, Block preBlock, Transaction atTx, Block atBlock,
+                               Coin initialBalance, Coin balanceAfterPre, Coin balanceAfterAt) {
     }
 }
