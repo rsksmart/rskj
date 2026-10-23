@@ -55,6 +55,8 @@ class ConsensusLogFormatStringsTest {
     private static final String CHANNEL_MANAGER = "org/ethereum/net/server/ChannelManagerImpl.java";
     private static final String ASYNC_BLOCK_PROCESSOR = "co/rsk/net/AsyncNodeBlockProcessor.java";
     private static final String BLOCK_SYNC_SERVICE = "co/rsk/net/BlockSyncService.java";
+    private static final String NODE_ID = "co/rsk/net/NodeID.java";
+    private static final String START = "co/rsk/Start.java";
 
     static Stream<Arguments> pinnedLiterals() {
         return Stream.of(
@@ -96,6 +98,8 @@ class ConsensusLogFormatStringsTest {
             Arguments.of(ASYNC_BLOCK_PROCESSOR, "\"Invalid block with number {} {} from {} \""),
             Arguments.of(BLOCK_SYNC_SERVICE, "getLogger(\"blocksyncservice\")"),
             Arguments.of(BLOCK_SYNC_SERVICE, "\"Invalid block with number {} {} from {} \""),
+            // AsyncNodeBlockProcessor renders the peer with NodeID.toString(); the scraper reads the hash and peer from it
+            Arguments.of(NODE_ID, "\"NodeID{\""),
             // block attribution is read from MDC, not from the message text
             Arguments.of(BLOCK_CHAIN, "MDC.put(\"blockHeight\""),
             Arguments.of(BLOCK_CHAIN, "MDC.put(\"blockHash\""),
@@ -114,6 +118,10 @@ class ConsensusLogFormatStringsTest {
             Arguments.of(SYSTEM_UTILS, "disabledNetworkUpgrade.name()"),
             Arguments.of(NODE_RUNNER, "getLogger(\"fullnoderunner\")"),
             Arguments.of(NODE_RUNNER, "SystemUtils.printDisabledNetworkUpgrades(logger,"),
+            // node readiness and startup crash
+            Arguments.of(NODE_RUNNER, "\"Starting RSK\""),
+            Arguments.of(START, "getLogger(\"start\")"),
+            Arguments.of(START, "\"The RSK node main thread failed"),
             // peer identity for peer.active construction; Channel.toString() is how a peer is rendered in those lines
             Arguments.of(CHANNEL_MANAGER, "getLogger(\"net\")"),
             Arguments.of(CHANNEL_MANAGER, "\"Added new peer: {}. Total num of active peers: {}\""),
