@@ -110,12 +110,13 @@ class ConsensusLogFormatStringsTest {
             Arguments.of(BOOTSTRAP_IMPORTER, "\"Bootstrap-data v2 imported {} blocks"),
             // launcher contract: single-dash -base-path, and -X key=value split on the first '=' only
             Arguments.of(RSK_CLI, "names = {\"-base-path\"}"),
-            Arguments.of(RSK_CLI, "xArgument.split(\"=\", 2)"),
+            Arguments.of(RSK_CLI, ".split(\"=\", 2)"),
             // post-import height beacon and network fingerprint (pre-flight gate).
             // SystemUtils holds the message; NodeRunnerImpl's "fullnoderunner" logger is the one that emits it,
             // so the scraper matches on that logger name. The call pin ties the two together.
             Arguments.of(SYSTEM_UTILS, "\"WARNING: Network upgrade {} is DISABLED. Best block number is: {}.\""),
-            Arguments.of(SYSTEM_UTILS, "disabledNetworkUpgrade.name()"),
+            // enum name() (PAPYRUS_200), not getName() (papyrus200): the scraper matches [A-Z0-9_]+
+            Arguments.of(SYSTEM_UTILS, ".name()"),
             Arguments.of(NODE_RUNNER, "getLogger(\"fullnoderunner\")"),
             Arguments.of(NODE_RUNNER, "SystemUtils.printDisabledNetworkUpgrades(logger,"),
             // node readiness and startup crash
