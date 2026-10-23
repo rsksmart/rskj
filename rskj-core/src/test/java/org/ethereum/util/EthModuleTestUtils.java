@@ -93,6 +93,17 @@ public class EthModuleTestUtils {
                 null);
     }
 
+    /**
+     * The production local-call path ({@code eth_call}) wired to a {@link World}: an unsigned transaction
+     * from an explicit sender, executed on a tracking repository that is never committed.
+     */
+    public static ReversibleTransactionExecutor buildReversibleTransactionExecutor(World world, TestSystemProperties config) {
+        TransactionExecutorFactory executor = buildCustomExecutorFactory(
+                world, config, null, new BlockFactory(config.getActivationConfig()), world.getBlockTxSignatureCache());
+
+        return new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor);
+    }
+
     private static TransactionExecutorFactory buildBasicExecutorFactory(World world, TestSystemProperties config) {
         return buildCustomExecutorFactory(world, config, null, null, null);
     }
