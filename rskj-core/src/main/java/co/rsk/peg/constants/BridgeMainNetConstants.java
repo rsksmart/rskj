@@ -48,8 +48,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         btcHeightWhenPegoutTxIndexActivates = 837_589; // Estimated date Wed, 03 Apr 2024 15:00:00 GMT. 832,430 was the block number at time of calculation
         pegoutTxIndexGracePeriodInBtcBlocks = THIRTY_DAYS_IN_BTC_BLOCKS;
-        // TODO: estimate the BTC height for the RSKIP643 activation date once it is scheduled
-        btcHeightWhenFederationsPendingBtcUTXOsActivates = 10_000_000;
 
         blockWithTooMuchChainWorkHeight = 849_138;
     }

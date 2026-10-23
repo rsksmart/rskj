@@ -72,7 +72,6 @@ public abstract class BridgeConstants {
 
     protected int btcHeightWhenPegoutTxIndexActivates;
     protected int pegoutTxIndexGracePeriodInBtcBlocks;
-    protected int btcHeightWhenFederationsPendingBtcUTXOsActivates;
     protected int blockWithTooMuchChainWorkHeight;
 
     public NetworkParameters getBtcParams() {
@@ -152,10 +151,6 @@ public abstract class BridgeConstants {
 
     public int getPegoutTxIndexGracePeriodInBtcBlocks() {
         return pegoutTxIndexGracePeriodInBtcBlocks;
-    }
-
-    public int getBtcHeightWhenFederationsPendingBtcUTXOsActivates() {
-        return btcHeightWhenFederationsPendingBtcUTXOsActivates;
     }
 
     public int getBlockWithTooMuchChainWorkHeight() { return blockWithTooMuchChainWorkHeight; }
