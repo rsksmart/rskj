@@ -45,6 +45,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 
@@ -309,5 +312,21 @@ public final class TestUtils {
         System.arraycopy(data, 0, copiedData, 32 - data.length, dlen);
 
         return copiedData;
+    }
+
+    /**
+     * The rskj-core module directory. Walks up from the working directory, so it works both from Gradle (which runs
+     * tests in rskj-core) and from an IDE that runs them from the repository root.
+     */
+    public static Path moduleRoot() {
+        for (Path dir = Paths.get("").toAbsolutePath(); dir != null; dir = dir.getParent()) {
+            if (Files.isRegularFile(dir.resolve("rskj-core/src/main/resources/reference.conf"))) {
+                return dir.resolve("rskj-core");
+            }
+            if (Files.isRegularFile(dir.resolve("src/main/resources/reference.conf"))) {
+                return dir;
+            }
+        }
+        throw new IllegalStateException("Could not find the rskj-core module above " + Paths.get("").toAbsolutePath());
     }
 }

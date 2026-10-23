@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.stream.Stream;
+import org.ethereum.TestUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -153,22 +153,8 @@ class ConsensusLogFormatStringsTest {
             relativeFile + " gained the colon form of the peer-relay refusal; the no-colon variant is load-bearing");
     }
 
-    private static Path mainJava() {
-        for (Path dir = Paths.get("").toAbsolutePath(); dir != null; dir = dir.getParent()) {
-            Path viaModule = dir.resolve("rskj-core/src/main/java");
-            if (Files.isDirectory(viaModule)) {
-                return viaModule;
-            }
-            Path direct = dir.resolve("src/main/java");
-            if (Files.isDirectory(direct) && Files.isRegularFile(dir.resolve("src/main/resources/reference.conf"))) {
-                return direct;
-            }
-        }
-        throw new IllegalStateException("Could not find rskj-core/src/main/java above " + Paths.get("").toAbsolutePath());
-    }
-
     private static String readSource(String relativeFile) throws IOException {
-        Path file = mainJava().resolve(relativeFile);
+        Path file = TestUtils.moduleRoot().resolve("src/main/java").resolve(relativeFile);
         assertTrue(Files.exists(file), "source file moved: " + relativeFile);
         return Files.readString(file, StandardCharsets.UTF_8);
     }
