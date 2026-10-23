@@ -37,6 +37,8 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 
+import static org.ethereum.core.Rskip545TestSupport.initCodeReturning;
+import static org.ethereum.core.Rskip545TestSupport.snapshotAtBest;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -124,16 +126,13 @@ class Rskip545DelegationStateEndToEndTest {
     }
 
     private static RskAddress deploy(World world, Account sender, long nonce, byte[] runtime) {
-        // PUSH1 len, PUSH1 12, PUSH1 0, CODECOPY, PUSH1 len, PUSH1 0, RETURN, runtime
-        byte len = (byte) runtime.length;
-        byte[] initcode = ByteUtil.merge(new byte[]{0x60, len, 0x60, 0x0c, 0x60, 0x00, 0x39, 0x60, len, 0x60, 0x00, (byte) 0xf3}, runtime);
         Transaction create = Transaction.builder()
                 .nonce(BigInteger.valueOf(nonce))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(300_000))
                 .value(Coin.ZERO)
                 .chainId(CHAIN_ID)
-                .data(initcode)
+                .data(initCodeReturning(runtime))
                 .build();
         create.sign(sender.getEcKey().getPrivKeyBytes());
         connect(world, create);
@@ -164,10 +163,6 @@ class Rskip545DelegationStateEndToEndTest {
                 .build(world.getConfig());
         assertEquals(1, block.getTransactionsList().size());
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block));
-    }
-
-    private static RepositorySnapshot snapshotAtBest(World world) {
-        return world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
     }
 
     private static World newWorld(long rskip544Activation) {

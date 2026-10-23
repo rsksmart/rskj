@@ -19,6 +19,8 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.db.RepositorySnapshot;
+import co.rsk.test.World;
 import org.ethereum.config.Constants;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
@@ -51,6 +53,22 @@ public final class Rskip545TestSupport {
             new RskAddress("0x0000000000000000000000000000000000000003");
 
     private Rskip545TestSupport() {
+    }
+
+    /**
+     * Init code that deploys {@code runtime}:
+     * PUSH1 len, PUSH1 12, PUSH1 0, CODECOPY, PUSH1 len, PUSH1 0, RETURN, runtime.
+     */
+    public static byte[] initCodeReturning(byte[] runtime) {
+        if (runtime.length > 255) {
+            throw new IllegalArgumentException("Test runtime must fit in one-byte PUSH1 length");
+        }
+        byte len = (byte) runtime.length;
+        return ByteUtil.merge(new byte[]{0x60, len, 0x60, 0x0c, 0x60, 0x00, 0x39, 0x60, len, 0x60, 0x00, (byte) 0xf3}, runtime);
+    }
+
+    public static RepositorySnapshot snapshotAtBest(World world) {
+        return world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
     }
 
     /**

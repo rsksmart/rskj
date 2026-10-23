@@ -34,13 +34,14 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionBuilder;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 import java.util.Collections;
 
+import static org.ethereum.core.Rskip545TestSupport.initCodeReturning;
+import static org.ethereum.core.Rskip545TestSupport.snapshotAtBest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -93,15 +94,13 @@ class LegacySelfdestructRefundCapTest {
     }
 
     private static RskAddress deploy(World world, Account sender, byte[] runtime) {
-        byte len = (byte) runtime.length;
-        byte[] initcode = ByteUtil.merge(new byte[]{0x60, len, 0x60, 0x0c, 0x60, 0x00, 0x39, 0x60, len, 0x60, 0x00, (byte) 0xf3}, runtime);
         Transaction create = Transaction.builder()
                 .nonce(BigInteger.valueOf(0))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(300_000))
                 .value(Coin.valueOf(CONTRACT_BALANCE))
                 .chainId(CHAIN_ID)
-                .data(initcode)
+                .data(initCodeReturning(runtime))
                 .build();
         create.sign(sender.getEcKey().getPrivKeyBytes());
         connect(world, create);
@@ -123,9 +122,5 @@ class LegacySelfdestructRefundCapTest {
         assertEquals(1, block.getTransactionsList().size());
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block));
         return block;
-    }
-
-    private static RepositorySnapshot snapshotAtBest(World world) {
-        return world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
     }
 }
