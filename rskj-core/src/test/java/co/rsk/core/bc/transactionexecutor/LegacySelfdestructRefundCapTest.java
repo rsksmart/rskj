@@ -31,7 +31,6 @@ import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionBuilder;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.HashUtil;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -72,12 +71,15 @@ class LegacySelfdestructRefundCapTest {
         RskAddress contract = deploy(world, sender, SELFDESTRUCT_RUNTIME);
         Coin balanceBeforeCall = snapshotAtBest(world).getBalance(sender.getAddress());
 
-        Transaction call = sign(sender, Transaction.builder()
+        Transaction call = Transaction.builder()
                 .nonce(BigInteger.valueOf(1))
                 .gasPrice(GAS_PRICE)
                 .gasLimit(BigInteger.valueOf(100_000))
+                .receiveAddress(contract)
                 .value(Coin.ZERO)
-                .chainId(CHAIN_ID), contract);
+                .chainId(CHAIN_ID)
+                .build();
+        call.sign(sender.getEcKey().getPrivKeyBytes());
         Block block = connect(world, call);
 
         TransactionReceipt receipt = world.getReceiptStore()
@@ -105,12 +107,6 @@ class LegacySelfdestructRefundCapTest {
         create.sign(sender.getEcKey().getPrivKeyBytes());
         connect(world, create);
         return new RskAddress(HashUtil.calcNewAddr(sender.getAddress().getBytes(), BigInteger.valueOf(0).toByteArray()));
-    }
-
-    private static Transaction sign(Account sender, TransactionBuilder builder, RskAddress to) {
-        Transaction tx = builder.receiveAddress(to).build();
-        tx.sign(sender.getEcKey().getPrivKeyBytes());
-        return tx;
     }
 
     private static Block connect(World world, Transaction tx) {
