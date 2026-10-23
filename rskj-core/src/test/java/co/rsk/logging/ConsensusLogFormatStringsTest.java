@@ -60,81 +60,81 @@ class ConsensusLogFormatStringsTest {
 
     static Stream<Arguments> pinnedLiterals() {
         return Stream.of(
-            // execution refusal (classifier: FAIL, execution branch)
-            Arguments.of(BLOCK_EXECUTOR, "getLogger(\"blockexecutor\")"),
-            Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given State Root is invalid\""),
-            Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given Receipt Root is invalid\""),
-            Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given Logs Bloom is invalid\""),
-            Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given gasUsed doesn't match: {} != {}\""),
-            Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given paidFees doesn't match: {} != {}\""),
-            Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given txs doesn't match: {} != {}\""),
-            Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] execution was interrupted because of an invalid transaction\""),
-            // per-block outcome, local pre-execution refusal, node error
-            Arguments.of(BLOCK_CHAIN, "getLogger(\"blockchain\")"),
-            // pinned per call: INFO for a normal block, WARN for a slow one, and the scraper reads both
-            Arguments.of(BLOCK_CHAIN, "logger.info(\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
-            Arguments.of(BLOCK_CHAIN, "logger.warn(\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
-            Arguments.of(BLOCK_CHAIN, "\"Invalid block with number: {}\""),
-            Arguments.of(BLOCK_CHAIN, "\"Unexpected error: \""),
-            // pre-execution rule attribution (classifier: FAIL, validation branch)
-            Arguments.of(BLOCK_DIFFICULTY_RULE, "getLogger(\"blockvalidator\")"),
-            Arguments.of(BLOCK_DIFFICULTY_RULE, "\"#{}: difficulty != calcDifficulty\""),
-            // class logger on purpose: %c{1} renders it as o.e.v.DifficultyRule, which the scraper matches
-            Arguments.of(DIFFICULTY_RULE, "getLogger(DifficultyRule.class)"),
-            Arguments.of(DIFFICULTY_RULE, "\"#{}: difficulty != calcDifficulty\""),
-            Arguments.of(COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
-            Arguments.of(COMPOSITE_RULE, "\"Error Validating block {} {}\""),
-            Arguments.of(PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
-            Arguments.of(PARENT_COMPOSITE_RULE, "\"Error Validating block {} {}\""),
-            // header-rule attribution: these two forms name the failing rule, the block forms above do not.
-            // The argument is part of the pin: Class.toString() renders "class co.rsk...", which the scraper captures.
-            Arguments.of(HEADER_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
-            Arguments.of(HEADER_COMPOSITE_RULE, "\"Error Validating {} for header {} {}\", rule.getClass(),"),
-            Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
-            Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "\"Error Validating {} for parent header {} {}\", rule.getClass(),"),
-            // peer-relay refusal (classifier: uncorroborated unless a local line agrees). The trailing space is part of
-            // the literal; forbiddenLiterals() below keeps the colon form out of these files.
-            Arguments.of(ASYNC_BLOCK_PROCESSOR, "getLogger(\"asyncblockprocessor\")"),
-            Arguments.of(ASYNC_BLOCK_PROCESSOR, "\"Invalid block with number {} {} from {} \""),
-            Arguments.of(BLOCK_SYNC_SERVICE, "getLogger(\"blocksyncservice\")"),
-            Arguments.of(BLOCK_SYNC_SERVICE, "\"Invalid block with number {} {} from {} \""),
-            // AsyncNodeBlockProcessor renders the peer with NodeID.toString(); the scraper reads the hash and peer from it
-            Arguments.of(NODE_ID, "\"NodeID{\""),
-            // block attribution is read from MDC, not from the message text
-            Arguments.of(BLOCK_CHAIN, "MDC.put(\"blockHeight\""),
-            Arguments.of(BLOCK_CHAIN, "MDC.put(\"blockHash\""),
-            // bootstrap import completion; prefixes only, the rest of each format string carries timings and counts.
-            // Class logger on purpose: the scraper matches [c.r.d.i.BootstrapImporter]
-            Arguments.of(BOOTSTRAP_IMPORTER, "getLogger(BootstrapImporter.class)"),
-            Arguments.of(BOOTSTRAP_IMPORTER, "\"Bootstrap data has successfully been imported"),
-            Arguments.of(BOOTSTRAP_IMPORTER, "\"Bootstrap-data v2 imported {} blocks"),
-            // launcher contract: single-dash -base-path, and -X key=value split on the first '=' only
-            Arguments.of(RSK_CLI, "names = {\"-base-path\"}"),
-            Arguments.of(RSK_CLI, ".split(\"=\", 2)"),
-            // post-import height beacon and network fingerprint (pre-flight gate).
-            // SystemUtils holds the message; NodeRunnerImpl's "fullnoderunner" logger is the one that emits it,
-            // so the scraper matches on that logger name. The call pin ties the two together.
-            Arguments.of(SYSTEM_UTILS, "\"WARNING: Network upgrade {} is DISABLED. Best block number is: {}.\""),
-            // enum name() (PAPYRUS_200), not getName() (papyrus200): the scraper matches [A-Z0-9_]+
-            Arguments.of(SYSTEM_UTILS, ".name()"),
-            Arguments.of(NODE_RUNNER, "getLogger(\"fullnoderunner\")"),
-            Arguments.of(NODE_RUNNER, "SystemUtils.printDisabledNetworkUpgrades(logger,"),
-            // node readiness and startup crash
-            Arguments.of(NODE_RUNNER, "\"Starting RSK\""),
-            Arguments.of(START, "getLogger(\"start\")"),
-            Arguments.of(START, "\"The RSK node main thread failed"),
-            // peer identity for peer.active construction; Channel.toString() is how a peer is rendered in those lines
-            Arguments.of(CHANNEL_MANAGER, "getLogger(\"net\")"),
-            Arguments.of(CHANNEL_MANAGER, "\"Added new peer: {}. Total num of active peers: {}\""),
-            Arguments.of(CHANNEL, "\"%s | %s\"")
+                // execution refusal (classifier: FAIL, execution branch)
+                Arguments.of(BLOCK_EXECUTOR, "getLogger(\"blockexecutor\")"),
+                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given State Root is invalid\""),
+                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given Receipt Root is invalid\""),
+                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given Logs Bloom is invalid\""),
+                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given gasUsed doesn't match: {} != {}\""),
+                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given paidFees doesn't match: {} != {}\""),
+                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given txs doesn't match: {} != {}\""),
+                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] execution was interrupted because of an invalid transaction\""),
+                // per-block outcome, local pre-execution refusal, node error
+                Arguments.of(BLOCK_CHAIN, "getLogger(\"blockchain\")"),
+                // pinned per call: INFO for a normal block, WARN for a slow one, and the scraper reads both
+                Arguments.of(BLOCK_CHAIN, "logger.info(\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
+                Arguments.of(BLOCK_CHAIN, "logger.warn(\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
+                Arguments.of(BLOCK_CHAIN, "\"Invalid block with number: {}\""),
+                Arguments.of(BLOCK_CHAIN, "\"Unexpected error: \""),
+                // pre-execution rule attribution (classifier: FAIL, validation branch)
+                Arguments.of(BLOCK_DIFFICULTY_RULE, "getLogger(\"blockvalidator\")"),
+                Arguments.of(BLOCK_DIFFICULTY_RULE, "\"#{}: difficulty != calcDifficulty\""),
+                // class logger on purpose: %c{1} renders it as o.e.v.DifficultyRule, which the scraper matches
+                Arguments.of(DIFFICULTY_RULE, "getLogger(DifficultyRule.class)"),
+                Arguments.of(DIFFICULTY_RULE, "\"#{}: difficulty != calcDifficulty\""),
+                Arguments.of(COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
+                Arguments.of(COMPOSITE_RULE, "\"Error Validating block {} {}\""),
+                Arguments.of(PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
+                Arguments.of(PARENT_COMPOSITE_RULE, "\"Error Validating block {} {}\""),
+                // header-rule attribution: these two forms name the failing rule, the block forms above do not.
+                // The argument is part of the pin: Class.toString() renders "class co.rsk...", which the scraper captures.
+                Arguments.of(HEADER_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
+                Arguments.of(HEADER_COMPOSITE_RULE, "\"Error Validating {} for header {} {}\", rule.getClass(),"),
+                Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
+                Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "\"Error Validating {} for parent header {} {}\", rule.getClass(),"),
+                // peer-relay refusal (classifier: uncorroborated unless a local line agrees). The trailing space is part of
+                // the literal; forbiddenLiterals() below keeps the colon form out of these files.
+                Arguments.of(ASYNC_BLOCK_PROCESSOR, "getLogger(\"asyncblockprocessor\")"),
+                Arguments.of(ASYNC_BLOCK_PROCESSOR, "\"Invalid block with number {} {} from {} \""),
+                Arguments.of(BLOCK_SYNC_SERVICE, "getLogger(\"blocksyncservice\")"),
+                Arguments.of(BLOCK_SYNC_SERVICE, "\"Invalid block with number {} {} from {} \""),
+                // AsyncNodeBlockProcessor renders the peer with NodeID.toString(); the scraper reads the hash and peer from it
+                Arguments.of(NODE_ID, "\"NodeID{\""),
+                // block attribution is read from MDC, not from the message text
+                Arguments.of(BLOCK_CHAIN, "MDC.put(\"blockHeight\""),
+                Arguments.of(BLOCK_CHAIN, "MDC.put(\"blockHash\""),
+                // bootstrap import completion; prefixes only, the rest of each format string carries timings and counts.
+                // Class logger on purpose: the scraper matches [c.r.d.i.BootstrapImporter]
+                Arguments.of(BOOTSTRAP_IMPORTER, "getLogger(BootstrapImporter.class)"),
+                Arguments.of(BOOTSTRAP_IMPORTER, "\"Bootstrap data has successfully been imported"),
+                Arguments.of(BOOTSTRAP_IMPORTER, "\"Bootstrap-data v2 imported {} blocks"),
+                // launcher contract: single-dash -base-path, and -X key=value split on the first '=' only
+                Arguments.of(RSK_CLI, "names = {\"-base-path\"}"),
+                Arguments.of(RSK_CLI, ".split(\"=\", 2)"),
+                // post-import height beacon and network fingerprint (pre-flight gate).
+                // SystemUtils holds the message; NodeRunnerImpl's "fullnoderunner" logger is the one that emits it,
+                // so the scraper matches on that logger name. The call pin ties the two together.
+                Arguments.of(SYSTEM_UTILS, "\"WARNING: Network upgrade {} is DISABLED. Best block number is: {}.\""),
+                // enum name() (PAPYRUS_200), not getName() (papyrus200): the scraper matches [A-Z0-9_]+
+                Arguments.of(SYSTEM_UTILS, ".name()"),
+                Arguments.of(NODE_RUNNER, "getLogger(\"fullnoderunner\")"),
+                Arguments.of(NODE_RUNNER, "SystemUtils.printDisabledNetworkUpgrades(logger,"),
+                // node readiness and startup crash
+                Arguments.of(NODE_RUNNER, "\"Starting RSK\""),
+                Arguments.of(START, "getLogger(\"start\")"),
+                Arguments.of(START, "\"The RSK node main thread failed"),
+                // peer identity for peer.active construction; Channel.toString() is how a peer is rendered in those lines
+                Arguments.of(CHANNEL_MANAGER, "getLogger(\"net\")"),
+                Arguments.of(CHANNEL_MANAGER, "\"Added new peer: {}. Total num of active peers: {}\""),
+                Arguments.of(CHANNEL, "\"%s | %s\"")
         );
     }
 
     /** The peer-relay refusal must stay colon-free: with a colon it would be misclassified as a local refusal. */
     static Stream<Arguments> forbiddenLiterals() {
         return Stream.of(
-            Arguments.of(ASYNC_BLOCK_PROCESSOR, "\"Invalid block with number: "),
-            Arguments.of(BLOCK_SYNC_SERVICE, "\"Invalid block with number: ")
+                Arguments.of(ASYNC_BLOCK_PROCESSOR, "\"Invalid block with number: "),
+                Arguments.of(BLOCK_SYNC_SERVICE, "\"Invalid block with number: ")
         );
     }
 
