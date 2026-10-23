@@ -24,6 +24,8 @@ import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 /**
  * Validates that a block header carries the version its height requires.
  * <p>
@@ -42,7 +44,7 @@ public class BlockHeaderVersionRule implements BlockValidationRule, BlockHeaderV
     private final ActivationConfig activationConfig;
 
     public BlockHeaderVersionRule(ActivationConfig activationConfig) {
-        this.activationConfig = activationConfig;
+        this.activationConfig = Objects.requireNonNull(activationConfig);
     }
 
     @Override

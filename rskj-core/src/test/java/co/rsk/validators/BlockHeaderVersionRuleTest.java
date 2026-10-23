@@ -19,6 +19,8 @@
 package co.rsk.validators;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import com.typesafe.config.ConfigFactory;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -30,8 +32,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,7 +49,7 @@ class BlockHeaderVersionRuleTest {
 
     private static final long BLOCK_NUMBER = 1L;
 
-    /** A config that requires exactly this header version at {@link #BLOCK_NUMBER}. */
+    /** A config that requires exactly this header version at every height above genesis. */
     private static ActivationConfig configRequiring(int version) {
         switch (version) {
             case 0:
@@ -52,11 +61,38 @@ class BlockHeaderVersionRuleTest {
         }
     }
 
-    /** A real header built the way the miner builds it under the config that requires {@code version}. */
+    /**
+     * A config with every upgrade active from height 0 except RSKIP351 and RSKIP535, which activate at the
+     * given heights: version 0 below {@code rskip351Height}, version 1 from there, version 2 from
+     * {@code rskip535Height}.
+     */
+    private static ActivationConfig activatingRskip351At(long rskip351Height, long rskip535Height) {
+        Map<ConsensusRule, Long> heights = EnumSet.allOf(ConsensusRule.class).stream()
+                .collect(Collectors.toMap(Function.identity(), ignored -> 0L));
+        heights.put(ConsensusRule.RSKIP351, rskip351Height);
+        heights.put(ConsensusRule.RSKIP535, rskip535Height);
+        return new ActivationConfig(heights, new HashMap<>());
+    }
+
+    /** The real testnet config: RSKIP351 activates at 7,139,600 and RSKIP535 at 7,604,200. */
+    private static ActivationConfig testnet() {
+        return ActivationConfig.read(ConfigFactory.load("config/testnet").getConfig(SystemProperties.PROPERTY_BLOCKCHAIN_CONFIG));
+    }
+
     private static BlockHeader headerOfVersion(int version) {
-        BlockHeader header = new BlockHeaderBuilder(configRequiring(version)).setNumber(BLOCK_NUMBER).build();
+        return headerOfVersion(version, BLOCK_NUMBER);
+    }
+
+    /** A real header at {@code number} built the way the miner builds it under the config that requires {@code version}. */
+    private static BlockHeader headerOfVersion(int version, long number) {
+        BlockHeader header = new BlockHeaderBuilder(configRequiring(version)).setNumber(number).build();
         assertEquals((byte) version, header.getVersion());
         return header;
+    }
+
+    @Test
+    void rejectsANullActivationConfig() {
+        assertThrows(NullPointerException.class, () -> new BlockHeaderVersionRule(null));
     }
 
     @ParameterizedTest
@@ -73,6 +109,26 @@ class BlockHeaderVersionRuleTest {
         BlockHeaderVersionRule rule = new BlockHeaderVersionRule(configRequiring(requiredVersion));
 
         assertFalse(rule.isValid(headerOfVersion(headerVersion)));
+    }
+
+    @ParameterizedTest(name = "height {0} accepts version {1} and rejects version {2}")
+    @CsvSource({"9, 0, 1", "10, 1, 0", "19, 1, 2", "20, 2, 1"})
+    void switchesTheRequiredVersionExactlyAtEachActivationHeight(long height, int acceptedVersion, int rejectedVersion) {
+        // RSKIP351 from 10 and RSKIP535 from 20: the last block before each activation keeps the old
+        // version and the activation block itself already carries the new one
+        BlockHeaderVersionRule rule = new BlockHeaderVersionRule(activatingRskip351At(10, 20));
+
+        assertTrue(rule.isValid(headerOfVersion(acceptedVersion, height)));
+        assertFalse(rule.isValid(headerOfVersion(rejectedVersion, height)));
+    }
+
+    @ParameterizedTest(name = "testnet height {0} accepts version {1} and rejects version {2}")
+    @CsvSource({"7139599, 0, 1", "7139600, 1, 0", "7604199, 1, 2", "7604200, 2, 1"})
+    void switchesTheRequiredVersionAtTheTestnetActivationHeights(long height, int acceptedVersion, int rejectedVersion) {
+        BlockHeaderVersionRule rule = new BlockHeaderVersionRule(testnet());
+
+        assertTrue(rule.isValid(headerOfVersion(acceptedVersion, height)));
+        assertFalse(rule.isValid(headerOfVersion(rejectedVersion, height)));
     }
 
     @Test

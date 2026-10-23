@@ -24,8 +24,12 @@ import co.rsk.config.InternalService;
 import co.rsk.config.NodeCliFlags;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.mine.BlockToMineBuilder;
+import co.rsk.mine.MinerServer;
 import co.rsk.net.AsyncNodeBlockProcessor;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.SnapshotProcessor;
+import co.rsk.net.SyncProcessor;
 import co.rsk.net.discovery.KnownPeersHandler;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.trie.MultiTrieStore;
@@ -77,6 +81,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.anyLong;
@@ -395,6 +400,30 @@ class RskContextTest {
     @Test
     void snapBlockValidationEnforcesTheHeaderVersion() {
         assertNotNull(findRule(rskContext.getSnapBlockValidationRule(), BlockHeaderVersionRule.class));
+    }
+
+    @Test
+    void snapshotProcessorEnforcesTheHeaderVersionOnTheHeadersItValidates() {
+        // snap sync validates headers with the composite handed to SnapshotProcessor, not with the
+        // block rule above, so the version rule must be wired there as well
+        SyncProcessor syncProcessor = rskContext.getSyncProcessor();
+        SnapshotProcessor snapshotProcessor = TestUtils.getInternalState(syncProcessor, "snapshotProcessor");
+        BlockHeaderValidationRule headerRules = TestUtils.getInternalState(snapshotProcessor, "blockHeaderValidator");
+
+        assertNotNull(findRule(headerRules, BlockHeaderVersionRule.class));
+    }
+
+    @Test
+    void minerServerEnforcesTheHeaderVersionOnTheUnclesItPicks() {
+        // the miner screens candidate uncles with its own rule set; without the version rule there it
+        // could build a block with an uncle the main validator rejects
+        MinerServer minerServer = rskContext.getMinerServer();
+        BlockToMineBuilder blockToMineBuilder = TestUtils.getInternalState(minerServer, "builder");
+        BlockValidationRule minerRules = TestUtils.getInternalState(blockToMineBuilder, "validationRules");
+        BlockUnclesValidationRule unclesRule = assertInstanceOf(BlockUnclesValidationRule.class, minerRules);
+        BlockHeaderValidationRule uncleHeaderRules = TestUtils.getInternalState(unclesRule, "validations");
+
+        assertNotNull(findRule(uncleHeaderRules, BlockHeaderVersionRule.class));
     }
 
     /** The first rule of {@code ruleClass} inside a composite, whether it keeps its rules in a list or an array. */
