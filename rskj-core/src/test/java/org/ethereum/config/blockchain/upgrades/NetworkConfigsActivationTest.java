@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.ethereum.TestUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -200,10 +201,6 @@ class NetworkConfigsActivationTest {
 
     @Test
     void passedActivationHeightsMatchGolden() throws IOException {
-        if (Boolean.getBoolean("activation.golden.update")) {
-            writeGolden();
-            return;
-        }
         assertTrue(Files.exists(GOLDEN), "golden missing; run ./gradlew :rskj-core:updateActivationGolden to create " + GOLDEN);
         JsonNode golden = MAPPER.readTree(GOLDEN.toFile());
         List<String> violations = new ArrayList<>();
@@ -256,7 +253,10 @@ class NetworkConfigsActivationTest {
         }
     }
 
-    private void writeGolden() throws IOException {
+    /** Not a check: rewrites the golden. Runs only from ./gradlew :rskj-core:updateActivationGolden. */
+    @Test
+    @EnabledIfSystemProperty(named = "activation.golden.update", matches = "true")
+    void regenerateGolden() throws IOException {
         ObjectNode root = MAPPER.createObjectNode();
         ObjectNode asOf = root.putObject("asOf");
         ObjectNode heights = root.putObject("heights");
