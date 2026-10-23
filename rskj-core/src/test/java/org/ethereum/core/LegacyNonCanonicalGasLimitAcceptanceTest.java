@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
+import com.google.common.primitives.Bytes;
 import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
@@ -61,7 +62,7 @@ class LegacyNonCanonicalGasLimitAcceptanceTest {
         Account sender = new AccountBuilder(world).name("sender").balance(Coin.valueOf(1_000_000_000L)).build();
 
         byte[] raw = signedLegacyRaw(sender.getEcKey());
-        assertEquals((byte) 0x83, raw[indexOf(raw, GAS_LIMIT_WITH_LEADING_ZERO) - 1], "the gas limit is sent as 0x83005208");
+        assertEquals((byte) 0x83, raw[Bytes.indexOf(raw, GAS_LIMIT_WITH_LEADING_ZERO) - 1], "the gas limit is sent as 0x83005208");
 
         Transaction tx = new ImmutableTransaction(raw);
         assertArrayEquals(GAS_LIMIT_WITH_LEADING_ZERO, tx.getGasLimit());
@@ -106,18 +107,5 @@ class LegacyNonCanonicalGasLimitAcceptanceTest {
                 RLP.encodeByte(v),
                 RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r)),
                 RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s)));
-    }
-
-    private static int indexOf(byte[] haystack, byte[] needle) {
-        outer:
-        for (int i = 0; i <= haystack.length - needle.length; i++) {
-            for (int j = 0; j < needle.length; j++) {
-                if (haystack[i + j] != needle[j]) {
-                    continue outer;
-                }
-            }
-            return i;
-        }
-        return -1;
     }
 }
