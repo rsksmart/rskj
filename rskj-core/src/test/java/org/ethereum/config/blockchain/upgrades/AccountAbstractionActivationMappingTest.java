@@ -60,7 +60,7 @@ class AccountAbstractionActivationMappingTest {
 
     @Test
     void accountAbstractionRules_followTheirHardforkWhenHeightsAreDistinct() {
-        // Distinct heights make a rule moved to another hardfork visible even where both are -1 today
+        // Distinct heights make a rule moved to another hardfork visible even where both are -1
         Config blockchainConfig = ConfigFactory.load("config/regtest")
                 .withValue("blockchain.config.hardforkActivationHeights.vetiver900", ConfigValueFactory.fromAnyRef(100))
                 .withValue("blockchain.config.hardforkActivationHeights.cardamom1000", ConfigValueFactory.fromAnyRef(200))

@@ -91,14 +91,11 @@ class Rskip545DelegationStateEndToEndTest {
     }
 
     /**
-     * Today the EVM decides "this account is delegated" from its code bytes alone. A contract deployed before
-     * RSKIP-544 whose runtime code happens to be 0xef0100 || address, and which never signed an authorization,
-     * is executed as a delegation once RSKIP-545 is active. This test pins that behavior so a change to it is a
-     * deliberate decision.
+     * The EVM treats an account as delegated from its code bytes alone. A contract deployed while RSKIP-544 is
+     * off whose runtime code is 0xef0100 || address, and which never signed an authorization, runs as a
+     * delegation once RSKIP-545 is active. This test pins that behavior, so changing it must change this test.
      *
-     * <p>No shipped network runs RSKIP-545 with RSKIP-544 off, and scans of mainnet and testnet state found no
-     * account with such code. Whether a delegation should also require the stored authority flag is for the
-     * team to decide; if it does, this test must change with that decision.
+     * <p>No shipped network runs RSKIP-545 with RSKIP-544 off.
      */
     @Test
     void codeOnlyDesignatorWithoutAuthorityFlag_isExecutedAsDelegation_currentBehavior() {
