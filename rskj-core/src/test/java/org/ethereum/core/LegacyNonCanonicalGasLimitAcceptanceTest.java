@@ -77,7 +77,10 @@ class LegacyNonCanonicalGasLimitAcceptanceTest {
                 .transactions(Collections.singletonList(tx))
                 .build(world.getConfig());
         assertEquals(1, block.getTransactionsList().size());
-        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block));
+
+        Block received = new BlockFactory(config.getActivationConfig()).decodeBlock(block.getEncoded());
+        assertArrayEquals(raw, received.getTransactionsList().get(0).getEncoded());
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(received));
 
         TransactionReceipt receipt = world.getReceiptStore()
                 .getInMainChain(tx.getHash().getBytes(), world.getBlockStore()).orElseThrow().getReceipt();
