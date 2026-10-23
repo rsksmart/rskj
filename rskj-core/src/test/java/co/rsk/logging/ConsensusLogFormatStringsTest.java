@@ -77,16 +77,19 @@ class ConsensusLogFormatStringsTest {
             // pre-execution rule attribution (classifier: FAIL, validation branch)
             Arguments.of(BLOCK_DIFFICULTY_RULE, "getLogger(\"blockvalidator\")"),
             Arguments.of(BLOCK_DIFFICULTY_RULE, "\"#{}: difficulty != calcDifficulty\""),
+            // class logger on purpose: %c{1} renders it as o.e.v.DifficultyRule, which the scraper matches
+            Arguments.of(DIFFICULTY_RULE, "getLogger(DifficultyRule.class)"),
             Arguments.of(DIFFICULTY_RULE, "\"#{}: difficulty != calcDifficulty\""),
             Arguments.of(COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
             Arguments.of(COMPOSITE_RULE, "\"Error Validating block {} {}\""),
             Arguments.of(PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
             Arguments.of(PARENT_COMPOSITE_RULE, "\"Error Validating block {} {}\""),
-            // header-rule attribution: these two forms name the failing rule, the block forms above do not
+            // header-rule attribution: these two forms name the failing rule, the block forms above do not.
+            // The argument is part of the pin: Class.toString() renders "class co.rsk...", which the scraper captures.
             Arguments.of(HEADER_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
-            Arguments.of(HEADER_COMPOSITE_RULE, "\"Error Validating {} for header {} {}\""),
+            Arguments.of(HEADER_COMPOSITE_RULE, "\"Error Validating {} for header {} {}\", rule.getClass(),"),
             Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
-            Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "\"Error Validating {} for parent header {} {}\""),
+            Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "\"Error Validating {} for parent header {} {}\", rule.getClass(),"),
             // peer-relay refusal (classifier: uncorroborated unless a local line agrees). The trailing space is part of
             // the literal; forbiddenLiterals() below keeps the colon form out of these files.
             Arguments.of(ASYNC_BLOCK_PROCESSOR, "getLogger(\"asyncblockprocessor\")"),
@@ -96,7 +99,9 @@ class ConsensusLogFormatStringsTest {
             // block attribution is read from MDC, not from the message text
             Arguments.of(BLOCK_CHAIN, "MDC.put(\"blockHeight\""),
             Arguments.of(BLOCK_CHAIN, "MDC.put(\"blockHash\""),
-            // bootstrap import completion; prefixes only, the rest of each format string carries timings and counts
+            // bootstrap import completion; prefixes only, the rest of each format string carries timings and counts.
+            // Class logger on purpose: the scraper matches [c.r.d.i.BootstrapImporter]
+            Arguments.of(BOOTSTRAP_IMPORTER, "getLogger(BootstrapImporter.class)"),
             Arguments.of(BOOTSTRAP_IMPORTER, "\"Bootstrap data has successfully been imported"),
             Arguments.of(BOOTSTRAP_IMPORTER, "\"Bootstrap-data v2 imported {} blocks"),
             // launcher contract: single-dash -base-path, and -X key=value split on the first '=' only
