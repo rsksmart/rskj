@@ -56,6 +56,8 @@ class LegacySelfdestructRefundCapTest {
     private static final byte[] SELFDESTRUCT_RUNTIME = Hex.decode("33ff");
     private static final long CONTRACT_BALANCE = 1_000;
     private static final BigInteger GAS_PRICE = BigInteger.valueOf(2);
+    // 26_002 gas before refunds (21_000 + CALLER 2 + SELFDESTRUCT 5_000), refund min(24_000, 26_002 / 2)
+    private static final long EXPECTED_GAS_USED = 13_001L;
 
     @ParameterizedTest(name = "accountAbstractionActive={0}")
     @ValueSource(booleans = {false, true})
@@ -83,10 +85,9 @@ class LegacySelfdestructRefundCapTest {
         RepositorySnapshot state = snapshotAtBest(world);
 
         assertTrue(receipt.isSuccessful());
-        // 26_002 gas before refunds (21_000 + CALLER 2 + SELFDESTRUCT 5_000), refund min(24_000, 26_002 / 2)
-        assertEquals(13_001L, gasUsed);
-        assertEquals(13_001L, block.getGasUsed());
-        assertEquals(balanceBeforeCall.subtract(Coin.valueOf(13_001L * GAS_PRICE.longValue())).add(Coin.valueOf(CONTRACT_BALANCE)),
+        assertEquals(EXPECTED_GAS_USED, gasUsed);
+        assertEquals(EXPECTED_GAS_USED, block.getGasUsed());
+        assertEquals(balanceBeforeCall.subtract(Coin.valueOf(EXPECTED_GAS_USED * GAS_PRICE.longValue())).add(Coin.valueOf(CONTRACT_BALANCE)),
                 state.getBalance(sender.getAddress()));
         assertTrue(state.getCode(contract) == null || state.getCode(contract).length == 0, "the contract must be deleted");
     }
