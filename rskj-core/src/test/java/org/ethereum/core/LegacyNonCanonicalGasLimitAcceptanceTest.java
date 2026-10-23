@@ -40,10 +40,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Legacy transactions have never required minimal scalar encodings, and both master and the account abstraction
- * branch mine a legacy tx whose gas limit has a leading zero byte (0x83005208). Rejecting it now, without an
- * activation height, would split the chain, so this test pins that it is decoded, validated and executed, and that
- * its hash is the hash of the bytes received.
+ * Legacy transactions have never required minimal scalar encodings, so a node must accept one whose gas limit has a
+ * leading zero byte (0x83005208). Rejecting it without an activation height would split the chain, so this test pins
+ * that a block carrying it is decoded the way a peer receives it, validated and executed, and that the tx hash is the
+ * hash of the bytes received.
  */
 class LegacyNonCanonicalGasLimitAcceptanceTest {
 
