@@ -8,11 +8,13 @@ import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.BridgeUtils.simulatePegoutTxSize;
 import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static co.rsk.peg.PegUtils.getFlyoverFederationRedeemScript;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
+import static co.rsk.peg.federation.FederationTestUtils.signInputs;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,7 +47,6 @@ import co.rsk.test.builders.FederationSupportBuilder;
 import co.rsk.test.builders.PegoutTransactionBuilder;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.IntStream;
 
 import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -61,15 +62,36 @@ import org.junit.jupiter.api.*;
 
 class BridgeSupportSvpTest {
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+    private static final ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0);
+    // before RSKIP643 the btc tx height is not stored in the registered UTXOs
+    private static final int UTXO_HEIGHT_BEFORE_CARDAMOM = 0;
+    // federations pending UTXOs are stored when the release is created, before its btc tx height is known
+    private static final int FEDERATIONS_PENDING_UTXO_HEIGHT = 0;
     private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainNetConstants.getBtcParams();
+    // past the pegout index start, so releases are not identified by their inputs as legacy releases are
+    private static final int HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX = bridgeMainNetConstants.getBtcHeightWhenPegoutTxIndexActivates()
+        + bridgeMainNetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+    private static final int BTC_BLOCKS_BETWEEN_PEGOUT_INDEX_AND_FEDERATIONS_PENDING_BTC_UTXOS = 100;
+    private static final int HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS = HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX + BTC_BLOCKS_BETWEEN_PEGOUT_INDEX_AND_FEDERATIONS_PENDING_BTC_UTXOS;
     private static final FederationConstants federationMainNetConstants = bridgeMainNetConstants.getFederationConstants();
+    private static final BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
+    private static final PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
     private static final List<Coin> svpFundTxOutpointsValues = Arrays.asList(
         Coin.valueOf(1_000_000),
         Coin.valueOf(500_000),
         Coin.valueOf(300_000)
     );
+    private static final List<BtcECKey> segwitActiveFederationKeys = BitcoinTestUtils.getBtcEcKeys(20, "active");
+    private static final Federation segwitActiveFederation = P2shP2wshErpFederationBuilder.builder()
+        .withMembersBtcPublicKeys(segwitActiveFederationKeys)
+        .build();
+    private static final List<UTXO> segwitActiveFederationUtxos = getSegwitActiveFedUtxos();
+    private static final UTXO utxosToFundANewSpendTx = UTXOBuilder.builder()
+        .withScriptPubKey(segwitActiveFederation.getP2SHScript())
+        .withTransactionHash(createHash(999))
+        .build();
     private static final Coin svpFundTxOutputsValue = bridgeMainNetConstants.getSvpFundTxOutputsValue();
     private static final Coin totalValueSentToProposedFederation = svpFundTxOutputsValue.multiply(2);
     private static final Coin feePerKb = Coin.valueOf(1000L);
@@ -77,6 +99,15 @@ class BridgeSupportSvpTest {
 
     private static final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
     private static final CallTransaction.Function commitFederationFailedEvent = BridgeEvents.COMMIT_FEDERATION_FAILED.getEvent();
+
+    private static final Coin CHANGE_VALUE = Coin.COIN.multiply(10);
+    private static final Coin SVP_SPEND_TX_OUTPUT_VALUE = Coin.valueOf(1762);
+    // svp fund tx change output comes after the proposed and flyover proposed federation outputs
+    private static final long OUTPUT_INDEX_FOR_SVP_FUND_TX_CHANGE = 2;
+    // pegin output to the active federation is the first one
+    private static final long OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED = 0;
+    // svp spend tx output to the active federation is the only one
+    private static final long OUTPUT_INDEX_FOR_SPEND_TX_OUTPUT_TO_FED = 0;
 
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
 
@@ -120,7 +151,7 @@ class BridgeSupportSvpTest {
             .build();
         rskExecutionBlock = Block.createBlockFromHeader(blockHeader, true);
 
-        Keccak256 rskTxHash = PegTestUtils.createHash3(1);
+        Keccak256 rskTxHash = RskTestUtils.createHash(1);
         rskTx = mock(Transaction.class);
         when(rskTx.getHash()).thenReturn(rskTxHash);
 
@@ -192,6 +223,21 @@ class BridgeSupportSvpTest {
             .withFeePerKbSupport(feePerKbSupport)
             .withExecutionBlock(rskExecutionBlock)
             .build();
+    }
+
+    private static List<UTXO> getSegwitActiveFedUtxos() {
+        List<UTXO> segwitActiveFederationUtxos = new ArrayList<>();
+        Script outputScript = segwitActiveFederation.getP2SHScript();
+        for (int i = 0; i < svpFundTxOutpointsValues.size(); i++) {
+            Sha256Hash transactionHash = createHash(i + 1);
+            UTXO utxo = UTXOBuilder.builder()
+                .withScriptPubKey(outputScript)
+                .withTransactionHash(transactionHash)
+                .withValue(svpFundTxOutpointsValues.get(i))
+                .build();
+            segwitActiveFederationUtxos.add(utxo);
+        }
+        return segwitActiveFederationUtxos;
     }
 
     @Nested
@@ -401,8 +447,72 @@ class BridgeSupportSvpTest {
         }
 
         @Test
-        void updateCollections_whenFundTxCanBeCreated_whenActiveFedIsLegacy_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
+        void updateCollections_whenFundTxCanBeCreated_whenActiveFedIsLegacy_forVetiver_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
             // arrange
+            setUpBridgeSupportForVetiver();
+            int activeFederationUtxosSizeBeforeCreatingFundTx = federationSupport.getActiveFederationBtcUTXOs().size();
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+
+            svpFundTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            assertReleaseWasSettledForVetiver(
+                repository,
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                rskExecutionBlock.getNumber(),
+                rskTx.getHash(),
+                svpFundTransaction,
+                svpFundTxOutpointsValues,
+                totalValueSentToProposedFederation
+            );
+
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints
+            assertSvpFundTransactionInputsAreFromLegacyActiveFederation();
+            assertSvpFundTransactionHasExpectedOutputs(activeFederation);
+        }
+
+        @Test
+        void updateCollections_whenFundTxCanBeCreated_whenActiveFedIsSegwit_forVetiver_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
+            // arrange
+            setUpBridgeSupportForVetiver();
+            setupSegwitActiveFederationWithUtxos();
+            int activeFederationUtxosSizeBeforeCreatingFundTx = federationSupport.getActiveFederationBtcUTXOs().size();
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+
+            svpFundTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            assertReleaseWasSettledForVetiver(
+                repository,
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                rskExecutionBlock.getNumber(),
+                rskTx.getHash(),
+                svpFundTransaction,
+                svpFundTxOutpointsValues,
+                totalValueSentToProposedFederation
+            );
+
+            assertSvpFundTxWasCreated(activeFederationUtxosSizeBeforeCreatingFundTx);
+        }
+
+        @Test
+        void updateCollections_whenFundTxCanBeCreated_whenActiveFedIsSegwit_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
+            // arrange
+            setupSegwitActiveFederationWithUtxos();
             int activeFederationUtxosSizeBeforeCreatingFundTx = federationSupport.getActiveFederationBtcUTXOs().size();
 
             // act
@@ -417,22 +527,20 @@ class BridgeSupportSvpTest {
             assertReleaseWasSettled(
                 repository,
                 bridgeStorageProvider,
+                federationStorageProvider,
+                federationSupport,
                 logs,
                 rskExecutionBlock.getNumber(),
                 rskTx.getHash(),
                 svpFundTransaction,
                 svpFundTxOutpointsValues,
-                totalValueSentToProposedFederation,
-                allActivations
+                totalValueSentToProposedFederation
             );
 
-            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints
-
-            assertSvpFundTransactionInputsAreFromLegacyActiveFederation();
-            assertSvpFundTransactionHasExpectedOutputs();
+            assertSvpFundTxWasCreated(activeFederationUtxosSizeBeforeCreatingFundTx);
         }
 
-        private void assertSvpFundTransactionHasExpectedOutputs() {
+        private void assertSvpFundTransactionHasExpectedOutputs(Federation activeFederation) {
             int svpFundTransactionUnsignedOutputsExpectedSize = 3;
             assertEquals(svpFundTransactionUnsignedOutputsExpectedSize, svpFundTransaction.getOutputs().size());
 
@@ -460,64 +568,14 @@ class BridgeSupportSvpTest {
             }
         }
 
-        @Test
-        void updateCollections_whenFundTxCanBeCreated_whenActiveFedIsSegwit_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
-            // arrange
-            List<BtcECKey> activeFederationMembersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
-                "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
-                "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19"
-            }, true);
-            activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .withMembersBtcPublicKeys(activeFederationMembersBtcPublicKeys)
-                .build();
-            federationStorageProvider.setNewFederation(activeFederation);
-
-            List<UTXO> activeFederationUTXOs = new ArrayList<>();
-            Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-            int numberOfUtxos = 3;
-            for (int i = 0; i < numberOfUtxos; i++) {
-                Sha256Hash transactionHash = createHash(i + 1);
-                UTXO utxo = UTXOBuilder.builder()
-                    .withScriptPubKey(outputScript)
-                    .withTransactionHash(transactionHash)
-                    .withValue(svpFundTxOutpointsValues.get(i))
-                    .build();
-                activeFederationUTXOs.add(utxo);
-            }
-
-            bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
-
-            int activeFederationUtxosSizeBeforeCreatingFundTx = federationSupport.getActiveFederationBtcUTXOs().size();
-
-            // act
-            bridgeSupport.updateCollections(rskTx);
-            bridgeStorageProvider.save();
-
-            // assert
-            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
-            assertTrue(svpFundTxHashUnsigned.isPresent());
-
-            svpFundTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
-            assertReleaseWasSettled(
-                repository,
-                bridgeStorageProvider,
-                logs,
-                rskExecutionBlock.getNumber(),
-                rskTx.getHash(),
-                svpFundTransaction,
-                svpFundTxOutpointsValues,
-                totalValueSentToProposedFederation,
-                allActivations
-            );
-
+        private void assertSvpFundTxWasCreated(int activeFederationUtxosSizeBeforeCreatingFundTx) {
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints
-
             assertSvpFundTransactionInputsAreFromSegwitCompatibleActiveFederation();
-            assertSvpFundTransactionHasExpectedOutputs();
+            assertSvpFundTransactionHasExpectedOutputs(segwitActiveFederation);
         }
 
         private void assertSvpFundTransactionInputsAreFromSegwitCompatibleActiveFederation() {
-            TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(activeFederation.getRedeemScript());
+            TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(segwitActiveFederation.getRedeemScript());
 
             for (int i = 0; i < svpFundTransaction.getInputs().size(); i++) {
                 assertEquals(witness, svpFundTransaction.getWitness(i));
@@ -525,21 +583,68 @@ class BridgeSupportSvpTest {
         }
 
         @Test
-        void updateCollections_whenWaitingForFundTxToBeRegistered_shouldNotCreateFundTransactionAgain() throws Exception {
+        void updateCollections_whenWaitingForFundTxToBeRegistered_forVetiver_shouldNotCreateFundTransactionAgain() throws Exception {
             // arrange
-            arrangeSvpFundTransactionUnsigned();
+            setUpBridgeSupportForVetiver();
+            setupSegwitActiveFederationWithUtxos();
+            setupUnsignedFundTxToBeRegistered();
+            Sha256Hash svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned().orElseThrow();
 
             // act
             bridgeSupport.updateCollections(rskTx);
-            bridgeStorageProvider.save();
 
             // assert
+            assertFundTxWasNotCreatedAgain(svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void updateCollections_whenWaitingForFundTxToBeRegistered_shouldNotCreateFundTransactionAgain() throws Exception {
+            // arrange
+            setupSegwitActiveFederationWithUtxos();
+            setupUnsignedFundTxToBeRegistered();
+            Sha256Hash svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned().orElseThrow();
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+
+            // assert
+            assertFundTxWasNotCreatedAgain(svpFundTxHashUnsigned);
+        }
+
+        private void setupUnsignedFundTxToBeRegistered() throws IOException {
+            // the first call creates the fund tx, spending all the active federation utxos
+            bridgeSupport.updateCollections(rskTx);
+
+            // so another fund tx could be created if the bridge did not wait for the first one to be registered
+            federationSupport.getActiveFederationBtcUTXOs().add(utxosToFundANewSpendTx);
+
+            // clears the log to catch only the log of the second call to updateCollections
+            logs.clear();
+        }
+
+        private void assertFundTxWasNotCreatedAgain(Sha256Hash svpFundTxHashUnsigned) {
+            assertEquals(Optional.of(svpFundTxHashUnsigned), bridgeStorageProvider.getSvpFundTxHashUnsigned());
+            assertUtxosAreEqual(List.of(utxosToFundANewSpendTx), federationSupport.getActiveFederationBtcUTXOs()); // not spent
             assertJustUpdateCollectionsWasLogged();
         }
 
         @Test
         void updateCollections_whenFundTxSignedIsSaved_shouldNotCreateFundTransaction() throws Exception {
             // arrange
+            arrangeSvpFundTransactionSigned();
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            assertNoSvpFundTxHashUnsigned();
+        }
+
+        @Test
+        void updateCollections_whenFundTxSignedIsSaved_forVetiver_shouldNotCreateFundTransaction() throws Exception {
+            // arrange
+            setUpBridgeSupportForVetiver();
             arrangeSvpFundTransactionSigned();
 
             // act
@@ -564,6 +669,21 @@ class BridgeSupportSvpTest {
             assertJustUpdateCollectionsWasLogged();
         }
 
+        @Test
+        void updateCollections_whenWaitingForSpendTxToBeRegistered_forVetiver_shouldNotCreateFundTransaction() throws Exception {
+            // arrange
+            setUpBridgeSupportForVetiver();
+            arrangeSvpSpendTransaction();
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            assertNoSvpFundTxHashUnsigned();
+            assertJustUpdateCollectionsWasLogged();
+        }
+
         private void assertJustUpdateCollectionsWasLogged() {
             assertEquals(1, logs.size());
 
@@ -577,6 +697,38 @@ class BridgeSupportSvpTest {
         }
     }
 
+    private void setUpBridgeSupportForVetiver() {
+        federationSupport = FederationSupportBuilder.builder()
+            .withFederationConstants(federationMainNetConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(vetiverActivations)
+            .build();
+        bridgeStorageProvider = new BridgeStorageProvider(
+            repository,
+            btcMainnetParams,
+            vetiverActivations
+        );
+        bridgeEventLogger = new BridgeEventLoggerImpl(
+            bridgeMainNetConstants,
+            vetiverActivations,
+            logs
+        );
+        bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeMainNetConstants)
+            .withProvider(bridgeStorageProvider)
+            .withEventLogger(bridgeEventLogger)
+            .withActivations(vetiverActivations)
+            .withFederationSupport(federationSupport)
+            .withFeePerKbSupport(feePerKbSupport)
+            .withExecutionBlock(rskExecutionBlock)
+            .build();
+    }
+
+    private void setupSegwitActiveFederationWithUtxos() {
+        federationStorageProvider.setNewFederation(segwitActiveFederation);
+        bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), segwitActiveFederationUtxos, BridgeSerializationUtils::serializeUTXOList);
+    }
+
     private void arrangeSvpFundTransactionUnsigned() {
         recreateSvpFundTransactionUnsigned();
         addOutputChange(svpFundTransaction);
@@ -586,7 +738,27 @@ class BridgeSupportSvpTest {
         assertTrue(svpFundTransactionHashUnsigned.isPresent());
     }
 
+    private void arrangeSvpFundTransactionUnsignedForVetiver() {
+        recreateSvpFundTransactionUnsigned();
+        addOutputChange(svpFundTransaction);
+
+        saveSvpFundTransactionUnsignedForVetiver();
+        Optional<Sha256Hash> svpFundTransactionHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+        assertTrue(svpFundTransactionHashUnsigned.isPresent());
+    }
+
     private void saveSvpFundTransactionUnsigned() {
+        Sha256Hash svpFundTransactionHash = svpFundTransaction.getHash();
+        List<UTXO> changeUtxosToActiveFederation = buildExpectedUtxosRegistered(
+            svpFundTransaction,
+            federationSupport.getActiveFederation(),
+            FEDERATIONS_PENDING_UTXO_HEIGHT
+        );
+        federationSupport.storeFederationsPendingBtcUTXOs(svpFundTransactionHash, changeUtxosToActiveFederation);
+        saveSvpFundTransactionHashUnsigned(svpFundTransactionHash);
+    }
+
+    private void saveSvpFundTransactionUnsignedForVetiver() {
         savePegoutIndex(svpFundTransaction);
         saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
     }
@@ -614,131 +786,348 @@ class BridgeSupportSvpTest {
         @Test
         void registerBtcTransaction_forSvpFundTransactionChange_whenProposedFederationDoesNotExist_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
             // arrange
-            arrangeSvpFundTransactionUnsigned();
-
-            signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
-            setUpForTransactionRegistration(svpFundTransaction);
-
+            arrangeSvpFundTransactionCreatedForCardamomFromSegwitActiveFederationToBeRegistered();
             federationStorageProvider.setProposedFederation(null);
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
 
             // act
-            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                svpFundTransaction.bitcoinSerialize(),
-                btcBlockWithPmtHeight,
-                pmtWithTransactions.bitcoinSerialize()
-            );
-            bridgeStorageProvider.save();
+            registerBtcTransaction(svpFundTransaction);
 
             // assert
-            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
-            assertTransactionWasProcessed(svpFundTransaction.getHash());
+            assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(activeFederationUtxosBeforeRegisteringTx);
             assertSvpFundTransactionValuesWereNotUpdated();
         }
 
         @Test
-        void registerBtcTransaction_forSvpFundTransactionChange_whenValidationPeriodEnded_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
+        void registerBtcTransaction_forSvpFundTransactionChange_whenProposedFederationDoesNotExist_forVetiver_shouldRegisterChangeUtxoButNotUpdateSvpFundTransactionValues() throws Exception {
             // arrange
-            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            arrangeSvpFundTransactionToBeRegisteredForVetiver();
+            federationStorageProvider.setProposedFederation(null);
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
 
-            arrangeSvpFundTransactionUnsigned();
-            signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
-            setUpForTransactionRegistration(svpFundTransaction);
-
-            // Act
-            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                svpFundTransaction.bitcoinSerialize(),
-                btcBlockWithPmtHeight,
-                pmtWithTransactions.bitcoinSerialize()
-            );
-            bridgeStorageProvider.save();
+            // act
+            registerBtcTransaction(svpFundTransaction);
 
             // assert
-            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
-            assertTransactionWasProcessed(svpFundTransaction.getHash());
+            assertSvpFundTxChangeWasRegisteredForVetiver(activeFederationUtxosBeforeRegisteringTx);
+            assertSvpFundTransactionValuesWereNotUpdated();
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenValidationPeriodEnded_forVetiver_shouldRegisterChangeUtxoButNotUpdateSvpFundTransactionValues() throws Exception {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            arrangeSvpFundTransactionToBeRegisteredForVetiver();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredForVetiver(activeFederationUtxosBeforeRegisteringTx);
+            assertSvpFundTransactionValuesWereNotUpdated();
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenValidationPeriodEnded_shouldRegisterChangeUtxoButNotUpdateSvpFundTransactionValues() throws Exception {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            arrangeSvpFundTransactionCreatedForCardamomFromSegwitActiveFederationToBeRegistered();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(activeFederationUtxosBeforeRegisteringTx);
+            assertSvpFundTransactionValuesWereNotUpdated();
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_withFundTxCreatedForCardamom_shouldRegisterChangeUtxo() throws Exception {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            arrangeSvpFundTransactionCreatedForCardamomFromSegwitActiveFederationToBeRegistered();
+            arrangeSvpValuesWereClearedAfterValidationPeriodEnded();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(activeFederationUtxosBeforeRegisteringTx);
+            assertNoSvpFundTxHashUnsigned();
+            assertNoSvpFundTxSigned();
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_forVetiver_shouldRegisterChangeUtxo() throws Exception {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            arrangeSvpFundTransactionToBeRegisteredForVetiver();
+            arrangeSvpValuesWereClearedAfterValidationPeriodEnded();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredForVetiver(activeFederationUtxosBeforeRegisteringTx);
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpValuesWereCleared_withFundTxCreatedForVetiver_shouldRegisterChangeUtxo() throws Exception {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            arrangeSvpFundTransactionCreatedForVetiverFromSegwitActiveFederationToBeRegistered();
+            arrangeSvpValuesWereClearedAfterValidationPeriodEnded();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(activeFederationUtxosBeforeRegisteringTx);
+        }
+
+        @Test
+        void registerBtcTransaction_forNormalPegout_whenSvpPeriodIsOngoing_forVetiver_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
+            // arrange
+            arrangeSvpFundTransactionUnsignedForVetiver();
+
+            BtcTransaction pegout = PegoutTransactionBuilder.builder()
+                .withActiveFederation(activeFederation)
+                .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
+                .withChangeAmount(CHANGE_VALUE)
+                .withSignatures(activeFederationKeys)
+                .build();
+
+            savePegoutIndex(pegout);
+            setUpForTransactionRegistration(pegout, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
+            setUpBridgeSupportForVetiver();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(pegout);
+
+            // assert
+            List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
+                pegout,
+                activeFederation,
+                UTXO_HEIGHT_BEFORE_CARDAMOM
+            );
+            assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
+            assertTransactionWasProcessed(pegout.getHash());
             assertSvpFundTransactionValuesWereNotUpdated();
         }
 
         @Test
         void registerBtcTransaction_forNormalPegout_whenSvpPeriodIsOngoing_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
-            // Arrange
+            // arrange
+            setupSegwitActiveFederationWithUtxos();
             arrangeSvpFundTransactionUnsigned();
 
             BtcTransaction pegout = PegoutTransactionBuilder.builder()
-                .withActiveFederation(activeFederation)
+                .withActiveFederation(segwitActiveFederation)
                 .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
-                .withChangeAmount(Coin.COIN.multiply(10))
-                .withSignatures(activeFederationKeys)
+                .withChangeAmount(CHANGE_VALUE)
                 .build();
+            signInputs(segwitActiveFederation, segwitActiveFederationKeys, pegout);
 
-            savePegoutIndex(pegout);
-            setUpForTransactionRegistration(pegout);
-
-            // Act
-            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                pegout.bitcoinSerialize(),
-                btcBlockWithPmtHeight,
-                pmtWithTransactions.bitcoinSerialize()
+            // after RSKIP643 the pegout change is saved as federations pending utxos instead of in the pegout index
+            List<UTXO> pegoutChangeUtxos = buildExpectedUtxosRegistered(
+                pegout,
+                segwitActiveFederation,
+                FEDERATIONS_PENDING_UTXO_HEIGHT
             );
-            bridgeStorageProvider.save();
+            federationSupport.storeFederationsPendingBtcUTXOs(pegout.getHash(), pegoutChangeUtxos);
+            setUpForTransactionRegistration(pegout, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(pegout);
 
             // assert
-            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
+                pegout,
+                segwitActiveFederation,
+                btcBlockWithPmtHeight
+            );
+            assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
             assertTransactionWasProcessed(pegout.getHash());
             assertSvpFundTransactionValuesWereNotUpdated();
         }
 
         @Test
         void registerBtcTransaction_forSvpFundTransactionWithoutChangeOutput_whenSvpPeriodIsOngoing_shouldJustUpdateSvpFundTransactionValues() throws Exception {
-            // Arrange
+            // arrange
+            setupSegwitActiveFederationWithUtxos();
             recreateSvpFundTransactionUnsigned();
-            saveSvpFundTransactionUnsigned();
+            // without change there are no outputs to the federations, so no pending UTXOs are stored
+            saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
 
-            signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
-            setUpForTransactionRegistration(svpFundTransaction);
+            signInputs(segwitActiveFederation, segwitActiveFederationKeys, svpFundTransaction);
+            setUpForTransactionRegistration(svpFundTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
 
-            // Act
-            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                svpFundTransaction.bitcoinSerialize(),
-                btcBlockWithPmtHeight,
-                pmtWithTransactions.bitcoinSerialize()
-            );
-            bridgeStorageProvider.save();
+            // act
+            registerBtcTransaction(svpFundTransaction);
 
-            // Assert
-            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
-            assertTransactionWasProcessed(svpFundTransaction.getHash());
+            // assert
+            assertSvpFundTxWithNoChangeWasRegistered(activeFederationUtxosBeforeRegisteringTx);
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(svpFundTransaction.getHash()));
             assertSvpFundTransactionValuesWereUpdated();
         }
 
         @Test
-        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpPeriodIsOngoing_shouldRegisterTransactionAndUpdateSvpFundTransactionValues() throws Exception {
-            // Arrange
-            arrangeSvpFundTransactionUnsigned();
-            signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
-            setUpForTransactionRegistration(svpFundTransaction);
+        void registerBtcTransaction_forSvpFundTransactionWithoutChangeOutput_whenSvpPeriodIsOngoing_forVetiver_shouldJustUpdateSvpFundTransactionValues() throws Exception {
+            // arrange
+            recreateSvpFundTransactionUnsigned();
+            saveSvpFundTransactionUnsignedForVetiver();
 
-            // Act
-            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            signInputs(activeFederation, activeFederationKeys, svpFundTransaction);
+            setUpForTransactionRegistration(svpFundTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
+            setUpBridgeSupportForVetiver();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxWithNoChangeWasRegistered(activeFederationUtxosBeforeRegisteringTx);
+            assertSvpFundTransactionValuesWereUpdated();
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpPeriodIsOngoing_forVetiver_shouldRegisterTransactionAndUpdateSvpFundTransactionValues() throws Exception {
+            // arrange
+            arrangeSvpFundTransactionToBeRegisteredForVetiver();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredForVetiver(activeFederationUtxosBeforeRegisteringTx);
+            assertSvpFundTransactionValuesWereUpdated();
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpPeriodIsOngoing_withFundTxCreatedForCardamom_shouldRegisterTransactionAndUpdateSvpFundTransactionValues() throws Exception {
+            // arrange
+            arrangeSvpFundTransactionCreatedForCardamomFromSegwitActiveFederationToBeRegistered();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(activeFederationUtxosBeforeRegisteringTx);
+            assertSvpFundTransactionValuesWereUpdated();
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpPeriodIsOngoing_withFundTxCreatedForVetiver_shouldRegisterTransactionAndUpdateSvpFundTransactionValues() throws Exception {
+            // arrange
+            arrangeSvpFundTransactionCreatedForVetiverFromSegwitActiveFederationToBeRegistered();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            registerBtcTransaction(svpFundTransaction);
+
+            // assert
+            assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(activeFederationUtxosBeforeRegisteringTx);
+            assertSvpFundTransactionValuesWereUpdated();
+        }
+
+        private void arrangeSvpFundTransactionCreatedForCardamomFromSegwitActiveFederationToBeRegistered() throws BlockStoreException {
+            setupSegwitActiveFederationWithUtxos();
+            arrangeSvpFundTransactionUnsigned();
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(svpFundTransaction.getHash()));
+
+            signInputs(segwitActiveFederation, segwitActiveFederationKeys, svpFundTransaction);
+            setUpForTransactionRegistration(svpFundTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
+        }
+
+        private void arrangeSvpFundTransactionCreatedForVetiverFromSegwitActiveFederationToBeRegistered() throws BlockStoreException {
+            setupSegwitActiveFederationWithUtxos();
+            // the fund tx was created before RSKIP643, so its pegout index was saved instead of its pending utxos
+            arrangeSvpFundTransactionUnsignedForVetiver();
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(svpFundTransaction.getHash()));
+
+            signInputs(segwitActiveFederation, segwitActiveFederationKeys, svpFundTransaction);
+            // and it is registered after RSKIP643
+            setUpForTransactionRegistration(svpFundTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
+        }
+
+        private void arrangeSvpFundTransactionToBeRegisteredForVetiver() throws BlockStoreException {
+            arrangeSvpFundTransactionUnsignedForVetiver();
+
+            signInputs(activeFederation, activeFederationKeys, svpFundTransaction);
+            setUpForTransactionRegistration(svpFundTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
+            setUpBridgeSupportForVetiver();
+        }
+
+        private void arrangeSvpValuesWereClearedAfterValidationPeriodEnded() throws IOException {
+            // the svp failed, so the next updateCollections clears the svp values
+            bridgeSupport.updateCollections(rskTx);
+            bridgeStorageProvider.save();
+            assertNoProposedFederation();
+            assertNoSvpFundTxHashUnsigned();
+            logs.clear();
+        }
+
+        private void registerBtcTransaction(BtcTransaction transaction) throws Exception {
             bridgeSupport.registerBtcTransaction(
                 rskTx,
-                svpFundTransaction.bitcoinSerialize(),
+                transaction.bitcoinSerialize(),
                 btcBlockWithPmtHeight,
                 pmtWithTransactions.bitcoinSerialize()
             );
             bridgeStorageProvider.save();
+        }
 
-            // Assert
-            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+        private void assertSvpFundTxChangeWasRegisteredInSegwitActiveFederation(List<UTXO> activeFederationUtxosBeforeRegisteringTx) throws IOException {
+            Sha256Hash svpFundTransactionHash = svpFundTransaction.getHash();
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(svpFundTransactionHash));
+            assertLogUtxosRegisteredForSvpFundTransaction(svpFundTransactionHash);
+            UTXO expectedChangeUtxo = buildSvpFundTxChangeUtxo(segwitActiveFederation, btcBlockWithPmtHeight);
+            assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, List.of(expectedChangeUtxo));
+            assertTransactionWasProcessed(svpFundTransactionHash);
+        }
+
+        private void assertSvpFundTxChangeWasRegisteredForVetiver(List<UTXO> activeFederationUtxosBeforeRegisteringTx) throws IOException {
+            UTXO expectedChangeUtxo = buildSvpFundTxChangeUtxo(activeFederation, UTXO_HEIGHT_BEFORE_CARDAMOM);
+            assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, List.of(expectedChangeUtxo));
             assertTransactionWasProcessed(svpFundTransaction.getHash());
-            assertSvpFundTransactionValuesWereUpdated();
+        }
+
+        private void assertSvpFundTxWithNoChangeWasRegistered(List<UTXO> activeFederationUtxosBeforeRegisteringTx) throws IOException {
+            List<UTXO> expectedUtxosRegistered = List.of();
+            assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
+            assertUtxosRegisteredWasNotEmitted();
+            assertTransactionWasProcessed(svpFundTransaction.getHash());
+        }
+
+        private UTXO buildSvpFundTxChangeUtxo(Federation changeFederation, int changeUtxoHeight) {
+            return UTXOBuilder.builder()
+                .withTransactionHash(svpFundTransaction.getHash())
+                .withOutpointIndex(OUTPUT_INDEX_FOR_SVP_FUND_TX_CHANGE)
+                .withValue(CHANGE_VALUE)
+                .withBlockHeight(changeUtxoHeight)
+                .withScriptPubKey(changeFederation.getP2SHScript())
+                .build();
+        }
+
+        private void assertLogUtxosRegisteredForSvpFundTransaction(Sha256Hash svpFundTransactionHash) {
+            assertLogUtxosRegistered(
+                logs,
+                svpFundTransactionHash,
+                List.of(CHANGE_VALUE),
+                List.of(OUTPUT_INDEX_FOR_SVP_FUND_TX_CHANGE),
+                segwitActiveFederation.getAddress()
+            );
         }
 
         private void assertSvpFundTransactionValuesWereUpdated() {
@@ -1036,22 +1425,24 @@ class BridgeSupportSvpTest {
     @Tag("Spend transaction registration tests")
     class SpendTxRegistrationTests {
         @Test
-        void registerBtcTransaction_forPegout_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegout_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_forPegout_whenWaitingForSvpSpendTx_forVetiver_shouldProcessAndRegisterPegout_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
-            setUpForTransactionRegistration(svpSpendTransaction);
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
 
             BtcTransaction pegout = PegoutTransactionBuilder.builder()
                 .withActiveFederation(activeFederation)
                 .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
-                .withChangeAmount(Coin.COIN.multiply(10))
+                .withChangeAmount(CHANGE_VALUE)
                 .withSignatures(activeFederationKeys)
                 .build();
 
             savePegoutIndex(pegout);
-            setUpForTransactionRegistration(pegout);
+            setUpForTransactionRegistration(pegout, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
+            setUpBridgeSupportForVetiver();
 
-            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1064,14 +1455,72 @@ class BridgeSupportSvpTest {
 
             // assert
             // pegout was registered and processed
-            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
+                pegout,
+                activeFederation,
+                UTXO_HEIGHT_BEFORE_CARDAMOM
+            );
+            assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
             assertTransactionWasProcessed(pegout.getHash());
 
             // spend tx was not registered nor processed
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
+            assertProposedFederationExists();
+        }
+
+        @Test
+        void registerBtcTransaction_forPegout_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegout_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            setupSegwitActiveFederationWithUtxos();
+            arrangeSvpSpendTransactionFromSegwitActiveFederation();
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
+
+            BtcTransaction pegout = PegoutTransactionBuilder.builder()
+                .withActiveFederation(segwitActiveFederation)
+                .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
+                .withChangeAmount(CHANGE_VALUE)
+                .build();
+            signInputs(segwitActiveFederation, segwitActiveFederationKeys, pegout);
+
+            List<UTXO> pegoutChangeUtxos = buildExpectedUtxosRegistered(
+                pegout,
+                segwitActiveFederation,
+                FEDERATIONS_PENDING_UTXO_HEIGHT
+            );
+            federationSupport.storeFederationsPendingBtcUTXOs(pegout.getHash(), pegoutChangeUtxos);
+            setUpForTransactionRegistration(pegout, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
+
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
+
+            // act
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                pegout.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // assert
+            // pegout was registered and processed
+            List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
+                pegout,
+                segwitActiveFederation,
+                btcBlockWithPmtHeight
+            );
+            assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+            assertTransactionWasProcessed(pegout.getHash());
+
+            // spend tx was not registered nor processed
+            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+            // svp success was not processed
+            assertSvpSpendTxHashUnsignedIsInStorage();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1079,7 +1528,7 @@ class BridgeSupportSvpTest {
         void registerBtcTransaction_forLegacyPeginFromP2pkh_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
-            setUpForTransactionRegistration(svpSpendTransaction);
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
             BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
             BtcECKey senderPubKey = getBtcEcKeyFromSeed("legacy_pegin_sender");
@@ -1087,22 +1536,10 @@ class BridgeSupportSvpTest {
             pegin.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
             Coin amountToSend = Coin.COIN;
             pegin.addOutput(amountToSend, activeFederation.getAddress());
-            setUpForTransactionRegistration(pegin);
-
-            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
-            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .build();
+            setUpForTransactionRegistration(pegin, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1121,13 +1558,14 @@ class BridgeSupportSvpTest {
             assertEquals(P2pkhBtcLockSender.class, btcLockSender.get().getClass());
             // pegin was registered and processed
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertLogUtxosRegisteredForPegin(pegin, amountToSend);
             assertTransactionWasProcessed(pegin.getHash());
 
             // spend tx was not registered nor processed
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1135,7 +1573,7 @@ class BridgeSupportSvpTest {
         void registerBtcTransaction_forLegacyPeginFromP2shP2wpkh_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
-            setUpForTransactionRegistration(svpSpendTransaction);
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
             BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
             BtcECKey senderPubKey = getBtcEcKeyFromSeed("legacy_pegin_p2shp2wpkh_sender");
@@ -1153,22 +1591,10 @@ class BridgeSupportSvpTest {
 
             Coin amountToSend = Coin.COIN;
             pegin.addOutput(amountToSend, activeFederation.getAddress());
-            setUpForTransactionRegistration(pegin);
-
-            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
-            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .build();
+            setUpForTransactionRegistration(pegin, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1187,13 +1613,14 @@ class BridgeSupportSvpTest {
             assertEquals(P2shP2wpkhBtcLockSender.class, btcLockSender.get().getClass());
             // pegin was registered and processed
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertLogUtxosRegisteredForPegin(pegin, amountToSend);
             assertTransactionWasProcessed(pegin.getHash());
 
             // spend tx was not registered nor processed
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1201,7 +1628,7 @@ class BridgeSupportSvpTest {
         void registerBtcTransaction_forLegacyPeginFromP2shMultisig_whenWaitingForSvpSpendTx_shouldProcessButNotRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
-            setUpForTransactionRegistration(svpSpendTransaction);
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
             BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
             List<BtcECKey> pubKeys = Arrays.asList(
@@ -1214,22 +1641,10 @@ class BridgeSupportSvpTest {
 
             Coin amountToSend = Coin.COIN;
             pegin.addOutput(amountToSend, activeFederation.getAddress());
-            setUpForTransactionRegistration(pegin);
-
-            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
-            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .build();
+            setUpForTransactionRegistration(pegin, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1248,6 +1663,7 @@ class BridgeSupportSvpTest {
             assertEquals(P2shMultisigBtcLockSender.class, btcLockSender.get().getClass());
             // pegin was not registered
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertUtxosRegisteredWasNotEmitted();
             // but was marked as processed
             assertTransactionWasProcessed(pegin.getHash());
 
@@ -1255,7 +1671,7 @@ class BridgeSupportSvpTest {
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1263,7 +1679,7 @@ class BridgeSupportSvpTest {
         void registerBtcTransaction_forLegacyPeginFromP2shP2wsh_whenWaitingForSvpSpendTx_shouldProcessButNotRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
-            setUpForTransactionRegistration(svpSpendTransaction);
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
             BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
             List<BtcECKey> pubKeys = Arrays.asList(
@@ -1285,22 +1701,10 @@ class BridgeSupportSvpTest {
 
             Coin amountToSend = Coin.COIN;
             pegin.addOutput(amountToSend, activeFederation.getAddress());
-            setUpForTransactionRegistration(pegin);
-
-            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
-            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .build();
+            setUpForTransactionRegistration(pegin, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1319,6 +1723,7 @@ class BridgeSupportSvpTest {
             assertEquals(P2shP2wshBtcLockSender.class, btcLockSender.get().getClass());
             // pegin was not registered
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertUtxosRegisteredWasNotEmitted();
             // but was marked as processed
             assertTransactionWasProcessed(pegin.getHash());
 
@@ -1326,7 +1731,7 @@ class BridgeSupportSvpTest {
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1334,7 +1739,7 @@ class BridgeSupportSvpTest {
         void registerBtcTransaction_forPeginV1_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException, PeginInstructionsException {
             // arrange
             arrangeSvpSpendTransaction();
-            setUpForTransactionRegistration(svpSpendTransaction);
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
             BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
             BtcECKey senderPubKey = getBtcEcKeyFromSeed("legacy_pegin_sender");
@@ -1344,24 +1749,10 @@ class BridgeSupportSvpTest {
             pegin.addOutput(amountToSend, activeFederation.getAddress());
             Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, bridgeContractAddress, Optional.empty());
             pegin.addOutput(Coin.ZERO, opReturnScript);
-            setUpForTransactionRegistration(pegin);
-
-            // recreate bridge support with real btcLockSenderProvider and peginInstructionsProvider instead of a mock to be able to parse pegin v1
-            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-            PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .withPeginInstructionsProvider(peginInstructionsProvider)
-                .build();
+            setUpForTransactionRegistration(pegin, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1379,13 +1770,14 @@ class BridgeSupportSvpTest {
             assertEquals(1, peginInstructions.get().getProtocolVersion());
             // pegin was registered and processed
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertLogUtxosRegisteredForPegin(pegin, amountToSend);
             assertTransactionWasProcessed(pegin.getHash());
 
             // spend tx was not registered nor processed
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1399,9 +1791,10 @@ class BridgeSupportSvpTest {
         void registerBtcTransaction_whenSpendTransactionHashIsNotSaved_shouldBeIdentifiedAsRejectedPeginAndMarkAsProcessed() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             recreateSvpSpendTransactionUnsigned();
-            setUpForTransactionRegistration(svpSpendTransaction);
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            Federation activeFederationBeforeRegisteringTx = federationSupport.getActiveFederation();
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1415,11 +1808,12 @@ class BridgeSupportSvpTest {
             // assert
             // spend tx was not registered
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertUtxosRegisteredWasNotEmitted();
 
             assertTxIsRejectedPeginAndMarkedAsProcessed(svpSpendTransaction);
 
             // svp success was not processed
-            assertNoHandoverToNewFederation();
+            assertNoHandoverToNewFederation(activeFederationBeforeRegisteringTx);
             assertProposedFederationExists();
         }
 
@@ -1431,9 +1825,9 @@ class BridgeSupportSvpTest {
         void registerBtcTransaction_whenIsTheSpendTransaction_shouldProcessSpendTxAndSvpSuccess() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
-            setUpForTransactionRegistration(svpSpendTransaction);
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
-            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1445,7 +1839,33 @@ class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
-            assertSvpSuccess(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, btcBlockWithPmtHeight);
+            assertLogUtxosRegisteredForSvpSpendTransaction(SVP_SPEND_TX_OUTPUT_VALUE);
+        }
+
+        @Test
+        void registerBtcTransaction_whenIsTheSpendTransaction_forVetiver_shouldRegisterSpendTxUtxoWithZeroHeight() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            arrangeSvpSpendTransaction();
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(vetiverActivations)
+                .build();
+
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                svpSpendTransaction.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // assert
+            assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, UTXO_HEIGHT_BEFORE_CARDAMOM);
+            assertUtxosRegisteredWasNotEmitted();
         }
 
         @Test
@@ -1454,9 +1874,9 @@ class BridgeSupportSvpTest {
             arrangeExecutionBlockIsAfterValidationPeriodEnded();
 
             arrangeSvpSpendTransaction();
-            setUpForTransactionRegistration(svpSpendTransaction);
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
-            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1468,21 +1888,23 @@ class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
-            assertSvpSuccess(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, btcBlockWithPmtHeight);
+            assertLogUtxosRegisteredForSvpSpendTransaction(SVP_SPEND_TX_OUTPUT_VALUE);
         }
 
         @Test
         void registerBtcTransaction_whenIsTheSpendTransaction_withAmountBelowMinPeginValue_shouldProcessSpendTxAndSvpSuccess() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             createSpendTransaction();
+            recreateSvpFundTransactionSignedByLegacyActiveFederation();
             addSpendTransactionInputs();
             Coin amountToSend = bridgeMainNetConstants.getMinimumPeginTxValue(allActivations).minus(Coin.valueOf(1));
             addSpendTransactionOutput(amountToSend);
             saveSvpSpendTransactionValues();
 
-            setUpForTransactionRegistration(svpSpendTransaction);
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
-            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -1494,16 +1916,17 @@ class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
-            assertSvpSuccess(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, btcBlockWithPmtHeight);
+            assertLogUtxosRegisteredForSvpSpendTransaction(amountToSend);
         }
 
         @Test
         void registerBtcTransaction_twice_whenIsTheSpendTransaction_shouldRegisterItJustOnce() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
-            setUpForTransactionRegistration(svpSpendTransaction);
+            setUpForTransactionRegistration(svpSpendTransaction, HEIGHT_TO_USE_FEDERATIONS_PENDING_BTC_UTXOS);
 
-            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
 
             // register spend tx for the first time
             bridgeSupport.registerBtcTransaction(
@@ -1523,18 +1946,42 @@ class BridgeSupportSvpTest {
             );
 
             // assert utxo was registered just once
-            assertSvpSuccess(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertSvpSuccess(activeFederationUtxosBeforeRegisteringTx, btcBlockWithPmtHeight);
+            assertLogUtxosRegisteredForSvpSpendTransaction(SVP_SPEND_TX_OUTPUT_VALUE);
+            assertEquals(1, getLogsBySignature(logs, BridgeEvents.UTXOS_REGISTERED.getEvent()).size());
         }
 
-        private void assertSvpSuccess(int expectedActiveFederationUtxosSize) throws IOException {
+        private void assertLogUtxosRegisteredForSvpSpendTransaction(Coin expectedValueSent) {
+            assertLogUtxosRegistered(
+                logs,
+                svpSpendTransaction.getHash(),
+                List.of(expectedValueSent),
+                List.of(OUTPUT_INDEX_FOR_SPEND_TX_OUTPUT_TO_FED),
+                activeFederation.getAddress()
+            );
+        }
+
+        private void assertLogUtxosRegisteredForPegin(BtcTransaction pegin, Coin expectedValueSent) {
+            assertLogUtxosRegistered(
+                logs,
+                pegin.getHash(),
+                List.of(expectedValueSent),
+                List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
+                activeFederation.getAddress()
+            );
+        }
+
+        private void assertSvpSuccess(List<UTXO> activeFederationUtxosBeforeRegisteringTx, int expectedBtcTxHeight) throws IOException {
             List<UTXO> activeFederationUtxosAfterRegisteringTx = Collections.unmodifiableList(federationSupport.getActiveFederationBtcUTXOs());
 
             // tx registration
-            assertActiveFederationUtxosSize(expectedActiveFederationUtxosSize);
-            assertTransactionWasProcessed(svpSpendTransaction.getHash());
-            assertTrue(activeFederationUtxosAfterRegisteringTx.stream().anyMatch(
-                utxo -> utxo.getHash().equals(svpSpendTransaction.getHash()) && utxo.getIndex() == 0)
+            List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
+                svpSpendTransaction,
+                activeFederation,
+                expectedBtcTxHeight
             );
+            assertUtxosWereAddedToActiveFederation(activeFederationUtxosBeforeRegisteringTx, expectedUtxosRegistered);
+            assertTransactionWasProcessed(svpSpendTransaction.getHash());
 
             // svp success
             assertNoSvpSpendTxHash();
@@ -1550,9 +1997,9 @@ class BridgeSupportSvpTest {
             assertNewActiveFederationCreationBlockHeightWasSet();
         }
 
-        private void assertNoHandoverToNewFederation() {
+        private void assertNoHandoverToNewFederation(Federation expectedActiveFederation) {
             assertUTXOsWereNotMovedToOldFederation();
-            assertNewAndOldFederationsWereNotSet();
+            assertNewAndOldFederationsWereNotSet(expectedActiveFederation);
             assertLastRetiredFederationScriptWasNotSet();
             assertNewActiveFederationCreationBlockHeightWasNotSet();
         }
@@ -1587,14 +2034,14 @@ class BridgeSupportSvpTest {
             assertEquals(proposedFederation, newFederation);
         }
 
-        private void assertNewAndOldFederationsWereNotSet() {
+        private void assertNewAndOldFederationsWereNotSet(Federation expectedActiveFederation) {
             // assert old federation is still null
             Federation oldFederation = federationStorageProvider.getOldFederation(federationMainNetConstants, allActivations);
             assertNull(oldFederation);
 
             // assert new federation is still the active federation
             Federation newFederation = federationStorageProvider.getNewFederation(federationMainNetConstants, allActivations);
-            assertEquals(activeFederation, newFederation);
+            assertEquals(expectedActiveFederation, newFederation);
         }
 
         private void assertLastRetiredFederationScriptWasSet() {
@@ -1631,21 +2078,26 @@ class BridgeSupportSvpTest {
     }
 
     private void arrangeSvpFundTransactionSigned() {
-        recreateSvpFundTransactionSigned();
+        recreateSvpFundTransactionSignedByLegacyActiveFederation();
 
         bridgeStorageProvider.setSvpFundTxSigned(svpFundTransaction);
         bridgeStorageProvider.save();
     }
 
-    private void recreateSvpFundTransactionSigned() {
+    private void recreateSvpFundTransactionSignedByLegacyActiveFederation() {
         recreateSvpFundTransactionUnsigned();
-        signInputs(svpFundTransaction);
+        signInputs(activeFederation, activeFederationKeys, svpFundTransaction);
+    }
+
+    private void recreateSvpFundTransactionSignedBySegwitActiveFederation() {
+        recreateSvpFundTransactionUnsigned();
+        signInputs(segwitActiveFederation, segwitActiveFederationKeys, svpFundTransaction);
     }
 
     private void recreateSvpFundTransactionUnsigned() {
         svpFundTransaction = new BtcTransaction(btcMainnetParams);
 
-        addInput(svpFundTransaction, proposedFederation);
+        addInput(svpFundTransaction, federationSupport.getActiveFederation());
 
         svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederation.getAddress());
         Address flyoverProposedFederationAddress = PegUtils.getFlyoverFederationAddress(
@@ -1669,17 +2121,8 @@ class BridgeSupportSvpTest {
 
     private void addOutputChange(BtcTransaction transaction) {
         // add output to the active fed
-        Script activeFederationP2SHScript = activeFederation.getP2SHScript();
-        transaction.addOutput(Coin.COIN.multiply(10), activeFederationP2SHScript);
-    }
-
-    private void signInputs(BtcTransaction transaction) {
-        List<BtcECKey> keysToSign =
-            BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true);
-        List<TransactionInput> inputs = transaction.getInputs();
-        IntStream.range(0, inputs.size()).forEach(i ->
-            BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
-        );
+        Script activeFederationP2SHScript = federationSupport.getActiveFederation().getP2SHScript();
+        transaction.addOutput(CHANGE_VALUE, activeFederationP2SHScript);
     }
 
     private void arrangeSvpSpendTransaction() {
@@ -1687,12 +2130,25 @@ class BridgeSupportSvpTest {
         saveSvpSpendTransactionValues();
     }
 
+    private void arrangeSvpSpendTransactionFromSegwitActiveFederation() {
+        recreateSvpSpendTransactionUnsignedFromSegwitActiveFederation();
+        saveSvpSpendTransactionValues();
+    }
+
     private void recreateSvpSpendTransactionUnsigned() {
         createSpendTransaction();
+        recreateSvpFundTransactionSignedByLegacyActiveFederation();
         addSpendTransactionInputs();
 
-        Coin amountToSend = Coin.valueOf(1762);
-        addSpendTransactionOutput(amountToSend);
+        addSpendTransactionOutput(SVP_SPEND_TX_OUTPUT_VALUE);
+    }
+
+    private void recreateSvpSpendTransactionUnsignedFromSegwitActiveFederation() {
+        createSpendTransaction();
+        recreateSvpFundTransactionSignedBySegwitActiveFederation();
+        addSpendTransactionInputs();
+
+        addSpendTransactionOutput(SVP_SPEND_TX_OUTPUT_VALUE);
     }
 
     private void createSpendTransaction() {
@@ -1701,7 +2157,6 @@ class BridgeSupportSvpTest {
     }
 
     private void addSpendTransactionInputs() {
-        recreateSvpFundTransactionSigned();
         // add inputs
         int proposedFederationFormatVersion = proposedFederation.getFormatVersion();
 
@@ -1739,13 +2194,13 @@ class BridgeSupportSvpTest {
         bridgeStorageProvider.save();
     }
 
-    private void setUpForTransactionRegistration(BtcTransaction transaction) throws BlockStoreException {
+    private void setUpForTransactionRegistration(BtcTransaction transaction, int btcBlockWithTransactionHeight) throws BlockStoreException {
         // recreate a valid chain that has the tx, so it passes the previous checks in registerBtcTransaction
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
         BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, allActivations);
 
         pmtWithTransactions = createValidPmtForTransactions(List.of(transaction), btcMainnetParams);
-        btcBlockWithPmtHeight = bridgeMainNetConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeMainNetConstants.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
+        btcBlockWithPmtHeight = btcBlockWithTransactionHeight;
 
         int chainHeight = btcBlockWithPmtHeight + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
         recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
@@ -1760,6 +2215,8 @@ class BridgeSupportSvpTest {
             .withFeePerKbSupport(feePerKbSupport)
             .withExecutionBlock(rskExecutionBlock)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withBtcLockSenderProvider(btcLockSenderProvider)
+            .withPeginInstructionsProvider(peginInstructionsProvider)
             .withRepository(repository)
             .build();
     }
@@ -1770,6 +2227,16 @@ class BridgeSupportSvpTest {
 
     private void assertActiveFederationUtxosSize(int expectedActiveFederationUtxosSize) {
         assertEquals(expectedActiveFederationUtxosSize, federationSupport.getActiveFederationBtcUTXOs().size());
+    }
+
+    private void assertUtxosWereAddedToActiveFederation(List<UTXO> activeFederationUtxosBeforeRegisteringTx, List<UTXO> expectedUtxosRegistered) {
+        List<UTXO> expectedActiveFederationUtxos = new ArrayList<>(activeFederationUtxosBeforeRegisteringTx);
+        expectedActiveFederationUtxos.addAll(expectedUtxosRegistered);
+        assertUtxosAreEqual(expectedActiveFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
+    }
+
+    private void assertUtxosRegisteredWasNotEmitted() {
+        assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
     }
 
     private void assertTransactionWasProcessed(Sha256Hash transactionHash) throws IOException {

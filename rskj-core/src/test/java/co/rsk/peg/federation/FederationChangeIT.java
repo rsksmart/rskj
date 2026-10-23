@@ -4,7 +4,13 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
+import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
+import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasNotEmitted;
 import static co.rsk.peg.BridgeSupportTestUtil.assertFederatorSigning;
+import static co.rsk.peg.BridgeSupportTestUtil.assertLogFlyoverUtxosRegistered;
+import static co.rsk.peg.BridgeSupportTestUtil.assertLogUtxosRegistered;
+import static co.rsk.peg.BridgeSupportTestUtil.assertFederationsPendingBtcUTXOsWereSaved;
+import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutTxSigHashWasNotSaved;
 import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutTxSigHashWasSaved;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.createValidPmtForTransactions;
@@ -12,6 +18,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.recreateChainFromPmt;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
+import static co.rsk.peg.federation.FederationTestUtils.signInputs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -142,6 +149,19 @@ class FederationChangeIT {
     );
     private static final int LEGACY_PEGIN_PROTOCOL_VERSION = 0;
     private static final int PEGIN_V1_PROTOCOL_VERSION = 1;
+    private static final Coin PEGIN_VALUE = Coin.COIN;
+    // pegin output to the federation is the first one
+    private static final long PEGIN_OUTPUT_INDEX_TO_FED = 0;
+    private static final Coin FLYOVER_PEGIN_VALUE = Coin.COIN;
+    // flyover pegin has a single output, to the flyover federation address
+    private static final long FLYOVER_PEGIN_OUTPUT_INDEX_TO_FED = 0;
+    private static final Coin PEGOUT_CHANGE_VALUE = Coin.COIN.multiply(10);
+    // pegout change output comes after the user output
+    private static final long PEGOUT_CHANGE_OUTPUT_INDEX = 1;
+    // svp fund tx change output comes after the proposed and flyover proposed federation outputs
+    private static final int SVP_FUND_TX_CHANGE_OUTPUT_INDEX = 2;
+    // svp spend tx sends everything back to the active federation in its only output
+    private static final int SVP_SPEND_TX_OUTPUT_INDEX_TO_ACTIVE_FED = 0;
     private static final int NEW_FEDERATION_MEMBERS_SIZE = NEW_FEDERATION_MEMBERS_KEYS.size();
     private static final int NEW_FEDERATION_THRESHOLD = NEW_FEDERATION_MEMBERS_SIZE / 2 + 1;
     private static final List<FederationMember> NEW_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(NEW_FEDERATION_MEMBERS_KEYS);
@@ -318,77 +338,89 @@ class FederationChangeIT {
     }
 
     @Test
+    void changeFederation_withVetiverActivations_fromSegwitToSegwit() throws Exception {
+        // Arrange
+        setUp(VETIVER_ACTIVATIONS);
+
+        // Both the retiring and the new federation are segwit, with 20 members each
+        var originalFederation = createOriginalSegwitFederation();
+
+        // Act & Assert
+        changeFederationFromSegwitUntilMigrationPhase(originalFederation);
+        var newFederation = federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, activations);
+
+        // Calling update collections should start migration. Only one pegout entry has ever existed at
+        // this point, so these single-entry assertions hold regardless of how many further legacy-capped
+        // rounds are needed below to fully drain the retiring federation.
+        Set<Entry> pegoutEntriesBeforeRound1 = getPegoutEntriesSnapshot();
+        int logsSizeBeforeRound1 = logs.size();
+        callUpdateCollections();
+        assertMigrationHasStarted();
+        assertPegoutTxSigHashesAreSaved();
+        verifyPegouts();
+        assertMigrationRoundWasSettledAsExpected(pegoutEntriesBeforeRound1, logsSizeBeforeRound1, newFederation.getAddress());
+
+        // Check again live federations references are as expected
+        assertNewAndOldFederationsReferences(newFederation, originalFederation);
+        assertActiveAndRetiringFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
+
+        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender8");
+        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender8");
+        assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender9");
+        assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender9");
+
+        // Under pre-RSKIP455 activations, the retiring federation wallet is capped at
+        // legacyMaxInputsPerMigrationTransaction UTXOs per migration tx, so draining the rest can take
+        // several more rounds; each needs its own rskTxHash (see callUpdateCollections(Transaction)).
+        int maxDrainingRounds = 10;
+        int drainingRounds = 0;
+        while (!federationSupport.getRetiringFederationBtcUTXOs().isEmpty() && drainingRounds < maxDrainingRounds) {
+            Set<Entry> pegoutEntriesBeforeRound = getPegoutEntriesSnapshot();
+            int logsSizeBeforeRound = logs.size();
+            callUpdateCollections(buildUpdateCollectionsTransaction(100 + drainingRounds));
+            assertMigrationRoundWasSettledAsExpected(pegoutEntriesBeforeRound, logsSizeBeforeRound, newFederation.getAddress());
+            drainingRounds++;
+        }
+        assertTrue(federationSupport.getRetiringFederationBtcUTXOs().isEmpty());
+        assertPegoutTxSigHashesAreSaved();
+        verifyPegouts();
+
+        // Move blockchain until the end of the migration phase: even with pre-RSKIP455 activations,
+        // the retiring federation is fully drained above, so it clears with no funds left behind.
+        long migrationCreationRskBlockNumber = currentBlock.getNumber();
+        int logsSizeBeforeEndMigration = logs.size();
+        endMigration();
+        assertPegoutConfirmedEventWasEmitted(logsSizeBeforeEndMigration, migrationCreationRskBlockNumber);
+
+        assertOnlyActiveFedIsLive(newFederation);
+        assertPeginsShouldNotWorkToFed(originalFederation, "sender10");
+        assertPegoutsShouldNotWorkToFed(originalFederation, "sender10");
+        assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
+        assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
+    }
+
+    // TODO(juli): assertPegoutsShouldWorkToFed saves the pegout tx sighash itself, which the bridge no longer does
+    //  after RSKIP643. Once registerPegoutTransaction is implemented, register the pegout change through it instead
+    @Test
     void changeFederation_withAllActivations_fromSegwitToSegwit_splitMigrationOutputs() throws Exception {
         // Arrange
         setUp(ALL_ACTIVATIONS);
 
         // Both the retiring and the new federation are segwit, with 20 members each
         var originalFederation = createOriginalSegwitFederation();
-        var originalUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMS, activations);
 
         // Act & Assert
-        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
-        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
-        // Create pending federation using the new federation keys
-        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
-        voteToAddFederatorPublicKeysToPendingFederation();
-
-        var pendingFederation = federationStorageProvider.getPendingFederation();
-        assertPendingFederationIsBuiltAsExpected(pendingFederation);
-
-        voteToCommitPendingFederation(originalFederation);
-        var newFederationOpt = federationSupport.getProposedFederation();
-        assertTrue(newFederationOpt.isPresent());
-        var newFederation = newFederationOpt.get();
-        var expectedProposedFederation = createExpectedProposedFederation();
-        assertEquals(expectedProposedFederation, newFederation);
-
-        assertPeginsShouldNotWorkToFed(newFederation, "sender1");
-
-        // Proceed with SVP process
-        callUpdateCollectionsAndAssertSvpFundTxIsCreated();
-        registerSignedSvpFundTx(ORIGINAL_SEGWIT_FEDERATION_MEMBERS_KEYS);
-
-        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender2");
-        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender2");
-        assertPeginsShouldNotWorkToFed(newFederation, "sender3");
-        assertPegoutsShouldNotWorkToFed(newFederation, "sender3");
-
-        callUpdateCollectionsAndAssertSvpSpendTxIsCreated();
-        addSignaturesToAndRegisterSvpSpendTx();
-
-        // Validations post commit
-        assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(originalFederation);
-        assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs);
-        assertNewAndOldFederationsReferences(newFederation, originalFederation);
-        assertNextFederationCreationBlockHeight(newFederation.getCreationBlockNumber());
-
-        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender4");
-        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender4");
-        assertPeginsShouldNotWorkToFed(newFederation, "sender5");
-        assertPegoutsShouldNotWorkToFed(newFederation, "sender5");
-
-        // Move blockchain until the activation phase
-        activateNewFederation();
-        assertActiveAndRetiringFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
-        assertMigrationHasNotStarted();
-
-        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender6");
-        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender6");
-        assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender7");
-        assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender7");
-
-        // Move blockchain until the migration phase
-        activateMigration();
+        changeFederationFromSegwitUntilMigrationPhase(originalFederation);
+        var newFederation = federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, activations);
 
         // Round 1: the retiring federation is realistically sized (50 UTXOs plus the pegin/pegout
-        // activity above), so its balance is already well past the single-output threshold. This
+        // activity during the federation change), so its balance is already well past the single-output threshold. This
         // naturally exercises RSKIP455's fixed-value multiple-outputs bucket ([40, 1000) BTC on mainnet).
         Set<Entry> pegoutEntriesBeforeRound1 = getPegoutEntriesSnapshot();
         int logsSizeBeforeRound1 = logs.size();
         callUpdateCollections();
         assertMigrationHasStarted();
-        assertPegoutTxSigHashesAreSaved();
+        assertFederationsPendingBtcUTXOsAreSaved();
         verifyPegouts();
         assertMigrationRoundWasSettledAsExpected(pegoutEntriesBeforeRound1, logsSizeBeforeRound1, newFederation.getAddress());
 
@@ -416,7 +448,7 @@ class FederationChangeIT {
         int missingUTXOs = maxInputsPerMigrationTransaction - utxosAlreadyPresent;
         injectUtxosToRetiringFederation(originalFederation.getAddress(), Coin.COIN.multiply(10), missingUTXOs);
         callUpdateCollections(buildUpdateCollectionsTransaction(300));
-        assertPegoutTxSigHashesAreSaved();
+        assertFederationsPendingBtcUTXOsAreSaved();
         verifyPegouts();
         Entry maxSizeMigrationEntry = assertMigrationRoundWasSettledAsExpected(pegoutEntriesBeforeRound2, logsSizeBeforeRound2, newFederation.getAddress());
         assertTrue(federationSupport.getRetiringFederationBtcUTXOs().isEmpty());
@@ -471,7 +503,7 @@ class FederationChangeIT {
         int logsSizeBeforeRound3 = logs.size();
         injectUtxoToRetiringFederation(originalFederation.getAddress(), Coin.COIN.multiply(30));
         callUpdateCollections(buildUpdateCollectionsTransaction(400));
-        assertPegoutTxSigHashesAreSaved();
+        assertFederationsPendingBtcUTXOsAreSaved();
         verifyPegouts();
         assertMigrationRoundWasSettledAsExpected(pegoutEntriesBeforeRound3, logsSizeBeforeRound3, newFederation.getAddress());
         assertTrue(federationSupport.getRetiringFederationBtcUTXOs().isEmpty());
@@ -489,10 +521,70 @@ class FederationChangeIT {
         assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
     }
 
+    private void changeFederationFromSegwitUntilMigrationPhase(Federation originalFederation) throws Exception {
+        var originalUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMS, activations);
+
+        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
+        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
+        // Create pending federation using the new federation keys
+        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
+        voteToAddFederatorPublicKeysToPendingFederation();
+
+        var pendingFederation = federationStorageProvider.getPendingFederation();
+        assertPendingFederationIsBuiltAsExpected(pendingFederation);
+
+        voteToCommitPendingFederation(originalFederation);
+        var newFederationOpt = federationSupport.getProposedFederation();
+        assertTrue(newFederationOpt.isPresent());
+        var newFederation = newFederationOpt.get();
+        var expectedProposedFederation = createExpectedProposedFederation();
+        assertEquals(expectedProposedFederation, newFederation);
+
+        assertPeginsShouldNotWorkToFed(newFederation, "sender1");
+
+        // Proceed with SVP process
+        callUpdateCollectionsAndAssertSvpFundTxIsCreated();
+        registerSignedSvpFundTx(ORIGINAL_SEGWIT_FEDERATION_MEMBERS_KEYS);
+
+        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender2");
+        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender2");
+        assertPeginsShouldNotWorkToFed(newFederation, "sender3");
+        assertPegoutsShouldNotWorkToFed(newFederation, "sender3");
+
+        callUpdateCollectionsAndAssertSvpSpendTxIsCreated();
+        addSignaturesToAndRegisterSvpSpendTx();
+
+        // Validations post commit
+        assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(originalFederation);
+        assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs);
+        assertNewAndOldFederationsReferences(newFederation, originalFederation);
+        assertNextFederationCreationBlockHeight(newFederation.getCreationBlockNumber());
+
+        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender4");
+        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender4");
+        assertPeginsShouldNotWorkToFed(newFederation, "sender5");
+        assertPegoutsShouldNotWorkToFed(newFederation, "sender5");
+
+        // Move blockchain until the activation phase
+        activateNewFederation();
+        assertActiveAndRetiringFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
+        assertMigrationHasNotStarted();
+
+        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender6");
+        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender6");
+        assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender7");
+        assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender7");
+
+        // Move blockchain until the migration phase
+        activateMigration();
+    }
+
+    // TODO(juli): once registerPegoutTransaction is implemented, add a version of this test with allActivations
+    //  that registers the pegout change through registerPegoutTransaction
     @Test
-    void rollbackPendingFederation_afterPartiallyBuilt_wipesStateAndAllowsNewFederationChangeToProceed() throws Exception {
+    void rollbackPendingFederation_afterPartiallyBuilt_forVetiver_wipesStateAndAllowsNewFederationChangeToProceed() throws Exception {
         // Arrange
-        setUp(ALL_ACTIVATIONS);
+        setUp(VETIVER_ACTIVATIONS);
         var originalFederation = createOriginalSegwitFederation();
 
         assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
@@ -928,12 +1020,19 @@ class FederationChangeIT {
         var svpFundTx = copyPreservingInputValues(pegoutsTxs.get(0).getBtcTransaction());
 
         int neededSignatures = federationSupport.getActiveFederationThreshold();
-        signInputs(svpFundTx, activeFederationMembersKeys.subList(0, neededSignatures));
+        signInputs(federationSupport.getActiveFederation(), activeFederationMembersKeys.subList(0, neededSignatures), svpFundTx);
 
         int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
         registerBtcTransaction(svpFundTx);
 
         assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+        Coin svpFundTxChangeValue = svpFundTx.getOutput(SVP_FUND_TX_CHANGE_OUTPUT_INDEX).getValue();
+        verifyLogUtxosRegistered(
+            svpFundTx,
+            List.of(svpFundTxChangeValue),
+            List.of((long) SVP_FUND_TX_CHANGE_OUTPUT_INDEX),
+            federationSupport.getActiveFederationAddress()
+        );
         var svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
         assertFalse(svpFundTxHashUnsigned.isPresent());
         var svpFundTransactionSigned = bridgeStorageProvider.getSvpFundTxSigned();
@@ -1001,6 +1100,13 @@ class FederationChangeIT {
         registerBtcTransaction(svpSpendTx);
 
         assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+        Coin svpSpendTxValueSentToActiveFed = svpSpendTx.getOutput(SVP_SPEND_TX_OUTPUT_INDEX_TO_ACTIVE_FED).getValue();
+        verifyLogUtxosRegistered(
+            svpSpendTx,
+            List.of(svpSpendTxValueSentToActiveFed),
+            List.of((long) SVP_SPEND_TX_OUTPUT_INDEX_TO_ACTIVE_FED),
+            federationSupport.getActiveFederationAddress()
+        );
         var svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
         assertFalse(svpSpendTxHashUnsigned.isPresent());
         var newFederationOpt = federationSupport.getProposedFederation();
@@ -1033,6 +1139,59 @@ class FederationChangeIT {
 
     private void assertNoEventWasEmittedSince(int logsSizeBeforeCheckpoint) {
         assertEquals(logsSizeBeforeCheckpoint, logs.size());
+    }
+
+    private void verifyLogUtxosRegistered(
+        BtcTransaction btcTransaction,
+        List<Coin> expectedValuesInSatoshis,
+        List<Long> expectedOutputIndexes,
+        Address expectedFederationAddress
+    ) {
+        if (activations.isActive(ConsensusRule.RSKIP643)) {
+            assertLogUtxosRegistered(
+                logs,
+                btcTransaction.getHash(),
+                expectedValuesInSatoshis,
+                expectedOutputIndexes,
+                expectedFederationAddress
+            );
+        } else {
+            // before RSKIP643 no utxos_registered event is ever emitted in the whole flow
+            assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
+        }
+    }
+
+    private void verifyLogFlyoverUtxosRegistered(
+        int logsSizeBeforeCheckpoint,
+        BtcTransaction flyoverPeginBtcTx,
+        List<Coin> expectedValuesInSatoshis,
+        List<Long> expectedOutputIndexes,
+        Address expectedFederationAddress,
+        Keccak256 expectedFlyoverDerivationHash
+    ) {
+        // Flyover crediting goes straight to the LBC contract; no PEGIN_BTC/LOCK_BTC event is emitted for it,
+        // so its only event is flyover_utxos_registered, emitted after RSKIP643
+        if (activations.isActive(ConsensusRule.RSKIP643)) {
+            assertEquals(logsSizeBeforeCheckpoint + 1, logs.size());
+            assertLogFlyoverUtxosRegistered(
+                logs.subList(logsSizeBeforeCheckpoint, logs.size()),
+                flyoverPeginBtcTx.getHash(),
+                expectedValuesInSatoshis,
+                expectedOutputIndexes,
+                expectedFederationAddress,
+                expectedFlyoverDerivationHash
+            );
+        } else {
+            assertNoEventWasEmittedSince(logsSizeBeforeCheckpoint);
+        }
+    }
+
+    private void assertUtxosRegisteredWasNotEmitted(BtcTransaction btcTransaction) {
+        List<DataWord> encodedTopics = getEncodedTopics(
+            BridgeEvents.UTXOS_REGISTERED.getEvent(),
+            btcTransaction.getHash().getBytes()
+        );
+        assertTrue(getLogsTopics(logs, encodedTopics).isEmpty());
     }
 
     private void activateNewFederation() {
@@ -1156,24 +1315,43 @@ class FederationChangeIT {
     private void assertLegacyP2pkhPeginWorks(Address federationAddress, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
         var legacyP2pkhPeginToFed = createLegacyP2pkhPegin(federationAddress, senderSeed);
         var expectedReceiver = BitcoinTestUtils.getRskAddressFromBtcPublicKey(BitcoinTestUtils.getBtcEcKeyFromSeed(senderSeed));
-        assertPeginWorks(legacyP2pkhPeginToFed, federationUtxosReference, expectedReceiver, LEGACY_PEGIN_PROTOCOL_VERSION);
+        assertPeginWorks(
+            legacyP2pkhPeginToFed,
+            federationAddress,
+            federationUtxosReference,
+            expectedReceiver,
+            LEGACY_PEGIN_PROTOCOL_VERSION
+        );
     }
 
     private void assertLegacyP2shP2wpkhPeginWorks(Address federationAddress, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
         var legacyP2shP2wpkhPeginToFed = createLegacyP2shP2wpkhPegin(federationAddress, senderSeed);
         var expectedReceiver = BitcoinTestUtils.getRskAddressFromBtcPublicKey(BitcoinTestUtils.getBtcEcKeyFromSeed(senderSeed));
-        assertPeginWorks(legacyP2shP2wpkhPeginToFed, federationUtxosReference, expectedReceiver, LEGACY_PEGIN_PROTOCOL_VERSION);
+        assertPeginWorks(
+            legacyP2shP2wpkhPeginToFed,
+            federationAddress,
+            federationUtxosReference,
+            expectedReceiver,
+            LEGACY_PEGIN_PROTOCOL_VERSION
+        );
     }
 
     private void assertPeginV1Works(Address federationAddress, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
         var receiver = RskTestUtils.generateAddress("receiver");
         var peginV1ToFed = createPeginV1(federationAddress, senderSeed, receiver);
 
-        assertPeginWorks(peginV1ToFed, federationUtxosReference, receiver, PEGIN_V1_PROTOCOL_VERSION);
+        assertPeginWorks(
+            peginV1ToFed,
+            federationAddress,
+            federationUtxosReference,
+            receiver,
+            PEGIN_V1_PROTOCOL_VERSION
+        );
     }
 
     private void assertPeginWorks(
         BtcTransaction pegin,
+        Address federationAddress,
         List<UTXO> federationUtxosReference,
         RskAddress expectedReceiver,
         int expectedProtocolVersion
@@ -1190,10 +1368,16 @@ class FederationChangeIT {
         assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(pegin.getHash()));
         // assert utxo was registered
         assertEquals(utxosSizeBeforeRegisteringPeginV1 + 1, federationUtxosReference.size());
-        assertPeginBtcEventWasEmitted(logsSizeBeforePegin, pegin, expectedReceiver, Coin.COIN, expectedProtocolVersion);
+        assertPeginBtcEventWasEmitted(logsSizeBeforePegin, pegin, expectedReceiver, PEGIN_VALUE, expectedProtocolVersion);
+        verifyLogUtxosRegistered(
+            pegin,
+            List.of(PEGIN_VALUE),
+            List.of(PEGIN_OUTPUT_INDEX_TO_FED),
+            federationAddress
+        );
 
         // assert funds were actually transferred from the bridge to the receiver
-        var peginAmountInWeis = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
+        var peginAmountInWeis = co.rsk.core.Coin.fromBitcoin(PEGIN_VALUE);
         assertEquals(receiverBalanceBeforePegin.add(peginAmountInWeis), repository.getBalance(expectedReceiver));
         assertEquals(bridgeBalanceBeforePegin.subtract(peginAmountInWeis), repository.getBalance(BRIDGE_ADDRESS));
 
@@ -1237,11 +1421,17 @@ class FederationChangeIT {
         ));
         // assert utxo was registered
         assertEquals(utxosSizeBeforeRegisteringFlyoverPegin + 1, federationUtxosReference.size());
-        // Flyover crediting goes straight to the LBC contract; no PEGIN_BTC/LOCK_BTC event is emitted for it
-        assertNoEventWasEmittedSince(logsSizeBeforeFlyoverPegin);
+        verifyLogFlyoverUtxosRegistered(
+            logsSizeBeforeFlyoverPegin,
+            flyoverPeginBtcTx,
+            List.of(FLYOVER_PEGIN_VALUE),
+            List.of(FLYOVER_PEGIN_OUTPUT_INDEX_TO_FED),
+            federation.getAddress(),
+            flyoverPegin.getRight()
+        );
 
         // assert funds were actually transferred from the bridge to the LBC contract
-        var flyoverPeginAmountInWeis = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
+        var flyoverPeginAmountInWeis = co.rsk.core.Coin.fromBitcoin(FLYOVER_PEGIN_VALUE);
         assertEquals(lbcBalanceBeforeFlyoverPegin.add(flyoverPeginAmountInWeis), repository.getBalance(LBC_ADDRESS));
         assertEquals(bridgeBalanceBeforeFlyoverPegin.subtract(flyoverPeginAmountInWeis), repository.getBalance(BRIDGE_ADDRESS));
 
@@ -1262,6 +1452,12 @@ class FederationChangeIT {
         assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(pegout.getHash()));
         // assert utxo was registered
         assertEquals(utxosSizeBeforeRegisteringPegout + 1, federationUtxosReference.size());
+        verifyLogUtxosRegistered(
+            pegout,
+            List.of(PEGOUT_CHANGE_VALUE),
+            List.of(PEGOUT_CHANGE_OUTPUT_INDEX),
+            federation.getAddress()
+        );
     }
 
     private void assertPeginsShouldNotWorkToFed(Federation federation, String senderSeed) throws Exception {
@@ -1351,6 +1547,7 @@ class FederationChangeIT {
         // assert no utxos were registered
         assertEquals(activeFederationUtxosSizeBeforeRegisteringPegout, federationSupport.getActiveFederationBtcUTXOs().size());
         assertEquals(retiringFederationUtxosSizeBeforeRegisteringPegout, federationSupport.getRetiringFederationBtcUTXOs().size());
+        assertUtxosRegisteredWasNotEmitted(pegout);
     }
 
     private BtcTransaction createLegacyP2pkhPegin(Address federationAddress, String senderSeed) {
@@ -1358,7 +1555,7 @@ class FederationChangeIT {
         var senderPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed(senderSeed);
 
         peginBtcTx.addInput(BitcoinTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, senderPublicKey));
-        peginBtcTx.addOutput(Coin.COIN, federationAddress);
+        peginBtcTx.addOutput(PEGIN_VALUE, federationAddress);
 
         return peginBtcTx;
     }
@@ -1377,7 +1574,7 @@ class FederationChangeIT {
         txWit.setPush(1, senderPublicKey.getPubKey());
         peginBtcTx.setWitness(0, txWit);
 
-        peginBtcTx.addOutput(Coin.COIN, federationAddress);
+        peginBtcTx.addOutput(PEGIN_VALUE, federationAddress);
 
         return peginBtcTx;
     }
@@ -1387,7 +1584,7 @@ class FederationChangeIT {
         var senderPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed(senderSeed);
 
         peginBtcTx.addInput(BitcoinTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, senderPublicKey));
-        peginBtcTx.addOutput(Coin.COIN, federationAddress);
+        peginBtcTx.addOutput(PEGIN_VALUE, federationAddress);
         var opReturnOutputScript = PegTestUtils.createOpReturnScriptForRsk(
             PEGIN_V1_PROTOCOL_VERSION,
             destinationAddress,
@@ -1412,7 +1609,7 @@ class FederationChangeIT {
         );
 
         var flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(NETWORK_PARAMS, flyoverDerivationHash, federation);
-        flyoverPeginBtcTx.addOutput(Coin.COIN, flyoverFederationAddress);
+        flyoverPeginBtcTx.addOutput(FLYOVER_PEGIN_VALUE, flyoverFederationAddress);
 
         return Pair.of(flyoverPeginBtcTx, flyoverDerivationHash);
     }
@@ -1423,7 +1620,7 @@ class FederationChangeIT {
             .withNetworkParameters(NETWORK_PARAMS)
             .withActiveFederation(federation)
             .withOutput(Coin.COIN, receiverAddress)
-            .withChangeAmount(Coin.COIN.multiply(10))
+            .withChangeAmount(PEGOUT_CHANGE_VALUE)
             .build();
     }
 
@@ -1538,20 +1735,6 @@ class FederationChangeIT {
         }
 
         return copy;
-    }
-
-    private void signInputs(BtcTransaction transaction, List<BtcECKey> keysToSign) {
-        boolean isSegwitFederation = federationSupport.getActiveFederation().getFormatVersion() ==
-            FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
-
-        List<TransactionInput> inputs = transaction.getInputs();
-        IntStream.range(0, inputs.size()).forEach(i -> {
-            if (isSegwitFederation) {
-                BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(transaction, i, inputs.get(i).getValue(), keysToSign);
-            } else {
-                BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, i, keysToSign);
-            }
-        });
     }
     
     // Assert federation change related methods
@@ -1865,6 +2048,18 @@ class FederationChangeIT {
 
         for (var pegoutTx : pegoutsTxs) {
             assertPegoutTxSigHashWasSaved(bridgeStorageProvider, pegoutTx);
+        }
+    }
+
+    private void assertFederationsPendingBtcUTXOsAreSaved() throws IOException {
+        var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
+            .getEntries(activations).stream()
+            .map(Entry::getBtcTransaction)
+            .toList();
+
+        for (var pegoutTx : pegoutsTxs) {
+            assertPegoutTxSigHashWasNotSaved(bridgeStorageProvider, pegoutTx);
+            assertFederationsPendingBtcUTXOsWereSaved(federationStorageProvider, federationSupport, pegoutTx);
         }
     }
 }
