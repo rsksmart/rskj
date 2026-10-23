@@ -89,12 +89,9 @@ class BridgeSupportRegisterBtcTransactionTest {
     private static final int BTC_HEIGHT_WHEN_PEGOUT_TX_INDEX_ACTIVATES = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
     private static final int PEGOUT_TX_INDEX_GRACE_PERIOD_IN_BTC_BLOCKS = bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
     private static final int HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX = BTC_HEIGHT_WHEN_PEGOUT_TX_INDEX_ACTIVATES + PEGOUT_TX_INDEX_GRACE_PERIOD_IN_BTC_BLOCKS;
-    // past the pegout index start, so releases are not identified by their inputs as legacy releases are,
-    // and past the grace period, so releases created before RSKIP643 are no longer looked up in the pegout index
+    // past the pegout index start, so releases are not identified by their inputs as legacy releases are
     private static final int HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD = bridgeMainnetConstants.getBtcHeightWhenFederationsPendingBtcUTXOsActivates()
         + PEGOUT_TX_INDEX_GRACE_PERIOD_IN_BTC_BLOCKS;
-    // still past the pegout index start, and releases created before RSKIP643 are still looked up in it
-    private static final int HEIGHT_WITHIN_GRACE_PERIOD_HEIGHT_BLOCK = HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD - 1;
     private static final int HEIGHT_BEFORE_USING_PEGOUT_INDEX = 1;
     private static final int UTXO_HEIGHT_BEFORE_CARDAMOM = 0;
     private static final Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
@@ -3157,13 +3154,13 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_withSegwitActiveAndRetiringFeds_withinGracePeriod_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_withSegwitActiveAndRetiringFeds_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupSegwitActiveAndSegwitRetiringFeds(allActivations);
                 BtcTransaction btcTransaction = getPegoutTxWithOneInputAndOutputWithChange();
 
                 // act
-                registerReleaseTransaction(btcTransaction, HEIGHT_WITHIN_GRACE_PERIOD_HEIGHT_BLOCK);
+                registerReleaseTransaction(btcTransaction, HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD);
 
                 // assert
                 assertLogRejectedPegin(logs, btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
@@ -5380,8 +5377,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         private static final Coin CHANGE_VALUE = Coin.COIN.div(4);
         // the pegout recipients pay the fees, so the change is the input value minus the requested value
         private static final Coin PEGOUT_REQUEST_VALUE = INPUT_VALUE.subtract(CHANGE_VALUE);
-        private static final Coin CHANGE_VALUE_BELOW_MINIMUM_PEGIN_VALUE = minimumPeginTxValue.subtract(Coin.SATOSHI);
-        private static final Coin PEGOUT_REQUEST_VALUE_LEAVING_CHANGE_BELOW_MINIMUM_PEGIN_VALUE = INPUT_VALUE.subtract(CHANGE_VALUE_BELOW_MINIMUM_PEGIN_VALUE);
         private static final Keccak256 PEGOUT_REQUEST_RSK_TX_HASH = RskTestUtils.createHash(2);
         // the pegout change output is added last, after the user output
         private static final long OUTPUT_INDEX_FOR_PEGOUT_CHANGE = 1L;
@@ -5425,7 +5420,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutWithChangeCreatedForVetiver_withinGracePeriod_shouldRegisterChangeInActiveFed() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withPegoutWithChangeCreatedForVetiver_shouldRegisterChangeInActiveFed() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             // before RSKIP643 the pegout sighash is saved in the pegout index instead of its change as federations pending utxos
             BtcTransaction pegout = createPegoutForVetiverFromActiveFedPayingToUser(PEGOUT_REQUEST_VALUE);
@@ -5437,14 +5432,14 @@ class BridgeSupportRegisterBtcTransactionTest {
                 pegout,
                 segwitActiveFederation,
                 segwitActiveFederationKeys,
-                HEIGHT_WITHIN_GRACE_PERIOD_HEIGHT_BLOCK
+                HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD
             );
 
             // assert
             List<UTXO> expectedUtxosRegistered = buildExpectedUtxosRegistered(
                 pegout,
                 segwitActiveFederation,
-                HEIGHT_WITHIN_GRACE_PERIOD_HEIGHT_BLOCK
+                HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD
             );
             assertUtxosAreEqual(expectedUtxosRegistered, federationSupport.getActiveFederationBtcUTXOs());
             assertReleaseWasRegistered(
@@ -5457,58 +5452,6 @@ class BridgeSupportRegisterBtcTransactionTest {
                 List.of(OUTPUT_INDEX_FOR_PEGOUT_CHANGE),
                 segwitActiveFederation.getAddress()
             );
-        }
-
-        @Test
-        void registerBtcTransaction_withPegoutWithChangeCreatedForVetiver_afterGracePeriod_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction pegout = createPegoutForVetiverFromActiveFedPayingToUser(PEGOUT_REQUEST_VALUE);
-            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
-            setUpBridgeAndFederationSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
-
-            // act
-            signAndRegisterReleaseTransaction(
-                pegout,
-                segwitActiveFederation,
-                segwitActiveFederationKeys,
-                HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD
-            );
-
-            // assert
-            // the pegout index is no longer looked up, so the change sent from the federation is evaluated as a legacy pegin
-            assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
-            assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
-            assertReleaseWasRejectedAndRefundedToSpendingFederation(logs, bridgeStorageProvider, pegout, segwitActiveFederation);
-        }
-
-        @Test
-        void registerBtcTransaction_withPegoutWithChangeBelowMinimumPeginValueCreatedForVetiver_afterGracePeriod_shouldBeRejectedWithoutRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction pegout = createPegoutForVetiverFromActiveFedPayingToUser(PEGOUT_REQUEST_VALUE_LEAVING_CHANGE_BELOW_MINIMUM_PEGIN_VALUE);
-            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
-            setUpBridgeAndFederationSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
-
-            // act
-            signAndRegisterReleaseTransaction(
-                pegout,
-                segwitActiveFederation,
-                segwitActiveFederationKeys,
-                HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD
-            );
-
-            // assert
-            // the change is evaluated as a legacy pegin, and its amount is checked before its multisig sender,
-            // so it is rejected without a refund and never reaches the federation utxos
-            assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
-            assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
-            assertLogRejectedPegin(logs, pegout, RejectedPeginReason.INVALID_AMOUNT);
-            assertLogNonRefundablePegin(logs, pegout, NonRefundablePeginReason.INVALID_AMOUNT);
-            assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(pegout.getHash()).isEmpty());
-
-            boolean wasRefunded = bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(allActivations).stream()
-                .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
-                .anyMatch(release -> release.getInputs().stream().anyMatch(input -> input.getOutpoint().getHash().equals(pegout.getHash())));
-            assertFalse(wasRefunded);
         }
 
         @Test
@@ -5568,36 +5511,9 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutWithoutChangeCreatedForVetiver_withinGracePeriod_shouldMarkAsProcessedWithoutRegisteringUtxos() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withPegoutWithoutChangeCreatedForVetiver_shouldMarkAsProcessedWithoutRegisteringUtxos() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             // before RSKIP643 the pegout sighash is saved in the pegout index, even when the pegout has no change
-            // requesting the whole input value leaves no change
-            BtcTransaction pegout = createPegoutForVetiverFromActiveFedPayingToUser(INPUT_VALUE);
-            assertNotPendingUtxos(pegout);
-            setUpBridgeAndFederationSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
-
-            // act
-            signAndRegisterReleaseTransaction(
-                pegout,
-                segwitActiveFederation,
-                segwitActiveFederationKeys,
-                HEIGHT_WITHIN_GRACE_PERIOD_HEIGHT_BLOCK
-            );
-
-            // assert
-            assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
-            assertTransactionWasProcessed(
-                bridgeStorageProvider,
-                pegout.getHash(),
-                (int) rskExecutionBlock.getNumber()
-            );
-            assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
-        }
-
-        @Test
-        void registerBtcTransaction_withPegoutWithoutChangeCreatedForVetiver_afterGracePeriod_shouldNotRegister() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            // before RSKIP643 the pegout sighash is saved in the pegout index instead of its change as federations pending utxos
             // requesting the whole input value leaves no change
             BtcTransaction pegout = createPegoutForVetiverFromActiveFedPayingToUser(INPUT_VALUE);
             assertNotPendingUtxos(pegout);
@@ -5612,9 +5528,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            // the pegout index is no longer looked up, and with no output to the live federations the pegout is unknown
             assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
-            assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(pegout.getHash()).isEmpty());
+            assertTransactionWasProcessed(
+                bridgeStorageProvider,
+                pegout.getHash(),
+                (int) rskExecutionBlock.getNumber()
+            );
             assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
         }
 
@@ -5731,33 +5650,9 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationWithOneOutputCreatedForVetiver_withinGracePeriod_shouldRegisterMigratedUtxosInActiveFed() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withMigrationWithOneOutputCreatedForVetiver_shouldRegisterMigratedUtxosInActiveFed() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             // before RSKIP643 the migration sighash is saved in the pegout index instead of its outputs as federations pending utxos
-            BtcTransaction migrationTransaction = createMigrationForVetiverFromRetiringFedToActiveFed();
-            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(migrationTransaction.getHash()));
-            setUpBridgeAndFederationSupport(MIGRATION_REGISTRATION_BLOCK_NUMBER);
-
-            // act
-            signAndRegisterReleaseTransaction(
-                migrationTransaction,
-                retiringFederation,
-                retiringFederationKeys,
-                HEIGHT_WITHIN_GRACE_PERIOD_HEIGHT_BLOCK
-            );
-
-            // assert
-            assertEquals(1, migrationTransaction.getOutputs().size());
-            assertMigrationWasRegisteredInActiveFed(
-                migrationTransaction,
-                List.of(0L),
-                HEIGHT_WITHIN_GRACE_PERIOD_HEIGHT_BLOCK
-            );
-        }
-
-        @Test
-        void registerBtcTransaction_withMigrationWithOneOutputCreatedForVetiver_afterGracePeriod_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
             BtcTransaction migrationTransaction = createMigrationForVetiverFromRetiringFedToActiveFed();
             assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(migrationTransaction.getHash()));
             setUpBridgeAndFederationSupport(MIGRATION_REGISTRATION_BLOCK_NUMBER);
@@ -5771,11 +5666,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            // the pegout index is no longer looked up, so the migrated funds are evaluated as a legacy pegin
             assertEquals(1, migrationTransaction.getOutputs().size());
-            assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
-            assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
-            assertReleaseWasRejectedAndRefundedToSpendingFederation(logs, bridgeStorageProvider, migrationTransaction, retiringFederation);
+            assertMigrationWasRegisteredInActiveFed(
+                migrationTransaction,
+                List.of(0L),
+                HEIGHT_AFTER_FEDERATIONS_PENDING_BTC_UTXOS_GRACE_PERIOD
+            );
         }
 
         @Test

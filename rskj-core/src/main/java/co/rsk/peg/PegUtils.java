@@ -34,10 +34,8 @@ public class PegUtils {
     static PegTxType getTransactionTypeUsingPegoutIndex(
         ActivationConfig.ForBlock activations,
         BridgeStorageProvider provider,
-        BridgeConstants bridgeConstants,
         Wallet liveFederationsWallet,
-        BtcTransaction btcTransaction,
-        long btcTransactionHeight
+        BtcTransaction btcTransaction
     ) {
         if (!activations.isActive(ConsensusRule.RSKIP379)) {
             throw new IllegalStateException("Can't call this method before RSKIP379 activation");
@@ -45,35 +43,14 @@ public class PegUtils {
 
         List<TransactionOutput> liveFederationOutputs = btcTransaction.getWalletOutputs(liveFederationsWallet);
 
-        if (isIdentifiedByPegoutIndex(
-            provider,
-            bridgeConstants,
-            activations,
-            btcTransaction,
-            btcTransactionHeight
-        )) {
+        Optional<Sha256Hash> inputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTransaction);
+        if (inputSigHash.isPresent() && provider.hasPegoutTxSigHash(inputSigHash.get())) {
             return PegTxType.PEGOUT_OR_MIGRATION;
         } else if (!liveFederationOutputs.isEmpty()){
             return PegTxType.PEGIN;
         } else {
             return PegTxType.UNKNOWN;
         }
-    }
-
-    private static boolean isIdentifiedByPegoutIndex(
-        BridgeStorageProvider provider,
-        BridgeConstants bridgeConstants,
-        ActivationConfig.ForBlock activations,
-        BtcTransaction btcTransaction,
-        long btcTransactionHeight
-    ) {
-        // Once the grace period ends, releases are only identified by their federations pending btc utxos
-        if (isFederationsPendingBtcUTXOsEnabled(bridgeConstants, activations, btcTransactionHeight)) {
-            return false;
-        }
-        return BitcoinUtils.getSigHashForPegoutIndex(btcTransaction)
-            .map(provider::hasPegoutTxSigHash)
-            .orElse(false);
     }
 
     /**
@@ -149,10 +126,8 @@ public class PegUtils {
         return getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
-            bridgeConstants,
             liveFederationsWallet,
-            btcTransaction,
-            btcTransactionHeight
+            btcTransaction
         );
     }
 
@@ -166,18 +141,6 @@ public class PegUtils {
         int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
         return activations.isActive(ConsensusRule.RSKIP379) &&
             btcTransactionHeight >= heightAtWhichToStartUsingPegoutIndex;
-    }
-
-    private static boolean isFederationsPendingBtcUTXOsEnabled(
-        BridgeConstants bridgeConstants,
-        ActivationConfig.ForBlock activations,
-        long btcTransactionHeight
-    ) {
-        int btcHeightWhenFederationsPendingBtcUTXOsActivates = bridgeConstants.getBtcHeightWhenFederationsPendingBtcUTXOsActivates();
-        int gracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-        int heightAtWhichToStartUsingFederationsPendingBtcUTXOs = btcHeightWhenFederationsPendingBtcUTXOsActivates + gracePeriodInBtcBlocks;
-        return activations.isActive(ConsensusRule.RSKIP643) &&
-            btcTransactionHeight >= heightAtWhichToStartUsingFederationsPendingBtcUTXOs;
     }
 
     private static boolean isTheSvpFundTransaction(
