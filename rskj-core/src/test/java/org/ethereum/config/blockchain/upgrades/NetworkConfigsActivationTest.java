@@ -100,6 +100,34 @@ class NetworkConfigsActivationTest {
         return out;
     }
 
+    /**
+     * Consensus rule config key -> effective activation height, as ActivationConfig.read resolves it (numeric
+     * entries and upgrade-name entries alike). -1 means never active. ActivationConfig exposes no per-rule getter,
+     * so the height is recovered with a boundary search over isActive. Enum order keeps the golden byte-stable.
+     */
+    static Map<String, Long> consensusRuleHeights(Config networkConfig) {
+        ActivationConfig activations = ActivationConfig.read(networkConfig.getConfig("blockchain.config"));
+        Map<String, Long> out = new LinkedHashMap<>();
+        for (ConsensusRule rule : ConsensusRule.values()) {
+            long height = -1;
+            if (activations.isActive(rule, Long.MAX_VALUE)) {
+                long lo = 0;
+                long hi = Long.MAX_VALUE;
+                while (lo < hi) {   // smallest block at which the rule is active
+                    long mid = lo + (hi - lo) / 2;
+                    if (activations.isActive(rule, mid)) {
+                        hi = mid;
+                    } else {
+                        lo = mid + 1;
+                    }
+                }
+                height = lo;
+            }
+            out.put(rule.getConfigKey(), height);
+        }
+        return out;
+    }
+
     @ParameterizedTest(name = "{0}")
     @MethodSource("networkNames")
     void activationConfigReadsWithoutError(String network) {
@@ -192,51 +220,68 @@ class NetworkConfigsActivationTest {
         List<String> violations = new ArrayList<>();
         for (String network : networkNames()) {
             JsonNode asOfNode = golden.path("asOf").path(network);
-            JsonNode goldenHeights = golden.path("heights").path(network);
             assertFalse(asOfNode.isMissingNode(), "golden asOf missing for " + network);
-            assertFalse(goldenHeights.isMissingNode(), "golden heights missing for " + network);
             long asOf = asOfNode.asLong();
             assertEquals(AS_OF.getOrDefault(network, -1L).longValue(), asOf,
                 network + ": golden asOf is stale; run ./gradlew :rskj-core:updateActivationGolden");
-            Map<String, Long> current = activationHeights(loadNetwork(network));
-            for (Iterator<Map.Entry<String, JsonNode>> it = goldenHeights.fields(); it.hasNext();) {
-                Map.Entry<String, JsonNode> e = it.next();
-                long was = e.getValue().asLong();
-                Long now = current.get(e.getKey());
-                if (now == null) {
-                    violations.add(network + "." + e.getKey() + " removed (was " + was + ")");
-                    continue;
-                }
-                if (was == now) {
-                    continue;
-                }
-                // A change is a violation if the height had already passed, or is being moved retroactively
-                // onto already-mined history. Scheduled/disabled changes above asOf are legitimate and show up
-                // in the config diff itself; regenerate the golden after making one.
-                boolean pinned = asOf >= 0 && ((was >= 0 && was <= asOf) || (now >= 0 && now <= asOf));
-                if (pinned) {
-                    violations.add(network + "." + e.getKey() + " changed " + was + " -> " + now + " (asOf=" + asOf + ")");
-                }
-            }
-            // A key the config has but the golden lacks is unpinned: it would never be compared again.
-            for (String key : current.keySet()) {
-                if (!goldenHeights.has(key)) {
-                    violations.add(network + "." + key + " not in golden (now " + current.get(key)
-                        + "); run ./gradlew :rskj-core:updateActivationGolden");
-                }
+            Config cfg = loadNetwork(network);
+            compareSection(golden, "heights", network, asOf, activationHeights(cfg), violations);
+            // Per-rule heights only matter where history is pinned; a pinned network without them fails below.
+            if (asOf >= 0) {
+                compareSection(golden, "consensusRules", network, asOf, consensusRuleHeights(cfg), violations);
             }
         }
         assertTrue(violations.isEmpty(), "Passed activation heights changed: " + violations);
+    }
+
+    private static void compareSection(JsonNode golden, String section, String network, long asOf,
+                                       Map<String, Long> current, List<String> violations) {
+        JsonNode goldenHeights = golden.path(section).path(network);
+        assertFalse(goldenHeights.isMissingNode(),
+            "golden " + section + " missing for " + network + "; run ./gradlew :rskj-core:updateActivationGolden");
+        for (Iterator<Map.Entry<String, JsonNode>> it = goldenHeights.fields(); it.hasNext();) {
+            Map.Entry<String, JsonNode> e = it.next();
+            long was = e.getValue().asLong();
+            Long now = current.get(e.getKey());
+            if (now == null) {
+                violations.add(network + "." + section + "." + e.getKey() + " removed (was " + was + ")");
+                continue;
+            }
+            if (was == now) {
+                continue;
+            }
+            // A change is a violation if the height had already passed, or is being moved retroactively
+            // onto already-mined history. Scheduled/disabled changes above asOf are legitimate and show up
+            // in the config diff itself; regenerate the golden after making one.
+            boolean pinned = asOf >= 0 && ((was >= 0 && was <= asOf) || (now >= 0 && now <= asOf));
+            if (pinned) {
+                violations.add(network + "." + section + "." + e.getKey() + " changed " + was + " -> " + now + " (asOf=" + asOf + ")");
+            }
+        }
+        // A key the config has but the golden lacks is unpinned: it would never be compared again.
+        for (String key : current.keySet()) {
+            if (!goldenHeights.has(key)) {
+                violations.add(network + "." + section + "." + key + " not in golden (now " + current.get(key)
+                    + "); run ./gradlew :rskj-core:updateActivationGolden");
+            }
+        }
     }
 
     private void writeGolden() throws IOException {
         ObjectNode root = MAPPER.createObjectNode();
         ObjectNode asOf = root.putObject("asOf");
         ObjectNode heights = root.putObject("heights");
+        ObjectNode rules = root.putObject("consensusRules");
         for (String network : networkNames()) {
-            asOf.put(network, AS_OF.getOrDefault(network, -1L));
+            long networkAsOf = AS_OF.getOrDefault(network, -1L);
+            asOf.put(network, networkAsOf);
+            Config cfg = loadNetwork(network);
             ObjectNode h = heights.putObject(network);
-            activationHeights(loadNetwork(network)).forEach(h::put);
+            activationHeights(cfg).forEach(h::put);
+            if (networkAsOf >= 0) {
+                ObjectNode r = rules.putObject(network);
+                consensusRuleHeights(cfg).forEach(r::put);
+            }
         }
         Files.createDirectories(GOLDEN.getParent());
         // Explicit LF indenter + trailing newline: the golden is a committed text file, and the platform default
