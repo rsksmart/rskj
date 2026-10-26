@@ -27,6 +27,7 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.junit.jupiter.api.Test;
@@ -71,6 +72,9 @@ class SelfdestructPreservesNonceDslTest {
     @Test
     void beforeActivationCreate2ContractIsDeletedAndRecreated() throws FileNotFoundException, DslProcessorException {
         World world = run("dsl/rskip701/create2_destroy_recreate.txt", false);
+        long best = world.getBlockChain().getBestBlock().getNumber();
+        assertFalse(world.getConfig().getActivationConfig().isActive(ConsensusRule.RSKIP545, best));
+        assertFalse(world.getConfig().getActivationConfig().isActive(ConsensusRule.RSKIP701, best));
 
         RepositorySnapshot afterDestroy = snapshotAt(world, "b02");
         assertFalse(afterDestroy.isExist(CONTRACT_C));
