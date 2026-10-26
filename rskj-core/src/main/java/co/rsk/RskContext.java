@@ -97,7 +97,6 @@ import co.rsk.validators.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -654,24 +653,25 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (rskSystemProperties == null) {
-            rskSystemProperties = buildRskSystemProperties();
+            RskSystemProperties builtProperties = Objects.requireNonNull(
+                    buildRskSystemProperties(), "buildRskSystemProperties() returned null");
+            rskSystemProperties = builtProperties;
 
-            boolean acceptAnyHost = Optional.ofNullable(rskSystemProperties)
-                    .map(SystemProperties::rpcHttpHost)
-                    .orElse(new ArrayList<>())
-                    .contains("*");
-
-            boolean isWalletEnabled = rskSystemProperties != null && rskSystemProperties.isWalletEnabled();
-
-            if (acceptAnyHost && isWalletEnabled) {
-                logger.warn("It is not recommended to bypass hosts checks, by setting '*' in" +
-                        " the host list, and have wallet enabled both together." +
-                        " If you bypass hosts check we suggest to have wallet disabled, the same thing" +
-                        " if you want to enable wallet, then it is suggested to not bypass hosts check.");
-            }
+            warnIfHostCheckIsBypassedWithWalletEnabled(builtProperties);
         }
 
         return rskSystemProperties;
+    }
+
+    private static void warnIfHostCheckIsBypassedWithWalletEnabled(RskSystemProperties properties) {
+        boolean acceptAnyHost = properties.rpcHttpHost().contains("*");
+
+        if (acceptAnyHost && properties.isWalletEnabled()) {
+            logger.warn("It is not recommended to bypass hosts checks, by setting '*' in" +
+                    " the host list, and have wallet enabled both together." +
+                    " If you bypass hosts check we suggest to have wallet disabled, the same thing" +
+                    " if you want to enable wallet, then it is suggested to not bypass hosts check.");
+        }
     }
 
     public synchronized PeerScoringManager getPeerScoringManager() {
