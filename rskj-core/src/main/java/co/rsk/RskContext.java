@@ -1137,7 +1137,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                                     getProofOfWorkRule(),
                                     getForkDetectionDataRule(),
                                     blockTimeStampValidationRule,
-                                    new ValidGasUsedRule()
+                                    new ValidGasUsedRule(),
+                                    new BlockHeaderVersionRule(rskSystemProperties.getActivationConfig())
                             ),
                             new BlockHeaderParentCompositeRule(
                                     new PrevMinGasPriceRule(),
@@ -1154,7 +1155,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new GasLimitRule(commonConstants.getMinGasLimit()),
                     new ExtraDataRule(commonConstants.getMaximumExtraDataSize()),
                     getForkDetectionDataRule(),
-                    new ValidTxExecutionSublistsEdgesRule(getRskSystemProperties().getActivationConfig())
+                    new ValidTxExecutionSublistsEdgesRule(getRskSystemProperties().getActivationConfig()),
+                    new BlockHeaderVersionRule(rskSystemProperties.getActivationConfig())
             );
         }
 
@@ -1182,7 +1184,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     blockTimeStampValidationRule,
                     new GasLimitRule(commonConstants.getMinGasLimit()),
                     new ExtraDataRule(commonConstants.getMaximumExtraDataSize()),
-                    new ValidTxExecutionSublistsEdgesRule(getRskSystemProperties().getActivationConfig())
+                    new ValidTxExecutionSublistsEdgesRule(getRskSystemProperties().getActivationConfig()),
+                    new BlockHeaderVersionRule(rskSystemProperties.getActivationConfig())
             );
         }
 
@@ -1863,7 +1866,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new BlockHeaderCompositeRule(
                             getProofOfWorkRule(),
                             new BlockTimeStampValidationRule(commonConstants.getNewBlockMaxSecondsInTheFuture(), rskSystemProperties.getActivationConfig(), commonConstants, rskSystemProperties.getBitcoinjNetworkConstants()),
-                            new ValidGasUsedRule()
+                            new ValidGasUsedRule(),
+                            new BlockHeaderVersionRule(rskSystemProperties.getActivationConfig())
                     ),
                     new BlockHeaderParentCompositeRule(
                             new PrevMinGasPriceRule(),
@@ -2115,7 +2119,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new BlockHeaderCompositeRule(
                             getProofOfWorkRule(),
                             blockTimeStampValidationRule,
-                            new ValidGasUsedRule()
+                            new ValidGasUsedRule(),
+                            new BlockHeaderVersionRule(getRskSystemProperties().getActivationConfig())
                     ),
                     getRskSystemProperties().getSnapshotChunkSize(),
                     checkpointDistance,
