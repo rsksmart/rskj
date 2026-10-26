@@ -20,10 +20,12 @@ package org.ethereum.core.transaction.parser.util;
 import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -177,28 +179,25 @@ public final class AuthorizationListCodec {
             throw invalidParamError("Authorization list entry missing s at index " + index);
         }
 
-        byte[] chainIdBytes = HexUtils.strHexOrStrNumberToByteArray(entry.getChainId());
+        byte[] chainIdBytes = decodeQuantity(entry.getChainId(), "chainId", index);
         CommonParsingUtils.requireDataWordBytes(chainIdBytes, "Authorization chain_id is not valid");
         BigInteger chainId = chainIdBytes == null || chainIdBytes.length == 0
                 ? BigInteger.ZERO
                 : new BigInteger(1, chainIdBytes);
-        byte[] addressBytes = HexUtils.stringHexToByteArray(entry.getAddress());
-        if (addressBytes == null || addressBytes.length != RskAddress.LENGTH_IN_BYTES) {
-            throw invalidParamError(
-                    "Authorization list entry address must be a 20-byte hex value at index " + index);
+        String addressError = "Authorization list entry address must be a 20-byte hex value at index " + index;
+        byte[] addressBytes = decodeHex(entry.getAddress(), addressError);
+        if (addressBytes.length != RskAddress.LENGTH_IN_BYTES) {
+            throw invalidParamError(addressError);
         }
-        byte[] nonce = HexUtils.strHexOrStrNumberToByteArray(entry.getNonce());
+        byte[] nonce = decodeQuantity(entry.getNonce(), "nonce", index);
         if (nonce == null) {
             nonce = new byte[0];
         }
         CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
         requireNonceInRange(decodeUnsignedBigInteger(nonce));
-        byte yParity = parseNormalizedYParity(HexUtils.strHexOrStrNumberToByteArray(entry.getYParity()));
-        byte[] r = HexUtils.stringHexToByteArray(entry.getR());
-        byte[] s = HexUtils.stringHexToByteArray(entry.getS());
-        if (r == null || s == null) {
-            throw invalidParamError("Authorization list entry signature r/s must be hex at index " + index);
-        }
+        byte yParity = parseNormalizedYParity(decodeQuantity(entry.getYParity(), "yParity", index));
+        byte[] r = decodeHex(entry.getR(), "Authorization list entry r must be hex at index " + index);
+        byte[] s = decodeHex(entry.getS(), "Authorization list entry s must be hex at index " + index);
         CommonParsingUtils.requireNormalizedSignatureComponent(r, "Authorization signature r is not valid");
         CommonParsingUtils.requireNormalizedSignatureComponent(s, "Authorization signature s is not valid");
         byte v = (byte) (Transaction.LOWER_REAL_V + yParity);
@@ -213,6 +212,25 @@ public final class AuthorizationListCodec {
         validateAuthorization(auth);
         requireProcessableAuthorization(auth, index);
         return auth;
+    }
+
+    /** Decodes RPC hex text, reporting text that is not hex as an invalid parameter. */
+    private static byte[] decodeHex(String value, String errorMessage) {
+        try {
+            return HexUtils.stringHexToByteArray(value);
+        } catch (DecoderException e) {
+            throw invalidParamError(errorMessage);
+        }
+    }
+
+    /** Decodes an RPC hex or decimal quantity, reporting either malformed form as an invalid parameter. */
+    private static byte[] decodeQuantity(String value, String fieldName, int index) {
+        try {
+            return HexUtils.strHexOrStrNumberToByteArray(value);
+        } catch (DecoderException | RskJsonRpcRequestException e) {
+            throw invalidParamError(
+                    "Authorization list entry " + fieldName + " must be a hex or decimal quantity at index " + index);
+        }
     }
 
     /**

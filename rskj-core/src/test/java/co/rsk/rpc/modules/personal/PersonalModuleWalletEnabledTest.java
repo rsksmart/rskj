@@ -18,6 +18,9 @@ import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.function.Consumer;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -109,6 +112,49 @@ class PersonalModuleWalletEnabledTest {
                 () -> personalModuleWalletEnabled.sendTransaction(argsParam, "passphrase1"));
         assertEquals(-32602, ex.getCode());
         assertEquals("Invalid transaction: maxPriorityFeePerGas (2000000000) must not exceed maxFeePerGas (1000000000)", ex.getMessage());
+        verify(eth, never()).submitTransaction(any());
+    }
+
+    @Test
+    void sendTransaction_accessListAddressNotHex_throwsInvalidParams() {
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress("0xzz" + "00".repeat(19));
+        entry.setStorageKeys(List.of());
+
+        assertSendTransactionInvalidParams("0x1", args -> args.setAccessList(List.of(entry)),
+                "Access list entry address must be a 20-byte hex value at index 0");
+    }
+
+    @Test
+    void sendTransaction_authorizationListRNotHex_throwsInvalidParams() {
+        CallArguments.AuthorizationListEntry entry = new CallArguments.AuthorizationListEntry();
+        entry.setChainId("0x21");
+        entry.setAddress("0x" + "11".repeat(20));
+        entry.setNonce("0x0");
+        entry.setYParity("0x0");
+        entry.setR("0xzz");
+        entry.setS("0x1");
+
+        assertSendTransactionInvalidParams("0x4", args -> args.setAuthorizationList(List.of(entry)),
+                "Authorization list entry r must be hex at index 0");
+    }
+
+    private void assertSendTransactionInvalidParams(
+            String type, Consumer<CallArguments> customizer, String expectedMessage) {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount("passphrase1");
+        Ethereum eth = mock(Ethereum.class);
+        PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(config, eth, wallet, mock(TransactionPool.class));
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, new RskAddress(new ECKey().getAddress()));
+        args.setType(type);
+        args.setChainId(HexUtils.toQuantityJsonHex(config.getNetworkConstants().getChainId()));
+        customizer.accept(args);
+        CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(RskJsonRpcRequestException.class,
+                () -> personalModuleWalletEnabled.sendTransaction(argsParam, "passphrase1"));
+        assertEquals(-32602, ex.getCode());
+        assertEquals(expectedMessage, ex.getMessage());
         verify(eth, never()).submitTransaction(any());
     }
 

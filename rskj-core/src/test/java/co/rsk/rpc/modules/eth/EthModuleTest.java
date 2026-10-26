@@ -66,6 +66,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -871,6 +872,48 @@ class EthModuleTest {
         RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
         assertEquals(-32602, ex.getCode());
         assertEquals("Invalid transaction: maxPriorityFeePerGas (2000000000) must not exceed maxFeePerGas (1000000000)", ex.getMessage());
+        verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
+    void sendTransaction_accessListAddressNotHex_throwsInvalidParams() {
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress("0xzz" + "00".repeat(19));
+        entry.setStorageKeys(List.of());
+
+        assertSendTransactionInvalidParams("0x1", args -> args.setAccessList(List.of(entry)),
+                "Access list entry address must be a 20-byte hex value at index 0");
+    }
+
+    @Test
+    void sendTransaction_authorizationListRNotHex_throwsInvalidParams() {
+        CallArguments.AuthorizationListEntry entry = new CallArguments.AuthorizationListEntry();
+        entry.setChainId("0x21");
+        entry.setAddress("0x" + "11".repeat(20));
+        entry.setNonce("0x0");
+        entry.setYParity("0x0");
+        entry.setR("0xzz");
+        entry.setS("0x1");
+
+        assertSendTransactionInvalidParams("0x4", args -> args.setAuthorizationList(List.of(entry)),
+                "Authorization list entry r must be hex at index 0");
+    }
+
+    private static void assertSendTransactionInvalidParams(
+            String type, Consumer<CallArguments> customizer, String expectedMessage) {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, wallet.addAccount());
+        args.setType(type);
+        args.setChainId("0x21");
+        customizer.accept(args);
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(Constants.regtest(), wallet, mock(TransactionPool.class), transactionGateway);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+        assertEquals(-32602, ex.getCode());
+        assertEquals(expectedMessage, ex.getMessage());
         verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
     }
 

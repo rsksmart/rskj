@@ -38,6 +38,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -248,6 +249,32 @@ class AccessListCodecTest {
 
         assertThrows(RskJsonRpcRequestException.class,
                 () -> AccessListCodec.encodeAccessList(List.of(entry)));
+    }
+
+    @Test
+    void encodeAccessList_addressNotHex_throwsInvalidParams() {
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress("0xzz" + "00".repeat(19));
+        entry.setStorageKeys(Collections.emptyList());
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
+                () -> AccessListCodec.encodeAccessList(List.of(entry)));
+
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Access list entry address must be a 20-byte hex value at index 0", ex.getMessage());
+    }
+
+    @Test
+    void encodeAccessList_storageKeyNotHex_throwsInvalidParams() {
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress("0x" + "aa".repeat(20));
+        entry.setStorageKeys(List.of("0x" + "bb".repeat(32), "0xzz" + "00".repeat(31)));
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
+                () -> AccessListCodec.encodeAccessList(List.of(entry)));
+
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Access list storage key must be a 32-byte hex value at entry 0, key 1", ex.getMessage());
     }
 
     // -------------------------------------------------------------------------
