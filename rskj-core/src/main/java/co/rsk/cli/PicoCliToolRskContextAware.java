@@ -23,6 +23,7 @@ import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 
 public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware implements Callable<Integer> {
@@ -31,10 +32,20 @@ public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware 
     protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) {
         this.ctx = ctx;
 
-        int result = new CommandLine(this).setUnmatchedArgumentsAllowed(true).execute(args);
+        CommandLine commandLine = new CommandLine(this).setUnmatchedArgumentsAllowed(true);
+        rejectArgumentsUnknownToToolAndNode(commandLine.parseArgs(args).unmatched());
+
+        int result = commandLine.execute(args);
 
         if (result != 0) {
             throw new PicocliBadResultException(result);
+        }
+    }
+
+    /** Arguments the tool does not declare must be node arguments (network flags, -X overrides, ...). */
+    private static void rejectArgumentsUnknownToToolAndNode(List<String> unmatched) {
+        if (!unmatched.isEmpty()) {
+            new CommandLine(new RskCli()).parseArgs(unmatched.toArray(new String[0]));
         }
     }
 }
