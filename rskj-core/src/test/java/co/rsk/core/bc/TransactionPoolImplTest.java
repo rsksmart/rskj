@@ -1052,6 +1052,19 @@ class TransactionPoolImplTest {
     }
 
     @Test
+    void queuedTransactionDroppedOnNewBestBlockOnceAccountIsDelegated() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        Transaction queued = createSampleTransaction(1, 2, 1000, 1);
+        Assertions.assertTrue(transactionPool.addTransaction(queued).queuedTransactionsWereAdded());
+
+        makeAccountDelegated(1, 2);
+        Block block = new BlockBuilder(null, null, null).parent(blockChain.getBestBlock()).build();
+        transactionPool.processBest(block);
+
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
     void delegatedAccount_replacementTransactionWithValidGasBumpAcceptedAndOnlyOneTransactionRemainsInPool() {
         createTestAccounts(2, Coin.valueOf(1000000));
         makeAccountDelegated(1, 2);

@@ -347,6 +347,10 @@ public class TransactionPoolImpl implements TransactionPool {
         //or else the transactions would be validated against outdated account state.
         this.setBestBlock(newBlock);
 
+        // before retracting, so a retracted transaction is not refused because of an entry
+        // the new state no longer allows
+        removeTransactionsOutOfNonceRange();
+
         if (fork != null) {
             for (Block blk : fork.getOldBlocks()) {
                 retractBlock(blk);
@@ -387,6 +391,40 @@ public class TransactionPoolImpl implements TransactionPool {
         logger.trace("Retracting block {} {} with {} txs", block.getNumber(), block.getPrintableHash(), txs.size());
 
         this.addTransactions(txs);
+    }
+
+    /**
+     * Removes pending and queued transactions whose nonce is below the state nonce of their
+     * sender at the current best block, since they can no longer be mined. For a delegated
+     * sender, also removes any transaction above the state nonce, so the account keeps at most
+     * the one transaction that executes next, as enforced when transactions are added.
+     */
+    private void removeTransactionsOutOfNonceRange() {
+        RepositorySnapshot repository = getCurrentRepository();
+        Map<RskAddress, BigInteger> stateNonces = new HashMap<>();
+        Map<RskAddress, Boolean> delegatedSenders = new HashMap<>();
+        List<Keccak256> toremove = new ArrayList<>();
+
+        List<Transaction> pooled = new ArrayList<>(pendingTransactions.getTransactions());
+        pooled.addAll(queuedTransactions.getTransactions());
+
+        for (Transaction tx : pooled) {
+            RskAddress sender = tx.getSender(signatureCache);
+            BigInteger stateNonce = stateNonces.computeIfAbsent(sender, repository::getNonce);
+
+            int nonceComparison = tx.getNonceAsInteger().compareTo(stateNonce);
+
+            if (nonceComparison < 0) {
+                toremove.add(tx.getHash());
+                logger.trace("Clear stale transaction, nonce: [{}] state nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), stateNonce, tx.getHash());
+            } else if (nonceComparison > 0
+                    && delegatedSenders.computeIfAbsent(sender, s -> DelegationCodeResolver.isDelegatedCode(repository.getCode(s)))) {
+                toremove.add(tx.getHash());
+                logger.trace("Clear gapped transaction of delegated account, nonce: [{}] state nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), stateNonce, tx.getHash());
+            }
+        }
+
+        removeTransactionList(toremove);
     }
 
     private void removeObsoleteTransactions(int depth, int timeout) {
