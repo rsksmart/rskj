@@ -54,6 +54,11 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.ParameterizedTest;
+import com.typesafe.config.ConfigValue;
+import com.typesafe.config.ConfigValueFactory;
+import co.rsk.config.TestSystemProperties;
 
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
@@ -547,6 +552,63 @@ class TraceModuleImplTest {
         Assertions.assertEquals("0x" + authority.toHexString(), suicide.get("action").get("address").asText());
         Assertions.assertEquals("0x" + beneficiary.toHexString(), suicide.get("action").get("refundAddress").asText());
         Assertions.assertEquals("0x3e8", suicide.get("action").get("balance").asText());
+    }
+
+    /**
+     * Plan T20 (council C#1): SELFDESTRUCT in a CREATE2 child with nonce 1. With RSKIP701 the child is cleared,
+     * without it it is deleted; the trace is the same in both cases: the root call and one "suicide" frame. There is
+     * no storage-clear frame, because finalization clears or deletes through the repository, not through Storage.
+     */
+    @ParameterizedTest(name = "rskip701 active: {0}")
+    @ValueSource(booleans = {true, false})
+    void traceTransaction_selfdestructInCreate2Child_hasRootAndOneSuicideFrame(boolean rskip701Active)
+            throws FileNotFoundException, DslProcessorException {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        // RSKIP545 requires RSKIP701, so it follows the RSKIP701 activation
+        ConfigValue activationHeight = ConfigValueFactory.fromAnyRef(rskip701Active ? 0 : -1);
+        TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
+                .withValue("blockchain.config.consensusRules.rskip701", activationHeight)
+                .withValue("blockchain.config.consensusRules.rskip545", activationHeight));
+        World world = new World(receiptStore, config);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(DslParser.fromResource("dsl/eth_module/estimateGas/selfdestructCreate2Contract.txt"));
+        RskAddress child = new RskAddress("564277e6a03a179c7b29165fd3fa2612dd9b6602");
+        RskAddress beneficiary = world.getAccountByName("accB").getAddress();
+        Assertions.assertEquals(BigInteger.ONE, world.getRepositoryLocator()
+                .snapshotAt(world.getBlockChain().getBestBlock().getHeader()).getNonce(child));
+        processor.processCommands(new DslParser("transaction_build destroy\n" +
+                "    sender acc1\n" +
+                "    nonce 1\n" +
+                "    receiverAddress " + child.toHexString() + "\n" +
+                "    value 1000\n" +
+                "    data 000000000000000000000000" + beneficiary.toHexString() + "\n" +
+                "    gas 200000\n" +
+                "    build\n" +
+                "block_build b02\n" +
+                "    parent b01\n" +
+                "    gasLimit 6800000\n" +
+                "    transactions destroy\n" +
+                "    build\n" +
+                "block_connect b02\n" +
+                "assert_best b02\n" +
+                "assert_tx_success destroy\n"));
+
+        RepositorySnapshot afterDestroy = world.getRepositoryLocator()
+                .snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        Assertions.assertEquals(rskip701Active, afterDestroy.isExist(child), "cleared with RSKIP701, deleted without it");
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+        JsonNode result = traceModule.traceTransaction(world.getTransactionByName("destroy").getHash().toJsonString());
+
+        Assertions.assertTrue(result.isArray());
+        Assertions.assertEquals(2, result.size());
+        Assertions.assertEquals("\"call\"", result.get(0).get("type").toString());
+        JsonNode suicide = result.get(1);
+        Assertions.assertEquals("\"suicide\"", suicide.get("type").toString());
+        Assertions.assertEquals("0x" + child.toHexString(), suicide.get("action").get("address").asText());
+        Assertions.assertEquals("0x" + beneficiary.toHexString(), suicide.get("action").get("refundAddress").asText());
+        Assertions.assertEquals("0x3e8", suicide.get("action").get("balance").asText());
+        Assertions.assertEquals("[0]", suicide.get("traceAddress").toString());
     }
 
     private static void retrieveSuicideInvocationTrace(World world, ReceiptStore receiptStore, String txname) {
