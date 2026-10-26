@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -51,6 +52,7 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderV2;
 import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Repository;
@@ -1311,6 +1313,169 @@ public class BlockExecutorTest {
         Assertions.assertEquals(type4Tx, executed.get(0));
         Assertions.assertEquals(legacyTxDependingOnType4Authority, executed.get(1));
         Assertions.assertEquals(independentLegacyTx, executed.get(2));
+    }
+
+    @Test
+    void parallelBlockWithCallsThroughADelegatedAccountAndItsRedelegation_validatesToTheMinedState() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+        byte chainId = config.getNetworkConstants().getChainId();
+        Repository track = repository.startTracking();
+        Account s1 = createAccount("pd1s1", track, Coin.valueOf(1_000_000));
+        Account s2 = createAccount("pd1s2", track, Coin.valueOf(1_000_000));
+        Account s3 = createAccount("pd1s3", track, Coin.valueOf(1_000_000));
+        Account s4 = createAccount("pd1s4", track, Coin.valueOf(1_000_000));
+        Account s5 = createAccount("pd1s5", track, Coin.valueOf(1_000_000));
+        Account independentSender = createAccount("pd1i1", track, Coin.valueOf(1_000_000));
+        Account independentReceiver = createAccount("pd1i2", track, Coin.ZERO);
+        Account authority = createAccount("pd1authority", track, Coin.valueOf(1_000_000));
+        RskAddress x = deployAt(track, "pd1x", INCREMENT_SLOT0);
+        RskAddress y = deployAt(track, "pd1y", SET_SLOT1);
+        delegate(track, authority.getAddress(), x);
+
+        Transaction callA1 = callTx(s1, authority.getAddress(), chainId);
+        Transaction callA2 = callTx(s2, authority.getAddress(), chainId);
+        Transaction redelegateA = createType4Tx(s3, s3.getAddress(), BigInteger.ZERO, chainId, y, BigInteger.ZERO, authority.getEcKey());
+        Transaction callDelegateDirectly = callTx(s4, x, chainId);
+        Transaction callA3 = callTx(s5, authority.getAddress(), chainId);
+        Transaction independent = createLegacyTx(independentSender, independentReceiver.getAddress(), BigInteger.ZERO, chainId);
+
+        Block block = mineWithSequentialCloserAndValidate(track, "pd1",
+                Arrays.asList(callA1, callA2, redelegateA, callDelegateDirectly, callA3, independent),
+                s1, s2, s3, s4, s5, independentSender);
+
+        int sublistOfA = sublistIndexOf(block, callA1);
+        Assertions.assertEquals(sublistOfA, sublistIndexOf(block, callA2));
+        Assertions.assertEquals(sublistOfA, sublistIndexOf(block, redelegateA));
+        Assertions.assertEquals(sublistOfA, sublistIndexOf(block, callA3));
+    }
+
+    @Test
+    void parallelBlockWithTwoAuthoritiesDelegatedToTheSameCode_validatesToTheMinedState() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+        byte chainId = config.getNetworkConstants().getChainId();
+        Repository track = repository.startTracking();
+        Account s1 = createAccount("pd2s1", track, Coin.valueOf(1_000_000));
+        Account s2 = createAccount("pd2s2", track, Coin.valueOf(1_000_000));
+        Account a = createAccount("pd2a", track, Coin.valueOf(1_000_000));
+        Account b = createAccount("pd2b", track, Coin.valueOf(1_000_000));
+        RskAddress x = deployAt(track, "pd2x", INCREMENT_SLOT0);
+        delegate(track, a.getAddress(), x);
+        delegate(track, b.getAddress(), x);
+
+        Transaction callA = callTx(s1, a.getAddress(), chainId);
+        Transaction callB = callTx(s2, b.getAddress(), chainId);
+        Block block = mineWithSequentialCloserAndValidate(track, "pd2", Arrays.asList(callA, callB), s1, s2);
+
+        Assertions.assertNotEquals(sublistIndexOf(block, callA), sublistIndexOf(block, callB),
+                "the authorities' storages are disjoint, so the calls may run in parallel");
+    }
+
+    @Test
+    void parallelBlockWithRedelegationBeforeTheCalls_validatesToTheMinedState() {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+        byte chainId = config.getNetworkConstants().getChainId();
+        Repository track = repository.startTracking();
+        Account s1 = createAccount("pd3s1", track, Coin.valueOf(1_000_000));
+        Account s2 = createAccount("pd3s2", track, Coin.valueOf(1_000_000));
+        Account s3 = createAccount("pd3s3", track, Coin.valueOf(1_000_000));
+        Account authority = createAccount("pd3authority", track, Coin.valueOf(1_000_000));
+        RskAddress x = deployAt(track, "pd3x", INCREMENT_SLOT0);
+        RskAddress y = deployAt(track, "pd3y", SET_SLOT1);
+        delegate(track, authority.getAddress(), x);
+
+        Transaction redelegateA = createType4Tx(s1, s1.getAddress(), BigInteger.ZERO, chainId, y, BigInteger.ZERO, authority.getEcKey());
+        Transaction callA1 = callTx(s2, authority.getAddress(), chainId);
+        Transaction callA2 = callTx(s3, authority.getAddress(), chainId);
+        Block block = mineWithSequentialCloserAndValidate(track, "pd3", Arrays.asList(redelegateA, callA1, callA2), s1, s2, s3);
+
+        Assertions.assertEquals(sublistIndexOf(block, redelegateA), sublistIndexOf(block, callA1));
+        Assertions.assertEquals(sublistIndexOf(block, redelegateA), sublistIndexOf(block, callA2));
+    }
+
+    // PUSH1 0 SLOAD PUSH1 1 ADD PUSH1 0 SSTORE STOP
+    private static final byte[] INCREMENT_SLOT0 = Hex.decode("60005460010160005500");
+    // PUSH1 1 PUSH1 1 SSTORE STOP
+    private static final byte[] SET_SLOT1 = Hex.decode("600160015500");
+
+    /**
+     * Mines the block with executeAndFill, then validates it 20 times. A closer tx that conflicts with every
+     * sender keeps a sequential sublist at the end, as REMASC does in production blocks; without it the
+     * test-only REMASC fallback in TransactionListExecutor rejects multi-sublist blocks for unrelated reasons.
+     */
+    private Block mineWithSequentialCloserAndValidate(Repository track, String seed, List<Transaction> txs, Account... senders) {
+        RskAddress[] senderAddresses = Arrays.stream(senders).map(Account::getAddress).toArray(RskAddress[]::new);
+        RskAddress closerTarget = deployAt(track, seed + "closer", balanceReader(senderAddresses));
+        Account closerSender = createAccount(seed + "closerSender", track, Coin.valueOf(1_000_000));
+        List<Transaction> all = new ArrayList<>(txs);
+        all.add(callTx(closerSender, closerTarget, config.getNetworkConstants().getChainId()));
+        track.commit();
+        Block parent = blockchain.getBestBlock();
+        parent.setStateRoot(repository.getRoot());
+
+        Block block = createParallelTestBlock(parent, all);
+        BlockResult mined = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE).executeAndFill(block, parent.getHeader());
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, mined);
+        Assertions.assertEquals(all.size(), mined.getExecutedTransactions().size());
+        Assertions.assertTrue(block.getHeader().getTxExecutionSublistsEdges().length > 0, "the block must use parallel sublists");
+
+        for (int i = 0; i < 20; i++) {
+            Assertions.assertTrue(buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE).executeAndValidate(block, parent.getHeader()),
+                    "validation run " + i + " must reproduce the mined state, receipts and bloom");
+        }
+        return block;
+    }
+
+    /** Index of the parallel sublist holding the tx, or the sublist count for the sequential one. */
+    private static int sublistIndexOf(Block block, Transaction tx) {
+        int position = block.getTransactionsList().indexOf(tx);
+        Assertions.assertTrue(position >= 0, "tx must be in the block");
+        short[] edges = block.getHeader().getTxExecutionSublistsEdges();
+        for (int i = 0; i < edges.length; i++) {
+            if (position < edges[i]) {
+                return i;
+            }
+        }
+        return edges.length;
+    }
+
+    private Transaction callTx(Account sender, RskAddress to, byte chainId) {
+        Transaction tx = Transaction.builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(100_000))
+                .receiveAddress(to)
+                .chainId(chainId)
+                .value(BigInteger.ZERO)
+                .build();
+        tx.sign(sender.getEcKey().getPrivKeyBytes());
+        return tx;
+    }
+
+    private static RskAddress deployAt(Repository track, String seed, byte[] code) {
+        RskAddress address = new RskAddress(Arrays.copyOfRange(HashUtil.keccak256(seed.getBytes()), 12, 32));
+        track.createAccount(address);
+        track.saveCode(address, code);
+        track.initializeStorage(address);
+        return address;
+    }
+
+    private static void delegate(Repository track, RskAddress authority, RskAddress target) {
+        track.saveCode(authority, DelegationCodeResolver.createDelegatedCode(target));
+        track.initializeStorage(authority);
+        track.setDelegationAuthority(authority);
+    }
+
+    /** Code reading BALANCE of every address, so a call to it conflicts with every sublist touching them. */
+    private static byte[] balanceReader(RskAddress... addresses) {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        for (RskAddress a : addresses) {
+            out.write(0x73);
+            out.writeBytes(a.getBytes());
+            out.write(0x31);
+            out.write(0x50);
+        }
+        out.write(0x00);
+        return out.toByteArray();
     }
 
     @Test
