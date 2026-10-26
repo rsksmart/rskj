@@ -22,6 +22,8 @@ import co.rsk.config.GasLimitConfig;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.ForkDetectionDataCalculator;
 import co.rsk.mine.GasLimitCalculator;
@@ -498,6 +500,53 @@ class TraceModuleImplTest {
             Assertions.assertNotNull(oresult.get("error"));
             Assertions.assertEquals("\"Reverted\"", oresult.get("error").toString());
         }
+    }
+
+    /**
+     * Pins current behavior: under RSKIP701 a delegated account that executes SELFDESTRUCT only moves its
+     * balance and is not deleted, yet the trace still reports a "suicide" subtrace for it.
+     */
+    @Test
+    void traceTransaction_selfdestructInDelegatedAccount_emitsSuicideSubtraceAlthoughTheAccountSurvives_currentBehavior()
+            throws FileNotFoundException, DslProcessorException {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(DslParser.fromResource("dsl/eth_module/estimateGas/selfdestructDelegatedAccount.txt"));
+        RskAddress authority = world.getAccountByName("authority").getAddress();
+        RskAddress beneficiary = world.getAccountByName("accB").getAddress();
+        processor.processCommands(new DslParser("transaction_build destroy\n" +
+                "    sender acc1\n" +
+                "    nonce 3\n" +
+                "    receiverAddress " + authority.toHexString() + "\n" +
+                "    value 0\n" +
+                "    data 000000000000000000000000" + beneficiary.toHexString() + "\n" +
+                "    gas 200000\n" +
+                "    build\n" +
+                "block_build b02\n" +
+                "    parent b01\n" +
+                "    gasLimit 6800000\n" +
+                "    transactions destroy\n" +
+                "    build\n" +
+                "block_connect b02\n" +
+                "assert_best b02\n" +
+                "assert_tx_success destroy\n"));
+
+        RepositorySnapshot afterDestroy = world.getRepositoryLocator()
+                .snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        Assertions.assertTrue(afterDestroy.isActiveDelegatedEOA(authority), "the delegated account survives");
+        Assertions.assertEquals(BigInteger.ONE, afterDestroy.getNonce(authority));
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+        JsonNode result = traceModule.traceTransaction(world.getTransactionByName("destroy").getHash().toJsonString());
+
+        Assertions.assertTrue(result.isArray());
+        Assertions.assertEquals(2, result.size());
+        JsonNode suicide = result.get(1);
+        Assertions.assertEquals("\"suicide\"", suicide.get("type").toString());
+        Assertions.assertEquals("0x" + authority.toHexString(), suicide.get("action").get("address").asText());
+        Assertions.assertEquals("0x" + beneficiary.toHexString(), suicide.get("action").get("refundAddress").asText());
+        Assertions.assertEquals("0x3e8", suicide.get("action").get("balance").asText());
     }
 
     private static void retrieveSuicideInvocationTrace(World world, ReceiptStore receiptStore, String txname) {
