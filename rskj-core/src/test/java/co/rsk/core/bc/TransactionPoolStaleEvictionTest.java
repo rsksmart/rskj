@@ -29,6 +29,7 @@ import co.rsk.validators.DummyBlockValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
@@ -37,6 +38,7 @@ import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.util.RskTestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -136,8 +138,7 @@ class TransactionPoolStaleEvictionTest {
     @Test
     void delegatedAccountKeepsOnlyRetractedTransactionAfterReorg() {
         Assertions.assertTrue(context.getRskSystemProperties().getActivationConfig().isActive(ConsensusRule.RSKIP545, 1));
-        Assertions.assertTrue(DelegationCodeResolver.isDelegatedCode(
-                context.getRepositoryLocator().snapshotAt(genesis.getHeader()).getCode(delegatedAccount.getAddress())));
+        Assertions.assertTrue(isDelegatedAt(genesis, delegatedAccount));
 
         Transaction stale = tx(delegatedAccount, 0, 1000);
         Assertions.assertTrue(pool.addTransaction(stale).pendingTransactionsWereAdded());
@@ -174,8 +175,37 @@ class TransactionPoolStaleEvictionTest {
         Assertions.assertEquals(Set.of(executable.getHash()), poolHashes());
     }
 
+    @Test
+    void accountDelegatedByAnotherSenderKeepsOnlyExecutableTransaction() {
+        Transaction stale = tx(accountA, 0, 1000);
+        Transaction executable = tx(accountA, 1, 1000);
+        Transaction gapped = tx(accountA, 2, 1000);
+        Assertions.assertTrue(pool.addTransaction(stale).pendingTransactionsWereAdded());
+        Assertions.assertTrue(pool.addTransaction(executable).pendingTransactionsWereAdded());
+        Assertions.assertTrue(pool.addTransaction(gapped).pendingTransactionsWereAdded());
+
+        // accountB's set code transaction delegates accountA and consumes its nonce 0
+        Transaction setCode = new TransactionBuilder()
+                .transactionType(TransactionType.TYPE_4.getByteCode())
+                .sender(accountB)
+                .receiver(receiver)
+                .gasLimit(BigInteger.valueOf(100_000))
+                .authorization(accountA, DELEGATE, BigInteger.ZERO, Constants.REGTEST_CHAIN_ID)
+                .build();
+        Block block = connect(genesis, setCode);
+        Assertions.assertEquals(BigInteger.ONE, stateNonce(block, accountA));
+        Assertions.assertTrue(isDelegatedAt(block, accountA));
+
+        Assertions.assertEquals(Set.of(executable.getHash()), poolHashes());
+    }
+
     private BigInteger stateNonce(Block block, Account account) {
         return context.getRepositoryLocator().snapshotAt(block.getHeader()).getNonce(account.getAddress());
+    }
+
+    private boolean isDelegatedAt(Block block, Account account) {
+        return DelegationCodeResolver.isDelegatedCode(
+                context.getRepositoryLocator().snapshotAt(block.getHeader()).getCode(account.getAddress()));
     }
 
     private Block connectSide(Block parent, Transaction... txs) {
