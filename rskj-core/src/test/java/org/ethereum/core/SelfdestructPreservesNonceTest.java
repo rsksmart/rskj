@@ -118,7 +118,7 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     @MethodSource("activationStates")
     void contractWithNonZeroNonceIsClearedAndKeepsItsNonceOnlyAfterActivation(String phase, boolean activated) {
         if (!activated) {
-            activateAllBut(ConsensusRule.RSKIP701);
+            deactivateRskip701();
         }
         MutableRepository repository = createRepository();
         installContract(repository, CONTRACT_C, BigInteger.ONE, CODE_D, BALANCE_C);
@@ -129,14 +129,99 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         Transaction tx = signedCall(CONTRACT_C, beneficiaryWord(BENEFICIARY_B));
         TransactionExecutor executor = execute(repository, tx);
 
+        assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_C.getBytes())),
+                "A cleared account is still recorded as deleted for the same-block creation check");
         if (activated) {
             assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
-            assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_C.getBytes())),
-                    "A cleared account is still recorded as deleted for the same-block creation check");
         } else {
             assertFalse(repository.isExist(CONTRACT_C));
         }
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
+    }
+
+    @ParameterizedTest(name = "RSKIP701: contract naming itself as beneficiary {0}")
+    @MethodSource("activationStates")
+    void contractWithNonZeroNonceNamingItselfBurnsItsBalanceAndIsClearedOnlyAfterActivation(String phase, boolean activated) {
+        if (!activated) {
+            deactivateRskip701();
+        }
+        MutableRepository repository = createRepository();
+        installContract(repository, CONTRACT_C, BigInteger.ONE, CODE_D, BALANCE_C);
+        installContract(repository, CONTRACT_X, BigInteger.ONE, codeCallingThenStoringBalancePlusOne(CONTRACT_C), 0);
+        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
+        fundSender(repository, SENDER_BALANCE);
+        mockExecutionBlockForRealVm();
+
+        TransactionExecutor executor = execute(repository, signedCall(CONTRACT_X, beneficiaryWord(CONTRACT_C)));
+
+        assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_C.getBytes())));
+        // The balance is burned at SELFDESTRUCT, not only at the end of the transaction: the caller reads zero
+        assertEquals(DataWord.ONE, repository.getStorageValue(CONTRACT_X, DataWord.ZERO));
+        if (activated) {
+            // Only a delegated account keeps its balance when it names itself; this one burns it
+            assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
+        } else {
+            assertFalse(repository.isExist(CONTRACT_C));
+        }
+        assertEquals(Coin.valueOf(BALANCE_B), repository.getBalance(BENEFICIARY_B));
+    }
+
+    @ParameterizedTest(name = "RSKIP701: EXTCODEHASH and EXTCODESIZE of a destroyed contract {0}")
+    @MethodSource("activationStates")
+    void extcodehashOfAClearedContractIsTheHashOfEmptyCodeOnlyAfterActivation(String phase, boolean activated) {
+        if (!activated) {
+            deactivateRskip701();
+        }
+        MutableRepository repository = createRepository();
+        installContract(repository, CONTRACT_C, BigInteger.ONE, CODE_D, BALANCE_C);
+        installContract(repository, CONTRACT_P, BigInteger.ONE, codeProbing(CONTRACT_C), 0);
+        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
+        fundSender(repository, SENDER_BALANCE);
+        mockExecutionBlockForRealVm();
+
+        execute(repository, signedCall(BigInteger.ZERO, CONTRACT_C, beneficiaryWord(BENEFICIARY_B)));
+        execute(repository, signedCall(BigInteger.ONE, CONTRACT_P, EMPTY_DATA));
+
+        assertEquals(DataWord.ONE, repository.getStorageValue(CONTRACT_P, DataWord.valueOf(2)), "The probe must have run");
+        if (activated) {
+            assertEquals(DataWord.valueOf(MutableRepository.KECCAK_256_OF_EMPTY_ARRAY.getBytes()),
+                    repository.getStorageValue(CONTRACT_P, DataWord.ZERO),
+                    "A cleared account exists, so EXTCODEHASH pushes the hash of empty code");
+        } else {
+            assertNull(repository.getStorageValue(CONTRACT_P, DataWord.ZERO),
+                    "A deleted account does not exist, so EXTCODEHASH pushes zero");
+        }
+        // Control: no code in either case
+        assertNull(repository.getStorageValue(CONTRACT_P, DataWord.ONE));
+    }
+
+    @Test
+    void selfdestructNamingAClearedAccountPaysNoNewAccountCostWhileADeletedOnePaysIt() {
+        long clearedArm = gasOfSelfdestructNamingADestroyedContract();
+        deactivateRskip701();
+        long deletedArm = gasOfSelfdestructNamingADestroyedContract();
+
+        assertEquals(GasCost.NEW_ACCT_SUICIDE, deletedArm - clearedArm);
+    }
+
+    /**
+     * Destroys C (nonce 1) in a first transaction, then E executes SELFDESTRUCT naming C in a second one.
+     * Returns the gas of the second transaction before refunds.
+     */
+    private long gasOfSelfdestructNamingADestroyedContract() {
+        MutableRepository repository = createRepository();
+        installContract(repository, CONTRACT_C, BigInteger.ONE, CODE_D, BALANCE_C);
+        installContract(repository, CONTRACT_E, BigInteger.ONE, CODE_D, 0);
+        createAccountWithBalance(repository, BENEFICIARY_B, BALANCE_B);
+        fundSender(repository, SENDER_BALANCE);
+        mockExecutionBlockForRealVm();
+        execute(repository, signedCall(BigInteger.ZERO, CONTRACT_C, beneficiaryWord(BENEFICIARY_B)));
+
+        TransactionExecutor executor = execute(repository,
+                signedCall(BigInteger.ONE, CONTRACT_E, beneficiaryWord(CONTRACT_C)));
+
+        assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_E.getBytes())));
+        return executor.getResult().getGasUsedBeforeRefunds();
     }
 
     // -------------------------------------------------------------------------
@@ -184,7 +269,7 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
 
     @Test
     void beforeActivationConsumedAuthorizationIsAppliedAgainAfterSelfdestruct() {
-        activateAllBut(ConsensusRule.RSKIP701);
+        deactivateRskip701KeepingRskip545();
 
         MutableRepository repository = replayConsumedAuthorizationAfterSelfdestruct();
 
@@ -321,7 +406,7 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     @MethodSource("activationStates")
     void balanceReceivedAfterMarkingIsRemovedWithTheRestOnlyAfterActivation(String phase, boolean activated) {
         if (!activated) {
-            activateAllBut(ConsensusRule.RSKIP701);
+            deactivateRskip701();
         }
         MutableRepository repository = createRepository();
         installContract(repository, CONTRACT_C, BigInteger.ONE, CODE_D, BALANCE_C);
@@ -347,7 +432,7 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     @MethodSource("activationStates")
     void contractRaisingItsNonceBeforeSelfdestructIsClearedWithTheRaisedNonceOnlyAfterActivation(String phase, boolean activated) {
         if (!activated) {
-            activateAllBut(ConsensusRule.RSKIP701);
+            deactivateRskip701();
         }
         MutableRepository repository = createRepository();
         installContract(repository, CONTRACT_G, BigInteger.ZERO, CODE_G, BALANCE_C);
@@ -373,7 +458,7 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     @MethodSource("activationStates")
     void contractRaisingItsNonceAfterBeingMarkedIsClearedWithTheNonceAtTheEndOfTheTransaction(String phase, boolean activated) {
         if (!activated) {
-            activateAllBut(ConsensusRule.RSKIP701);
+            deactivateRskip701();
         }
         // CALLDATASIZE ISZERO PUSH1 9 JUMPI | PUSH1 0 CALLDATALOAD SELFDESTRUCT | JUMPDEST CREATE(0, 0, 0) POP STOP
         byte[] codeC = Hex.decode("3615600957600035ff5b600060006000f05000");
@@ -539,6 +624,21 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     // Fixtures
     // -------------------------------------------------------------------------
 
+    /**
+     * RSKIP545 requires RSKIP701, so it is turned off too: the state every shipped network is in before cardamom1000.
+     */
+    private void deactivateRskip701() {
+        activateAllBut(ConsensusRule.RSKIP545, ConsensusRule.RSKIP701);
+    }
+
+    /**
+     * Keeps RSKIP545 on so that delegated accounts exist with RSKIP701 off. ActivationConfig.read rejects this
+     * combination, so no node runs it; it isolates the RSKIP701 gate on the delegated-account paths.
+     */
+    private void deactivateRskip701KeepingRskip545() {
+        activateAllBut(ConsensusRule.RSKIP701);
+    }
+
     private void activateAllBut(ConsensusRule... disabled) {
         activationConfig = ActivationConfigsForTest.allBut(disabled);
         when(config.getActivationConfig()).thenReturn(activationConfig);
@@ -587,6 +687,27 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
                 Hex.decode("36600060003760006000366000" + valueArgument + "73"),
                 target.getBytes(),
                 new byte[]{(byte) 0x5a, callOpcode, (byte) 0x50, (byte) 0x00});
+    }
+
+    /**
+     * Stores EXTCODEHASH(target) in slot 0, EXTCODESIZE(target) in slot 1 and 1 in slot 2.
+     * PUSH20 target EXTCODEHASH PUSH1 0 SSTORE | PUSH20 target EXTCODESIZE PUSH1 1 SSTORE | PUSH1 1 PUSH1 2 SSTORE STOP
+     */
+    private static byte[] codeProbing(RskAddress target) {
+        return ByteUtil.merge(
+                Hex.decode("73"), target.getBytes(), Hex.decode("3f600055" + "73"),
+                target.getBytes(), Hex.decode("3b600155" + "6001600255" + "00"));
+    }
+
+    /**
+     * CALLDATACOPY(0, 0, 32) CALL(GAS, target, 0, 0, 32, 0, 0) POP, then stores BALANCE(target) + 1 in slot 0:
+     * PUSH1 1 PUSH20 target BALANCE ADD PUSH1 0 SSTORE STOP. The + 1 tells a zero balance from a probe that did not run.
+     */
+    private static byte[] codeCallingThenStoringBalancePlusOne(RskAddress target) {
+        return ByteUtil.merge(
+                Hex.decode("602060006000" + "37" + "60006000602060006000" + "73"), target.getBytes(),
+                Hex.decode("5af150" + "6001" + "73"), target.getBytes(),
+                Hex.decode("3101" + "600055" + "00"));
     }
 
     /** PUSH20 beneficiary SELFDESTRUCT */
