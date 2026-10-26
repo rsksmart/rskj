@@ -74,6 +74,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.contains;
@@ -83,6 +85,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.doReturn;
@@ -424,6 +428,39 @@ class RskContextTest {
         BlockHeaderValidationRule uncleHeaderRules = TestUtils.getInternalState(unclesRule, "validations");
 
         assertNotNull(findRule(uncleHeaderRules, BlockHeaderVersionRule.class));
+    }
+
+    @Test
+    void buildsTheSystemPropertiesOnceAndServesThatInstance() {
+        RskSystemProperties builtProperties = new TestSystemProperties();
+        AtomicInteger builds = new AtomicInteger();
+
+        try (RskContext context = contextBuildingPropertiesWith(() -> {
+            builds.incrementAndGet();
+            return builtProperties;
+        })) {
+            assertSame(builtProperties, context.getRskSystemProperties());
+            assertSame(builtProperties, context.getRskSystemProperties());
+            assertEquals(1, builds.get());
+        }
+    }
+
+    @Test
+    void failsFastWhenTheSystemPropertiesAreBuiltAsNull() {
+        // the constructor already asks for the properties, so a null never leaves this method
+        NullPointerException failure = assertThrows(NullPointerException.class,
+                () -> contextBuildingPropertiesWith(() -> null));
+
+        assertEquals("buildRskSystemProperties() returned null", failure.getMessage());
+    }
+
+    private static RskContext contextBuildingPropertiesWith(Supplier<RskSystemProperties> propertiesBuilder) {
+        return new RskContext(new String[0]) {
+            @Override
+            protected synchronized RskSystemProperties buildRskSystemProperties() {
+                return propertiesBuilder.get();
+            }
+        };
     }
 
     /** The first rule of {@code ruleClass} inside a composite, whether it keeps its rules in a list or an array. */

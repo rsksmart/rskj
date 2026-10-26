@@ -34,7 +34,9 @@ public class RskTestFactory extends RskTestContext {
     }
 
     @Override
-    public RskSystemProperties buildRskSystemProperties() {
+    public RskSystemProperties getRskSystemProperties() {
+        // RskContext's constructor already asks for the properties, before this factory has stored
+        // its config; answering the getter directly keeps the null out of RskContext's cache
         return config;
     }
 
