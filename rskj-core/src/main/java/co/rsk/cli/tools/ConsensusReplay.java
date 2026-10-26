@@ -111,7 +111,9 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
 
     /** Transaction types each rule introduces; a block carrying none of them is legacy-only.
      * A rule absent here introduces none, which makes the P1 check stricter, never weaker. */
+    // Rules that only add transaction types: with only these forced, a legacy-only block must not diverge (P1).
     private static final Map<ConsensusRule, Set<TransactionType>> TYPES_INTRODUCED = Map.of(
+            ConsensusRule.RSKIP543, EnumSet.of(TransactionType.TYPE_1, TransactionType.TYPE_2, TransactionType.TYPE_4),
             ConsensusRule.RSKIP545, EnumSet.of(TransactionType.TYPE_4),
             ConsensusRule.RSKIP546, EnumSet.of(TransactionType.TYPE_1, TransactionType.TYPE_2));
 
@@ -143,14 +145,14 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
     private boolean resume;
 
     @CommandLine.Option(names = {"--rule"},
-            description = "BACKTEST only: consensus rule config key forced on, e.g. rskip545")
-    private String ruleKey;
+            description = "BACKTEST only: consensus rule config key forced on, e.g. rskip545; repeat it to force several")
+    private List<String> ruleKeys;
 
     @CommandLine.Option(names = {"--force-at"},
             description = "BACKTEST only: height from which --rule is expected to be active")
     private Long forceAt;
 
-    private ConsensusRule forcedRule;
+    private final Set<ConsensusRule> forcedRules = EnumSet.noneOf(ConsensusRule.class);
 
     /** What a failing record reports. Each needs different follow-up, so they are never summed. */
     enum Failure {
@@ -250,7 +252,7 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
     /** Why this invocation must not run, or null: refusing beats thousands of false divergences. */
     private String refusalReason(ActivationConfig activationConfig) {
         if (scenario != Scenario.BACKTEST) {
-            if (ruleKey != null || forceAt != null) {
+            if (ruleKeys != null || forceAt != null) {
                 return "--rule and --force-at only apply to --scenario BACKTEST; without it the run is a plain "
                         + scenario + " and would look green for the wrong reason";
             }
@@ -258,7 +260,7 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
             return null;
         }
 
-        if (ruleKey == null || forceAt == null) {
+        if (ruleKeys == null || forceAt == null) {
             return "BACKTEST needs --rule <consensusRuleConfigKey> and --force-at <height>";
         }
 
@@ -266,21 +268,26 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
             return "BACKTEST must not persist state: forced-activation tries would corrupt the snapshot for later runs";
         }
 
-        try {
-            forcedRule = ConsensusRule.fromConfigKey(ruleKey);
-        } catch (IllegalArgumentException e) {
-            return "unknown consensus rule '" + ruleKey + "'";
-        }
+        for (String ruleKey : ruleKeys) {
+            ConsensusRule forcedRule;
+            try {
+                forcedRule = ConsensusRule.fromConfigKey(ruleKey);
+            } catch (IllegalArgumentException e) {
+                return "unknown consensus rule '" + ruleKey + "'";
+            }
 
-        if (NOT_BACKTESTABLE.contains(forcedRule)) {
-            return ruleKey + " is not backtestable: it changes header format or hashing "
-                    + "(see ActivationConfig.getHeaderVersion), so every stored header would fail to match "
-                    + "for reasons unrelated to the change under test";
-        }
+            if (NOT_BACKTESTABLE.contains(forcedRule)) {
+                return ruleKey + " is not backtestable: it changes header format or hashing "
+                        + "(see ActivationConfig.getHeaderVersion), so every stored header would fail to match "
+                        + "for reasons unrelated to the change under test";
+            }
 
-        if (!activationConfig.isActive(forcedRule, forceAt)) {
-            return ruleKey + " is not active at height " + forceAt + " in the loaded config; "
-                    + "pass -Xblockchain.config.consensusRules." + ruleKey + "=" + forceAt;
+            if (!activationConfig.isActive(forcedRule, forceAt)) {
+                return ruleKey + " is not active at height " + forceAt + " in the loaded config; "
+                        + "pass -Xblockchain.config.consensusRules." + ruleKey + "=" + forceAt;
+            }
+
+            forcedRules.add(forcedRule);
         }
 
         return null;
@@ -602,10 +609,14 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
         return sb.toString();
     }
 
-    /** Divergence is measured, not failed; a diverging legacy-only block is the P1 violation. */
+    /**
+     * Divergence is measured, not failed. A diverging legacy-only block is the P1 violation, but only when
+     * every forced rule merely adds transaction types: a rule that changes legacy behaviour makes it expected.
+     */
     private String backtestClassification(Block block, boolean diverged, String divergedFields) {
         boolean legacyOnly = isLegacyOnly(block);
-        boolean p1Violation = diverged && legacyOnly;
+        boolean p1Applies = TYPES_INTRODUCED.keySet().containsAll(forcedRules);
+        boolean p1Violation = diverged && legacyOnly && p1Applies;
 
         if (diverged) {
             divergentBlocks++;
@@ -617,13 +628,15 @@ public class ConsensusReplay extends PicoCliToolRskContextAware {
         }
 
         return String.format(",\"forcedRule\":\"%s\",\"forcedAt\":%d,\"ruleActiveHere\":%b"
-                        + ",\"legacyOnly\":%b,\"diverged\":%b,\"divergedFields\":%s,\"p1Violation\":%b",
-                ruleKey, forceAt, block.getNumber() >= forceAt, legacyOnly, diverged, divergedFields, p1Violation);
+                        + ",\"legacyOnly\":%b,\"diverged\":%b,\"divergedFields\":%s,\"p1Applies\":%b,\"p1Violation\":%b",
+                String.join("+", ruleKeys), forceAt, block.getNumber() >= forceAt, legacyOnly, diverged, divergedFields,
+                p1Applies, p1Violation);
     }
 
     /** True when no transaction in the block is of a type the forced rule introduces. */
     private boolean isLegacyOnly(Block block) {
-        Set<TransactionType> introduced = TYPES_INTRODUCED.getOrDefault(forcedRule, EnumSet.noneOf(TransactionType.class));
+        Set<TransactionType> introduced = EnumSet.noneOf(TransactionType.class);
+        forcedRules.forEach(rule -> introduced.addAll(TYPES_INTRODUCED.getOrDefault(rule, Set.of())));
 
         return block.getTransactionsList().stream().noneMatch(tx -> introduced.contains(tx.getType()));
     }

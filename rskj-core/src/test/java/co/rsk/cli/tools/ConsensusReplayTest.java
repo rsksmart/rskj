@@ -360,6 +360,51 @@ class ConsensusReplayTest {
                 "the clean block must not be flagged: " + lines.get(1));
     }
 
+    /** Forcing several typed-transaction rules together keeps P1: a diverging legacy-only block still fails. */
+    @Test
+    void backtestOfSeveralTypedTransactionRulesStillFlagsADivergingLegacyOnlyBlock() throws FileNotFoundException, DslProcessorException, IOException {
+        List<String> lines = backtestOfATamperedLegacyBlock("backtest-typed-rules.jsonl", 1,
+                "--rule", "rskip543", "--rule", "rskip545", "--rule", "rskip546");
+
+        Assertions.assertTrue(lines.get(0).contains("\"forcedRule\":\"rskip543+rskip545+rskip546\"")
+                        && lines.get(0).contains("\"p1Applies\":true") && lines.get(0).contains("\"p1Violation\":true"),
+                "only typed-transaction rules were forced, so a legacy-only block must not diverge: " + lines.get(0));
+    }
+
+    /**
+     * A rule that changes legacy behaviour (here RSKIP-692) makes legacy-only divergence expected, so a
+     * whole-fork backtest measures it instead of failing; attribution is by rule, never by block list.
+     */
+    @Test
+    void backtestIncludingARuleThatChangesLegacyBehaviourMeasuresLegacyDivergence() throws FileNotFoundException, DslProcessorException, IOException {
+        List<String> lines = backtestOfATamperedLegacyBlock("backtest-legacy-rule.jsonl", 0,
+                "--rule", "rskip545", "--rule", "rskip692");
+
+        Assertions.assertTrue(lines.get(0).contains("\"diverged\":true") && lines.get(0).contains("\"legacyOnly\":true")
+                        && lines.get(0).contains("\"p1Applies\":false") && lines.get(0).contains("\"p1Violation\":false"),
+                "the divergence must be measured but not failed: " + lines.get(0));
+    }
+
+    private List<String> backtestOfATamperedLegacyBlock(String reportName, int expectedExit, String... rules)
+            throws FileNotFoundException, DslProcessorException, IOException {
+        World world = buildWorld();
+        Path report = tempDir.resolve(reportName);
+
+        Block real = world.getBlockStore().getChainBlockByNumber(1);
+        BlockHeader header = spy(real.getHeader());
+        doReturn(new byte[32]).when(header).getReceiptsRoot();
+        Block tampered = spy(real);
+        doReturn(header).when(tampered).getHeader();
+
+        List<String> args = new ArrayList<>(List.of(rules));
+        args.addAll(List.of("--force-at", "0"));
+        NodeStopper stopper = run(world, blockStoreReturning(world, tampered), world.getBlockExecutor(), report,
+                "BACKTEST", args.toArray(new String[0]));
+
+        verify(stopper).stop(expectedExit);
+        return Files.readAllLines(report, StandardCharsets.UTF_8);
+    }
+
     /**
      * Discrimination check: under BACKTEST divergence is the expected output, so a diverging block
      * that carries a transaction of the type the forced rule introduces is measured, not failed.
