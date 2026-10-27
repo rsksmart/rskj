@@ -215,6 +215,24 @@ class TransactionPoolStaleEvictionTest {
         Assertions.assertTrue(poolTransactions().isEmpty());
     }
 
+    @Test
+    void accountDelegatedUpToQueuedNonceGetsQueuedTransactionMined() {
+        Transaction queued = tx(accountA, 1, 1000);
+        Assertions.assertTrue(pool.addTransaction(queued).queuedTransactionsWereAdded());
+
+        // accountB's set code transaction delegates accountA and consumes its nonce 0
+        Block delegating = connect(genesis, setCode(accountB, accountA, 0));
+        Assertions.assertEquals(BigInteger.ONE, stateNonce(delegating, accountA));
+        Assertions.assertTrue(isDelegatedAt(delegating, accountA));
+
+        Assertions.assertEquals(List.of(queued), pool.getPendingTransactions());
+        Assertions.assertTrue(pool.getQueuedTransactions().isEmpty());
+
+        Block mined = connect(delegating, pool.getPendingTransactions().toArray(new Transaction[0]));
+        Assertions.assertEquals(BigInteger.TWO, stateNonce(mined, accountA));
+        Assertions.assertTrue(poolTransactions().isEmpty());
+    }
+
     private Transaction setCode(Account sender, Account authority, long authorityNonce) {
         return new TransactionBuilder()
                 .transactionType(TransactionType.TYPE_4.getByteCode())

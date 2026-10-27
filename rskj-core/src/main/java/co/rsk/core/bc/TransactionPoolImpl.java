@@ -57,6 +57,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.ethereum.util.BIUtil.toBI;
@@ -396,35 +397,45 @@ public class TransactionPoolImpl implements TransactionPool {
     /**
      * Removes pending and queued transactions whose nonce is below the state nonce of their
      * sender at the current best block, since they can no longer be mined. For a delegated
-     * sender, also removes any transaction above the state nonce, so the account keeps at most
-     * the one transaction that executes next, as enforced when transactions are added.
+     * sender, also removes any transaction above the state nonce, and moves a queued transaction
+     * at the state nonce to pending, so the account keeps at most the one transaction that
+     * executes next, as enforced when transactions are added, and the miner can include it.
      */
     private void removeTransactionsOutOfNonceRange() {
         RepositorySnapshot repository = getCurrentRepository();
-        Map<RskAddress, BigInteger> stateNonces = new HashMap<>();
-        Map<RskAddress, Boolean> delegatedSenders = new HashMap<>();
+        Map<RskAddress, BigInteger> stateNonceBySender = new HashMap<>();
+        Map<RskAddress, Boolean> isDelegatedBySender = new HashMap<>();
+        Predicate<RskAddress> isDelegated = sender -> isDelegatedBySender.computeIfAbsent(
+                sender, s -> DelegationCodeResolver.isDelegatedCode(repository.getCode(s)));
         List<Keccak256> toremove = new ArrayList<>();
+        List<Transaction> toPromote = new ArrayList<>();
 
         List<Transaction> pooled = new ArrayList<>(pendingTransactions.getTransactions());
         pooled.addAll(queuedTransactions.getTransactions());
 
         for (Transaction tx : pooled) {
             RskAddress sender = tx.getSender(signatureCache);
-            BigInteger stateNonce = stateNonces.computeIfAbsent(sender, repository::getNonce);
+            BigInteger stateNonce = stateNonceBySender.computeIfAbsent(sender, repository::getNonce);
 
             int nonceComparison = tx.getNonceAsInteger().compareTo(stateNonce);
 
             if (nonceComparison < 0) {
                 toremove.add(tx.getHash());
                 logger.trace("Clear stale transaction, nonce: [{}] state nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), stateNonce, tx.getHash());
-            } else if (nonceComparison > 0
-                    && delegatedSenders.computeIfAbsent(sender, s -> DelegationCodeResolver.isDelegatedCode(repository.getCode(s)))) {
+            } else if (nonceComparison > 0 && isDelegated.test(sender)) {
                 toremove.add(tx.getHash());
                 logger.trace("Clear gapped transaction of delegated account, nonce: [{}] state nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), stateNonce, tx.getHash());
+            } else if (nonceComparison == 0 && queuedTransactions.hasTransaction(tx) && isDelegated.test(sender)) {
+                toremove.add(tx.getHash());
+                toPromote.add(tx);
+                logger.trace("Promote queued transaction of delegated account, nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), tx.getHash());
             }
         }
 
         removeTransactionList(toremove);
+
+        // re-added through the admission rules, so a transaction that no longer passes them is dropped
+        addTransactions(toPromote);
     }
 
     private void removeObsoleteTransactions(int depth, int timeout) {
