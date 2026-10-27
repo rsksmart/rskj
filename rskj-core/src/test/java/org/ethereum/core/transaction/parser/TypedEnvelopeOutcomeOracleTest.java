@@ -819,6 +819,30 @@ class TypedEnvelopeOutcomeOracleTest {
         assertEquals(new Coin(new BigInteger(max, 16)), parsed.value());
     }
 
+    /** Data is a byte string, not a scalar: wider than a data word and led by a zero byte, it parses as sent. */
+    private static final String WIDE_DATA_HEX = "00" + "ab".repeat(40);
+
+    @Test
+    void type1DataWiderThanADataWordWithALeadingZeroParses() {
+        ParsedType1Transaction parsed = parseType1(TYPE_1.envelope(List.of(Edit.set("data", item(WIDE_DATA_HEX)))));
+
+        assertArrayEquals(Hex.decode(WIDE_DATA_HEX), parsed.data());
+    }
+
+    @Test
+    void type2DataWiderThanADataWordWithALeadingZeroParses() {
+        ParsedType2Transaction parsed = parseType2(TYPE_2.envelope(List.of(Edit.set("data", item(WIDE_DATA_HEX)))));
+
+        assertArrayEquals(Hex.decode(WIDE_DATA_HEX), parsed.data());
+    }
+
+    @Test
+    void type4DataWiderThanADataWordWithALeadingZeroParses() {
+        ParsedType4Transaction parsed = parseType4(TYPE_4.envelope(List.of(Edit.set("data", item(WIDE_DATA_HEX)))));
+
+        assertArrayEquals(Hex.decode(WIDE_DATA_HEX), parsed.data());
+    }
+
     private static void assertSignedWithChainId33AndYParity1(SignatureState state) {
         SignedSignature signed = assertInstanceOf(SignedSignature.class, state);
         assertEquals(33, signed.chainId());
