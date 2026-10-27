@@ -30,8 +30,10 @@ import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.*;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
@@ -54,6 +56,8 @@ import static co.rsk.util.ListArrayUtil.isEmpty;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP174;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP351;
+import static org.ethereum.core.DelegationCodeResolver.isDelegatedCode;
+
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -108,6 +112,8 @@ public class TransactionExecutor {
     private final Set<RskAddress> precompiledContractsCalled = new HashSet<>();
 
     private final boolean postponeFeePayment;
+
+    private long authorizationRefund = 0;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -167,20 +173,27 @@ public class TransactionExecutor {
         }
 
         if (tx.isTypedTransactionNotAllowed(activations)) {
-            logger.warn("Typed transactions are not supported before RSKIP543 activation, tx {}", tx.getHash());
-            execError("typed transactions are not supported before RSKIP543 activation");
+            logger.warn("Transaction type {} is not supported before its activation, tx {}", tx.getTypePrefix(), tx.getHash());
+            execError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
             return false;
         }
+        if(tx.isType4()){
+            if(tx.isContractCreation()){
+                logger.warn("Transaction type {} can not execute a contract, tx {}", tx.getTypePrefix(), tx.getHash());
+                execError("transaction type " + tx.getTypePrefix() + " can not execute a contract");
+                return false;
+            }
+            if (!isSenderCodeValid()) {
+                return false;
+            }
 
-        if (tx.isInitCodeSizeInvalidForTx(activations)) {
-
-            String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
-
-            logger.warn(errorMessage);
-
-            execError(errorMessage);
-
-            return false;
+        }else{
+            if (tx.isInitCodeSizeInvalidForTx(activations)) {
+                String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
+                logger.warn(errorMessage);
+                execError(errorMessage);
+                return false;
+            }
         }
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
@@ -215,13 +228,14 @@ public class TransactionExecutor {
             return false;
         }
 
-        if (!transactionAddressesAreValid()) {
-            return false;
-        }
-
-        return true;
+        return transactionAddressesAreValid();
     }
 
+    private boolean isSenderCodeValid() {
+        RskAddress sender = tx.getSender(signatureCache);
+        byte[] code = track.getCode(sender);
+        return isEmpty(code) || isDelegatedCode(code);
+    }
 
     private boolean transactionAddressesAreValid() {
         // Prevent transactions with excessive address size
@@ -306,11 +320,35 @@ public class TransactionExecutor {
             logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
         }
 
-        if (tx.isContractCreation()) {
-            create();
-        } else {
+        if(tx.isType4()){
+            authorizationRefund = processAuthorizationList(tx.getAuthorizationList(), track, tx);
             call();
+        }else{
+            if (tx.isContractCreation()) {
+                create();
+            } else {
+                call();
+            }
         }
+    }
+
+    private long processAuthorizationList(List<SetCodeAuthorization> authorizationList, Repository repository, Transaction tx) {
+        SetCodeAuthorizationTransactionExecutor authorizationTransactionExecutor = new SetCodeAuthorizationTransactionExecutor();
+        BigInteger outerTransactionChainId = BigInteger.valueOf(tx.getChainId());
+        long totalRefund = 0;
+
+        for (SetCodeAuthorization authorization : authorizationList) {
+            Repository authorizationTrack = repository.startTracking();
+            try {
+                long refund = authorizationTransactionExecutor.processAuthorizationTuple(authorizationTrack, outerTransactionChainId, authorization);
+                totalRefund = Math.addExact(totalRefund, refund);
+                authorizationTrack.commit();
+            } catch (Exception e) {
+                authorizationTrack.rollback();
+                logger.debug("Authorization processing failed. tx={}", tx.getHash(), e);
+            }
+        }
+        return totalRefund;
     }
 
     private boolean enoughGas(long txGasLimit, long requiredGas, long gasUsed) {
@@ -384,17 +422,13 @@ public class TransactionExecutor {
             result.spendGas(gasUsed);
             profiler.stop(metric);
         } else {
-            byte[] code = track.getCode(targetAddress);
+            byte[] code = getExecutionCode(track, targetAddress);
             // Code can be null
             if (isEmpty(code)) {
                 gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
             } else {
-                ProgramInvoke programInvoke =  programInvokeFactory
-                        .createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
-
-                this.vm = new VM(vmConfig, precompiledContracts);
-                this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts, signatureCache);
+                createProgram(code, cacheTrack);
             }
         }
 
@@ -700,6 +734,7 @@ public class TransactionExecutor {
 
         // The actual gas subtracted is equal to half of the future refund
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
+        gasRefund = GasCost.add(gasRefund, authorizationRefund);
         result.addDeductedRefund(gasRefund);
         result.setGasUsedBeforeRefunds(result.getGasUsed());
 
@@ -762,5 +797,51 @@ public class TransactionExecutor {
     @Nonnull
     public Set<RskAddress> precompiledContractsCalled() {
         return this.precompiledContractsCalled.isEmpty() ? Collections.emptySet() : new HashSet<>(this.precompiledContractsCalled);
+    }
+
+    private byte[] getExecutionCode(Repository track, RskAddress targetAddress) {
+        byte[] code = track.getCode(targetAddress);
+
+        if (!isDelegatedCode(code)) {
+            return code;
+        }
+
+        RskAddress delegatedAddress = DelegationCodeResolver
+                .extractDelegatedAddress(code);
+
+        if (isPrecompile(delegatedAddress)) {
+            return ByteUtil.EMPTY_BYTE_ARRAY;
+        }
+
+        return track.getCode(delegatedAddress);
+    }
+
+    private boolean isPrecompile(RskAddress address) {
+        return precompiledContracts.getContractForAddress(activations, DataWord.valueOf(address.getBytes())) != null;
+    }
+
+    private void createProgram(byte[] code, Repository cacheTrack) {
+        ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
+                tx,
+                txindex,
+                executionBlock,
+                cacheTrack,
+                blockStore,
+                signatureCache
+        );
+
+        this.vm = new VM(vmConfig, precompiledContracts);
+
+        this.program = new Program(
+                vmConfig,
+                precompiledContracts,
+                blockFactory,
+                activations,
+                code,
+                programInvoke,
+                tx,
+                deletedAccounts,
+                signatureCache
+        );
     }
 }

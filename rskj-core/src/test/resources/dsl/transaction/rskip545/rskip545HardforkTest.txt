@@ -1,0 +1,150 @@
+comment
+
+// RSKIP-545 hardfork boundary DSL test.
+// Configuration (Java driver): RSKIP-543, RSKIP-546 and RSKIP-545 activate at block 5.
+//
+// Pre-activation (blocks 1-4): Type 4 transactions are dropped.
+// Transition (block 5): first block accepting Type 4.
+// Post-activation (blocks 6-7): Type 4 coexists with legacy.
+
+end
+
+account_new acc1 100000000000000000
+account_new acc2 1000000
+
+# Block 1: legacy transfer pre-activation
+transaction_build txPreLegacy
+    sender acc1
+    receiver acc2
+    value 10000
+    gas 21000
+    build
+
+block_build b01
+    parent g00
+    transactions txPreLegacy
+    build
+
+block_connect b01
+assert_best b01
+assert_tx_success txPreLegacy
+
+# Block 2: another legacy tx
+transaction_build txPreLegacy2
+    sender acc1
+    nonce 1
+    receiver acc2
+    value 5000
+    gas 21000
+    build
+
+block_build b02
+    parent b01
+    transactions txPreLegacy2
+    build
+
+block_connect b02
+assert_best b02
+assert_tx_success txPreLegacy2
+
+# Block 3: Type 4 attempt before activation — dropped by executor
+transaction_build txPreType4Attempt
+    sender acc1
+    nonce 2
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 0000000000000000000000000000000000000003 3
+    build
+
+block_build b03
+    parent b02
+    transactions txPreType4Attempt
+    build
+
+block_connect b03
+assert_best b03
+
+# Block 4: empty pre-activation step before transition
+block_build b04
+    parent b03
+    transactions
+    build
+
+block_connect b04
+assert_best b04
+
+# Block 5: transition — Type 4 accepted
+transaction_build txTransitionType4
+    sender acc1
+    nonce 2
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 0000000000000000000000000000000000000003 3
+    build
+
+transaction_build txTransitionLegacy
+    sender acc2
+    receiver acc1
+    value 100
+    gas 21000
+    build
+
+block_build b05
+    parent b04
+    transactions txTransitionType4 txTransitionLegacy
+    build
+
+block_connect b05
+assert_best b05
+assert_tx_success txTransitionType4
+assert_tx_success txTransitionLegacy
+
+# Block 6: post-activation Type 4
+transaction_build txPostType4
+    sender acc1
+    nonce 4
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 0000000000000000000000000000000000000003 5
+    build
+
+block_build b06
+    parent b05
+    transactions txPostType4
+    build
+
+block_connect b06
+assert_best b06
+assert_tx_success txPostType4
+
+# Block 7: legacy still works post-activation
+transaction_build txPostLegacy
+    sender acc1
+    nonce 6
+    receiver acc2
+    value 2000
+    gas 21000
+    build
+
+block_build b07
+    parent b06
+    transactions txPostLegacy
+    build
+
+block_connect b07
+assert_best b07
+assert_tx_success txPostLegacy
+
+assert_best b07

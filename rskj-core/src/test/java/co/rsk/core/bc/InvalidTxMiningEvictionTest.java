@@ -192,7 +192,7 @@ class InvalidTxMiningEvictionTest {
                 .nonce(nonce)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(recipient.getAddress())
+                .receiveAddress(recipient.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.valueOf(100))
                 .build();

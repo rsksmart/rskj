@@ -76,7 +76,7 @@ public final class TransactionUtils {
                 .nonce(nonce)
                 .gasPrice(gasPrice)
                 .gasLimit(gasLimit)
-                .destination(toAddress != null ? Hex.decode(toAddress) : null)
+                .receiveAddress(toAddress != null ? Hex.decode(toAddress) : null)
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(value)
                 .build();
@@ -90,7 +90,7 @@ public final class TransactionUtils {
                 .nonce(nonce)
                 .gasPrice(gasPrice)
                 .gasLimit(gasLimit)
-                .destination(toAddress != null ? Hex.decode(toAddress) : null)
+                .receiveAddress(toAddress != null ? Hex.decode(toAddress) : null)
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(value)
                 .data(data)

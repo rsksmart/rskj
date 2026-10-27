@@ -143,7 +143,7 @@ class BlockChainImplInvalidTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.valueOf(1L))
                 .gasLimit(BigInteger.TEN)
-                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .receiveAddress(Hex.decode("0000000000000000000000000000000000000006"))
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(BigInteger.ZERO)
                 .build();

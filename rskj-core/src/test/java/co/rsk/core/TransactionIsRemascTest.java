@@ -45,7 +45,7 @@ class TransactionIsRemascTest {
         byte[] gasLimit
     ) {
         return Transaction.builder()
-            .destination(destination)
+            .receiveAddress(destination)
             .data(data)
             .value(value)
             .gasPrice(gasPrice)
