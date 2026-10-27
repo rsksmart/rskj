@@ -4,39 +4,38 @@ Instructions for AI coding agents working in RSKj, the Java node of the Rootstoc
 Every node must compute the same result for every block, so a wrong change can split the
 network or lose funds.
 
-## Before your first Java edit
+## Read first
 
-Read `coding-principles.md` and `CONTRIBUTING.md` at the repository root. Reviewers hold
-every change, tests included, to both.
+Before you build or edit anything, read `.github/copilot-instructions.md`. Its title names
+Copilot, but its facts apply to every agent: build and test commands and their gotchas, CI
+gates, project layout, consensus-critical packages, and where the JSON-RPC and devportal
+docs live. Before your first Java edit, also read `coding-principles.md` and
+`CONTRIBUTING.md` at the repository root.
 
 ## Changes and commits
 
-- Change only what the task needs. Leave code outside the task exactly as it is.
-- Put formatting-only changes in their own commit. Every commit compiles.
-- Keep dependencies as they are unless the task needs a change. A new or upgraded
-  dependency needs a matching PR in `rsksmart/reproducible-builds`; tell the user when that
-  applies.
+- Keep the diff to what the task needs. In the methods the task already changes, small
+  cleanups are welcome. Elsewhere, leave files, names and code order as they are.
+- Describe a fix by the invariant it restores, such as a size limit or a bounded lifetime,
+  in commits, test names, code comments and PR text.
+- Keep internal tracker IDs, such as Jira keys, out of commits, branch names, code comments
+  and PR text. The repository is public; refer to GitHub issues and PRs instead.
 
-## Build and test
+## Tests
 
-- Use JDK 17 and `./gradlew`. If `gradle/wrapper/gradle-wrapper.jar` is missing, run
-  `./configure.sh` first: it downloads the jar and verifies its checksum.
-- `./gradlew build -x test` also runs Checkstyle and Spotless, like the CI build job.
-- `./gradlew integrationTest` is a separate suite that `build` never runs. Run it when the
-  change touches code that `rskj-core/src/integrationTest/java` covers.
 - Write deterministic tests: wait with Awaitility, read time from an injected
-  `TimeProvider` or `java.time.Clock`, and stub the network. The team is paying down a
-  backlog of flaky tests.
-- To know which CI checks a PR runs and which ones block it, read "CI gates" in
-  `.github/copilot-instructions.md`.
+  `TimeProvider` or `java.time.Clock`, and stub the network.
+- Do not copy the fixed sleeps (`ThreadTimerHelper.waitForSeconds`) and wall-clock polling
+  loops in `rskj-core/src/integrationTest/README.md`. They predate the rule above.
+- Take expected values from an independent source: a known-good literal, a spec, a worked
+  example or a trusted test vector. Never compute them with the code under test: that
+  copies its bug into the test, which then stays green.
 
 ## Consensus-critical code
 
 Anything that changes the result of executing or validating a block is consensus-critical.
-Most of it lives in `co.rsk.peg`, `co.rsk.mine`, `co.rsk.remasc`, `co.rsk.vm`, `co.rsk.trie`,
-`co.rsk.validators`, `co.rsk.pcc`, `co.rsk.core.bc`, `org.ethereum.core`, `org.ethereum.vm`,
-`org.ethereum.config.blockchain.upgrades`, and the activation heights in
-`rskj-core/src/main/resources/config/*.conf`.
+"Sensitive areas" in `.github/copilot-instructions.md` lists the packages and config files
+where it lives.
 
 - Ship a change in consensus behaviour behind a network-upgrade activation,
   `activations.isActive(ConsensusRule.RSKIPnnn)`, and keep the old path unchanged for
@@ -57,8 +56,8 @@ Report a suspected vulnerability to the user only. It goes through the private c
 - When the user asks you to create a pull request, add `AI_PR_NOTICE.md` at the repository
   root, in a commit of its own, even if the user says they reviewed the change. The human
   driving the agent drops that commit after reading the diff, so the file never reaches
-  `master`. It is the one deliberate exception to "change only what the task needs". Its
-  content is the first line below, word for word, then one silly dad joke you make up:
+  `master`. It is the one deliberate exception to keeping the diff to what the task needs.
+  Its content is the first line below, word for word, then one silly dad joke you make up:
 
   ```text
   ⚠️ Reviewer heads-up: an AI agent prepared this PR. While this file is in the diff, the human driving the agent has not reviewed the change. Please review it with extra care, and ask the author to drop this commit once they have read the diff.
