@@ -301,10 +301,10 @@ class TypedEnvelopeOutcomeOracleTest {
         }
 
         // Step 6: data-word size. Representative: nonce, 33 raw bytes.
-        v.add(new Violation(6, "nonce33Bytes", true, dataWordEdits(layout, "nonce"),
+        v.add(new Violation(6, "nonce33Bytes", true, dataWordEdits("nonce"),
                 IllegalArgumentException.class, dataWordMessage("nonce")));
         // Step 7: canonical encoding. Representative: gas limit.
-        v.add(new Violation(7, "gasLimitLeadingZero", true, canonicalEdits(layout, "gasLimit"),
+        v.add(new Violation(7, "gasLimitLeadingZero", true, canonicalEdits("gasLimit"),
                 IllegalArgumentException.class, canonicalMessage("gasLimit")));
 
         // Step 8: signature state.
@@ -406,7 +406,7 @@ class TypedEnvelopeOutcomeOracleTest {
      * 2^256 spelled in 33 bytes. A priority fee that large would first trip the fee cap, so the
      * priority fee edit also raises the cap above it, which makes that edit touch both fields.
      */
-    private static List<Edit> dataWordEdits(Layout layout, String scalar) {
+    private static List<Edit> dataWordEdits(String scalar) {
         String thirtyThreeBytes = "01" + "00".repeat(32);
         return switch (scalar) {
             case "maxPriorityFee" -> List.of(
@@ -417,7 +417,7 @@ class TypedEnvelopeOutcomeOracleTest {
     }
 
     /** A leading zero byte over the base value, so the numeric value and the fee cap are unchanged. */
-    private static List<Edit> canonicalEdits(Layout layout, String scalar) {
+    private static List<Edit> canonicalEdits(String scalar) {
         String paddedBase = switch (scalar) {
             case "nonce" -> "00" + NONCE_HEX;
             case "gasPrice" -> "00" + GAS_PRICE_HEX;
@@ -437,10 +437,10 @@ class TypedEnvelopeOutcomeOracleTest {
 
         for (String scalar : order) {
             cases.add(new Case(prefix + "step6 " + scalar + "33Bytes",
-                    layout.envelope(dataWordEdits(layout, scalar)), IllegalArgumentException.class,
+                    layout.envelope(dataWordEdits(scalar)), IllegalArgumentException.class,
                     dataWordMessage(scalar)));
             cases.add(new Case(prefix + "step7 " + scalar + "LeadingZero",
-                    layout.envelope(canonicalEdits(layout, scalar)), IllegalArgumentException.class,
+                    layout.envelope(canonicalEdits(scalar)), IllegalArgumentException.class,
                     canonicalMessage(scalar)));
         }
 
@@ -451,13 +451,13 @@ class TypedEnvelopeOutcomeOracleTest {
                 String second = order.get(j);
                 // The two fee data-word messages are identical, so that pair cannot show an order.
                 if (!(first.equals("maxPriorityFee") && second.equals("maxFee"))) {
-                    List<Edit> edits = new ArrayList<>(dataWordEdits(layout, first));
-                    edits.addAll(dataWordEdits(layout, second));
+                    List<Edit> edits = new ArrayList<>(dataWordEdits(first));
+                    edits.addAll(dataWordEdits(second));
                     cases.add(new Case(prefix + "step6 pair " + first + "+" + second,
                             layout.envelope(edits), IllegalArgumentException.class, dataWordMessage(first)));
                 }
-                List<Edit> edits = new ArrayList<>(canonicalEdits(layout, first));
-                edits.addAll(canonicalEdits(layout, second));
+                List<Edit> edits = new ArrayList<>(canonicalEdits(first));
+                edits.addAll(canonicalEdits(second));
                 cases.add(new Case(prefix + "step7 pair " + first + "+" + second,
                         layout.envelope(edits), IllegalArgumentException.class, canonicalMessage(first)));
             }
@@ -466,8 +466,8 @@ class TypedEnvelopeOutcomeOracleTest {
         // Across the steps: a data-word failure on any scalar beats a canonical failure on any other.
         for (String canonicalScalar : order) {
             for (String dataWordScalar : order) {
-                List<Edit> canonicalEdits = canonicalEdits(layout, canonicalScalar);
-                List<Edit> dataWordEdits = dataWordEdits(layout, dataWordScalar);
+                List<Edit> canonicalEdits = canonicalEdits(canonicalScalar);
+                List<Edit> dataWordEdits = dataWordEdits(dataWordScalar);
                 if (sharesField(canonicalEdits, dataWordEdits)) {
                     continue;
                 }

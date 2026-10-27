@@ -47,9 +47,10 @@ class TypedEnvelopeSchemaTest {
     @Test
     void validate_wrongFieldCount_isRejected() {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9", TypedEnvelopeSchema.bytes(), TypedEnvelopeSchema.bytes());
+        RLPList txFields = envelope(item(1));
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> schema.validate(envelope(item(1)), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("Type-9 transaction must have exactly 2 elements", e.getMessage());
     }
@@ -57,9 +58,10 @@ class TypedEnvelopeSchemaTest {
     @Test
     void validate_listWhereBytesExpected_isRejectedWithFieldIndex() {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9", TypedEnvelopeSchema.bytes(), TypedEnvelopeSchema.bytes());
+        RLPList txFields = envelope(item(1), EMPTY_LIST);
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> schema.validate(envelope(item(1), EMPTY_LIST), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("Transaction field at index 1 must be encoded as an RLP byte string", e.getMessage());
     }
@@ -86,9 +88,10 @@ class TypedEnvelopeSchemaTest {
     void validate_addressOfWrongLength_isRejected() {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9", TypedEnvelopeSchema.address(), TypedEnvelopeSchema.bytes());
         byte[] nineteenBytes = new byte[19];
+        RLPList txFields = envelope(RLP.encodeElement(nineteenBytes), item(1));
 
         InvalidRskAddressException e = assertThrows(InvalidRskAddressException.class,
-                () -> schema.validate(envelope(RLP.encodeElement(nineteenBytes), item(1)), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("An RSK address must be 20 bytes long", e.getMessage());
     }
@@ -97,9 +100,10 @@ class TypedEnvelopeSchemaTest {
     void validate_addressCheckRunsBeforeFraming() {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9", TypedEnvelopeSchema.address(), TypedEnvelopeSchema.bytes());
         byte[] nineteenBytes = new byte[19];
+        RLPList txFields = envelope(RLP.encodeElement(nineteenBytes), EMPTY_LIST);
 
         InvalidRskAddressException e = assertThrows(InvalidRskAddressException.class,
-                () -> schema.validate(envelope(RLP.encodeElement(nineteenBytes), EMPTY_LIST), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("An RSK address must be 20 bytes long", e.getMessage());
     }
@@ -108,9 +112,10 @@ class TypedEnvelopeSchemaTest {
     void validate_nonNullAddressOnEmpty_isRejectedBeforeFraming() {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9",
                 TypedEnvelopeSchema.nonNullAddress("Type-9 needs a destination"), TypedEnvelopeSchema.bytes());
+        RLPList txFields = envelope(item(), EMPTY_LIST);
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> schema.validate(envelope(item(), EMPTY_LIST), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("Type-9 needs a destination", e.getMessage());
     }
@@ -129,9 +134,10 @@ class TypedEnvelopeSchemaTest {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9",
                 TypedEnvelopeSchema.scalar(0, "Nonce is not valid", "Nonce"));
         byte[] thirtyThreeBytes = nonZeroBytes(33);
+        RLPList txFields = envelope(RLP.encodeElement(thirtyThreeBytes));
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> schema.validate(envelope(RLP.encodeElement(thirtyThreeBytes)), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("Nonce is not valid", e.getMessage());
     }
@@ -150,9 +156,10 @@ class TypedEnvelopeSchemaTest {
     void validate_coinScalarWiderThanDataWord_isRejected() {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9",
                 TypedEnvelopeSchema.coinScalar(0, "Value is not valid", "Value"));
+        RLPList txFields = envelope(RLP.encodeElement(nonZeroBytes(33)));
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> schema.validate(envelope(RLP.encodeElement(nonZeroBytes(33))), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("Value is not valid", e.getMessage());
     }
@@ -163,9 +170,10 @@ class TypedEnvelopeSchemaTest {
                 TypedEnvelopeSchema.coinScalar(0, "Value is not valid", "Value"));
         byte[] leadingZero = nonZeroBytes(33);
         leadingZero[0] = 0;
+        RLPList txFields = envelope(RLP.encodeElement(leadingZero));
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> schema.validate(envelope(RLP.encodeElement(leadingZero)), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("Value must not have leading zero bytes; zero is encoded as the empty string", e.getMessage());
     }
@@ -174,9 +182,10 @@ class TypedEnvelopeSchemaTest {
     void validate_rawScalarWithLeadingZero_isRejectedAsNonCanonical() {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9",
                 TypedEnvelopeSchema.scalar(0, "Nonce is not valid", "Nonce"));
+        RLPList txFields = envelope(item(0, 5));
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> schema.validate(envelope(item(0, 5)), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("Nonce must not have leading zero bytes; zero is encoded as the empty string", e.getMessage());
     }
@@ -186,9 +195,10 @@ class TypedEnvelopeSchemaTest {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9",
                 TypedEnvelopeSchema.scalar(0, "Nonce is not valid", "Nonce"),
                 TypedEnvelopeSchema.scalar(1, "Gas Limit is not valid", "Gas Limit"));
+        RLPList txFields = envelope(item(0, 5), RLP.encodeElement(nonZeroBytes(33)));
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> schema.validate(envelope(item(0, 5), RLP.encodeElement(nonZeroBytes(33))), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("Gas Limit is not valid", e.getMessage());
     }
@@ -197,9 +207,10 @@ class TypedEnvelopeSchemaTest {
     void validate_semanticPhaseRunsBeforeScalarChecks() {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9",
                 TypedEnvelopeSchema.scalar(0, "Nonce is not valid", "Nonce"));
+        RLPList txFields = envelope(RLP.encodeElement(nonZeroBytes(33)));
 
         IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> schema.validate(envelope(RLP.encodeElement(nonZeroBytes(33))), fields -> {
+                () -> schema.validate(txFields, fields -> {
                     throw new IllegalStateException("semantic phase ran");
                 }));
 
@@ -209,9 +220,10 @@ class TypedEnvelopeSchemaTest {
     @Test
     void validate_semanticPhaseRunsAfterFraming() {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9", TypedEnvelopeSchema.bytes());
+        RLPList txFields = envelope(EMPTY_LIST);
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> schema.validate(envelope(EMPTY_LIST), fields -> {
+                () -> schema.validate(txFields, fields -> {
                     throw new IllegalStateException("semantic phase ran");
                 }));
 
@@ -223,9 +235,10 @@ class TypedEnvelopeSchemaTest {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9",
                 TypedEnvelopeSchema.scalar(1, "Second is not valid", "Second"),
                 TypedEnvelopeSchema.coinScalar(0, "First is not valid", "First"));
+        RLPList txFields = envelope(RLP.encodeElement(nonZeroBytes(33)), RLP.encodeElement(nonZeroBytes(33)));
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> schema.validate(envelope(RLP.encodeElement(nonZeroBytes(33)), RLP.encodeElement(nonZeroBytes(33))), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("First is not valid", e.getMessage());
     }
@@ -235,9 +248,10 @@ class TypedEnvelopeSchemaTest {
         TypedEnvelopeSchema schema = TypedEnvelopeSchema.of("Type-9",
                 TypedEnvelopeSchema.scalar(1, "Second is not valid", "Second"),
                 TypedEnvelopeSchema.coinScalar(0, "First is not valid", "First"));
+        RLPList txFields = envelope(item(0, 5), item(0, 5));
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> schema.validate(envelope(item(0, 5), item(0, 5)), fields -> null));
+                () -> schema.validate(txFields, fields -> null));
 
         assertEquals("First must not have leading zero bytes; zero is encoded as the empty string", e.getMessage());
     }

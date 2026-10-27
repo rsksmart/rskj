@@ -69,7 +69,17 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
             bytes() // s
     );
 
-    private record SemanticFields(byte[] accessListBytes, Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
+    /** Values the semantic phase parses; a plain holder, since a record would compare the array by reference. */
+    private static final class SemanticFields {
+        private final byte[] accessListBytes;
+        private final Coin maxPriorityFeePerGas;
+        private final Coin maxFeePerGas;
+
+        private SemanticFields(byte[] accessListBytes, Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
+            this.accessListBytes = accessListBytes;
+            this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+            this.maxFeePerGas = maxFeePerGas;
+        }
     }
 
     @Override
@@ -98,9 +108,9 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
                 value,
                 data,
                 TypedTransactionCodec.parseTypedSignatureState(txFields, CHAIN_ID_INDEX, Y_PARITY_INDEX, R_INDEX, S_INDEX),
-                semantic.accessListBytes(),
-                semantic.maxPriorityFeePerGas(),
-                semantic.maxFeePerGas()
+                semantic.accessListBytes,
+                semantic.maxPriorityFeePerGas,
+                semantic.maxFeePerGas
         );
     }
 
