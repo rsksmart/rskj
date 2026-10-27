@@ -197,30 +197,11 @@ public final class CommonParsingUtils {
         }
     }
 
-    /** Requires every non-list envelope field to be framed as an RLP byte string. */
-    public static void requireByteStringFields(RLPList txFields, int... listFieldIndices) {
-        for (int i = 0; i < txFields.size(); i++) {
-            if (isListField(i, listFieldIndices)) {
-                continue;
-            }
-            requireByteStringFramed(txFields.get(i), "Transaction field at index " + i);
-        }
-    }
-
-    /** Single-element {@link #requireByteStringFields}; a length check alone cannot tell a list from a byte string. */
+    /** Requires an envelope field to be framed as an RLP byte string; a length check alone cannot tell a list from a byte string. */
     public static void requireByteStringFramed(RLPElement field, String fieldLabel) {
         if (field instanceof RLPList) {
             throw new IllegalArgumentException(fieldLabel + " must be encoded as an RLP byte string");
         }
-    }
-
-    private static boolean isListField(int index, int... listFieldIndices) {
-        for (int listFieldIndex : listFieldIndices) {
-            if (listFieldIndex == index) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /** Re-encodes a decoded element minimally, for comparison with the bytes received. */
