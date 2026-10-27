@@ -1187,15 +1187,24 @@ class TransactionPoolImplTest {
     }
 
     @Test
-    void delegatedAccount_liveQueuedTransactionStillOccupiesSlot() {
+    void delegatedAccount_liveQueuedTransactionOccupiesSlotUntilNextBestBlock() {
         createTestAccounts(2, Coin.valueOf(1_000_000));
         Transaction queued = createSampleTransaction(1, 2, 1000, 2);
         Assertions.assertTrue(transactionPool.addTransaction(queued).queuedTransactionsWereAdded());
+        // the state changes without a new best block, which a node only sees inside processBest
         makeAccountDelegated(1, 2);
 
-        TransactionPoolAddResult r = transactionPool.addTransaction(createSampleTransaction(1, 2, 1000, 0));
+        Transaction next = createSampleTransaction(1, 2, 1000, 0);
+        TransactionPoolAddResult r = transactionPool.addTransaction(next);
         Assertions.assertFalse(r.transactionsWereAdded());
         Assertions.assertEquals("delegated account already has a transaction in the pool", r.getErrorMessage());
+
+        Block block = new BlockBuilder(null, null, null).parent(blockChain.getBestBlock()).build();
+        transactionPool.processBest(block);
+
+        r = transactionPool.addTransaction(next);
+        Assertions.assertTrue(r.pendingTransactionsWereAdded(), r.getErrorMessage());
+        Assertions.assertEquals(List.of(next), transactionPool.getPendingTransactions());
     }
 
     @Test

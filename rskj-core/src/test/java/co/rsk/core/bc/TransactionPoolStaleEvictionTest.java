@@ -37,6 +37,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.util.RskTestContext;
@@ -185,18 +186,43 @@ class TransactionPoolStaleEvictionTest {
         Assertions.assertTrue(pool.addTransaction(gapped).pendingTransactionsWereAdded());
 
         // accountB's set code transaction delegates accountA and consumes its nonce 0
-        Transaction setCode = new TransactionBuilder()
-                .transactionType(TransactionType.TYPE_4.getByteCode())
-                .sender(accountB)
-                .receiver(receiver)
-                .gasLimit(BigInteger.valueOf(100_000))
-                .authorization(accountA, DELEGATE, BigInteger.ZERO, Constants.REGTEST_CHAIN_ID)
-                .build();
-        Block block = connect(genesis, setCode);
+        Block block = connect(genesis, setCode(accountB, accountA, 0));
         Assertions.assertEquals(BigInteger.ONE, stateNonce(block, accountA));
         Assertions.assertTrue(isDelegatedAt(block, accountA));
 
         Assertions.assertEquals(Set.of(executable.getHash()), poolHashes());
+    }
+
+    @Test
+    void accountDelegatedWithQueuedTransactionAcceptsAndMinesNextNonce() {
+        Transaction stale = tx(accountA, 0, 1000);
+        Transaction gapped = tx(accountA, 2, 1000);
+        Assertions.assertTrue(pool.addTransaction(stale).pendingTransactionsWereAdded());
+        Assertions.assertTrue(pool.addTransaction(gapped).queuedTransactionsWereAdded());
+
+        // accountB's set code transaction delegates accountA and consumes its nonce 0
+        Block delegating = connect(genesis, setCode(accountB, accountA, 0));
+        Assertions.assertEquals(BigInteger.ONE, stateNonce(delegating, accountA));
+        Assertions.assertTrue(isDelegatedAt(delegating, accountA));
+
+        Transaction next = tx(accountA, 1, 1000);
+        TransactionPoolAddResult result = pool.addTransaction(next);
+        Assertions.assertTrue(result.pendingTransactionsWereAdded(), result.getErrorMessage());
+        Assertions.assertEquals(List.of(next), pool.getPendingTransactions());
+
+        Block mined = connect(delegating, pool.getPendingTransactions().toArray(new Transaction[0]));
+        Assertions.assertEquals(BigInteger.TWO, stateNonce(mined, accountA));
+        Assertions.assertTrue(poolTransactions().isEmpty());
+    }
+
+    private Transaction setCode(Account sender, Account authority, long authorityNonce) {
+        return new TransactionBuilder()
+                .transactionType(TransactionType.TYPE_4.getByteCode())
+                .sender(sender)
+                .receiver(receiver)
+                .gasLimit(BigInteger.valueOf(100_000))
+                .authorization(authority, DELEGATE, BigInteger.valueOf(authorityNonce), Constants.REGTEST_CHAIN_ID)
+                .build();
     }
 
     private BigInteger stateNonce(Block block, Account account) {
