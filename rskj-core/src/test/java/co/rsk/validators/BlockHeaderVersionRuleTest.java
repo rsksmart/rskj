@@ -20,13 +20,17 @@ package co.rsk.validators;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import com.typesafe.config.ConfigFactory;
+import org.ethereum.TestUtils;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderBuilder;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -38,6 +42,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -48,6 +53,9 @@ import static org.mockito.Mockito.when;
 class BlockHeaderVersionRuleTest {
 
     private static final long BLOCK_NUMBER = 1L;
+
+    /** Where the version byte sits in a full (non-compressed) encoding: after the 16 base fields and the ummRoot. */
+    private static final int VERSION_FIELD_INDEX = 17;
 
     /** A config that requires exactly this header version at every height above genesis. */
     private static ActivationConfig configRequiring(int version) {
@@ -129,6 +137,42 @@ class BlockHeaderVersionRuleTest {
 
         assertTrue(rule.isValid(headerOfVersion(acceptedVersion, height)));
         assertFalse(rule.isValid(headerOfVersion(rejectedVersion, height)));
+    }
+
+    @ParameterizedTest(name = "height {0}: a wire version byte of {1} still decodes, and only the rule rejects it")
+    @CsvSource({"19, 2", "20, 1"})
+    void rejectsAWireVersionTheDecoderStillAcceptsOnEitherSideOfTheRskip535Boundary(long height, int wireVersion) {
+        // BlockFactory takes the version from the wire and picks the header class from it: a version 2 byte in the
+        // RSKIP351-only window yields a V2 header with no baseEvent, a version 1 byte at a RSKIP535 height yields a V1
+        // header. Nothing else compares that byte with the activation state; this rule is the only check.
+        ActivationConfig config = activatingRskip351At(10, 20);
+        BlockFactory factory = new BlockFactory(config);
+        BlockHeaderVersionRule rule = new BlockHeaderVersionRule(config);
+        byte[] compliant = new BlockHeaderBuilder(config)
+                .setNumber(height)
+                .setCoinbase(TestUtils.generateAddress("coinbase"))
+                .build()
+                .getFullEncoded();
+
+        BlockHeader decoded = factory.decodeHeader(withVersionByte(compliant, (byte) wireVersion), false);
+
+        assertEquals((byte) wireVersion, decoded.getVersion());
+        assertEquals(height, decoded.getNumber());
+        assertTrue(rule.isValid(factory.decodeHeader(compliant, false)));
+        assertFalse(rule.isValid(decoded));
+    }
+
+    /** The same header bytes with the version element replaced; every header field is a byte-string element. */
+    private static byte[] withVersionByte(byte[] encodedHeader, byte version) {
+        RLPList fields = RLP.decodeList(encodedHeader);
+        byte[][] encodedFields = new byte[fields.size()][];
+        for (int i = 0; i < fields.size(); i++) {
+            encodedFields[i] = RLP.encodeElement(fields.get(i).getRLPRawData());
+        }
+        assertArrayEquals(encodedHeader, RLP.encodeList(encodedFields), "re-encoding reproduces the header");
+        assertEquals(1, fields.get(VERSION_FIELD_INDEX).getRLPData().length, "the slot holds a one-byte version");
+        encodedFields[VERSION_FIELD_INDEX] = RLP.encodeByte(version);
+        return RLP.encodeList(encodedFields);
     }
 
     @Test
