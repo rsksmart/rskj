@@ -1,0 +1,54 @@
+// Gradle init script used only by .oss-scanner/Dockerfile.
+//
+// The scanner's audit VM has no Internet access, so every artifact the agent might need must land
+// in GRADLE_USER_HOME while the image is still being built. Compiling code (`testClasses`,
+// `integrationTestClasses`, `fuzzTestClasses`) resolves only the *compile* classpaths; the
+// *runtime* classpaths (JUnit platform launcher and engines, the Mockito agent, ...) and the tool
+// configurations (`jacocoAgent`, `jacocoAnt`, `checkstyle`) stay unresolved until a task actually
+// executes. Offline, that first execution fails.
+//
+// This forces every resolvable configuration in every project, so the cache is warm for `test`,
+// `integrationTest` and `fuzzTest` without having to run any of them -- which matters because the
+// integration suite starts real nodes and binds RPC ports, and the image build has a 45-minute
+// budget.
+//
+// One task on the root project, walking allprojects itself, rather than a task registered per
+// project: an unqualified task name on the command line resolved to the root project's task only,
+// silently leaving :rskj-core -- the project that has all the dependencies -- untouched.
+//
+// Run with --offline it resolves from the cache alone, so it doubles as the check that the cache
+// is complete. That is how the Dockerfile uses it: once online to fill, once offline to verify.
+gradle.rootProject { rootProject ->
+    rootProject.tasks.register("ossScannerPrefetch") {
+        group = "oss-scanner"
+        description = "Resolves every resolvable configuration so the Gradle cache works offline."
+        doLast {
+            def resolved = 0
+            def skipped = []
+            rootProject.allprojects.each { project ->
+                project.configurations.each { configuration ->
+                    if (!configuration.canBeResolved) {
+                        return
+                    }
+                    try {
+                        configuration.resolve()
+                        resolved++
+                    } catch (Exception e) {
+                        // Some configurations are deliberately unresolvable in a given context, so
+                        // one failure is not fatal. They are all listed below for inspection: when
+                        // this runs with --offline, anything listed is a gap in the cache.
+                        skipped << "${project.path}:${configuration.name}: ${e.message}".toString()
+                    }
+                }
+            }
+            logger.lifecycle("prefetch: resolved ${resolved} configuration(s), skipped ${skipped.size()}")
+            skipped.each { logger.lifecycle("prefetch: SKIPPED ${it}") }
+            // -PossScannerStrict turns a skip into a build failure. The Dockerfile uses it on the
+            // --offline pass: offline, a configuration that will not resolve IS the gap this whole
+            // script exists to prevent, and it must fail the image build rather than the audit.
+            if (!skipped.isEmpty() && rootProject.hasProperty("ossScannerStrict")) {
+                throw new GradleException("prefetch: ${skipped.size()} configuration(s) did not resolve")
+            }
+        }
+    }
+}

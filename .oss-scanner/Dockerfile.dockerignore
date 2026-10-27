@@ -1,0 +1,22 @@
+# BuildKit reads <dockerfile>.dockerignore in preference to the context's .dockerignore, so this
+# file -- not the root .dockerignore -- governs what the OSS Scanner build sees. The root one is
+# written for the published node image and hides .github, which the auditing agent wants.
+#
+# If a builder ever ignores this file, the root .dockerignore applies instead: that is a smaller
+# context, not a broken build, so the degradation is safe.
+
+# The scanner's own pipeline copies .git back into /src after the build, so paying to send a large
+# history through the build context here would be wasted.
+.git
+
+# Local developer state. Absent from the scanner's fresh clone; excluded so a build run from a
+# working tree matches what the scanner sees.
+.gradle
+.gradle-test
+.idea
+.vscode
+.claude
+build
+rskj-core/build
+logs
+**/.sonar
