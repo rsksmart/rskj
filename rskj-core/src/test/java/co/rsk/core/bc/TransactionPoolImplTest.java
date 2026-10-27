@@ -1052,7 +1052,7 @@ class TransactionPoolImplTest {
     }
 
     @Test
-    void queuedTransactionDroppedOnNewBestBlockOnceAccountIsDelegated() {
+    void delegatedAccount_queuedTransactionDroppedOnNewBestBlock() {
         createTestAccounts(2, Coin.valueOf(1000000));
         Transaction queued = createSampleTransaction(1, 2, 1000, 1);
         Assertions.assertTrue(transactionPool.addTransaction(queued).queuedTransactionsWereAdded());

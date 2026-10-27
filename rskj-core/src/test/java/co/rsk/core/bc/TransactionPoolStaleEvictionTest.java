@@ -252,14 +252,6 @@ class TransactionPoolStaleEvictionTest {
                 context.getRepositoryLocator().snapshotAt(block.getHeader()).getCode(account.getAddress()));
     }
 
-    private Block connectSide(Block parent, Transaction... txs) {
-        Block block = blockGenerator.createChildBlock(parent, Arrays.asList(txs));
-        context.getBlockExecutor().executeAndFillAll(block, parent.getHeader());
-        block.seal();
-        Assertions.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockchain.tryToConnect(block));
-        return block;
-    }
-
     private Transaction tx(Account sender, long nonce, long valueInWei) {
         return new TransactionBuilder()
                 .sender(sender)
@@ -271,10 +263,21 @@ class TransactionPoolStaleEvictionTest {
     }
 
     private Block connect(Block parent, Transaction... txs) {
+        Block block = executedChild(parent, txs);
+        Assertions.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block));
+        return block;
+    }
+
+    private Block connectSide(Block parent) {
+        Block block = executedChild(parent);
+        Assertions.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockchain.tryToConnect(block));
+        return block;
+    }
+
+    private Block executedChild(Block parent, Transaction... txs) {
         Block block = blockGenerator.createChildBlock(parent, Arrays.asList(txs));
         context.getBlockExecutor().executeAndFillAll(block, parent.getHeader());
         block.seal();
-        Assertions.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block));
         return block;
     }
 
