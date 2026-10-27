@@ -110,8 +110,11 @@ class SelfdestructPreservesNonceDslTest {
     // -------------------------------------------------------------------------
 
     private static World run(String resource, boolean rskip701Active) throws FileNotFoundException, DslProcessorException {
-        TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig.withValue(
-                "blockchain.config.consensusRules.rskip701", ConfigValueFactory.fromAnyRef(rskip701Active ? 0 : -1)));
+        long activationHeight = rskip701Active ? 0 : -1;
+        // RSKIP545 requires RSKIP701, so it follows the RSKIP701 activation
+        TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
+                .withValue("blockchain.config.consensusRules.rskip701", ConfigValueFactory.fromAnyRef(activationHeight))
+                .withValue("blockchain.config.consensusRules.rskip545", ConfigValueFactory.fromAnyRef(activationHeight)));
         World world = new World(config);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(DslParser.fromResource(resource));

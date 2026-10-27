@@ -271,6 +271,72 @@ class ActivationConfigTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
+    void rskip545AcceptsRequiredRuleActivatingBefore(String requiredKey) {
+        Config config = BASE_CONFIG
+                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(200))
+                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(100));
+
+        ActivationConfig activationConfig = ActivationConfig.read(config);
+
+        assertTrue(activationConfig.isActive(ConsensusRule.RSKIP545, 200));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
+    void rskip545AcceptsRequiredRuleActivatingAtTheSameHeight(String requiredKey) {
+        Config config = BASE_CONFIG
+                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(200))
+                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(200));
+
+        ActivationConfig activationConfig = ActivationConfig.read(config);
+
+        assertTrue(activationConfig.isActive(ConsensusRule.RSKIP545, 200));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
+    void rskip545RejectsRequiredRuleActivatingAfter(String requiredKey) {
+        Config config = BASE_CONFIG
+                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(100))
+                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(200));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> ActivationConfig.read(config));
+
+        assertEquals("rskip545 (height 100) requires " + requiredKey + " active at or before 100, but it activates at 200",
+                exception.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
+    void rskip545RejectsDisabledRequiredRule(String requiredKey) {
+        Config config = BASE_CONFIG
+                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(100))
+                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(-1));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> ActivationConfig.read(config));
+
+        assertEquals("rskip545 (height 100) requires " + requiredKey + " active at or before 100, but it is disabled",
+                exception.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
+    void rskip545DisabledImposesNoOrderingOnRequiredRule(String requiredKey) {
+        Config disabledRequired = BASE_CONFIG
+                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(-1))
+                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(-1));
+        Config lateRequired = BASE_CONFIG
+                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(-1))
+                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(200));
+
+        assertFalse(ActivationConfig.read(disabledRequired).isActive(ConsensusRule.RSKIP545, 1000));
+        assertFalse(ActivationConfig.read(lateRequired).isActive(ConsensusRule.RSKIP545, 1000));
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"main", "testnet", "testnet2", "regtest"})
     void rskip701ActivatesNoLaterThanRskip545_shippedNetworkConfigs(String network) {
         // same layering as ConfigLoader: the network file overrides the defaults in reference.conf; paths that

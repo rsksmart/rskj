@@ -34,6 +34,21 @@ public class ActivationConfig {
     private static final String PROPERTY_ACTIVATION_HEIGHTS = "hardforkActivationHeights";
     private static final String PROPERTY_CONSENSUS_RULES = "consensusRules";
 
+    /**
+     * Rules that must be active at or before the height of the rule used as key, whenever that rule is active.
+     */
+    private static final Map<ConsensusRule, List<ConsensusRule>> ACTIVATION_DEPENDENCIES =
+            new EnumMap<>(ConsensusRule.class);
+
+    static {
+        ACTIVATION_DEPENDENCIES.put(ConsensusRule.RSKIP545, Arrays.asList(
+                ConsensusRule.RSKIP543,
+                ConsensusRule.RSKIP546,
+                ConsensusRule.RSKIP692,
+                ConsensusRule.RSKIP701
+        ));
+    }
+
     private final Map<ConsensusRule, Long> activationHeights;
     private final Map<NetworkUpgrade, Long> networkUpgrades;
 
@@ -73,7 +88,34 @@ public class ActivationConfig {
             activationHeights.put(consensusRule, activationHeight);
         }
 
+        validateActivationDependencies(activationHeights);
+
         return new ActivationConfig(activationHeights, networkUpgrades);
+    }
+
+    private static void validateActivationDependencies(Map<ConsensusRule, Long> activationHeights) {
+        for (Map.Entry<ConsensusRule, List<ConsensusRule>> dependency : ACTIVATION_DEPENDENCIES.entrySet()) {
+            ConsensusRule rule = dependency.getKey();
+            Long ruleHeight = activationHeights.get(rule);
+            if (ruleHeight == null || ruleHeight < 0) {
+                continue;
+            }
+
+            for (ConsensusRule required : dependency.getValue()) {
+                Long requiredHeight = activationHeights.get(required);
+                if (requiredHeight == null) {
+                    continue;
+                }
+
+                if (requiredHeight < 0 || requiredHeight > ruleHeight) {
+                    throw new IllegalArgumentException(String.format(
+                            "%s (height %d) requires %s active at or before %d, but %s",
+                            rule.getConfigKey(), ruleHeight, required.getConfigKey(), ruleHeight,
+                            requiredHeight < 0 ? "it is disabled" : "it activates at " + requiredHeight
+                    ));
+                }
+            }
+        }
     }
 
     private static long parseActivationHeight(
