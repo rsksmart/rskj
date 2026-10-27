@@ -70,6 +70,7 @@ Commands that mirror CI:
 - `./gradlew build -x test` — runs the full `build` minus the unit-test task. The per-source-set Checkstyle tasks (`checkstyleMain`, `checkstyleTest`, …) are wired into `check` by the checkstyle plugin and still run. The custom `checkstyleAll` aggregator task and `integrationTest` (a `JvmTestSuite`) are **not** wired into `check`, so this command does **not** run them — invoke `./gradlew integrationTest` and `./gradlew checkstyleAll` explicitly. A green `build -x test` does not mean integration tests passed.
 - `./gradlew test` — unit tests (JUnit 5). Filter with `--tests "FullyQualifiedClass"` or `--tests "FullyQualifiedClass.method"`.
 - `./gradlew integrationTest` — integration tests; depends on `assemble`.
+- `JAZZER_FUZZ=1 ./gradlew fuzzTest --tests "FullyQualifiedClass"` — the Jazzer fuzz targets of one class under `src/fuzzTest/java`; `JAZZER_FUZZ=1 ./gradlew runAllFuzzTests` runs every target. Neither `check` nor any PR gate runs them; `fuzz-test.yml` runs them on pushes to `master` and `*-rc`. See `FUZZING.md`.
 - `./gradlew checkstyleAll` — runs `checkstyleMain`, `checkstyleTest`, `checkstyleIntegrationTest`, and `checkstyleFuzzTest`.
 - `./gradlew checkstyleFile -PfilePath="src/main/java/A.java,src/main/java/B.java"` — checkstyle on a specific, arbitrary file set (no CI job calls this; it's for ad hoc local use). Paths must be relative to the `rskj-core` subproject, and the task resolves the list via `project.files(...)` inside `rskj-core`. Repo-relative paths (e.g. `rskj-core/src/main/java/...`) silently match nothing.
 - `./gradlew spotlessJavaCheck -PratchetFrom=origin/master` — Spotless on changed files; replace `master` with the PR base branch when applicable.
@@ -101,13 +102,15 @@ The workflow and templates under `.github/reproducible-build/` exist to **mirror
   - `co.rsk.config`, `co.rsk.db`, `co.rsk.crypto`, `co.rsk.scoring`, `co.rsk.metrics`, `co.rsk.util`, `co.rsk.panic`, `co.rsk.logfilter` — configuration, storage, crypto, and supporting subsystems.
   - `co.rsk.cli.tools.*` — standalone CLI utilities (`ImportBlocks`, `ExportBlocks`, `ConnectBlocks`, `RewindBlocks`, `ExecuteBlocks`, `ImportState`, `ExportState`, `DbMigrate`, `IndexBlooms`, `ShowStateInfo`, `StartBootstrap`, `ValidateBtcHeaders`, `GenerateOpenRpcDoc`).
 - `org.ethereum.*` — Ethereum compatibility layer inherited from the EthereumJ ancestry. The actual per-network activation **heights** live in the config resources (`rskj-core/src/main/resources/config/{main,testnet,testnet2,regtest}.conf`, under `hardforkActivationHeights` / `consensusRules`). The `org.ethereum.config.blockchain.upgrades` package (`ActivationConfig`, `ConsensusRule`, `NetworkUpgrade`) defines the RSKIP / hard-fork identifiers and the loader (`ActivationConfig.read`) that parses those heights — not the height values themselves. Treat both the config values and this package as consensus-critical.
+- `doc/rpc/` — the JSON-RPC reference: one OpenRPC fragment per method in `doc/rpc/methods/` (e.g. `eth_call.json`), shared schemas in `doc/rpc/components/`, and `template.json`. `./gradlew genRpcDocs` assembles them with `co.rsk.cli.tools.GenerateOpenRpcDoc` into `rskj-core/build/rpc-docs/rskj-openrpc.json`, and `devportal-update.yml` syncs the result to the devportal when `doc/rpc/` changes on `master`. A change to an RPC method's name, parameters or result updates that method's fragment in the same PR.
+- `docs/` — node-operator pages mirrored to the devportal. A page under `docs/03-node-operators/` reaches the devportal only if `.github/workflows/scripts/devportal-update/doc_config.yaml` lists it, so a new page does nothing until it is added there. `docs/README.md` explains the sync.
 - `.github/CODEOWNERS` — `@rsksmart/rsk-core` owns mining-related code; `@rsksmart/rsk-fed` owns peg/bridge. Treat changes to activation heights in config resources as requiring review from both groups, even if current CODEOWNERS path coverage does not enforce that automatically.
 
 ## Sensitive areas (extra scrutiny)
 
 Changes touching the following require deeper review even when the diff is small. Treat unexplained behavioural changes here as potential defects until proven otherwise.
 
-- `co.rsk.peg`, `co.rsk.mine`, `co.rsk.remasc`, `co.rsk.vm`, `co.rsk.trie`, `co.rsk.validators`, `co.rsk.pcc`.
+- `co.rsk.peg`, `co.rsk.mine`, `co.rsk.remasc`, `co.rsk.vm`, `co.rsk.trie`, `co.rsk.validators`, `co.rsk.pcc`, `co.rsk.core.bc`, `org.ethereum.core`, `org.ethereum.vm`.
 - The per-network activation heights in `config/*.conf` (`hardforkActivationHeights` / `consensusRules`), the `org.ethereum.config.blockchain.upgrades` loader, and any code gated by RSKIP activation flags.
 - Anything that changes consensus behaviour, persistence formats, JSON-RPC response shapes, wire-protocol messages, or block / transaction validation rules.
 - Any new or upgraded dependency (requires a companion `rsksmart/reproducible-builds` PR).
