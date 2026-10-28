@@ -211,52 +211,85 @@ class NetworkConfigsActivationTest {
             assertEquals(AS_OF.getOrDefault(network, -1L).longValue(), asOf,
                 network + ": golden asOf is stale; run ./gradlew :rskj-core:updateActivationGolden");
             Config cfg = loadNetwork(network);
-            compareSection(golden, "heights", network, asOf, activationHeights(cfg), violations);
-            // Per-rule heights only matter where history is pinned; a pinned network without them fails below.
+            compareSection(goldenSection(golden, "heights", network), network + ".heights.", asOf,
+                activationHeights(cfg), violations, violations);
+            // Per-rule heights only matter where history is pinned; a pinned network without them fails in goldenSection.
             if (asOf >= 0) {
-                compareSection(golden, "consensusRules", network, asOf, consensusRuleHeights(cfg), violations);
+                compareSection(goldenSection(golden, "consensusRules", network), network + ".consensusRules.", asOf,
+                    consensusRuleHeights(cfg), violations, violations);
             }
         }
         assertTrue(violations.isEmpty(), "Passed activation heights changed: " + violations);
     }
 
-    private static void compareSection(JsonNode golden, String section, String network, long asOf,
-                                       Map<String, Long> current, List<String> violations) {
+    private static JsonNode goldenSection(JsonNode golden, String section, String network) {
         JsonNode goldenHeights = golden.path(section).path(network);
         assertFalse(goldenHeights.isMissingNode(),
             "golden " + section + " missing for " + network + "; run ./gradlew :rskj-core:updateActivationGolden");
+        return goldenHeights;
+    }
+
+    /**
+     * Compares one golden section with the current heights. A difference that touches mined history (a height at or
+     * below asOf, before or after the change) goes to {@code mined}; any other difference that a regeneration fixes
+     * goes to {@code stale}. The test fails on both; regenerateGolden refuses only {@code mined}.
+     */
+    private static void compareSection(JsonNode goldenHeights, String label, long asOf, Map<String, Long> current,
+                                       List<String> mined, List<String> stale) {
         for (Iterator<Map.Entry<String, JsonNode>> it = goldenHeights.fields(); it.hasNext();) {
             Map.Entry<String, JsonNode> e = it.next();
             long was = e.getValue().asLong();
             Long now = current.get(e.getKey());
             if (now == null) {
-                violations.add(network + "." + section + "." + e.getKey() + " removed (was " + was + ")");
-                continue;
-            }
-            if (was == now) {
+                (isMined(was, asOf) ? mined : stale).add(label + e.getKey() + " removed (was " + was + ")");
                 continue;
             }
             // A change is a violation if the height had already passed, or is being moved retroactively
             // onto already-mined history. Scheduled/disabled changes above asOf are legitimate and show up
             // in the config diff itself; regenerate the golden after making one.
-            boolean pinned = asOf >= 0 && ((was >= 0 && was <= asOf) || (now >= 0 && now <= asOf));
-            if (pinned) {
-                violations.add(network + "." + section + "." + e.getKey() + " changed " + was + " -> " + now + " (asOf=" + asOf + ")");
+            if (was != now && (isMined(was, asOf) || isMined(now, asOf))) {
+                mined.add(label + e.getKey() + " changed " + was + " -> " + now + " (asOf=" + asOf + ")");
             }
         }
-        // A key the config has but the golden lacks is unpinned: it would never be compared again.
-        for (String key : current.keySet()) {
-            if (!goldenHeights.has(key)) {
-                violations.add(network + "." + section + "." + key + " not in golden (now " + current.get(key)
+        // A key the config has but the golden lacks is unpinned: it would never be compared again. A new key that is
+        // already active at or below asOf is a retroactive activation, not a missing golden entry.
+        for (Map.Entry<String, Long> e : current.entrySet()) {
+            if (goldenHeights.has(e.getKey())) {
+                continue;
+            }
+            if (isMined(e.getValue(), asOf)) {
+                mined.add(label + e.getKey() + " is new and active at " + e.getValue()
+                    + ", on already-mined history (asOf=" + asOf + ")");
+            } else {
+                stale.add(label + e.getKey() + " not in golden (now " + e.getValue()
                     + "); run ./gradlew :rskj-core:updateActivationGolden");
             }
         }
     }
 
-    /** Not a check: rewrites the golden. Runs only from ./gradlew :rskj-core:updateActivationGolden. */
+    /** A height at or below asOf is on mined history. Nothing is when asOf < 0: that network is not pinned. */
+    private static boolean isMined(long height, long asOf) {
+        return height >= 0 && height <= asOf;
+    }
+
+    /**
+     * Not a check: rewrites the golden. Runs only from ./gradlew :rskj-core:updateActivationGolden. It refuses to
+     * write over a change to mined history, so rerunning the task cannot bless what passedActivationHeightsMatchGolden
+     * reports. A deliberate change of that kind needs a hand edit of the golden and a reason in the PR.
+     */
     @Test
     @EnabledIfSystemProperty(named = "activation.golden.update", matches = "true")
     void regenerateGolden() throws IOException {
+        if (Files.exists(GOLDEN)) {
+            List<String> mined = minedHistoryChanges(MAPPER.readTree(GOLDEN.toFile()));
+            if (!mined.isEmpty()) {
+                // Printed as well: the task's short exception format drops the assertion message.
+                System.out.println("Golden not written: these changes touch mined history. Fix the config; if a change"
+                    + " is deliberate, edit the golden by hand and give the reason in the PR.");
+                mined.forEach(change -> System.out.println("  " + change));
+            }
+            assertTrue(mined.isEmpty(), "Golden not written: these changes touch mined history: " + mined);
+        }
         ObjectNode root = MAPPER.createObjectNode();
         ObjectNode asOf = root.putObject("asOf");
         ObjectNode heights = root.putObject("heights");
@@ -280,5 +313,28 @@ class NetworkConfigsActivationTest {
             .withArrayIndenter(new DefaultIndenter("  ", "\n"));
         Files.writeString(GOLDEN, MAPPER.writer(pp).writeValueAsString(root) + "\n");
         System.out.println("Golden written to " + GOLDEN);   // visible: updateActivationGolden shows standard streams
+    }
+
+    /**
+     * Changes to mined history on each network that the golden pins. The bound is the higher of the golden's asOf
+     * and AS_OF, so a height moved above the old asOf but at or below a bumped AS_OF counts too. The bound is AS_OF,
+     * not the real tip: blocks mined above AS_OF are not protected until the next bump.
+     */
+    private static List<String> minedHistoryChanges(JsonNode golden) throws IOException {
+        List<String> mined = new ArrayList<>();
+        List<String> stale = new ArrayList<>();   // the regeneration itself fixes these
+        for (String network : networkNames()) {
+            long goldenAsOf = golden.path("asOf").path(network).asLong(-1);
+            if (goldenAsOf < 0) {
+                continue;   // the golden does not pin this network yet
+            }
+            long asOf = Math.max(goldenAsOf, AS_OF.getOrDefault(network, -1L));
+            Config cfg = loadNetwork(network);
+            compareSection(golden.path("heights").path(network), network + ".heights.", asOf,
+                activationHeights(cfg), mined, stale);
+            compareSection(golden.path("consensusRules").path(network), network + ".consensusRules.", asOf,
+                consensusRuleHeights(cfg), mined, stale);
+        }
+        return mined;
     }
 }
