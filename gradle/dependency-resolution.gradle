@@ -1,0 +1,75 @@
+/*
+ * Fills the Gradle cache with every dependency this project can resolve, so that a later build
+ * finds everything locally and needs no network: a container image, a CI runner with a primed
+ * cache, an air-gapped machine, or anyone working offline.
+ *
+ * Compiling is not enough on its own. `assemble` and `testClasses` never touch the test,
+ * integrationTest or fuzzTest runtime classpaths, the JaCoCo agent, or the Checkstyle tool, so
+ * those are still missing once the network goes away. Gradle ships no task that resolves the lot.
+ *
+ *   ./gradlew resolveAllDependencies                                 warm the cache
+ *   ./gradlew resolveAllDependencies -PfailOnUnresolvedDependencies  warm it and assert it is complete
+ *   ./gradlew build --offline                                        what a warm cache buys
+ *
+ * The root build.gradle applies this to every project. A project resolves only its own
+ * configurations; the root's `resolveAllDependencies` aggregates them, the same shape as
+ * `checkstyleAll` in rskj-core/build.gradle.
+ *
+ * Note: the task reads its project's configurations at execution time, so it is not compatible
+ * with the configuration cache. rskj does not enable it.
+ */
+
+// A -P flag rather than a fixed policy: warming a cache and asserting that it is complete are two
+// different jobs, and only the caller knows which one it is doing. Resolved lazily so that the
+// task body never reads build state directly.
+def failOnUnresolvedDependencies = providers
+        .gradleProperty('failOnUnresolvedDependencies')
+        .map { true }
+        .orElse(false)
+
+// A configuration that a project only publishes -- apiElements, runtimeElements and friends --
+// cannot be resolved, and asking Gradle to resolve one raises an error that has nothing to do with
+// a missing dependency. Only resolvable configurations are candidates.
+def resolvableConfigurationsOf = { Project target ->
+    target.configurations.findAll { configuration -> configuration.canBeResolved }
+}
+
+// Collecting the failure instead of letting it propagate keeps one broken configuration from
+// hiding the state of every configuration after it. What to do about the failures is decided once,
+// at the end, by the caller.
+def describeFailure = { Configuration configuration ->
+    try {
+        configuration.resolve()
+        return null
+    } catch (Exception failure) {
+        return "${configuration.name}: ${failure.message}".toString()
+    }
+}
+
+tasks.register('resolveDependencies') {
+    group = 'Build Setup'
+    description = 'Downloads every resolvable dependency of this project into the Gradle cache'
+
+    // The task writes nothing Gradle could compare against a previous run, so it has no
+    // up-to-date state to claim.
+    outputs.upToDateWhen { false }
+
+    def target = project
+    def shouldFail = failOnUnresolvedDependencies
+
+    doLast {
+        def resolvable = resolvableConfigurationsOf(target)
+        def failures = resolvable.collect(describeFailure).findAll { it != null }
+
+        // The count is logged even when it is zero. A project that resolves nothing is a sign the
+        // task is looking in the wrong place, not a success -- an earlier version of this logic
+        // ran against the root project alone and reported "0" while :rskj-core, which holds every
+        // dependency, was never touched.
+        logger.lifecycle("resolved ${resolvable.size() - failures.size()} of ${resolvable.size()} configuration(s) in ${target.path}")
+        failures.each { failure -> logger.lifecycle("UNRESOLVED in ${target.path} -- ${failure}") }
+
+        if (!failures.isEmpty() && shouldFail.get()) {
+            throw new GradleException("${target.path}: ${failures.size()} configuration(s) could not be resolved")
+        }
+    }
+}
