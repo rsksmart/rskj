@@ -30,11 +30,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import com.typesafe.config.ConfigValue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -77,16 +77,16 @@ class NetworkConfigsActivationTest {
     }
 
     /**
-     * Upgrade name -> configured height. Iteration follows Typesafe Config's own deterministic {@code entrySet()}
-     * order (not the order the .conf file happens to declare them in), which is what keeps the golden byte-stable
-     * across regenerations.
+     * Upgrade name -> configured height, in NetworkUpgrade order. The golden then reads in fork order, and a
+     * rescheduled upgrade changes in place: {@code entrySet()} order is neither the file order nor stable, since it
+     * shifts when a value changes.
      */
     static Map<String, Long> activationHeights(Config networkConfig) {
         Config heights = networkConfig.getConfig("blockchain.config.hardforkActivationHeights");
         Map<String, Long> out = new LinkedHashMap<>();
-        for (Map.Entry<String, ConfigValue> e : heights.entrySet()) {
-            out.put(e.getKey(), heights.getLong(e.getKey()));
-        }
+        heights.root().keySet().stream()
+            .sorted(Comparator.comparing(NetworkUpgrade::named))   // an unknown name throws, as in ActivationConfig.read
+            .forEach(name -> out.put(name, heights.getLong(name)));
         return out;
     }
 
