@@ -191,7 +191,8 @@ class NetworkConfigsActivationTest {
      * Tip height per network at the time the golden was last blessed. Heights at or below asOf have been mined
      * and must never change. asOf < 0 means the network's history is not pinned: regtest heights are dev knobs,
      * and testnet2 is a new network (its own networkId and genesis) whose history is not pinned yet.
-     * Bump main/testnet at release time, then run ./gradlew :rskj-core:updateActivationGolden.
+     * Blocks mined above asOf are not pinned until the next bump. Bump main/testnet to a mined height in the first PR
+     * after each activation on that network, and at release time; then run ./gradlew :rskj-core:updateActivationGolden.
      */
     private static final Map<String, Long> AS_OF = Map.of(
         "main", 9_318_000L,
