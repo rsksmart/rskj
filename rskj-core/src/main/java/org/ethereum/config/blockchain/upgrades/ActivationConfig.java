@@ -24,6 +24,7 @@ import com.typesafe.config.ConfigValue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -36,14 +37,21 @@ public class ActivationConfig {
 
     /**
      * Rules that must be active at or before the height of the rule used as key, whenever that rule is active.
+     * Keys are checked in {@link ConsensusRule} order, so a config with several violations always reports the same one.
      */
-    private static final Map<ConsensusRule, List<ConsensusRule>> ACTIVATION_DEPENDENCIES = Map.of(
-            ConsensusRule.RSKIP545, List.of(
-                    ConsensusRule.RSKIP543,
-                    ConsensusRule.RSKIP546,
-                    ConsensusRule.RSKIP692,
-                    ConsensusRule.RSKIP701
-            )
+    private static final Map<ConsensusRule, List<ConsensusRule>> ACTIVATION_DEPENDENCIES = Collections.unmodifiableMap(
+            new EnumMap<>(Map.of(
+                    ConsensusRule.RSKIP545, List.of(
+                            ConsensusRule.RSKIP543,
+                            ConsensusRule.RSKIP544,
+                            ConsensusRule.RSKIP546,
+                            ConsensusRule.RSKIP692,
+                            ConsensusRule.RSKIP701
+                    ),
+                    ConsensusRule.RSKIP546, List.of(
+                            ConsensusRule.RSKIP543
+                    )
+            ))
     );
 
     private final Map<ConsensusRule, Long> activationHeights;

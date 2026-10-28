@@ -89,8 +89,10 @@ class Rskip543ReceiptIntegrationTest {
                 String.format("-Xpeer.port=%s", peerPort),
                 String.format("-Xrpc.providers.web.http.port=%s", rpcPort),
                 String.format("-Xblockchain.config.consensusRules.rskip543=%d", RSKIP543_ACTIVATION_BLOCK),
-                // RSKIP-545 requires RSKIP-543 at or before its own height; this test sends no set-code transaction
-                "-Xblockchain.config.consensusRules.rskip545=-1"
+                // RSKIP-545 and RSKIP-546 require RSKIP-543 at or before their own height; this test sends only
+                // legacy transactions
+                "-Xblockchain.config.consensusRules.rskip545=-1",
+                "-Xblockchain.config.consensusRules.rskip546=-1"
         };
         strBaseArgs = String.join(" ", baseArgs);
         baseJavaCmd = String.format("java -Dlogback.configurationFile=%s -Drsk.conf.file=%s",

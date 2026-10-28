@@ -63,9 +63,13 @@ class ContractCodePrefixDslTest {
     @Test
     void testCreateSucceedsWithEFByteBeforeRSKIP544Activation() 
             throws FileNotFoundException, DslProcessorException {
+        // RSKIP545 requires RSKIP544, so it is disabled with it
         TestSystemProperties properties = new TestSystemProperties(rawConfig ->
             rawConfig.withValue(
                 "blockchain.config.consensusRules.rskip544", 
+                ConfigValueFactory.fromAnyRef(-1)
+            ).withValue(
+                "blockchain.config.consensusRules.rskip545",
                 ConfigValueFactory.fromAnyRef(-1)
             )
         );

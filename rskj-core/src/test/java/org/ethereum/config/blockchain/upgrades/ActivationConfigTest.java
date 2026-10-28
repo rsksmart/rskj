@@ -38,11 +38,14 @@ import com.typesafe.config.ConfigValueFactory;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
@@ -270,69 +273,55 @@ class ActivationConfigTest {
         assertFalse(config.areActive(10L, RSKIP85, RSKIP351));
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
-    void rskip545AcceptsRequiredRuleActivatingBefore(String requiredKey) {
-        Config config = BASE_CONFIG
-                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(200))
-                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(100));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("activationDependencies")
+    void acceptsRequiredRuleActivatingBefore(Dependency dependency) {
+        ActivationConfig activationConfig = ActivationConfig.read(dependency.config(200, 100));
 
-        ActivationConfig activationConfig = ActivationConfig.read(config);
-
-        assertTrue(activationConfig.isActive(ConsensusRule.RSKIP545, 200));
+        assertTrue(activationConfig.isActive(ConsensusRule.fromConfigKey(dependency.dependentKey()), 200));
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
-    void rskip545AcceptsRequiredRuleActivatingAtTheSameHeight(String requiredKey) {
-        Config config = BASE_CONFIG
-                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(200))
-                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(200));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("activationDependencies")
+    void acceptsRequiredRuleActivatingAtTheSameHeight(Dependency dependency) {
+        ActivationConfig activationConfig = ActivationConfig.read(dependency.config(200, 200));
 
-        ActivationConfig activationConfig = ActivationConfig.read(config);
-
-        assertTrue(activationConfig.isActive(ConsensusRule.RSKIP545, 200));
+        assertTrue(activationConfig.isActive(ConsensusRule.fromConfigKey(dependency.dependentKey()), 200));
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
-    void rskip545RejectsRequiredRuleActivatingAfter(String requiredKey) {
-        Config config = BASE_CONFIG
-                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(100))
-                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(200));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("activationDependencies")
+    void rejectsRequiredRuleActivatingAfter(Dependency dependency) {
+        Config config = dependency.config(100, 200);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> ActivationConfig.read(config));
 
-        assertEquals("rskip545 (height 100) requires " + requiredKey + " active at or before 100, but it activates at 200",
+        assertEquals(dependency.dependentKey() + " (height 100) requires " + dependency.requiredKey() + " active at or before 100, but it activates at 200",
                 exception.getMessage());
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
-    void rskip545RejectsDisabledRequiredRule(String requiredKey) {
-        Config config = BASE_CONFIG
-                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(100))
-                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(-1));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("activationDependencies")
+    void rejectsDisabledRequiredRule(Dependency dependency) {
+        Config config = dependency.config(100, -1);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> ActivationConfig.read(config));
 
-        assertEquals("rskip545 (height 100) requires " + requiredKey + " active at or before 100, but it is disabled",
+        assertEquals(dependency.dependentKey() + " (height 100) requires " + dependency.requiredKey() + " active at or before 100, but it is disabled",
                 exception.getMessage());
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
-    void rskip545ActiveFromGenesisRejectsDisabledRequiredRule(String requiredKey) {
-        Config config = BASE_CONFIG
-                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(0))
-                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(-1));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("activationDependencies")
+    void dependentActiveFromGenesisRejectsDisabledRequiredRule(Dependency dependency) {
+        Config config = dependency.config(0, -1);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> ActivationConfig.read(config));
 
-        assertEquals("rskip545 (height 0) requires " + requiredKey + " active at or before 0, but it is disabled",
+        assertEquals(dependency.dependentKey() + " (height 0) requires " + dependency.requiredKey() + " active at or before 0, but it is disabled",
                 exception.getMessage());
     }
 
@@ -348,23 +337,74 @@ class ActivationConfigTest {
                 exception.getMessage());
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
-    void rskip545DisabledImposesNoOrderingOnRequiredRule(String requiredKey) {
-        Config disabledRequired = BASE_CONFIG
-                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(-1))
-                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(-1));
-        Config lateRequired = BASE_CONFIG
-                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(-1))
-                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(200));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("activationDependencies")
+    void disabledDependentImposesNoOrderingOnRequiredRule(Dependency dependency) {
+        Config disabledRequired = dependency.config(-1, -1);
+        Config lateRequired = dependency.config(-1, 200);
 
-        assertFalse(ActivationConfig.read(disabledRequired).isActive(ConsensusRule.RSKIP545, 1000));
-        assertFalse(ActivationConfig.read(lateRequired).isActive(ConsensusRule.RSKIP545, 1000));
+        assertFalse(ActivationConfig.read(disabledRequired).isActive(ConsensusRule.fromConfigKey(dependency.dependentKey()), 1000));
+        assertFalse(ActivationConfig.read(lateRequired).isActive(ConsensusRule.fromConfigKey(dependency.dependentKey()), 1000));
+    }
+
+    @Test
+    void reportsTheFirstViolatedRuleInConsensusRuleOrder() {
+        // RSKIP545 and RSKIP546 both activate before RSKIP543, which they both require
+        Config config = BASE_CONFIG
+                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(100))
+                .withValue("consensusRules.rskip546", ConfigValueFactory.fromAnyRef(100))
+                .withValue("consensusRules.rskip543", ConfigValueFactory.fromAnyRef(200));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> ActivationConfig.read(config));
+
+        assertEquals("rskip545 (height 100) requires rskip543 active at or before 100, but it activates at 200",
+                exception.getMessage());
+    }
+
+    private static Stream<Dependency> activationDependencies() {
+        return Stream.of(
+                // RSKIP546 also requires RSKIP543, so it activates with RSKIP545
+                new Dependency("rskip545", "rskip543", List.of("rskip546"), List.of()),
+                new Dependency("rskip545", "rskip544", List.of(), List.of()),
+                new Dependency("rskip545", "rskip546", List.of(), List.of()),
+                new Dependency("rskip545", "rskip692", List.of(), List.of()),
+                new Dependency("rskip545", "rskip701", List.of(), List.of()),
+                // RSKIP545 requires RSKIP546, so it is disabled to leave RSKIP546 as the only dependent rule
+                new Dependency("rskip546", "rskip543", List.of(), List.of("rskip545"))
+        );
+    }
+
+    /**
+     * A dependent rule, a rule it requires, and the other rules a case must move so that every dependency outside
+     * the pair stays satisfied: those in {@code activateWithDependent} take the dependent rule's height, those in
+     * {@code disabled} are switched off.
+     */
+    private record Dependency(String dependentKey, String requiredKey,
+                              List<String> activateWithDependent, List<String> disabled) {
+
+        Config config(long dependentHeight, long requiredHeight) {
+            Config config = BASE_CONFIG
+                    .withValue("consensusRules." + dependentKey, ConfigValueFactory.fromAnyRef(dependentHeight))
+                    .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(requiredHeight));
+            for (String key : activateWithDependent) {
+                config = config.withValue("consensusRules." + key, ConfigValueFactory.fromAnyRef(dependentHeight));
+            }
+            for (String key : disabled) {
+                config = config.withValue("consensusRules." + key, ConfigValueFactory.fromAnyRef(-1));
+            }
+            return config;
+        }
+
+        @Override
+        public String toString() {
+            return dependentKey + " requires " + requiredKey;
+        }
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"main", "testnet", "testnet2", "regtest"})
-    void rskip545RequiredRulesActivateNoLaterThanRskip545_shippedNetworkConfigs(String network) {
+    void requiredRulesActivateNoLaterThanTheirDependents_shippedNetworkConfigs(String network) {
         // same layering as ConfigLoader: the network file overrides the defaults in reference.conf; paths that
         // depend on the environment are left unresolved, the activation heights do not use them
         Config blockchainConfig = ConfigFactory.parseResourcesAnySyntax("config/" + network)
@@ -372,18 +412,20 @@ class ActivationConfigTest {
                 .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
                 .getConfig("blockchain.config");
 
-        assertRequiredRulesActivateNoLaterThanRskip545(network, blockchainConfig,
-                ConsensusRule.RSKIP543, ConsensusRule.RSKIP546, ConsensusRule.RSKIP692, ConsensusRule.RSKIP701);
+        assertRequiredRulesActivateNoLaterThan(network, blockchainConfig, ConsensusRule.RSKIP545,
+                ConsensusRule.RSKIP543, ConsensusRule.RSKIP544, ConsensusRule.RSKIP546, ConsensusRule.RSKIP692,
+                ConsensusRule.RSKIP701);
+        assertRequiredRulesActivateNoLaterThan(network, blockchainConfig, ConsensusRule.RSKIP546,
+                ConsensusRule.RSKIP543);
     }
 
     /**
-     * RSKIP545 must not activate before the rules it requires (RSKIP543, RSKIP546, RSKIP692 and RSKIP701), so each
-     * of them may activate at the same height as RSKIP545 or earlier. Activation is monotonic, so it is enough to
-     * check every height at which either rule could switch on: wherever RSKIP545 is active, the required rule must
-     * be active too.
+     * A dependent rule must not activate before the rules it requires, so each of them may activate at the same
+     * height as the dependent rule or earlier. Activation is monotonic, so it is enough to check every height at
+     * which any rule could switch on: wherever the dependent rule is active, the required rules must be active too.
      */
-    private static void assertRequiredRulesActivateNoLaterThanRskip545(
-            String network, Config blockchainConfig, ConsensusRule... requiredRules) {
+    private static void assertRequiredRulesActivateNoLaterThan(
+            String network, Config blockchainConfig, ConsensusRule dependent, ConsensusRule... requiredRules) {
         ActivationConfig activationConfig = ActivationConfig.read(blockchainConfig);
 
         Set<Long> candidateHeights = new TreeSet<>();
@@ -397,11 +439,11 @@ class ActivationConfigTest {
         candidateHeights.removeIf(height -> height < 0);
 
         for (long height : candidateHeights) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP545, height)) {
+            if (activationConfig.isActive(dependent, height)) {
                 for (ConsensusRule required : requiredRules) {
                     assertTrue(activationConfig.isActive(required, height),
-                            String.format("%s: RSKIP545 must not activate before %s, but RSKIP545 is active and %s is not at height %d",
-                                    network, required, required, height));
+                            String.format("%s: %s must not activate before %s, but %s is active and %s is not at height %d",
+                                    network, dependent, required, dependent, required, height));
                 }
             }
         }
