@@ -324,6 +324,32 @@ class ActivationConfigTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
+    void rskip545ActiveFromGenesisRejectsDisabledRequiredRule(String requiredKey) {
+        Config config = BASE_CONFIG
+                .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(0))
+                .withValue("consensusRules." + requiredKey, ConfigValueFactory.fromAnyRef(-1));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> ActivationConfig.read(config));
+
+        assertEquals("rskip545 (height 0) requires " + requiredKey + " active at or before 0, but it is disabled",
+                exception.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"rskip545", "rskip692"})
+    void failsReadingWithMissingRuleOfActivationDependency(String missingKey) {
+        Config config = BASE_CONFIG.withoutPath("consensusRules." + missingKey);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> ActivationConfig.read(config));
+
+        assertEquals("The configuration must contain all consensus rule values but is missing [" + missingKey + "]",
+                exception.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"rskip543", "rskip546", "rskip692", "rskip701"})
     void rskip545DisabledImposesNoOrderingOnRequiredRule(String requiredKey) {
         Config disabledRequired = BASE_CONFIG
                 .withValue("consensusRules.rskip545", ConfigValueFactory.fromAnyRef(-1))
