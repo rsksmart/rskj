@@ -64,8 +64,8 @@ class DeletedAccountStorageConnectionTest {
     private static final short PARALLEL_SUBLISTS = 2;
 
     // Both transactions in one sublist yields a single edge; two sublists yield two edges.
-    private static final short[] SAME_SUBLIST = new short[]{2};
-    private static final short[] SEPARATE_SUBLISTS = new short[]{1, 2};
+    private static final short[] sameSublistEdges = new short[]{2};
+    private static final short[] separateSublistEdges = new short[]{1, 2};
 
     private static final Consumer<MutableRepository> DELETE = repo -> repo.delete(CONTRACT);
     private static final Consumer<MutableRepository> READ_SLOT = repo -> repo.getStorageValue(CONTRACT, SLOT);
@@ -101,12 +101,12 @@ class DeletedAccountStorageConnectionTest {
 
     @Test
     void storageReadOfDeletedAccountSharesASublistWithTheDeletion() {
-        assertArrayEquals(SAME_SUBLIST, edgesFor(DELETE, READ_SLOT));
+        assertArrayEquals(sameSublistEdges, edgesFor(DELETE, READ_SLOT));
     }
 
     @Test
     void storageWriteOfDeletedAccountSharesASublistWithTheDeletion() {
-        assertArrayEquals(SAME_SUBLIST, edgesFor(DELETE, WRITE_SLOT));
+        assertArrayEquals(sameSublistEdges, edgesFor(DELETE, WRITE_SLOT));
     }
 
     @Test
@@ -121,7 +121,7 @@ class DeletedAccountStorageConnectionTest {
 
     @Test
     void storageReadOfAnotherAccountGetsItsOwnSublist() {
-        assertArrayEquals(SEPARATE_SUBLISTS, edgesFor(DELETE, repo -> repo.getStorageValue(OTHER, SLOT)));
+        assertArrayEquals(separateSublistEdges, edgesFor(DELETE, repo -> repo.getStorageValue(OTHER, SLOT)));
     }
 
     @Test
@@ -129,7 +129,7 @@ class DeletedAccountStorageConnectionTest {
         Consumer<MutableRepository> addBalance = repo -> repo.addBalance(CONTRACT, Coin.valueOf(1));
 
         assertFalse(collisionBetween(addBalance, READ_SLOT));
-        assertArrayEquals(SEPARATE_SUBLISTS, edgesFor(addBalance, READ_SLOT));
+        assertArrayEquals(separateSublistEdges, edgesFor(addBalance, READ_SLOT));
     }
 
     private boolean collisionBetween(Consumer<MutableRepository> first, Consumer<MutableRepository> second) throws Exception {

@@ -629,6 +629,71 @@ class ParallelExecutionStateTest {
                 "\n", new short[]{ 2 });
     }
 
+    // 14. B self-destructs a smart contract whose storage A reads
+    @Test
+    void readSelfdestruct() throws DslProcessorException {
+        this.compareStateRootPreAndPostRSKIP144AndTestEdges(deployTwoReadOrSelfdestructContractsAndCall("tx01", "tx01"), new short[]{ 2 });
+    }
+
+    @Test
+    void readAndSelfdestructOfAnotherContract() throws DslProcessorException {
+        this.compareStateRootPreAndPostRSKIP144AndTestEdges(deployTwoReadOrSelfdestructContractsAndCall("tx01", "tx01b"), new short[]{ 1, 2 });
+    }
+
+    /**
+     * Deploys two copies of a contract whose constructor sets slot 0 to 1. Its runtime code runs SLOAD(0)
+     * on empty calldata and SELFDESTRUCT(CALLER) on any other calldata.
+     * Then acc1 reads the storage of readContract and acc2 self-destructs destructContract.
+     */
+    private String deployTwoReadOrSelfdestructContractsAndCall(String readContract, String destructContract) {
+        String creationCode = "6001600055600b8060106000396000f3" + "36600857600054005b33ff";
+
+        return createThreeAccounts +
+                "transaction_build tx01\n" +
+                "    sender acc3\n" +
+                "    receiverAddress 00\n" +
+                "    data " + creationCode + "\n" +
+                "    gas 500000\n" +
+                "    build\n" +
+                "\n" +
+                "transaction_build tx01b\n" +
+                "    sender acc3\n" +
+                "    nonce 1\n" +
+                "    receiverAddress 00\n" +
+                "    data " + creationCode + "\n" +
+                "    gas 500000\n" +
+                "    build\n" +
+                "\n" +
+                "block_build b01\n" +
+                "    parent g00\n" +
+                "    gasLimit 7500000\n" +
+                "    transactions tx01 tx01b\n" +
+                "    build\n" +
+                "\n" +
+                "block_connect b01\n" +
+                "assert_tx_success tx01 tx01b\n" +
+                "\n" +
+                // Zero gas price: a test block has no REMASC transaction, so only the last sublist's fees reach
+                // REMASC, and fees in two parallel sublists would make the state root differ from the miner's
+                "transaction_build tx02\n" +
+                "    sender acc1\n" +
+                "    contract " + readContract + "\n" +
+                "    gas 100000\n" +
+                "    gasPrice 0\n" +
+                "    build\n" +
+                "\n" +
+                "transaction_build tx03\n" +
+                "    sender acc2\n" +
+                "    contract " + destructContract + "\n" +
+                "    data 01\n" +
+                "    gas 100000\n" +
+                "    gasPrice 0\n" +
+                "    build\n" +
+                "\n" +
+                buildBlockWithTwoTxs +
+                "assert_tx_success tx02 tx03\n";
+    }
+
     // 2. A is in a parallel sublist without enough gas available: B is placed in the sequential sublist
     @Test
     void useSequentialForGas() throws DslProcessorException {
