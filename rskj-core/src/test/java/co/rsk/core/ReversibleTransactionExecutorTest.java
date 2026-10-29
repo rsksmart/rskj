@@ -19,11 +19,18 @@
 
 package co.rsk.core;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.exception.TransactionExecutionRejectedException;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.test.builders.BlockBuilder;
+import co.rsk.test.builders.AccountBuilder;
 import co.rsk.util.TestContract;
+import com.typesafe.config.ConfigValueFactory;
+import com.google.common.primitives.Bytes;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -49,6 +56,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
@@ -58,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -65,6 +74,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class ReversibleTransactionExecutorTest {
+
+    /**
+     * A plain peg-out costs the 21,000 intrinsic gas plus the Bridge's fixed 23,000 for releaseBtc
+     * (BridgeMethods.RELEASE_BTC, fixedCost(23000L)). That is what the real signed transaction uses.
+     */
+    private static final long PEGOUT_GAS = 44_000L;
+
+    /**
+     * Regtest P2PKH address of the compressed secp256k1 generator point, whose hash160
+     * 751e76e8199196d454941c45d1b3a323f1433bd6 is the BIP173 test vector's witness program.
+     */
+    private static final String GENERATOR_POINT_REGTEST_ADDRESS = "mrCDrCybB6J1vRfbwM5hemdJz73FwDBC8r";
 
     @TempDir
     public Path tempDir;
@@ -152,6 +173,87 @@ class ReversibleTransactionExecutorTest {
                 Arguments.of(remasc, new byte[0], 21000L),   // precompile call: same
                 Arguments.of(null, new byte[0], 53000L),     // empty create: same
                 Arguments.of(null, new byte[]{0}, 53006L)    // create with 1-byte initcode: used to silently succeed
+        );
+    }
+
+    @ParameterizedTest(name = "{0}, value {2}")
+    @MethodSource("pegoutScenarios")
+    void estimateGas_pegoutToBridge_usesThePegoutGas(String scenario, boolean rskip545Active, String valueInWeiHex) {
+        RskTestFactory pegoutFactory = new RskTestFactory(tempDir.resolve("pegout"), pegoutConfig(rskip545Active));
+        Account sender = fundedPegoutSender(pegoutFactory);
+        Block bestBlock = pegoutFactory.getBlockchain().getBestBlock();
+        assertEquals(rskip545Active, pegoutFactory.getRskSystemProperties().getActivationConfig()
+                .isActive(ConsensusRule.RSKIP545, bestBlock.getNumber()));
+        RepositorySnapshot snapshot = pegoutFactory.getRepositoryLocator().snapshotAt(bestBlock.getHeader());
+
+        TransactionExecutor executor = pegoutFactory.getReversibleTransactionExecutor().estimateGas(
+                bestBlock, bestBlock.getCoinbase(), snapshot, pegoutParams(sender, valueInWeiHex));
+
+        assertNull(executor.getResult().getException());
+        assertEquals(PEGOUT_GAS, executor.getResult().getGasUsed());
+        byte[] placeholderAddress = GENERATOR_POINT_REGTEST_ADDRESS.getBytes(StandardCharsets.US_ASCII);
+        assertTrue(executor.getResult().getLogInfoList().stream()
+                .anyMatch(log -> Bytes.indexOf(log.getData(), placeholderAddress) >= 0));
+    }
+
+    @ParameterizedTest(name = "{0}, value {2}")
+    @MethodSource("pegoutScenarios")
+    void executeTransactionAtBlock_pegoutToBridge_succeedsWithEmptyReturn(String scenario, boolean rskip545Active, String valueInWeiHex) {
+        RskTestFactory pegoutFactory = new RskTestFactory(tempDir.resolve("pegout"), pegoutConfig(rskip545Active));
+        Account sender = fundedPegoutSender(pegoutFactory);
+        Block bestBlock = pegoutFactory.getBlockchain().getBestBlock();
+        assertEquals(rskip545Active, pegoutFactory.getRskSystemProperties().getActivationConfig()
+                .isActive(ConsensusRule.RSKIP545, bestBlock.getNumber()));
+
+        ProgramResult result = pegoutFactory.getReversibleTransactionExecutor().executeTransactionAtBlock(
+                bestBlock, bestBlock.getCoinbase(), pegoutParams(sender, valueInWeiHex));
+
+        assertNull(result.getException());
+        assertArrayEquals(new byte[0], result.getHReturn());
+    }
+
+    private static Stream<Arguments> pegoutScenarios() {
+        String pointZeroOneRbtcInWeiHex = "2386f26fc10000";
+        String oneRbtcInWeiHex = "0de0b6b3a7640000";
+        return Stream.of(
+                Arguments.of("RSKIP-545 active", true, pointZeroOneRbtcInWeiHex),
+                Arguments.of("RSKIP-545 active", true, oneRbtcInWeiHex),
+                Arguments.of("RSKIP-545 disabled", false, pointZeroOneRbtcInWeiHex),
+                Arguments.of("RSKIP-545 disabled", false, oneRbtcInWeiHex)
+        );
+    }
+
+    private static TestSystemProperties pegoutConfig(boolean rskip545Active) {
+        if (rskip545Active) {
+            return new TestSystemProperties();
+        }
+        return new TestSystemProperties(rawConfig -> rawConfig
+                .withValue("blockchain.config.consensusRules.rskip545", ConfigValueFactory.fromAnyRef(-1)));
+    }
+
+    private static Account fundedPegoutSender(RskTestFactory pegoutFactory) {
+        // Genesis' gas limit is too low for the peg-out
+        Block block = new BlockBuilder(pegoutFactory.getBlockchain(), null, pegoutFactory.getBlockStore())
+                .trieStore(pegoutFactory.getTrieStore())
+                .parent(pegoutFactory.getBlockchain().getBestBlock())
+                .gasLimit(BigInteger.valueOf(10_000_000))
+                .build();
+        pegoutFactory.getBlockchain().setStatus(block, block.getCumulativeDifficulty());
+        return new AccountBuilder(pegoutFactory.getBlockchain(), pegoutFactory.getBlockStore(), pegoutFactory.getRepositoryLocator())
+                .name("pegoutSender")
+                .balance(new Coin(new BigInteger("10000000000000000000")))
+                .build();
+    }
+
+    private ReversibleTransactionExecutor.ReversibleTransactionParams pegoutParams(Account sender, String valueInWeiHex) {
+        return new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                gasPrice,
+                BigInteger.valueOf(100_000).toByteArray(),
+                PrecompiledContracts.BRIDGE_ADDR.getBytes(),
+                Hex.decode(valueInWeiHex),
+                new byte[0],
+                sender.getAddress(),
+                null, (byte) 0, TransactionType.LEGACY, null, null, null
         );
     }
 
