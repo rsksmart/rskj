@@ -179,6 +179,27 @@ class ConsensusLogFormatStringsTest {
         return Pattern.compile(regex.toString());
     }
 
+    static Stream<Arguments> pinPatternCases() {
+        String closedPin = "logger.warn(\"Invalid block {} \"";
+        String openPin = "logger.error(\"The RSK node main thread failed";
+        return Stream.of(
+            Arguments.of(closedPin, "logger.warn(\"Invalid block {} \", number);", true),
+            Arguments.of(closedPin, "logger\n    .warn(\n        \"Invalid block {} \", number);", true),
+            Arguments.of(closedPin, "logger.info(\"Invalid block {} \", number);", false),
+            Arguments.of(closedPin, "logger.warn(\"Invalid  block {} \", number);", false),
+            Arguments.of(closedPin, "logger.warn(\"Invalid block {}\", number);", false),
+            Arguments.of(openPin, "logger.error(\n    \"The RSK node main thread failed: {}\", error);", true),
+            Arguments.of(openPin, "logger.warn(\"The RSK node main thread failed: {}\", error);", false),
+            Arguments.of(openPin, "logger.error(\"The RSK node main thread  failed: {}\", error);", false));
+    }
+
+    @ParameterizedTest
+    @MethodSource("pinPatternCases")
+    void pinPatternPreservesMatchingContract(String pin, String source, boolean expected) {
+        assertTrue(pinPattern(pin).matcher(source).find() == expected,
+            "Unexpected match result for pin " + pin + " in " + source);
+    }
+
     private static String readSource(String relativeFile) throws IOException {
         Path file = TestUtils.moduleRoot().resolve("src/main/java").resolve(relativeFile);
         assertTrue(Files.exists(file), "source file moved: " + relativeFile);
