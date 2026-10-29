@@ -1065,6 +1065,17 @@ class TransactionPoolImplTest {
     }
 
     @Test
+    void emptyPool_newBestBlockDoesNotReadState() {
+        RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
+        clearInvocations(repositoryLocator);
+
+        Block block = new BlockBuilder(null, null, null).parent(blockChain.getBestBlock()).build();
+        transactionPool.processBest(block);
+
+        verify(repositoryLocator, never()).snapshotAt(any());
+    }
+
+    @Test
     void delegatedAccount_replacementTransactionWithValidGasBumpAcceptedAndOnlyOneTransactionRemainsInPool() {
         createTestAccounts(2, Coin.valueOf(1000000));
         makeAccountDelegated(1, 2);

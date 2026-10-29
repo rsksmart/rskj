@@ -402,6 +402,13 @@ public class TransactionPoolImpl implements TransactionPool {
      * executes next, as enforced when transactions are added, and the miner can include it.
      */
     private void removeTransactionsOutOfNonceRange() {
+        List<Transaction> pooled = new ArrayList<>(pendingTransactions.getTransactions());
+        pooled.addAll(queuedTransactions.getTransactions());
+
+        if (pooled.isEmpty()) {
+            return;
+        }
+
         RepositorySnapshot repository = getCurrentRepository();
         Map<RskAddress, BigInteger> stateNonceBySender = new HashMap<>();
         Map<RskAddress, Boolean> isDelegatedBySender = new HashMap<>();
@@ -409,9 +416,6 @@ public class TransactionPoolImpl implements TransactionPool {
                 sender, s -> DelegationCodeResolver.isDelegatedCode(repository.getCode(s)));
         List<Keccak256> toremove = new ArrayList<>();
         List<Transaction> toPromote = new ArrayList<>();
-
-        List<Transaction> pooled = new ArrayList<>(pendingTransactions.getTransactions());
-        pooled.addAll(queuedTransactions.getTransactions());
 
         for (Transaction tx : pooled) {
             RskAddress sender = tx.getSender(signatureCache);
