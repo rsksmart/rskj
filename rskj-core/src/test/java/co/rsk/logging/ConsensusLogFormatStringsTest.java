@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.ethereum.TestUtils;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,6 +38,11 @@ import org.junit.jupiter.params.provider.MethodSource;
  * from these exact log lines, logger names and MDC keys, and launches the node with the CLI forms pinned below
  * (consumer: config/progress-markers.json in rsksmart/rskj-sync-tests). Changing one is allowed but must be deliberate: update this test
  * and coordinate with the consumer. Same keep-in-sync idea as JsonRpcDocCoverageTest for doc/rpc.
+ * A line that prints only when something fails (a refused block, a node error) is pinned with its logger call and
+ * level: the consumer drops a line whose level is not in its marker's level set, and nothing shows that drift until a
+ * real failure. A line that prints on every run is pinned by its text only, because the consumer's next run shows a
+ * drift there. Whitespace between code tokens does not matter, so a wrapped or re-indented call still matches; the
+ * text inside a string literal must match exactly.
  */
 class ConsensusLogFormatStringsTest {
 
@@ -58,46 +65,49 @@ class ConsensusLogFormatStringsTest {
     private static final String NODE_ID = "co/rsk/net/NodeID.java";
     private static final String START = "co/rsk/Start.java";
 
+    /** A string literal (closed, or left open by a pin that stops mid-literal), a word, or one other character. */
+    private static final Pattern PIN_TOKEN = Pattern.compile("\"(?:[^\"\\\\]|\\\\.)*\"?|\\w+|\\S");
+
     static Stream<Arguments> pinnedLiterals() {
         return Stream.of(
                 // execution refusal (classifier: FAIL, execution branch)
                 Arguments.of(BLOCK_EXECUTOR, "getLogger(\"blockexecutor\")"),
-                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given State Root is invalid\""),
-                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given Receipt Root is invalid\""),
-                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given Logs Bloom is invalid\""),
-                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given gasUsed doesn't match: {} != {}\""),
-                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given paidFees doesn't match: {} != {}\""),
-                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] given txs doesn't match: {} != {}\""),
-                Arguments.of(BLOCK_EXECUTOR, "\"Block {} [{}] execution was interrupted because of an invalid transaction\""),
+                Arguments.of(BLOCK_EXECUTOR, "logger.error(\"Block {} [{}] given State Root is invalid\""),
+                Arguments.of(BLOCK_EXECUTOR, "logger.error(\"Block {} [{}] given Receipt Root is invalid\""),
+                Arguments.of(BLOCK_EXECUTOR, "logger.error(\"Block {} [{}] given Logs Bloom is invalid\""),
+                Arguments.of(BLOCK_EXECUTOR, "logger.error(\"Block {} [{}] given gasUsed doesn't match: {} != {}\""),
+                Arguments.of(BLOCK_EXECUTOR, "logger.error(\"Block {} [{}] given paidFees doesn't match: {} != {}\""),
+                Arguments.of(BLOCK_EXECUTOR, "logger.error(\"Block {} [{}] given txs doesn't match: {} != {}\""),
+                Arguments.of(BLOCK_EXECUTOR, "logger.error(\"Block {} [{}] execution was interrupted because of an invalid transaction\""),
                 // per-block outcome, local pre-execution refusal, node error
                 Arguments.of(BLOCK_CHAIN, "getLogger(\"blockchain\")"),
-                // pinned per call: INFO for a normal block, WARN for a slow one, and the scraper reads both
-                Arguments.of(BLOCK_CHAIN, "logger.info(\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
-                Arguments.of(BLOCK_CHAIN, "logger.warn(\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
-                Arguments.of(BLOCK_CHAIN, "\"Invalid block with number: {}\""),
-                Arguments.of(BLOCK_CHAIN, "\"Unexpected error: \""),
-                // pre-execution rule attribution (classifier: FAIL, validation branch)
+                // printed for every block, at INFO or (when slow) WARN; the consumer's next run shows a drift, so no level
+                Arguments.of(BLOCK_CHAIN, "\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
+                Arguments.of(BLOCK_CHAIN, "logger.warn(\"Invalid block with number: {}\""),
+                Arguments.of(BLOCK_CHAIN, "logger.error(\"Unexpected error: \""),
+                // pre-execution rule attribution (classifier: FAIL, validation branch). The scraper accepts WARN or ERROR
+                // on these lines, so swapping one for the other only needs the pin updated.
                 Arguments.of(BLOCK_DIFFICULTY_RULE, "getLogger(\"blockvalidator\")"),
-                Arguments.of(BLOCK_DIFFICULTY_RULE, "\"#{}: difficulty != calcDifficulty\""),
+                Arguments.of(BLOCK_DIFFICULTY_RULE, "logger.warn(\"#{}: difficulty != calcDifficulty\""),
                 // class logger on purpose: %c{1} renders it as o.e.v.DifficultyRule, which the scraper matches
                 Arguments.of(DIFFICULTY_RULE, "getLogger(DifficultyRule.class)"),
-                Arguments.of(DIFFICULTY_RULE, "\"#{}: difficulty != calcDifficulty\""),
+                Arguments.of(DIFFICULTY_RULE, "logger.error(\"#{}: difficulty != calcDifficulty\""),
                 Arguments.of(COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
-                Arguments.of(COMPOSITE_RULE, "\"Error Validating block {} {}\""),
+                Arguments.of(COMPOSITE_RULE, "logger.warn(\"Error Validating block {} {}\""),
                 Arguments.of(PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
-                Arguments.of(PARENT_COMPOSITE_RULE, "\"Error Validating block {} {}\""),
+                Arguments.of(PARENT_COMPOSITE_RULE, "logger.warn(\"Error Validating block {} {}\""),
                 // header-rule attribution: these two forms name the failing rule, the block forms above do not.
                 // The argument is part of the pin: Class.toString() renders "class co.rsk...", which the scraper captures.
                 Arguments.of(HEADER_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
-                Arguments.of(HEADER_COMPOSITE_RULE, "\"Error Validating {} for header {} {}\", rule.getClass(),"),
+                Arguments.of(HEADER_COMPOSITE_RULE, "logger.warn(\"Error Validating {} for header {} {}\", rule.getClass(),"),
                 Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
-                Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "\"Error Validating {} for parent header {} {}\", rule.getClass(),"),
+                Arguments.of(HEADER_PARENT_COMPOSITE_RULE, "logger.warn(\"Error Validating {} for parent header {} {}\", rule.getClass(),"),
                 // peer-relay refusal (classifier: uncorroborated unless a local line agrees). The trailing space is part of
                 // the literal; forbiddenLiterals() below keeps the colon form out of these files.
                 Arguments.of(ASYNC_BLOCK_PROCESSOR, "getLogger(\"asyncblockprocessor\")"),
-                Arguments.of(ASYNC_BLOCK_PROCESSOR, "\"Invalid block with number {} {} from {} \""),
+                Arguments.of(ASYNC_BLOCK_PROCESSOR, "logger.warn(\"Invalid block with number {} {} from {} \""),
                 Arguments.of(BLOCK_SYNC_SERVICE, "getLogger(\"blocksyncservice\")"),
-                Arguments.of(BLOCK_SYNC_SERVICE, "\"Invalid block with number {} {} from {} \""),
+                Arguments.of(BLOCK_SYNC_SERVICE, "logger.warn(\"Invalid block with number {} {} from {} \""),
                 // AsyncNodeBlockProcessor renders the peer with NodeID.toString(); the scraper reads the hash and peer from it
                 Arguments.of(NODE_ID, "\"NodeID{\""),
                 // block attribution is read from MDC, not from the message text
@@ -122,7 +132,7 @@ class ConsensusLogFormatStringsTest {
                 // node readiness and startup crash
                 Arguments.of(NODE_RUNNER, "\"Starting RSK\""),
                 Arguments.of(START, "getLogger(\"start\")"),
-                Arguments.of(START, "\"The RSK node main thread failed"),
+                Arguments.of(START, "logger.error(\"The RSK node main thread failed"),
                 // peer identity for peer.active construction; Channel.toString() is how a peer is rendered in those lines
                 Arguments.of(CHANNEL_MANAGER, "getLogger(\"net\")"),
                 Arguments.of(CHANNEL_MANAGER, "\"Added new peer: {}. Total num of active peers: {}\""),
@@ -141,7 +151,7 @@ class ConsensusLogFormatStringsTest {
     @ParameterizedTest(name = "{0} contains {1}")
     @MethodSource("pinnedLiterals")
     void sourceStillContainsPinnedLiteral(String relativeFile, String literal) throws IOException {
-        assertTrue(readSource(relativeFile).contains(literal),
+        assertTrue(pinPattern(literal).matcher(readSource(relativeFile)).find(),
             "Pinned log literal not found in " + relativeFile + ": " + literal
                 + " -- external log-scraping tooling depends on it; coordinate before changing");
     }
@@ -151,6 +161,19 @@ class ConsensusLogFormatStringsTest {
     void sourceStillLacksForbiddenLiteral(String relativeFile, String literal) throws IOException {
         assertFalse(readSource(relativeFile).contains(literal),
             relativeFile + " gained the colon form of the peer-relay refusal; the no-colon variant is load-bearing");
+    }
+
+    /**
+     * The pin as a regex with optional whitespace before each token, so a wrapped or re-indented call still matches.
+     * A string literal is one token, so its text must match exactly: that is the text the consumer reads.
+     */
+    private static Pattern pinPattern(String pin) {
+        StringBuilder regex = new StringBuilder();
+        Matcher token = PIN_TOKEN.matcher(pin);
+        while (token.find()) {
+            regex.append("\\s*").append(Pattern.quote(token.group()));
+        }
+        return Pattern.compile(regex.toString());
     }
 
     private static String readSource(String relativeFile) throws IOException {
