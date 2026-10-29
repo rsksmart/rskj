@@ -253,28 +253,34 @@ class AccessListCodecTest {
 
     @Test
     void encodeAccessList_addressNotHex_throwsInvalidParams() {
+        CallArguments.AccessListEntry valid = new CallArguments.AccessListEntry();
+        valid.setAddress("0x" + "aa".repeat(20));
+        valid.setStorageKeys(Collections.emptyList());
         CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
         entry.setAddress("0xzz" + "00".repeat(19));
         entry.setStorageKeys(Collections.emptyList());
 
         RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-                () -> AccessListCodec.encodeAccessList(List.of(entry)));
+                () -> AccessListCodec.encodeAccessList(List.of(valid, entry)));
 
         assertEquals(-32602, ex.getCode());
-        assertEquals("Access list entry address must be a 20-byte hex value at index 0", ex.getMessage());
+        assertEquals("Access list entry address must be a 20-byte hex value at index 1", ex.getMessage());
     }
 
     @Test
     void encodeAccessList_storageKeyNotHex_throwsInvalidParams() {
+        CallArguments.AccessListEntry valid = new CallArguments.AccessListEntry();
+        valid.setAddress("0x" + "aa".repeat(20));
+        valid.setStorageKeys(List.of("0x" + "bb".repeat(32)));
         CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
         entry.setAddress("0x" + "aa".repeat(20));
         entry.setStorageKeys(List.of("0x" + "bb".repeat(32), "0xzz" + "00".repeat(31)));
 
         RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-                () -> AccessListCodec.encodeAccessList(List.of(entry)));
+                () -> AccessListCodec.encodeAccessList(List.of(valid, entry)));
 
         assertEquals(-32602, ex.getCode());
-        assertEquals("Access list storage key must be a 32-byte hex value at entry 0, key 1", ex.getMessage());
+        assertEquals("Access list storage key must be a 32-byte hex value at entry 1, key 1", ex.getMessage());
     }
 
     // -------------------------------------------------------------------------
