@@ -150,6 +150,7 @@ jobs:
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
           owner: rsksmart
           repositories: rskj-sync-tests
+          permission-contents: read
 
       - name: Resolve rskj + per-suite test refs
         id: refs
@@ -229,11 +230,14 @@ jobs:
             OLD_TOKEN="$GH_TOKEN"
             GH_TOKEN="$SYNC_TOKEN"; export GH_TOKEN
             # As an `if` condition, a failed lookup doesn't trip `set -e`.
-            if resolve_ref rsksmart/rskj-sync-tests "$IN_SYNC"; then
+            # `>/dev/null` hides resolve_ref's "refusing to fall back to main"
+            # error, because this lookup does fall back; the warning says why.
+            # RESOLVED and err are still set: the redirect adds no subshell.
+            if resolve_ref rsksmart/rskj-sync-tests "$IN_SYNC" >/dev/null; then
               SYNC_REF="$RESOLVED"
             else
               SYNC_REF="${IN_SYNC:-main}"
-              echo "::warning::could not resolve a branch in rsksmart/rskj-sync-tests; the advisory sync suite will run '$SYNC_REF'"
+              echo "::warning::could not resolve a branch in rsksmart/rskj-sync-tests (${err:-no error recorded}); the advisory sync suite will run '$SYNC_REF'"
             fi
             GH_TOKEN="$OLD_TOKEN"; export GH_TOKEN
           else
@@ -305,6 +309,17 @@ jobs:
   # blocks through this rskj build and checks they match the public network.
   # If this job fails, the run shows red in the Actions tab while the required
   # check stays green. That's expected: branch protection reads the check.
+  #
+  # Patience budget, stated here so it is not discovered by whoever first sees
+  # a `timed_out` Sync row: _dispatch-suite.yml stops polling at ~50 min
+  # (100 x 30 s) inside timeout-minutes: 55. The suite's pr.yml declares job
+  # timeouts that add up to 76 min on its longest path (12 + 8 + 50 + 6; see
+  # its "KNOWN TENSION" comment). Two real runs took ~33 min
+  # (rsksmart/rskj-sync-tests runs 34852163884 on 2026-09-14 and 37937319735
+  # on 2026-10-09), so a normal run has ~17 min of headroom. A slower run shows
+  # `timed_out` in the Sync row, never a tick; its verdict is in the linked
+  # run. Waiting longer needs a per-suite poll limit in _dispatch-suite.yml
+  # and a new App token after ~1h.
   sync:
     name: Sync suite
     needs: resolve
@@ -351,6 +366,7 @@ jobs:
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
           owner: rsksmart
           repositories: rskj-sync-tests
+          permission-actions: read
 
       - name: Build report, comment and gate
         env:
@@ -495,6 +511,11 @@ jobs:
               echo ""
               if [ -n "$SYNC_OUTCOME" ]; then
                 echo "Sync is advisory and never fails this check. ${SYNC_DETAIL}"
+              elif [ "$SYNC_CONCLUSION" = "timed_out" ]; then
+                # _dispatch-suite.yml reports timed_out when it stops waiting
+                # and when the sync run itself times out. Either way it set
+                # run_url first, so the row links to the run.
+                echo "Sync is advisory and never fails this check. It timed out, or ran longer than this run waits for it (~50 min), so its verdict isn't here. See the linked run."
               else
                 echo "Sync is advisory and never fails this check. Its result couldn't be read (the run didn't finish, or its report is missing)."
               fi
