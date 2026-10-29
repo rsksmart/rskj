@@ -41,8 +41,9 @@ import org.junit.jupiter.params.provider.MethodSource;
  * A line that prints only when something fails (a refused block, a node error) is pinned with its logger call and
  * level: the consumer drops a line whose level is not in its marker's level set, and nothing shows that drift until a
  * real failure. A line that prints on every run is pinned by its text only, because the consumer's next run shows a
- * drift there. Whitespace between code tokens does not matter, so a wrapped or re-indented call still matches; the
- * text inside a string literal must match exactly.
+ * drift there. The per-block line is pinned per call: its WARN copy prints only for a slow block. Whitespace between
+ * code tokens does not matter, so a wrapped or re-indented call still matches; the text inside a string literal must
+ * match exactly.
  */
 class ConsensusLogFormatStringsTest {
 
@@ -81,8 +82,10 @@ class ConsensusLogFormatStringsTest {
                 Arguments.of(BLOCK_EXECUTOR, "logger.error(\"Block {} [{}] execution was interrupted because of an invalid transaction\""),
                 // per-block outcome, local pre-execution refusal, node error
                 Arguments.of(BLOCK_CHAIN, "getLogger(\"blockchain\")"),
-                // printed for every block, at INFO or (when slow) WARN; the consumer's next run shows a drift, so no level
-                Arguments.of(BLOCK_CHAIN, "\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
+                // pinned per call, and the scraper reads both: INFO for a normal block, WARN for a slow one. The WARN copy
+                // prints only when a block is slow, so a drift in it would stay silent.
+                Arguments.of(BLOCK_CHAIN, "logger.info(\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
+                Arguments.of(BLOCK_CHAIN, "logger.warn(\"block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}\""),
                 Arguments.of(BLOCK_CHAIN, "logger.warn(\"Invalid block with number: {}\""),
                 Arguments.of(BLOCK_CHAIN, "logger.error(\"Unexpected error: \""),
                 // pre-execution rule attribution (classifier: FAIL, validation branch). The scraper accepts WARN or ERROR

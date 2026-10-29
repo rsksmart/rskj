@@ -18,9 +18,11 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.util.DefaultIndenter;
@@ -45,7 +47,9 @@ import java.util.stream.Stream;
 import org.ethereum.TestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 /**
@@ -281,8 +285,13 @@ class NetworkConfigsActivationTest {
     @Test
     @EnabledIfSystemProperty(named = "activation.golden.update", matches = "true")
     void regenerateGolden() throws IOException {
-        if (Files.exists(GOLDEN)) {
-            List<String> mined = minedHistoryChanges(MAPPER.readTree(GOLDEN.toFile()));
+        regenerate(GOLDEN);
+    }
+
+    /** Writes the golden to {@code golden}, or refuses and writes nothing if a change touches mined history. */
+    private static void regenerate(Path golden) throws IOException {
+        if (Files.exists(golden)) {
+            List<String> mined = minedHistoryChanges(MAPPER.readTree(golden.toFile()));
             if (!mined.isEmpty()) {
                 // Printed as well: the task's short exception format drops the assertion message.
                 System.out.println("Golden not written: these changes touch mined history. Fix the config; if a change"
@@ -306,14 +315,14 @@ class NetworkConfigsActivationTest {
                 consensusRuleHeights(cfg).forEach(r::put);
             }
         }
-        Files.createDirectories(GOLDEN.getParent());
+        Files.createDirectories(golden.getParent());
         // Explicit LF indenter + trailing newline: the golden is a committed text file, and the platform default
         // line separator would make it churn between contributors.
         DefaultPrettyPrinter pp = new DefaultPrettyPrinter()
             .withObjectIndenter(new DefaultIndenter("  ", "\n"))
             .withArrayIndenter(new DefaultIndenter("  ", "\n"));
-        Files.writeString(GOLDEN, MAPPER.writer(pp).writeValueAsString(root) + "\n");
-        System.out.println("Golden written to " + GOLDEN);   // visible: updateActivationGolden shows standard streams
+        Files.writeString(golden, MAPPER.writer(pp).writeValueAsString(root) + "\n");
+        System.out.println("Golden written to " + golden);   // visible: updateActivationGolden shows standard streams
     }
 
     /**
@@ -337,5 +346,80 @@ class NetworkConfigsActivationTest {
                 consensusRuleHeights(cfg), mined, stale);
         }
         return mined;
+    }
+
+    // Checks of the guard itself. A normal run sees only a golden that matches the configs, so these feed it changes.
+
+    /** One key through compareSection. The list that a change lands in decides whether regenerateGolden may write it. */
+    static Stream<Arguments> compareSectionCases() {
+        return Stream.of(
+            // golden height (null: no key), configured height (null: no key), asOf, expected list
+            Arguments.of(100L, 100L, 200L, "none"),     // unchanged
+            Arguments.of(100L, 101L, 200L, "mined"),    // a mined height moved
+            Arguments.of(100L, -1L, 200L, "mined"),     // a mined upgrade disabled
+            Arguments.of(300L, 150L, 200L, "mined"),    // a future height moved onto mined history
+            Arguments.of(300L, 400L, 200L, "none"),     // a future height rescheduled: the config diff shows it
+            Arguments.of(-1L, 400L, 200L, "none"),      // a disabled upgrade scheduled in the future
+            Arguments.of(-1L, 150L, 200L, "mined"),     // a disabled upgrade activated on mined history
+            Arguments.of(100L, null, 200L, "mined"),    // a mined key removed
+            Arguments.of(300L, null, 200L, "stale"),    // a future key removed
+            Arguments.of(null, 150L, 200L, "mined"),    // a new key active on mined history
+            Arguments.of(null, 300L, 200L, "stale"),    // a new key scheduled in the future
+            Arguments.of(null, -1L, 200L, "stale"),     // a new disabled key
+            Arguments.of(100L, 101L, -1L, "none"),      // a network whose history is not pinned
+            Arguments.of(null, 150L, -1L, "stale"));
+    }
+
+    @ParameterizedTest(name = "golden {0}, config {1}, asOf {2}: {3}")
+    @MethodSource("compareSectionCases")
+    void compareSectionSortsEachChange(Long golden, Long configured, long asOf, String expected) {
+        ObjectNode section = MAPPER.createObjectNode();
+        if (golden != null) {
+            section.put("key", golden);
+        }
+        Map<String, Long> current = configured == null ? Map.of() : Map.of("key", configured);
+        List<String> mined = new ArrayList<>();
+        List<String> stale = new ArrayList<>();
+        compareSection(section, "net.section.", asOf, current, mined, stale);
+        String actual = mined.isEmpty() ? (stale.isEmpty() ? "none" : "stale") : (stale.isEmpty() ? "mined" : "both");
+        assertEquals(expected, actual, "mined " + mined + ", stale " + stale);
+    }
+
+    @Test
+    void minedHistoryChangesReportsAMovedMinedHeight() throws IOException {
+        assertEquals(List.of(), minedHistoryChanges(MAPPER.readTree(GOLDEN.toFile())), "the checked-in golden must pass");
+        List<String> changes = minedHistoryChanges(goldenWithIris300Moved());
+        assertEquals(1, changes.size(), changes.toString());
+        assertTrue(changes.get(0).startsWith("main.heights.iris300 "), changes.toString());
+    }
+
+    /** The bound is the higher of the golden's asOf and AS_OF, so a bump of AS_OF cannot carry a change through. */
+    @Test
+    void minedHistoryChangesUsesABumpedAsOf() throws IOException {
+        ObjectNode golden = (ObjectNode) MAPPER.readTree(GOLDEN.toFile());
+        ObjectNode main = (ObjectNode) golden.path("heights").path("main");
+        long vetiver = main.path("vetiver900").asLong();
+        ((ObjectNode) golden.path("asOf")).put("main", vetiver - 1);   // blessed before vetiver900 was mined,
+        main.put("vetiver900", vetiver + 1);                             // then moved below the current AS_OF
+        List<String> changes = minedHistoryChanges(golden);
+        assertEquals(1, changes.size(), changes.toString());
+        assertTrue(changes.get(0).startsWith("main.heights.vetiver900 "), changes.toString());
+    }
+
+    @Test
+    void regenerateWritesNothingWhenItRefuses(@TempDir Path dir) throws IOException {
+        Path copy = dir.resolve("activation-heights-golden.json");
+        Files.writeString(copy, MAPPER.writeValueAsString(goldenWithIris300Moved()));
+        byte[] before = Files.readAllBytes(copy);
+        assertThrows(AssertionError.class, () -> regenerate(copy));
+        assertArrayEquals(before, Files.readAllBytes(copy));
+    }
+
+    /** The checked-in golden with iris300 on main moved by one block: a change to mined history. */
+    private static ObjectNode goldenWithIris300Moved() throws IOException {
+        ObjectNode golden = (ObjectNode) MAPPER.readTree(GOLDEN.toFile());
+        ObjectNode main = (ObjectNode) golden.path("heights").path("main");
+        main.put("iris300", main.path("iris300").asLong() + 1);
+        return golden;
     }
 }
