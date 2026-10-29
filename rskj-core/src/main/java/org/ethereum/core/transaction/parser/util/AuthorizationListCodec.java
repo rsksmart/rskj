@@ -185,7 +185,7 @@ public final class AuthorizationListCodec {
                 ? BigInteger.ZERO
                 : new BigInteger(1, chainIdBytes);
         String addressError = "Authorization list entry address must be a 20-byte hex value at index " + index;
-        byte[] addressBytes = decodeHex(entry.getAddress(), addressError);
+        byte[] addressBytes = CommonParsingUtils.decodeHex(entry.getAddress(), addressError);
         if (addressBytes.length != RskAddress.LENGTH_IN_BYTES) {
             throw invalidParamError(addressError);
         }
@@ -196,8 +196,8 @@ public final class AuthorizationListCodec {
         CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
         requireNonceInRange(decodeUnsignedBigInteger(nonce));
         byte yParity = parseNormalizedYParity(decodeQuantity(entry.getYParity(), "yParity", index));
-        byte[] r = decodeHex(entry.getR(), "Authorization list entry r must be hex at index " + index);
-        byte[] s = decodeHex(entry.getS(), "Authorization list entry s must be hex at index " + index);
+        byte[] r = CommonParsingUtils.decodeHex(entry.getR(), "Authorization list entry r must be hex at index " + index);
+        byte[] s = CommonParsingUtils.decodeHex(entry.getS(), "Authorization list entry s must be hex at index " + index);
         CommonParsingUtils.requireNormalizedSignatureComponent(r, "Authorization signature r is not valid");
         CommonParsingUtils.requireNormalizedSignatureComponent(s, "Authorization signature s is not valid");
         byte v = (byte) (Transaction.LOWER_REAL_V + yParity);
@@ -212,15 +212,6 @@ public final class AuthorizationListCodec {
         validateAuthorization(auth);
         requireProcessableAuthorization(auth, index);
         return auth;
-    }
-
-    /** Decodes RPC hex text, reporting text that is not hex as an invalid parameter. */
-    private static byte[] decodeHex(String value, String errorMessage) {
-        try {
-            return HexUtils.stringHexToByteArray(value);
-        } catch (DecoderException e) {
-            throw invalidParamError(errorMessage);
-        }
     }
 
     /** Decodes an RPC hex or decimal quantity, reporting either malformed form as an invalid parameter. */

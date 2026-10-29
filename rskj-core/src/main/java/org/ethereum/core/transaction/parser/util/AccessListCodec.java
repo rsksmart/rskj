@@ -18,8 +18,6 @@
 package org.ethereum.core.transaction.parser.util;
 
 import co.rsk.core.RskAddress;
-import co.rsk.util.HexUtils;
-import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -31,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.ethereum.core.transaction.parser.util.CommonParsingUtils.decodeHex;
 import static org.ethereum.core.transaction.parser.util.CommonParsingUtils.reencodeCanonical;
 import static org.ethereum.core.transaction.parser.util.CommonParsingUtils.requireByteStringFramed;
 import static org.ethereum.core.transaction.parser.util.CommonParsingUtils.requireListFramed;
@@ -153,14 +152,5 @@ public final class AccessListCodec {
             encodedEntries[i] = RLP.encodeList(encodedAddress, encodedKeyList);
         }
         return RLP.encodeList(encodedEntries);
-    }
-
-    /** Decodes RPC hex text, reporting text that is not hex as an invalid parameter. */
-    private static byte[] decodeHex(String value, String errorMessage) {
-        try {
-            return HexUtils.stringHexToByteArray(value);
-        } catch (DecoderException e) {
-            throw RskJsonRpcRequestException.invalidParamError(errorMessage);
-        }
     }
 }
