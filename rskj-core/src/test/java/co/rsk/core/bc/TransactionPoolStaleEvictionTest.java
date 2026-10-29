@@ -82,7 +82,7 @@ class TransactionPoolStaleEvictionTest {
     private Block genesis;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         context = new RskTestContext(tempDir, "--regtest") {
             @Override
             protected GenesisLoader buildGenesisLoader() {

@@ -350,7 +350,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         // before retracting, so a retracted transaction is not refused because of an entry
         // the new state no longer allows
-        removeTransactionsOutOfNonceRange();
+        reconcileTransactionsWithStateNonce();
 
         if (fork != null) {
             for (Block blk : fork.getOldBlocks()) {
@@ -401,7 +401,7 @@ public class TransactionPoolImpl implements TransactionPool {
      * at the state nonce to pending, so the account keeps at most the one transaction that
      * executes next, as enforced when transactions are added, and the miner can include it.
      */
-    private void removeTransactionsOutOfNonceRange() {
+    private void reconcileTransactionsWithStateNonce() {
         List<Transaction> pooled = new ArrayList<>(pendingTransactions.getTransactions());
         pooled.addAll(queuedTransactions.getTransactions());
 
@@ -414,7 +414,7 @@ public class TransactionPoolImpl implements TransactionPool {
         Map<RskAddress, Boolean> isDelegatedBySender = new HashMap<>();
         Predicate<RskAddress> isDelegated = sender -> isDelegatedBySender.computeIfAbsent(
                 sender, s -> DelegationCodeResolver.isDelegatedCode(repository.getCode(s)));
-        List<Keccak256> toremove = new ArrayList<>();
+        List<Keccak256> toRemove = new ArrayList<>();
         List<Transaction> toPromote = new ArrayList<>();
 
         for (Transaction tx : pooled) {
@@ -424,19 +424,19 @@ public class TransactionPoolImpl implements TransactionPool {
             int nonceComparison = tx.getNonceAsInteger().compareTo(stateNonce);
 
             if (nonceComparison < 0) {
-                toremove.add(tx.getHash());
+                toRemove.add(tx.getHash());
                 logger.trace("Clear stale transaction, nonce: [{}] state nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), stateNonce, tx.getHash());
             } else if (nonceComparison > 0 && isDelegated.test(sender)) {
-                toremove.add(tx.getHash());
+                toRemove.add(tx.getHash());
                 logger.trace("Clear gapped transaction of delegated account, nonce: [{}] state nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), stateNonce, tx.getHash());
             } else if (nonceComparison == 0 && queuedTransactions.hasTransaction(tx) && isDelegated.test(sender)) {
-                toremove.add(tx.getHash());
+                toRemove.add(tx.getHash());
                 toPromote.add(tx);
                 logger.trace("Promote queued transaction of delegated account, nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), tx.getHash());
             }
         }
 
-        removeTransactionList(toremove);
+        removeTransactionList(toRemove);
 
         // re-added through the admission rules, so a transaction that no longer passes them is dropped
         addTransactions(toPromote);
