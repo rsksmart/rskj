@@ -2009,6 +2009,55 @@ class EthModuleTest {
     }
 
     @Test
+    void call_accessListAddressNotHex_throwsInvalidParams() {
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress("0xzz" + "00".repeat(19));
+        entry.setStorageKeys(List.of());
+
+        CallArguments args = new CallArguments();
+        args.setFrom(TestUtils.generateAddress("from").toJsonString());
+        args.setTo(TestUtils.generateAddress("to").toJsonString());
+        args.setAccessList(List.of(entry));
+
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
+        EthModule eth = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                null,
+                null,
+                executor,
+                retriever,
+                mock(RepositoryLocator.class),
+                null,
+                null,
+                bridgeSupportFactory,
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
+                false,
+                null);
+
+        RskJsonRpcRequestException exception = assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest")));
+
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Access list entry address must be a 20-byte hex value at index 0", exception.getMessage());
+
+        verify(executor, never()).executeTransactionAtBlock(any(), any(), any());
+        verify(executor, never()).executeTransactionOnSnapshot(any(), any(), any(), any(), any());
+    }
+
+    @Test
     void call_type4WithoutStateOverride_usesBlockAndPreservesTypedParams() {
         RskAddress from = TestUtils.generateAddress("from");
         RskAddress to = TestUtils.generateAddress("to");
