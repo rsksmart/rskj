@@ -194,6 +194,39 @@ class TransactionPoolStaleEvictionTest {
     }
 
     @Test
+    void transactionsEvictedOnLosingTipAreNotRestoredByReorg() {
+        Transaction stale = tx(accountA, 0, 1000);
+        Transaction executable = tx(accountA, 1, 1000);
+        Transaction gapped = tx(accountA, 2, 1000);
+        Assertions.assertTrue(pool.addTransaction(stale).pendingTransactionsWereAdded());
+        Assertions.assertTrue(pool.addTransaction(executable).pendingTransactionsWereAdded());
+        Assertions.assertTrue(pool.addTransaction(gapped).pendingTransactionsWereAdded());
+
+        // losing chain X: accountB's set code transaction delegates accountA and consumes its nonce 0
+        Transaction delegation = setCode(accountB, accountA, 0);
+        connect(genesis, delegation);
+        Assertions.assertEquals(Set.of(executable.getHash()), poolHashes());
+
+        // heavier chain Y without the delegation: accountA is a plain account at nonce 0 again
+        Block y1 = connectSide(genesis);
+        Block y2 = connect(y1);
+        Assertions.assertFalse(isDelegatedAt(y2, accountA));
+        Assertions.assertEquals(BigInteger.ZERO, stateNonce(y2, accountA));
+
+        // nonces 0 and 2 are not restored; only the retracted delegation comes back
+        Assertions.assertEquals(Set.of(executable.getHash(), delegation.getHash()), poolHashes());
+
+        // once the delegation is mined again, nonce 1 is executable, as it was on chain X
+        Block y3 = connect(y2, delegation);
+        Assertions.assertEquals(BigInteger.ONE, stateNonce(y3, accountA));
+        Assertions.assertEquals(Set.of(executable.getHash()), poolHashes());
+
+        Block y4 = connect(y3, executable);
+        Assertions.assertEquals(BigInteger.TWO, stateNonce(y4, accountA));
+        Assertions.assertTrue(poolTransactions().isEmpty());
+    }
+
+    @Test
     void accountDelegatedWithQueuedTransactionAcceptsAndMinesNextNonce() {
         Transaction stale = tx(accountA, 0, 1000);
         Transaction gapped = tx(accountA, 2, 1000);
