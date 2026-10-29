@@ -177,6 +177,18 @@ class TransactionPoolStaleEvictionTest {
     }
 
     @Test
+    void delegatedAccountExecutableTransactionKeepsItsAdmissionBlock() {
+        Transaction executable = tx(delegatedAccount, 0, 1000);
+        Assertions.assertTrue(pool.addTransaction(executable).pendingTransactionsWereAdded());
+
+        Block block = connect(genesis);
+
+        // admitted at block 0, so with a depth of 10 it is outdated at block 11
+        pool.removeObsoleteTransactions(block.getNumber() + 10, 10, 0);
+        Assertions.assertTrue(poolTransactions().isEmpty());
+    }
+
+    @Test
     void accountDelegatedByAnotherSenderKeepsOnlyExecutableTransaction() {
         Transaction stale = tx(accountA, 0, 1000);
         Transaction executable = tx(accountA, 1, 1000);
@@ -264,6 +276,21 @@ class TransactionPoolStaleEvictionTest {
         Block mined = connect(delegating, pool.getPendingTransactions().toArray(new Transaction[0]));
         Assertions.assertEquals(BigInteger.TWO, stateNonce(mined, accountA));
         Assertions.assertTrue(poolTransactions().isEmpty());
+    }
+
+    @Test
+    void plainAccountQueuedTransactionAtStateNonceStaysQueued() {
+        Transaction queued = tx(accountA, 1, 1000);
+        Assertions.assertTrue(pool.addTransaction(queued).queuedTransactionsWereAdded());
+
+        // a different transaction from the same sender consumes nonce 0, and accountA stays a plain account
+        Block block = connect(genesis, tx(accountA, 0, 2000));
+        Assertions.assertEquals(BigInteger.ONE, stateNonce(block, accountA));
+        Assertions.assertFalse(isDelegatedAt(block, accountA));
+
+        // only a delegated account's queued transaction is promoted
+        Assertions.assertEquals(List.of(queued), pool.getQueuedTransactions());
+        Assertions.assertTrue(pool.getPendingTransactions().isEmpty());
     }
 
     private Transaction setCode(Account sender, Account authority, long authorityNonce) {
