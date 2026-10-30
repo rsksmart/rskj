@@ -72,10 +72,6 @@ public class MutableRepository implements Repository {
         this(mutableTrie, aInMemoryMutableTrie(), tracker);
     }
 
-    private static MutableTrieImpl aInMemoryMutableTrie() {
-        return new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie());
-    }
-
     public MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie) {
         this.trieKeyMapper = new TrieKeyMapper();
         this.mutableTrie = mutableTrie;
@@ -88,6 +84,10 @@ public class MutableRepository implements Repository {
         this.mutableTrie = mutableTrie;
         this.transientTrie = transientTrie;
         this.tracker = tracker;
+    }
+
+    private static MutableTrieImpl aInMemoryMutableTrie() {
+        return new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie());
     }
 
     @Override
@@ -131,6 +131,10 @@ public class MutableRepository implements Repository {
     public synchronized void delete(RskAddress addr) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
         tracker.addNewWrittenKey(new ByteArrayWrapper(accountKey));
+        // The recursive delete also removes every storage cell, which storage reads track through this key.
+        // Every transaction that reads or writes this key also reads or writes the account key, so tracking it
+        // connects no new transaction pair. A writer of this key that skips the account key would need activation.
+        tracker.addNewWrittenKey(new ByteArrayWrapper(trieKeyMapper.getAccountStoragePrefixKey(addr)));
         mutableTrie.deleteRecursive(accountKey);
     }
 
@@ -278,8 +282,7 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized DataWord getStorageValue(RskAddress addr, DataWord key) {
-        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        byte[] value = internalGet(triekey);
+        byte[] value = getStorageBytes(addr, key);
         if (value == null) {
             return null;
         }
@@ -289,6 +292,8 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized byte[] getStorageBytes(RskAddress addr, DataWord key) {
+        // A storage read is connected to a delete of the account, which writes the storage prefix key
+        tracker.addNewReadKey(new ByteArrayWrapper(trieKeyMapper.getAccountStoragePrefixKey(addr)));
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
         return internalGet(triekey);
     }
