@@ -322,6 +322,21 @@ class TransactionPoolStaleEvictionTest {
         Assertions.assertTrue(pool.getPendingTransactions().isEmpty());
     }
 
+    @Test
+    void queuedTransactionRefusedByAdmissionOnPromotionIsDropped() {
+        // admission checks a queued transaction's gas cost against the balance, but not its value
+        Transaction unaffordable = tx(accountA, 1, 2_000_000_000_000_000_000L);
+        Assertions.assertTrue(pool.addTransaction(unaffordable).queuedTransactionsWereAdded());
+
+        // accountB's set code transaction delegates accountA and consumes its nonce 0
+        Block delegating = connect(genesis, setCode(accountB, accountA, 0));
+        Assertions.assertEquals(BigInteger.ONE, stateNonce(delegating, accountA));
+        Assertions.assertTrue(isDelegatedAt(delegating, accountA));
+
+        Assertions.assertTrue(poolTransactions().isEmpty());
+        assertPoolKeepsWhatAdmissionAccepts(delegating, accountA, unaffordable);
+    }
+
     /**
      * Delegates {@code delegatedAccount} through accountB's set code transaction, which also
      * consumes its nonce 0, so the account carries both the delegation code and the flag.

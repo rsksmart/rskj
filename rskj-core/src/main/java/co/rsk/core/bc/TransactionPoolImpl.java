@@ -437,8 +437,28 @@ public class TransactionPoolImpl implements TransactionPool {
 
         removeTransactionList(toRemove);
 
-        // re-added through the admission rules, so a transaction that no longer passes them is dropped
-        addTransactions(toPromote);
+        promoteTransactions(toPromote);
+    }
+
+    /**
+     * Re-adds each transaction through the admission rules, so it lands in pending. A transaction
+     * that no longer passes them is dropped, and the reason is logged.
+     */
+    private void promoteTransactions(List<Transaction> toPromote) {
+        List<Transaction> pendingTransactionsAdded = new ArrayList<>();
+
+        for (Transaction tx : toPromote) {
+            TransactionPoolAddResult result = this.internalAddTransaction(tx);
+
+            if (!result.transactionsWereAdded()) {
+                logger.debug("Dropped queued transaction of delegated account on promotion, hash: [{}] reason: [{}]", tx.getHash(), result.getErrorMessage());
+            } else if (result.pendingTransactionsWereAdded()) {
+                pendingTransactionsAdded.add(tx);
+                pendingTransactionsAdded.addAll(this.addSuccessors(tx));
+            }
+        }
+
+        this.emitEvents(pendingTransactionsAdded);
     }
 
     private void removeObsoleteTransactions(int depth, int timeout) {
