@@ -134,6 +134,25 @@ class RegisterTransactionIT {
             setUpBridgeSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
             assertPegoutIsPending(pegout);
         }
+
+        @Test
+        void registerPegoutTransaction_withMalformedPmt_shouldRevert() throws IOException {
+            // arrange
+            byte[] malformedPmt = pmt.bitcoinSerialize();
+            // zeroing the leading 4 bytes transaction count keeps the expected size,
+            // but a pmt without transactions can't be parsed into a merkle root
+            int pmtTransactionCountLength = 4;
+            Arrays.fill(malformedPmt, 0, pmtTransactionCountLength, (byte) 0);
+            Transaction registerPegoutTransaction = buildRegisterPegoutTransaction(pegout, malformedPmt);
+
+            // act & assert
+            assertThrows(VMException.class, () -> executeBridgeTransaction(registerPegoutTransaction, PEGOUT_REGISTRATION_BLOCK_NUMBER));
+
+            // assert
+            // fresh storage providers only see what was saved
+            setUpBridgeSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
+            assertPegoutIsPending(pegout);
+        }
     }
 
     private void fundActiveFederationWithOneUtxo() {
