@@ -1,11 +1,10 @@
 package co.rsk.test.builders;
 
-import static co.rsk.peg.federation.FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION;
-
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import java.util.*;
 
@@ -140,28 +139,12 @@ public class PegoutTransactionBuilder {
         );
     }
 
-    private void signInput(BtcTransaction transaction, int inputIndex) {
-        if (activeFederation.getFormatVersion() == P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
-            Coin inputValue = inputs.get(inputIndex).getValue();
-            BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(
-                transaction,
-                inputIndex,
-                inputValue,
-                signingKeys
-            );
-        } else {
-            BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, inputIndex, signingKeys);
-        }
-    }
-
     private void signInputs(BtcTransaction transaction) {
         if (!signTransaction) {
             return;
         }
 
-        for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
-            signInput(transaction, inputIndex);
-        }
+        FederationTestUtils.signInputs(activeFederation, signingKeys, transaction);
     }
 
     private void addOutputsToTransaction(BtcTransaction transaction) {

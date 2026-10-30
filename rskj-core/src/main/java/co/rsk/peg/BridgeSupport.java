@@ -17,12 +17,11 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeUtils.calculateMigrationTransactionOutputsValues;
-import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
-import static co.rsk.peg.BridgeUtils.simulatePegoutTxSize;
+import static co.rsk.peg.BridgeUtils.*;
 import static co.rsk.peg.PegUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
+import static co.rsk.peg.bitcoin.UtxoUtils.copyWithBlockHeight;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static java.util.Objects.isNull;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
@@ -279,7 +278,7 @@ public class BridgeSupport {
         Federation federation = getActiveFederation();
         List<UTXO> utxos = federationSupport.getActiveFederationBtcUTXOs();
 
-        return BridgeUtils.getFederationSpendWallet(
+        return getFederationSpendWallet(
             btcContext,
             federation,
             utxos,
@@ -314,7 +313,7 @@ public class BridgeSupport {
         }
 
         logger.debug("[getRetiringFederationWallet] Fetching retiring federation spend wallet");
-        Wallet federationWallet = BridgeUtils.getFederationSpendWallet(
+        Wallet federationWallet = getFederationSpendWallet(
             btcContext,
             federation.get(),
             utxos,
@@ -332,7 +331,7 @@ public class BridgeSupport {
      *
      */
     public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos, boolean isFlyoverCompatible) {
-        return BridgeUtils.getFederationsSpendWallet(
+        return getFederationsSpendWallet(
             btcContext,
             federationSupport.getLiveFederations(),
             utxos,
@@ -346,11 +345,11 @@ public class BridgeSupport {
      * @return A no spend BTC wallet for the currently live federation(s)
      *
      */
-    public Wallet getNoSpendWalletForLiveFederations(boolean isFlyoverCompatible) {
-        return BridgeUtils.getFederationsNoSpendWallet(
+    private Wallet getNoSpendWalletForLiveFederations() {
+        return getFederationsNoSpendWallet(
             btcContext,
             federationSupport.getLiveFederations(),
-            isFlyoverCompatible,
+            false,
             provider
         );
     }
@@ -382,18 +381,22 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
-            // Validations for register
-            if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
-                throw new RegisterBtcTransactionException("Could not validate transaction");
-            }
+            validateBtcTxRegistration(btcTxHash, height, pmtSerialized, btcTxSerialized);
 
             BtcTransaction btcTx = new BtcTransaction(networkParameters, btcTxSerialized);
             btcTx.verify();
-            logger.debug("[registerBtcTransaction][rsk tx {}] Btc tx hash without witness {}", rskTxHash, btcTx.getHash(false));
+
+            Sha256Hash btcTxId = btcTx.getHash(false);
+            logger.debug("[registerBtcTransaction][rsk tx {}] Btc tx hash without witness {}", rskTxHash, btcTxId);
 
             // Check again that the tx was not already processed but making sure to use the txid (no witness)
-            if (isAlreadyBtcTxHashProcessed(btcTx.getHash(false))) {
+            if (isAlreadyBtcTxHashProcessed(btcTxId)) {
                 throw new RegisterBtcTransactionException("Transaction already processed");
+            }
+
+            if (shouldUseFederationsPendingBtcUTXOs(btcTxId) && !isTheSvpFundTxHashUnsigned(provider, btcTxId)) {
+                registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxId, height);
+                return;
             }
 
             FederationContext federationContext = federationSupport.getFederationContext();
@@ -409,9 +412,9 @@ public class BridgeSupport {
             logger.info("[registerBtcTransaction][btctx: {}] This is a {} transaction type", btcTx.getHash(), pegTxType);
             switch (pegTxType) {
                 case PEGIN -> registerPegIn(btcTx, rskTxHash, height);
-                case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx);
-                case SVP_FUND_TX -> registerSvpFundTx(btcTx);
-                case SVP_SPEND_TX -> registerSvpSpendTx(btcTx);
+                case PEGOUT_OR_MIGRATION -> registerNewUTXOsAndMarkTxAsProcessed(btcTx, height);
+                case SVP_FUND_TX -> registerSvpFundTx(btcTx, height);
+                case SVP_SPEND_TX -> registerSvpSpendTx(btcTx, height);
                 case UNKNOWN -> logger.warn("[registerBtcTransaction] Unknown peg tx type won't be registered.");
             }
         } catch (RegisterBtcTransactionException e) {
@@ -424,19 +427,67 @@ public class BridgeSupport {
         }
     }
 
-    private void registerSvpFundTx(BtcTransaction btcTx) throws IOException {
-        registerNewUtxos(btcTx); // Need to register the change UTXO
+    private boolean shouldUseFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        return activations.isActive(RSKIP643) && federationSupport.hasFederationsPendingBtcUTXOs(btcTxId);
+    }
+
+    public void registerPegoutTransaction(
+        Sha256Hash btcTxHash,
+        int height,
+        byte[] pmtSerialized
+    ) throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        Context.propagate(btcContext);
+        try {
+            if (!federationSupport.hasFederationsPendingBtcUTXOs(btcTxHash)) {
+                throw new RegisterBtcTransactionException("Transaction has no pending UTXOs to register");
+            }
+
+            // The SVP fund tx has to be registered through registerBtcTransaction while the SVP is ongoing,
+            // since the full SVP tx is needed to build the SVP spend tx.
+            if (isTheSvpFundTxHashUnsigned(provider, btcTxHash)) {
+                throw new RegisterBtcTransactionException("Transaction is the SVP fund tx");
+            }
+
+            if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
+                throw new RegisterBtcTransactionException("Transaction already processed");
+            }
+
+            validatePegoutTxRegistration(btcTxHash, height, pmtSerialized);
+
+            registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxHash, height);
+        } catch (RegisterBtcTransactionException e) {
+            logger.warn(
+                "[registerPegoutTransaction] Could not register Btc tx {}. Message: {}",
+                btcTxHash,
+                e.getMessage()
+            );
+        }
+    }
+
+    private void registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(Sha256Hash btcTxHash, int height) throws IOException {
+        logger.debug("[registerNewUTXOsByTxIdAndMarkTxHashAsProcessed] Btc tx hash without witness {} at height {}", btcTxHash, height);
+        registerNewUTXOsByTxId(btcTxHash, height);
+        markBtcTxHashAsProcessed(btcTxHash);
+    }
+
+    private void registerSvpFundTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
+        Sha256Hash btcTxId = btcTx.getHash(false);
+        if (shouldUseFederationsPendingBtcUTXOs(btcTxId)) {
+            registerNewUTXOsByTxIdAndMarkTxHashAsProcessed(btcTxId, btcTxHeight);
+        } else {
+            registerNewUTXOsAndMarkTxAsProcessed(btcTx, btcTxHeight);
+        }
 
         // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
-        // In that case, the fundTx will be identified as a regular peg-out tx and processed via #registerPegoutOrMigration
+        // In that case, the fundTx will be identified as a regular peg-out tx and processed via #registerPegoutTransaction
         // This covers the case when the fundTx is registered between the validation period end and the next call to updateCollections
         if (isSvpOngoing()) {
             updateSvpFundTransactionValues(btcTx);
         }
     }
 
-    private void registerSvpSpendTx(BtcTransaction btcTx) throws IOException {
-        registerNewUtxos(btcTx);
+    private void registerSvpSpendTx(BtcTransaction btcTx, int btcTxHeight) throws IOException {
+        registerNewUTXOsAndMarkTxAsProcessed(btcTx, btcTxHeight);
         provider.clearSvpSpendTxHashUnsigned();
 
         logger.info("[registerSvpSpendTx] Going to commit the proposed federation.");
@@ -486,7 +537,7 @@ public class BridgeSupport {
             activations
         );
         Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
-        Wallet fedWallet = getNoSpendWalletForLiveFederations(false);
+        Wallet fedWallet = getNoSpendWalletForLiveFederations();
         PeginEvaluationResult peginEvaluationResult = PegUtils.evaluatePegin(
             btcTx,
             peginInformation,
@@ -500,7 +551,12 @@ public class BridgeSupport {
         switch (peginProcessAction) {
             case REGISTER -> {
                 logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
-                executePegIn(btcTx, peginInformation, totalAmount);
+                executePegIn(
+                    btcTx,
+                    peginInformation,
+                    totalAmount,
+                    height
+                );
             }
             case REFUND -> handleRefundablePegin(btcTx, rskTxHash, peginEvaluationResult, peginInformation.getBtcRefundAddress());
             case NO_REFUND -> handleNonRefundablePegin(btcTx, peginInformation.getProtocolVersion(), peginEvaluationResult);
@@ -646,7 +702,7 @@ public class BridgeSupport {
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
 
-        if (!BridgeUtils.txIsProcessableInLegacyVersion(senderBtcAddressType, activations)) {
+        if (!txIsProcessableInLegacyVersion(senderBtcAddressType, activations)) {
             logger.warn("[processPeginVersionLegacy] [btcTx:{}] Could not get BtcLockSender from Btc tx", btcTx.getHash());
 
             if (activations.isActive(ConsensusRule.RSKIP181)) {
@@ -658,7 +714,12 @@ public class BridgeSupport {
 
         // Confirm we should process this lock
         if (shouldProcessPegInVersionLegacy(senderBtcAddressType, btcTx, senderBtcAddress, totalAmount, height)) {
-            executePegIn(btcTx, peginInformation, totalAmount);
+            executePegIn(
+                btcTx,
+                peginInformation,
+                totalAmount,
+                0
+            );
         } else {
             if (activations.isActive(ConsensusRule.RSKIP181)) {
                 if (!isTxLockableForLegacyVersion(senderBtcAddressType, btcTx, senderBtcAddress)) {
@@ -685,7 +746,12 @@ public class BridgeSupport {
 
         // Confirm we should process this lock
         if (verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {
-            executePegIn(btcTx, peginInformation, totalAmount);
+            executePegIn(
+                btcTx,
+                peginInformation,
+                totalAmount,
+                0
+            );
         } else {
             logger.debug("[processPegInVersion1] Peg-in attempt surpasses locking cap. Amount attempted to lock: {}", totalAmount);
 
@@ -698,7 +764,7 @@ public class BridgeSupport {
         }
     }
 
-    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) throws IOException {
+    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount, int btcTxHeight) throws IOException {
         RskAddress rskDestinationAddress = peginInformation.getRskDestinationAddress();
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
@@ -723,7 +789,7 @@ public class BridgeSupport {
         }
 
         // Save UTXOs from the federation(s) only if we actually locked the funds
-        registerNewUtxos(btcTx);
+        registerNewUTXOsAndMarkTxAsProcessed(btcTx, btcTxHeight);
     }
 
     private void refundTxSender(
@@ -750,14 +816,19 @@ public class BridgeSupport {
 
     private void markTxAsProcessed(BtcTransaction btcTx) throws IOException {
         // Mark tx as processed on this block (and use the txid without the witness)
-        long rskHeight = rskExecutionBlock.getNumber();
-        provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskHeight);
+        Sha256Hash btcTxHash = btcTx.getHash(false);
+        markBtcTxHashAsProcessed(btcTxHash);
         logger.debug(
             "[markTxAsProcessed] Mark btc transaction {} (wtxid: {}) as processed at height {}",
-            btcTx.getHash(),
+            btcTxHash,
             btcTx.getHash(true),
-            rskHeight
+            rskExecutionBlock.getNumber()
         );
+    }
+
+    private void markBtcTxHashAsProcessed(Sha256Hash btcTxHash) throws IOException {
+        long rskHeight = rskExecutionBlock.getNumber();
+        provider.setHeightBtcTxhashAlreadyProcessed(btcTxHash, rskHeight);
     }
 
     private boolean shouldProcessPegInVersionLegacy(
@@ -821,45 +892,122 @@ public class BridgeSupport {
     so they can be used as inputs in future peg-out transactions.
     Finally, mark the btcTx as processed.
      */
-    private void registerNewUtxos(BtcTransaction btcTx) throws IOException {
-        // Outputs to the active federation
-        Wallet activeFederationWallet = getActiveFederationWallet(false);
-        List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
-            activeFederationWallet
-        );
-        for (TransactionOutput output : outputsToTheActiveFederation) {
-            UTXO utxo = new UTXO(
-                btcTx.getHash(),
-                output.getIndex(),
-                output.getValue(),
-                0,
-                btcTx.isCoinBase(),
-                output.getScriptPubKey()
-            );
-            federationSupport.getActiveFederationBtcUTXOs().add(utxo);
-        }
-        logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
+    private void registerNewUTXOsAndMarkTxAsProcessed(BtcTransaction btcTx, int btcTxHeight) throws IOException {
+        int heightForNewUtxos = getHeightForNewUtxos(activations, btcTxHeight);
 
-        // Outputs to the retiring federation (if any)
-        Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
-        if (retiringFederationWallet.isPresent()) {
-            List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet.get());
-            for (TransactionOutput output : outputsToTheRetiringFederation) {
-                UTXO utxo = new UTXO(
-                    btcTx.getHash(),
-                    output.getIndex(),
-                    output.getValue(),
-                    0,
-                    btcTx.isCoinBase(),
-                    output.getScriptPubKey()
-                );
-                federationSupport.getRetiringFederationBtcUTXOs().add(utxo);
-            }
-            logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
-        }
+        Wallet activeFederationWallet = getActiveFederationWallet(false);
+        List<UTXO> utxosToTheActiveFederation = getUtxosSentToWallet(btcTx, activeFederationWallet, heightForNewUtxos);
+        registerUtxosToTheActiveFederation(btcTx.getHash(), utxosToTheActiveFederation);
+
+        List<UTXO> utxosToTheRetiringFederation = getRetiringFederationWallet(false)
+            .map(retiringFederationWallet -> getUtxosSentToWallet(btcTx, retiringFederationWallet, heightForNewUtxos))
+            .orElse(List.of());
+        registerUtxosToTheRetiringFederation(btcTx.getHash(), utxosToTheRetiringFederation);
 
         markTxAsProcessed(btcTx);
-        logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
+        logger.info("[registerNewUTXOsAndMarkTxAsProcessed] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
+    }
+
+    /*
+    Move the pending UTXOs created by the given release tx to the federation(s) they belong to,
+    so they can be used as inputs.
+     */
+    private void registerNewUTXOsByTxId(Sha256Hash btcTxId, int btcTxHeight) {
+        Script activeFederationScript = getActiveFederation().getP2SHScript();
+        Optional<Script> retiringFederationScript = getRetiringFederation().map(Federation::getP2SHScript);
+
+        List<UTXO> utxosToTheActiveFederation = new ArrayList<>();
+        List<UTXO> utxosToTheRetiringFederation = new ArrayList<>();
+        for (UTXO pendingUtxo : federationSupport.getFederationsPendingBtcUTXOs(btcTxId)) {
+            UTXO utxo = copyWithBlockHeight(pendingUtxo, btcTxHeight);
+            // checked first so a utxo is never registered to both federations when they share the same script
+            if (utxo.getScript().equals(activeFederationScript)) {
+                utxosToTheActiveFederation.add(utxo);
+            } else if (retiringFederationScript.filter(utxo.getScript()::equals).isPresent()) {
+                utxosToTheRetiringFederation.add(utxo);
+            } else {
+                logger.warn(
+                    "[registerNewUTXOsByTxId] Discarding utxo with index {} and value {} for btcTxId {}. Its script {} does not match any live federation",
+                    utxo.getIndex(),
+                    utxo.getValue(),
+                    btcTxId,
+                    utxo.getScript()
+                );
+            }
+        }
+
+        registerUtxosToTheActiveFederation(btcTxId, utxosToTheActiveFederation);
+        registerUtxosToTheRetiringFederation(btcTxId, utxosToTheRetiringFederation);
+        federationSupport.removeFederationsPendingBtcUTXOs(btcTxId);
+        logger.info("[registerNewUTXOsByTxId] Registered pending UTXOs for BTC Tx {}", btcTxId);
+    }
+
+    private void registerUtxosToTheActiveFederation(Sha256Hash btcTxId, List<UTXO> utxosToTheActiveFederation) {
+        // reading the federation utxos marks them to be saved, so skip it when there is nothing to add
+        if (utxosToTheActiveFederation.isEmpty()) {
+            return;
+        }
+
+        federationSupport.getActiveFederationBtcUTXOs().addAll(utxosToTheActiveFederation);
+        logUtxosRegistered(
+            btcTxId,
+            utxosToTheActiveFederation,
+            federationSupport.getActiveFederationAddress()
+        );
+        logger.debug("[registerUtxosToTheActiveFederation] Registered {} UTXOs sent to the active federation", utxosToTheActiveFederation.size());
+    }
+
+    private void registerUtxosToTheRetiringFederation(Sha256Hash btcTxId, List<UTXO> utxosToTheRetiringFederation) {
+        // reading the federation utxos marks them to be saved, so skip it when there is nothing to add
+        if (utxosToTheRetiringFederation.isEmpty()) {
+            return;
+        }
+        Address retiringFederationAddress = federationSupport.getRetiringFederationAddress()
+            .orElseThrow(() -> new IllegalStateException("UTXOs sent to the retiring federation exist without a retiring federation"));
+
+        federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosToTheRetiringFederation);
+        logUtxosRegistered(
+            btcTxId,
+            utxosToTheRetiringFederation,
+            retiringFederationAddress
+        );
+        logger.debug("[registerUtxosToTheRetiringFederation] Registered {} UTXOs sent to the retiring federation", utxosToTheRetiringFederation.size());
+    }
+
+    private void logUtxosRegistered(Sha256Hash btcTxHash, List<UTXO> registeredUtxos, Address federationAddress) {
+        if (!activations.isActive(RSKIP643) || registeredUtxos.isEmpty()) {
+            return;
+        }
+
+        List<Coin> valuesInSatoshis = registeredUtxos.stream().map(UTXO::getValue).toList();
+        List<Long> outputIndexes = registeredUtxos.stream().map(UTXO::getIndex).toList();
+        eventLogger.logUtxosRegistered(
+            btcTxHash,
+            valuesInSatoshis,
+            outputIndexes,
+            federationAddress
+        );
+    }
+
+    private void logFlyoverUtxosRegistered(
+        Sha256Hash btcTxHash,
+        List<UTXO> registeredUtxos,
+        Address federationAddress,
+        Keccak256 flyoverDerivationHash
+    ) {
+        if (!activations.isActive(RSKIP643) || registeredUtxos.isEmpty()) {
+            return;
+        }
+
+        List<Coin> valuesInSatoshis = registeredUtxos.stream().map(UTXO::getValue).toList();
+        List<Long> outputIndexes = registeredUtxos.stream().map(UTXO::getIndex).toList();
+        eventLogger.logFlyoverUtxosRegistered(
+            btcTxHash,
+            valuesInSatoshis,
+            outputIndexes,
+            federationAddress,
+            flyoverDerivationHash
+        );
     }
 
     /**
@@ -881,7 +1029,7 @@ public class BridgeSupport {
         );
 
         // Peg-out from a smart contract not allowed since it's not possible to derive a BTC address from it
-        if (BridgeUtils.isContractTx(rskTx)) {
+        if (isContractTx(rskTx)) {
             logger.trace(
                 "[releaseBtc] Contract {} tried to release funds. Release is just allowed from EOA",
                 senderAddress
@@ -897,7 +1045,7 @@ public class BridgeSupport {
         }
 
         Context.propagate(btcContext);
-        Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, networkParameters);
+        Address btcDestinationAddress = recoverBtcAddressFromEthTransaction(rskTx, networkParameters);
         logger.debug("[releaseBtc] BTC destination address: {}", btcDestinationAddress);
 
         requestRelease(btcDestinationAddress, pegoutValueInWeis, rskTx);
@@ -1435,9 +1583,24 @@ public class BridgeSupport {
     private void settleReleaseRequest(List<UTXO> utxosToUse, PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
         removeSpentUtxos(utxosToUse, releaseTransaction);
         addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction, releaseCreationTxHash);
-        savePegoutTxSigHash(releaseTransaction);
+        savePegoutTxInfo(releaseTransaction);
         logReleaseRequested(releaseCreationTxHash, releaseTransaction, requestedAmount);
         processReleaseTransactionInfo(releaseTransaction);
+    }
+
+    private void savePegoutTxInfo(BtcTransaction releaseTransaction) {
+        if (!activations.isActive(RSKIP643)) {
+            savePegoutTxSigHash(releaseTransaction);
+            return;
+        }
+
+        Wallet wallet = getNoSpendWalletForLiveFederations();
+        int btcTxHeight = 0;
+        List<UTXO> utxosSentToLiveFederations = getUtxosSentToWallet(releaseTransaction, wallet, btcTxHeight);
+        if (utxosSentToLiveFederations.isEmpty()) {
+            return;
+        }
+        federationSupport.storeFederationsPendingBtcUTXOs(releaseTransaction.getHash(), utxosSentToLiveFederations);
     }
 
     private void removeSpentUtxos(List<UTXO> utxosToUse, BtcTransaction releaseTx) {
@@ -1447,7 +1610,6 @@ public class BridgeSupport {
             ).toList();
 
         logger.debug("[removeSpentUtxos] Used {} UTXOs for this release", utxosToRemove.size());
-
         utxosToUse.removeAll(utxosToRemove);
     }
 
@@ -1817,7 +1979,7 @@ public class BridgeSupport {
 
         processSigning(signingFederationMember, signatures, releaseCreationRskTxHash, releaseTx);
 
-        if (!BridgeUtils.hasEnoughSignatures(btcContext, releaseTx)) {
+        if (!hasEnoughSignatures(btcContext, releaseTx)) {
             logMissingSignatures(releaseTx, releaseCreationRskTxHash, federation);
             return;
         }
@@ -1870,7 +2032,7 @@ public class BridgeSupport {
         svpSpendTxWFS.setValue(svpSpendTx);
         provider.setSvpSpendTxWaitingForSignatures(svpSpendTxWFS);
 
-        if (!BridgeUtils.hasEnoughSignatures(btcContext, svpSpendTx)) {
+        if (!hasEnoughSignatures(btcContext, svpSpendTx)) {
             logMissingSignatures(svpSpendTx, svpSpendTxCreationRskTxHash, proposedFederation);
             return;
         }
@@ -1891,7 +2053,7 @@ public class BridgeSupport {
     }
 
     private void logMissingSignatures(BtcTransaction btcTx, Keccak256 releaseCreationRskTxHash, Federation federation) {
-        int missingSignatures = BridgeUtils.countMissingSignatures(btcContext, btcTx);
+        int missingSignatures = countMissingSignatures(btcContext, btcTx);
         int neededSignatures = federation.getNumberOfSignaturesRequired();
         int signaturesCount = neededSignatures - missingSignatures;
 
@@ -2001,7 +2163,7 @@ public class BridgeSupport {
             Sha256Hash sigHash = sigHashes.get(i);
 
             boolean alreadySignedByThisFederator =
-                BridgeUtils.isInputSignedByThisFederator(btcTx, i, federatorBtcPublicKey, sigHash);
+                isInputSignedByThisFederator(btcTx, i, federatorBtcPublicKey, sigHash);
 
             if (alreadySignedByThisFederator) {
                 logger.warn("[sign] Input {} of tx {} already signed by this federator.", i, releaseCreationRskTxHash);
@@ -2284,7 +2446,10 @@ public class BridgeSupport {
 
         Sha256Hash merkleRoot = merkleBranch.reduceFrom(btcTxHash);
 
-        if (!isBlockMerkleRootValid(merkleRoot, block.getHeader())) {
+        try {
+            validateBlockMerkleRoot(merkleRoot, block.getHeader());
+        } catch (InvalidMerkleRootException e) {
+            logger.debug("[getBtcTransactionConfirmations] Error {} trying to validate block merkle root", e.getMessage());
             return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE;
         }
 
@@ -2800,7 +2965,7 @@ public class BridgeSupport {
         Address lpBtcAddress,
         boolean shouldTransferToContract
     ) throws BlockStoreException, IOException, BridgeIllegalArgumentException {
-        if (!BridgeUtils.isContractTx(rskTx)) {
+        if (!isContractTx(rskTx)) {
             logger.debug("[registerFlyoverBtcTransaction] (rskTx:{}) Sender not a contract", rskTx.getHash());
             return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.getCode());
         }
@@ -2838,9 +3003,12 @@ public class BridgeSupport {
             return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.getCode());
         }
 
-        if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
+        try {
+            validateBtcTxRegistration(btcTxHash, height, pmtSerialized, btcTxSerialized);
+        } catch (RegisterBtcTransactionException e) {
             logger.debug(
-                "[registerFlyoverBtcTransaction] (btcTx:{}) error during validationsForRegisterBtcTransaction",
+                "[registerFlyoverBtcTransaction] Error {} during validating registration for btcTx : {}",
+                e.getMessage(),
                 btcTxHash
             );
             return BigInteger.valueOf(FlyoverTxResponseCode.UNPROCESSABLE_TX_VALIDATIONS_ERROR.getCode());
@@ -2880,7 +3048,7 @@ public class BridgeSupport {
             logger.debug("[registerFlyoverBtcTransaction] flyover retiring federation address: {}", flyoverRetiringFederationAddress);
         }
 
-        FlyoverTxResponseCode txResponse = BridgeUtils.validateFlyoverPeginValue(
+        FlyoverTxResponseCode txResponse = validateFlyoverPeginValue(
             activations,
             bridgeConstants,
             btcContext,
@@ -2893,7 +3061,7 @@ public class BridgeSupport {
             return BigInteger.valueOf(txResponse.getCode());
         }
 
-        Coin totalAmount = BridgeUtils.getAmountSentToAddresses(
+        Coin totalAmount = getAmountSentToAddresses(
             activations,
             networkParameters,
             btcContext,
@@ -2908,7 +3076,7 @@ public class BridgeSupport {
             List<FlyoverFederationInformation> fbFederations = flyoverRetiringFederationInformation
                 .map(flyoverFederationInformation -> Arrays.asList(flyoverActiveFederationInformation, flyoverFederationInformation))
                 .orElseGet(() -> Collections.singletonList(flyoverActiveFederationInformation));
-            WalletProvider walletProvider = createFlyoverWalletProvider(fbFederations);
+            WalletProvider walletProvider = createFlyoverWalletProvider(fbFederations, height);
 
             provider.markFlyoverDerivationHashAsUsed(btcTxHashWithoutWitness, flyoverDerivationHash);
 
@@ -2926,11 +3094,12 @@ public class BridgeSupport {
 
         transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
 
-        List<UTXO> utxosForFlyoverActiveFed = BridgeUtils.getUTXOsSentToAddresses(
+        List<UTXO> utxosForFlyoverActiveFed = getUTXOsSentToAddresses(
             activations,
             networkParameters,
             btcContext,
             btcTx,
+            height,
             Collections.singletonList(flyoverActiveFederationAddress)
         );
         logger.info(
@@ -2946,11 +3115,12 @@ public class BridgeSupport {
         );
 
         if (activations.isActive(RSKIP293) && flyoverRetiringFederationInformation.isPresent()) {
-            List<UTXO> utxosForRetiringFed = BridgeUtils.getUTXOsSentToAddresses(
+            List<UTXO> utxosForRetiringFed = getUTXOsSentToAddresses(
                 activations,
                 networkParameters,
                 btcContext,
                 btcTx,
+                height,
                 Collections.singletonList(
                     flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(networkParameters)
                 )
@@ -3069,13 +3239,15 @@ public class BridgeSupport {
     }
 
     private WalletProvider createFlyoverWalletProvider(
-        List<FlyoverFederationInformation> fbFederations) {
+        List<FlyoverFederationInformation> fbFederations,
+        int btcTxHeight) {
         return (BtcTransaction btcTx, List<Address> addresses) -> {
-            List<UTXO> utxosList = BridgeUtils.getUTXOsSentToAddresses(
+            List<UTXO> utxosList = getUTXOsSentToAddresses(
                 activations,
                 networkParameters,
                 btcContext,
                 btcTx,
+                btcTxHeight,
                 addresses
             );
             return getFlyoverWallet(btcContext, utxosList, fbFederations);
@@ -3098,14 +3270,28 @@ public class BridgeSupport {
    // This method will be used by registerBtcTransfer to save all the data required on storage (utxos, btcTxHash-derivationHash),
    // and will look like.
     protected void saveFlyoverActiveFederationDataInStorage(
-            Sha256Hash btcTxHash,
-            Keccak256 derivationHash,
-            FlyoverFederationInformation flyoverFederationInformation,
-            List<UTXO> utxosList
+        Sha256Hash btcTxHash,
+        Keccak256 derivationHash,
+        FlyoverFederationInformation flyoverFederationInformation,
+        List<UTXO> utxosList
     ) {
+        Address activeFederationAddress = federationSupport.getActiveFederationAddress();
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
         federationSupport.getActiveFederationBtcUTXOs().addAll(utxosList);
+        logFlyoverUtxosRegistered(
+            btcTxHash,
+            utxosList,
+            activeFederationAddress,
+            derivationHash
+        );
+        logger.info(
+            "[saveFlyoverActiveFederationDataInStorage] {} flyover UTXOs registered for BTC tx hash: {}, derivation hash: {}, active federation address: {}",
+            utxosList.size(),
+            btcTxHash,
+            derivationHash,
+            activeFederationAddress
+        );
     }
 
     protected void saveFlyoverRetiringFederationDataInStorage(
@@ -3114,9 +3300,25 @@ public class BridgeSupport {
         FlyoverFederationInformation flyoverRetiringFederationInformation,
         List<UTXO> utxosList
     ) {
+        Address retiringFederationAddress = federationSupport.getRetiringFederationAddress()
+            .orElseThrow(() -> new IllegalStateException("Flyover retiring federation information exists without a retiring federation"));
+
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverRetiringFederationInformation(flyoverRetiringFederationInformation);
         federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosList);
+        logFlyoverUtxosRegistered(
+            btcTxHash,
+            utxosList,
+            retiringFederationAddress,
+            derivationHash
+        );
+        logger.info(
+            "[saveFlyoverRetiringFederationDataInStorage] {} flyover UTXOs registered for BTC tx hash: {}, derivation hash: {}, retiring federation address: {}",
+            utxosList.size(),
+            btcTxHash,
+            derivationHash,
+            retiringFederationAddress
+        );
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {
@@ -3384,9 +3586,7 @@ public class BridgeSupport {
         WalletProvider walletProvider = (BtcTransaction btcTransaction, List<Address> addresses) -> {
             // Build the list of UTXOs in the BTC transaction sent to either the active
             // or retiring federation
-            List<UTXO> utxosToUse = btcTx.getWalletOutputs(
-                getNoSpendWalletForLiveFederations(false)
-            )
+            List<UTXO> utxosToUse = btcTx.getWalletOutputs(getNoSpendWalletForLiveFederations())
                 .stream()
                 .map(output ->
                     new UTXO(
@@ -3433,88 +3633,110 @@ public class BridgeSupport {
     }
 
     @VisibleForTesting
-    protected boolean isBlockMerkleRootValid(Sha256Hash merkleRoot, BtcBlock blockHeader) {
-        boolean isValid = false;
+    protected void validateBtcTxRegistration(
+        Sha256Hash btcTxHash,
+        int height,
+        byte[] pmtSerialized,
+        byte[] btcTxSerialized
+    ) throws RegisterBtcTransactionException, BridgeIllegalArgumentException, BlockStoreException {
+        try {
+            validateHeightAndConfirmations(height, getBtcBlockchainBestChainHeight(), bridgeConstants, btcTxHash);
+        } catch (Exception e) {
+            throw new RegisterBtcTransactionException(e.getMessage());
+        }
 
-        if (blockHeader.getMerkleRoot().equals(merkleRoot)) {
-            logger.trace("block merkle root is valid");
-            isValid = true;
+        validatePMTSize(pmtSerialized);
+
+        Optional<Sha256Hash> merkleRoot = getMerkleRoot(pmtSerialized, btcTxHash);
+        if (merkleRoot.isEmpty()) {
+            throw new RegisterBtcTransactionException("Cannot get merkle root for PMT");
         }
-        else {
-            if (activations.isActive(ConsensusRule.RSKIP143)) {
-                CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHeader.getHash());
-                if (coinbaseInformation == null) {
-                    logger.trace("coinbase information for block {} is not yet registered", blockHeader.getHash());
-                }
-                isValid = coinbaseInformation != null && coinbaseInformation.getWitnessMerkleRoot().equals(merkleRoot);
-                logger.trace("witness merkle root is {} valid", (isValid ? "":"NOT"));
-            } else {
-                logger.trace("RSKIP143 is not active, avoid checking witness merkle root");
-            }
+        validateInputsCount(btcTxSerialized, activations);
+
+        try {
+            validateMerkleRoot(merkleRoot.get(), height);
+        } catch (InvalidMerkleRootException e) {
+            throw new RegisterBtcTransactionException(e.getMessage(), e);
         }
-        return isValid;
+
+        logger.trace("[validateBtcTxRegistration] Btc tx: {} successfully validated", btcTxHash);
     }
 
-    @VisibleForTesting
-    protected boolean validationsForRegisterBtcTransaction(Sha256Hash btcTxHash, int height, byte[] pmtSerialized, byte[] btcTxSerialized)
-            throws BlockStoreException, VerificationException.EmptyInputsOrOutputs, BridgeIllegalArgumentException {
-
-        // Validates height and confirmations for tx
+    private void validatePegoutTxRegistration(
+        Sha256Hash btcTxHash,
+        int height,
+        byte[] pmtSerialized
+    ) throws RegisterBtcTransactionException, BridgeIllegalArgumentException, BlockStoreException {
         try {
-            int acceptableConfirmationsAmount = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
-            if (!BridgeUtils.validateHeightAndConfirmations(
-                height,
-                getBtcBlockchainBestChainHeight(),
-                acceptableConfirmationsAmount,
-                btcTxHash)) {
-                return false;
-            }
+            validateHeightAndConfirmations(height, getBtcBlockchainBestChainHeight(), bridgeConstants, btcTxHash);
         } catch (Exception e) {
-            String panicMessage = String.format("[validationsForRegisterBtcTransaction] Btc Tx %s Supplied Height is %d but should be greater than 0", btcTxHash, height);
-            logger.warn(panicMessage);
-            return false;
+            throw new RegisterBtcTransactionException(e.getMessage());
         }
 
-        // Validates pmt size
-        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
-            String message = "PartialMerkleTree doesn't have expected size";
-            logger.warn(message);
-            throw new BridgeIllegalArgumentException(message);
+        validatePMTSize(pmtSerialized);
+
+        Optional<Sha256Hash> merkleRoot = getMerkleRoot(pmtSerialized, btcTxHash);
+        if (merkleRoot.isEmpty()) {
+            throw new RegisterBtcTransactionException("Cannot get merkle root for PMT");
         }
 
-        // Calculates merkleRoot
-        Sha256Hash merkleRoot;
         try {
-            merkleRoot = BridgeUtils.calculateMerkleRoot(networkParameters, pmtSerialized, btcTxHash);
-            if (merkleRoot == null) {
-                return false;
-            }
+            validateMerkleRoot(merkleRoot.get(), height);
+        } catch (InvalidMerkleRootException e) {
+            throw new RegisterBtcTransactionException(e.getMessage(), e);
+        }
+
+        logger.trace("[validatePegoutTxRegistration] Btc tx: {} successfully validated", btcTxHash);
+    }
+
+    private void validatePMTSize(byte[] pmtSerialized) throws BridgeIllegalArgumentException {
+        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
+            throw new BridgeIllegalArgumentException("PartialMerkleTree doesn't have expected size");
+        }
+    }
+
+    private Optional<Sha256Hash> getMerkleRoot(byte[] pmtSerialized, Sha256Hash btcTxHash) throws BridgeIllegalArgumentException {
+        Optional<Sha256Hash> merkleRoot;
+        try {
+            merkleRoot = calculateMerkleRoot(networkParameters, pmtSerialized, btcTxHash);
         } catch (VerificationException e) {
             throw new BridgeIllegalArgumentException(e.getMessage(), e);
         }
+        return merkleRoot;
+    }
 
-        // Validates inputs count
-        logger.info("[validationsForRegisterBtcTransaction] Going to validate inputs for btc tx {}", btcTxHash);
-        BridgeUtils.validateInputsCount(btcTxSerialized, activations.isActive(ConsensusRule.RSKIP143));
-
+    private void validateMerkleRoot(Sha256Hash merkleRoot, int btcBlockHeight) throws BlockStoreException, InvalidMerkleRootException {
         // Check the merkle root equals merkle root of btc block at specified height in the btc best chain
         // BTC blockstore is available since we've already queried the best chain height
-        logger.trace("[validationsForRegisterBtcTransaction] Getting btc block at height: {}", height);
-        BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
-        logger.trace("[validationsForRegisterBtcTransaction] Validating block merkle root at height: {}", height);
-        if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
-            String panicMessage = String.format(
-                "[validationsForRegisterBtcTransaction] Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
-                btcTxHash.toString(),
-                merkleRoot,
-                blockHeader.getMerkleRoot()
-            );
-            logger.warn(panicMessage);
-            return false;
+        logger.trace("[validateMerkleRoot] Getting btc block at height: {}", btcBlockHeight);
+        BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(btcBlockHeight).getHeader();
+
+        logger.trace("[validateMerkleRoot] Validating block merkle root at height: {}", btcBlockHeight);
+        validateBlockMerkleRoot(merkleRoot, blockHeader);
+    }
+
+    @VisibleForTesting
+    protected void validateBlockMerkleRoot(Sha256Hash merkleRoot, BtcBlock blockHeader) throws InvalidMerkleRootException {
+        if (blockHeader.getMerkleRoot().equals(merkleRoot)) {
+            logger.trace("[validateBlockMerkleRoot] Block merkle root is valid");
+            return;
         }
 
-        logger.trace("[validationsForRegisterBtcTransaction] Btc tx: {} successfully validated", btcTxHash);
-        return true;
+        if (!activations.isActive(ConsensusRule.RSKIP143)) {
+            String message = "[validateBlockMerkleRoot] RSKIP143 is not active, avoid checking witness merkle root";
+            logger.trace(message);
+            throw new InvalidMerkleRootException(message);
+        }
+
+        CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHeader.getHash());
+        if (coinbaseInformation == null || !coinbaseInformation.getWitnessMerkleRoot().equals(merkleRoot)) {
+            String message = String.format(
+                "[validateBlockMerkleRoot] Coinbase information for block %s is not yet registered " +
+                    "or its witness merkle root is not valid", blockHeader.getHash()
+            );
+            logger.trace(message);
+            throw new InvalidMerkleRootException(message);
+        }
     }
 
     private Coin computeTotalAmountSent(BtcTransaction btcTx) {

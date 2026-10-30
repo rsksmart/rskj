@@ -2,6 +2,7 @@ package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.crypto.Keccak256;
@@ -154,6 +155,41 @@ public interface FederationSupport {
 
     List<UTXO> getNewFederationBtcUTXOs();
     List<UTXO> getRetiringFederationBtcUTXOs();
+
+    /**
+     * Stores the federation UTXOs created by a release transaction (e.g. its change outputs)
+     * as pending, keyed by the release's BTC tx id. They are not spendable until the
+     * transaction is registered and they are moved to the federations.
+     * @param btcTxId the BTC tx id of the release transaction that creates the UTXOs
+     * @param utxos the UTXOs the release transaction sends to a federation
+     * @throws IllegalArgumentException if btcTxId is null or utxos is null or empty
+     * @throws IllegalStateException if btcTxId already has pending UTXOs
+     */
+    void storeFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos);
+
+    /**
+     * Tells whether the given BTC tx id has pending UTXOs that have not been moved to the
+     * federations yet.
+     * @param btcTxId the BTC tx id to look up
+     * @return whether pending UTXOs exist for btcTxId
+     */
+    boolean hasFederationsPendingBtcUTXOs(Sha256Hash btcTxId);
+
+    /**
+     * Returns the pending UTXOs of the given BTC tx id, i.e. the ones that would be moved to
+     * the federations.
+     * @param btcTxId the BTC tx id to look up
+     * @return an immutable list with the pending UTXOs of btcTxId, or an empty list if btcTxId
+     * has no pending UTXOs
+     */
+    List<UTXO> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId);
+
+    /**
+     * Removes the pending UTXOs of the given BTC tx id. Called once they have been moved
+     * to the federations they belong to.
+     * @param btcTxId the BTC tx id whose pending UTXOs are removed
+     */
+    void removeFederationsPendingBtcUTXOs(Sha256Hash btcTxId);
 
     /**
      * Returns the currently pending federation hash, or null if none exists
