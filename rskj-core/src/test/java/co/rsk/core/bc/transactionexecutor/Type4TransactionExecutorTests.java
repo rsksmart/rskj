@@ -1418,6 +1418,8 @@ class Type4TransactionExecutorTests extends Type4TransactionExecutorHelperTest {
 
         mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
         mockAccountWithBalanceAndNonce(cacheTracker, receiver, 1_000_000, ONE_NONCE);
+        // The marked receiver keeps a non-zero nonce, so finalization clears it instead of deleting it (RSKIP701)
+        when(tracker.getNonce(receiver)).thenReturn(ONE_NONCE);
         mockAuthorizationAccount(authorizationTracker, authorityAddress, ZERO_NONCE, delegatedCode);
         mockFreeBridgeTxFalse();
 
@@ -1551,6 +1553,8 @@ class Type4TransactionExecutorTests extends Type4TransactionExecutorHelperTest {
 
         mockAuthorizationAccount(authorizationTracker, authorityAddress, ZERO_NONCE, EMPTY_CODE);
         mockAccountWithBalanceAndNonce(cacheTracker, receiver, 1_000_000, ONE_NONCE);
+        // The marked receiver keeps a non-zero nonce, so finalization clears it instead of deleting it (RSKIP701)
+        when(tracker.getNonce(receiver)).thenReturn(ONE_NONCE);
         mockReceiver(receiver, selfdestructTo(sender));
 
         var authorization = createValidAuthorizationTuple(

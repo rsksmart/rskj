@@ -20,6 +20,7 @@ package org.ethereum.vm.program;
 
 import co.rsk.config.TestSystemProperties;
 import java.math.BigInteger;
+import java.util.Set;
 
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
@@ -31,6 +32,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class ProgramResultTest {
+
+    private static final DataWord CREATED_A = DataWord.valueOf(0xA1);
+    private static final DataWord CREATED_B = DataWord.valueOf(0xB2);
 
     private final TestSystemProperties config = new TestSystemProperties();
 
@@ -115,6 +119,50 @@ class ProgramResultTest {
         InternalTransaction result = (InternalTransaction)internalTxN;
 
         Assertions.assertArrayEquals(originTx.getHash().getBytes(), result.getOriginHash());
+    }
+
+    @Test
+    void merge_keeps_created_accounts_of_a_successful_child_and_drops_those_of_a_reverted_one() {
+        ProgramResult parent = new ProgramResult();
+        ProgramResult succeeded = childThatCreatedAndMarked(CREATED_A);
+        ProgramResult reverted = childThatCreatedAndMarked(CREATED_B);
+        reverted.setRevert();
+
+        parent.merge(succeeded);
+        parent.merge(reverted);
+
+        Assertions.assertEquals(Set.of(CREATED_A), parent.getCreatedAccounts());
+        Assertions.assertEquals(Set.of(CREATED_A), parent.getDeleteAccounts());
+    }
+
+    @Test
+    void merge_drops_created_accounts_of_a_child_that_failed_with_an_exception() {
+        ProgramResult parent = new ProgramResult();
+        ProgramResult failed = childThatCreatedAndMarked(CREATED_A);
+        failed.setException(new RuntimeException("halt"));
+
+        parent.merge(failed);
+
+        Assertions.assertTrue(parent.getCreatedAccounts().isEmpty());
+        Assertions.assertTrue(parent.getDeleteAccounts().isEmpty());
+    }
+
+    @Test
+    void clear_fields_on_exception_drops_created_accounts_merged_earlier() {
+        ProgramResult parent = new ProgramResult();
+        parent.merge(childThatCreatedAndMarked(CREATED_A));
+
+        parent.clearFieldsOnException();
+
+        Assertions.assertTrue(parent.getCreatedAccounts().isEmpty());
+        Assertions.assertTrue(parent.getDeleteAccounts().isEmpty());
+    }
+
+    private static ProgramResult childThatCreatedAndMarked(DataWord address) {
+        ProgramResult child = new ProgramResult();
+        child.addCreatedAccount(address);
+        child.addDeleteAccount(address);
+        return child;
     }
 
     private Transaction getOriginTransaction() {

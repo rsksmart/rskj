@@ -24,6 +24,7 @@ import com.typesafe.config.ConfigValue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,26 @@ import java.util.stream.Collectors;
 public class ActivationConfig {
     private static final String PROPERTY_ACTIVATION_HEIGHTS = "hardforkActivationHeights";
     private static final String PROPERTY_CONSENSUS_RULES = "consensusRules";
+
+    /**
+     * Rules that must be active at or before the height of the rule used as key, whenever that rule is active.
+     * Keys are checked in {@link ConsensusRule} order, so a config with several violations always reports the same one.
+     */
+    @VisibleForTesting
+    static final Map<ConsensusRule, List<ConsensusRule>> ACTIVATION_DEPENDENCIES = Collections.unmodifiableMap(
+            new EnumMap<>(Map.of(
+                    ConsensusRule.RSKIP545, List.of(
+                            ConsensusRule.RSKIP543,
+                            ConsensusRule.RSKIP544,
+                            ConsensusRule.RSKIP546,
+                            ConsensusRule.RSKIP692,
+                            ConsensusRule.RSKIP701
+                    ),
+                    ConsensusRule.RSKIP546, List.of(
+                            ConsensusRule.RSKIP543
+                    )
+            ))
+    );
 
     private final Map<ConsensusRule, Long> activationHeights;
     private final Map<NetworkUpgrade, Long> networkUpgrades;
@@ -73,7 +94,34 @@ public class ActivationConfig {
             activationHeights.put(consensusRule, activationHeight);
         }
 
-        return new ActivationConfig(activationHeights, networkUpgrades);
+        ActivationConfig activationConfig = new ActivationConfig(activationHeights, networkUpgrades);
+        validateActivationDependencies(activationHeights);
+
+        return activationConfig;
+    }
+
+    /**
+     * Expects a height for every consensus rule, which the constructor guarantees.
+     */
+    private static void validateActivationDependencies(Map<ConsensusRule, Long> activationHeights) {
+        for (Map.Entry<ConsensusRule, List<ConsensusRule>> dependency : ACTIVATION_DEPENDENCIES.entrySet()) {
+            ConsensusRule rule = dependency.getKey();
+            long ruleHeight = activationHeights.get(rule);
+            if (ruleHeight < 0) {
+                continue;
+            }
+
+            for (ConsensusRule required : dependency.getValue()) {
+                long requiredHeight = activationHeights.get(required);
+                if (requiredHeight < 0 || requiredHeight > ruleHeight) {
+                    throw new IllegalArgumentException(String.format(
+                            "%s (height %d) requires %s active at or before %d, but %s",
+                            rule.getConfigKey(), ruleHeight, required.getConfigKey(), ruleHeight,
+                            requiredHeight < 0 ? "it is disabled" : "it activates at " + requiredHeight
+                    ));
+                }
+            }
+        }
     }
 
     private static long parseActivationHeight(

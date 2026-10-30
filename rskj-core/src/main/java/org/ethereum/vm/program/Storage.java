@@ -88,10 +88,20 @@ public class Storage implements Repository, ProgramListenerAware {
 
     @Override
     public void delete(RskAddress addr) {
+        traceStorageClear(addr);
+        repository.delete(addr);
+    }
+
+    @Override
+    public void clearAccount(RskAddress addr) {
+        traceStorageClear(addr);
+        repository.clearAccount(addr);
+    }
+
+    private void traceStorageClear(RskAddress addr) {
         if (canListenTrace(addr)) {
             traceListener.onStorageClear();
         }
-        repository.delete(addr);
     }
 
     @Override
