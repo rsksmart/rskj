@@ -84,12 +84,13 @@ class RegisterTransactionIT {
     // federation and fee per kb storage live outside the repository, as in BridgeTest
     private StorageAccessor bridgeStorageAccessor;
     private RepositoryBtcBlockStoreWithCache.Factory btcBlockStoreFactory;
-    private List<UTXO> expectedActiveFederationUtxos;
+    private final List<UTXO> expectedActiveFederationUtxos = new ArrayList<>();
     private long userNonce;
     private long federatorNonce;
 
     private Block rskExecutionBlock;
     private BridgeStorageProvider bridgeStorageProvider;
+    private BtcBlockStoreWithCache btcBlockStore;
     private FederationStorageProvider federationStorageProvider;
     private FederationSupport federationSupport;
     private BridgeSupport bridgeSupport;
@@ -112,10 +113,9 @@ class RegisterTransactionIT {
         void setUp() throws IOException, BlockStoreException, VMException {
             fundActiveFederationWithOneUtxo();
             pegout = createPegout();
-            // the pegout spent the only federation utxo, and its change is still pending
-            expectedActiveFederationUtxos = new ArrayList<>();
             pmt = includeOnBtcAndGetPmt(pegout);
 
+            // the pegout spent the only federation utxo, and its change is still pending
             assertPegoutIsPending(pegout);
         }
 
@@ -176,7 +176,7 @@ class RegisterTransactionIT {
             int bestChainHeight = BTC_BLOCK_WITH_PEGOUT_HEIGHT + BRIDGE_CONSTANTS.getMaxDepthToSearchBlocksBelowIndexActivation() + 1;
             setUpBridgeSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
             recreateChainFromPmt(
-                buildBtcBlockStore(),
+                btcBlockStore,
                 bestChainHeight,
                 pmt,
                 BTC_BLOCK_WITH_PEGOUT_HEIGHT,
@@ -223,16 +223,7 @@ class RegisterTransactionIT {
             BRIDGE_CONSTANTS,
             BTC_BLOCK_WITH_PEGOUT_HEIGHT,
             btcTransaction,
-            buildBtcBlockStore()
-        );
-    }
-
-    private BtcBlockStoreWithCache buildBtcBlockStore() {
-        return btcBlockStoreFactory.newInstance(
-            repository,
-            BRIDGE_CONSTANTS,
-            bridgeStorageProvider,
-            ALL_ACTIVATIONS
+            btcBlockStore
         );
     }
 
@@ -281,6 +272,13 @@ class RegisterTransactionIT {
         bridgeStorageProvider = new BridgeStorageProvider(
             repository,
             NETWORK_PARAMETERS,
+            ALL_ACTIVATIONS
+        );
+        // the block store keeps its height index in the bridge storage provider, so it's built along with it
+        btcBlockStore = btcBlockStoreFactory.newInstance(
+            repository,
+            BRIDGE_CONSTANTS,
+            bridgeStorageProvider,
             ALL_ACTIVATIONS
         );
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
