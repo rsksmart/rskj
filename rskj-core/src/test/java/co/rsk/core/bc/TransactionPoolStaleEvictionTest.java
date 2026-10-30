@@ -71,6 +71,7 @@ class TransactionPoolStaleEvictionTest {
     public Path tempDir;
 
     private final Account delegatedAccount = new AccountBuilder().name("delegatedAccount").build();
+    private final Account codeOnlyAccount = new AccountBuilder().name("codeOnlyAccount").build();
     private final Account accountA = new AccountBuilder().name("accountA").build();
     private final Account accountB = new AccountBuilder().name("accountB").build();
     private final Account receiver = new AccountBuilder().name("receiver").build();
@@ -139,26 +140,26 @@ class TransactionPoolStaleEvictionTest {
     @Test
     void delegatedAccountKeepsOnlyRetractedTransactionAfterReorg() {
         Assertions.assertTrue(context.getRskSystemProperties().getActivationConfig().isActive(ConsensusRule.RSKIP545, 1));
-        Assertions.assertTrue(isDelegatedAt(genesis, delegatedAccount));
+        Block delegating = delegate(genesis);
 
-        Transaction stale = tx(delegatedAccount, 0, 1000);
+        Transaction stale = tx(delegatedAccount, 1, 1000);
         Assertions.assertTrue(pool.addTransaction(stale).pendingTransactionsWereAdded());
 
-        // chain X: a different transaction from the delegated account consumes nonce 0
-        Transaction minedOnX = tx(delegatedAccount, 0, 2000);
-        Block x1 = connect(genesis, minedOnX);
-        Assertions.assertEquals(BigInteger.ONE, stateNonce(x1, delegatedAccount));
+        // chain X: a different transaction from the delegated account consumes nonce 1
+        Transaction minedOnX = tx(delegatedAccount, 1, 2000);
+        Block x2 = connect(delegating, minedOnX);
+        Assertions.assertEquals(BigInteger.TWO, stateNonce(x2, delegatedAccount));
 
-        Transaction next = tx(delegatedAccount, 1, 1000);
+        Transaction next = tx(delegatedAccount, 2, 1000);
         Assertions.assertTrue(pool.addTransaction(next).pendingTransactionsWereAdded());
 
-        // heavier chain Y from genesis without any transaction of the delegated account
-        Block y1 = connectSide(genesis);
-        Block y2 = connect(y1);
-        Assertions.assertEquals(y2.getHash(), blockchain.getBestBlock().getHash());
-        Assertions.assertEquals(BigInteger.ZERO, stateNonce(y2, delegatedAccount));
+        // heavier chain Y from the delegating block without any transaction of the delegated account
+        Block y2 = connectSide(delegating);
+        Block y3 = connect(y2);
+        Assertions.assertEquals(y3.getHash(), blockchain.getBestBlock().getHash());
+        Assertions.assertEquals(BigInteger.ONE, stateNonce(y3, delegatedAccount));
 
-        // the nonce-1 transaction is gapped again and gives way to the retracted nonce-0 one
+        // the nonce-2 transaction is gapped again and gives way to the retracted nonce-1 one
         List<Keccak256> pooledForAccount = poolTransactions().stream()
                 .filter(t -> t.getSender().equals(delegatedAccount.getAddress()))
                 .map(Transaction::getHash)
@@ -168,22 +169,24 @@ class TransactionPoolStaleEvictionTest {
 
     @Test
     void delegatedAccountKeepsExecutableTransactionOnNewBestBlock() {
-        Transaction executable = tx(delegatedAccount, 0, 1000);
+        Block delegating = delegate(genesis);
+        Transaction executable = tx(delegatedAccount, 1, 1000);
         Assertions.assertTrue(pool.addTransaction(executable).pendingTransactionsWereAdded());
 
-        connect(genesis);
+        connect(delegating);
 
         Assertions.assertEquals(Set.of(executable.getHash()), poolHashes());
     }
 
     @Test
     void delegatedAccountExecutableTransactionKeepsItsAdmissionBlock() {
-        Transaction executable = tx(delegatedAccount, 0, 1000);
+        Block delegating = delegate(genesis);
+        Transaction executable = tx(delegatedAccount, 1, 1000);
         Assertions.assertTrue(pool.addTransaction(executable).pendingTransactionsWereAdded());
 
-        Block block = connect(genesis);
+        Block block = connect(delegating);
 
-        // admitted at block 0, so with a depth of 10 it is outdated at block 11
+        // admitted at block 1, so with a depth of 10 it is outdated at block 12
         pool.removeObsoleteTransactions(block.getNumber() + 10, 10, 0);
         Assertions.assertTrue(poolTransactions().isEmpty());
     }
@@ -203,6 +206,26 @@ class TransactionPoolStaleEvictionTest {
         Assertions.assertTrue(isDelegatedAt(block, accountA));
 
         Assertions.assertEquals(Set.of(executable.getHash()), poolHashes());
+    }
+
+    @Test
+    void accountWithDelegationCodeButNoAuthorityFlagIsTreatedAsPlainAccount() {
+        Assertions.assertTrue(DelegationCodeResolver.isDelegatedCode(codeAt(genesis, codeOnlyAccount)));
+        Assertions.assertFalse(isDelegatedAt(genesis, codeOnlyAccount));
+
+        Transaction first = tx(codeOnlyAccount, 0, 1000);
+        Transaction second = tx(codeOnlyAccount, 1, 1000);
+        Transaction gapped = tx(codeOnlyAccount, 3, 1000);
+        Assertions.assertTrue(pool.addTransaction(first).pendingTransactionsWereAdded());
+        // a delegated account is refused a second transaction
+        TransactionPoolAddResult result = pool.addTransaction(second);
+        Assertions.assertTrue(result.pendingTransactionsWereAdded(), result.getErrorMessage());
+        Assertions.assertTrue(pool.addTransaction(gapped).queuedTransactionsWereAdded());
+
+        // a delegated account's gapped transaction is evicted on a new best block
+        connect(genesis);
+
+        Assertions.assertEquals(Set.of(first.getHash(), second.getHash(), gapped.getHash()), poolHashes());
     }
 
     @Test
@@ -293,6 +316,21 @@ class TransactionPoolStaleEvictionTest {
         Assertions.assertTrue(pool.getPendingTransactions().isEmpty());
     }
 
+    /**
+     * Delegates {@code delegatedAccount} through accountB's set code transaction, which also
+     * consumes its nonce 0, so the account carries both the delegation code and the flag.
+     */
+    private Block delegate(Block parent) {
+        Block block = connect(parent, setCode(accountB, delegatedAccount, 0));
+        Assertions.assertTrue(isDelegatedAt(block, delegatedAccount));
+        Assertions.assertEquals(BigInteger.ONE, stateNonce(block, delegatedAccount));
+        return block;
+    }
+
+    private byte[] codeAt(Block block, Account account) {
+        return context.getRepositoryLocator().snapshotAt(block.getHeader()).getCode(account.getAddress());
+    }
+
     private Transaction setCode(Account sender, Account authority, long authorityNonce) {
         return new TransactionBuilder()
                 .transactionType(TransactionType.TYPE_4.getByteCode())
@@ -308,8 +346,7 @@ class TransactionPoolStaleEvictionTest {
     }
 
     private boolean isDelegatedAt(Block block, Account account) {
-        return DelegationCodeResolver.isDelegatedCode(
-                context.getRepositoryLocator().snapshotAt(block.getHeader()).getCode(account.getAddress()));
+        return context.getRepositoryLocator().snapshotAt(block.getHeader()).isActiveDelegatedEOA(account.getAddress());
     }
 
     private Transaction tx(Account sender, long nonce, long valueInWei) {
@@ -358,12 +395,13 @@ class TransactionPoolStaleEvictionTest {
             ObjectNode root = (ObjectNode) mapper.readTree(
                     getClass().getResourceAsStream("/genesis/rsk-unittests.json"));
             ObjectNode alloc = (ObjectNode) root.get("alloc");
-            for (Account account : List.of(accountA, accountB)) {
+            for (Account account : List.of(accountA, accountB, delegatedAccount)) {
                 alloc.putObject(account.getAddress().toString()).put("balance", BALANCE_IN_WEI);
             }
-            ObjectNode delegated = alloc.putObject(delegatedAccount.getAddress().toString());
-            delegated.put("balance", BALANCE_IN_WEI);
-            ObjectNode contract = delegated.putObject("contract");
+            // delegation code without the delegation authority flag, which a genesis entry cannot set
+            ObjectNode codeOnly = alloc.putObject(codeOnlyAccount.getAddress().toString());
+            codeOnly.put("balance", BALANCE_IN_WEI);
+            ObjectNode contract = codeOnly.putObject("contract");
             contract.put("code", Hex.toHexString(DelegationCodeResolver.createDelegatedCode(DELEGATE)));
             contract.putObject("data");
             return new ByteArrayInputStream(mapper.writeValueAsString(root).getBytes(StandardCharsets.UTF_8));

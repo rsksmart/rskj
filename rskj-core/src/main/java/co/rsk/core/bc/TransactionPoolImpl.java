@@ -30,7 +30,6 @@ import co.rsk.net.handler.quota.TxQuotaChecker;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
-import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.EventDispatchThread;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -413,7 +412,7 @@ public class TransactionPoolImpl implements TransactionPool {
         Map<RskAddress, BigInteger> stateNonceBySender = new HashMap<>();
         Map<RskAddress, Boolean> isDelegatedBySender = new HashMap<>();
         Predicate<RskAddress> isDelegated = sender -> isDelegatedBySender.computeIfAbsent(
-                sender, s -> DelegationCodeResolver.isDelegatedCode(repository.getCode(s)));
+                sender, s -> isDelegatedAccount(repository, s));
         List<Keccak256> toRemove = new ArrayList<>();
         List<Transaction> toPromote = new ArrayList<>();
 
@@ -596,9 +595,7 @@ public class TransactionPoolImpl implements TransactionPool {
             PendingState pendingState,
             boolean isSameNonceReplacement
     ) {
-        byte[] code = repository.getCode(sender);
-
-        if (!DelegationCodeResolver.isDelegatedCode(code)) {
+        if (!isDelegatedAccount(repository, sender)) {
             return Optional.empty();
         }
 
@@ -628,5 +625,14 @@ public class TransactionPoolImpl implements TransactionPool {
             return Optional.of(TransactionPoolAddResult.withError("gapped-nonce transaction from delegated account"));
         }
         return Optional.empty();
+    }
+
+    /**
+     * Whether the pool limits {@code address} to one transaction as an EIP-7702 delegated account:
+     * it carries the delegation authority flag and the delegation indicator as its code. Admission and
+     * the reconciliation on each new best block both use this, so they agree on which accounts it covers.
+     */
+    private static boolean isDelegatedAccount(RepositorySnapshot repository, RskAddress address) {
+        return repository.isActiveDelegatedEOA(address);
     }
 }

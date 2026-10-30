@@ -1295,9 +1295,11 @@ class TransactionPoolImplTest {
         Account sender = createAccount(senderAccountId);
         Account delegate = createAccount(delegateAccountId);
 
+        // a set code authorization writes the delegation code and the delegation authority flag together
         repository.saveCode(
                 sender.getAddress(),
                 DelegationCodeResolver.createDelegatedCode(delegate.getAddress())
         );
+        repository.setDelegationAuthority(sender.getAddress());
     }
 }
