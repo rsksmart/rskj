@@ -1177,6 +1177,23 @@ class EthModuleGasEstimationDSLTest {
         assertEquals(40_072L, estimateGas(eth, args, BlockTag.LATEST.getTag()));
     }
 
+    @Test
+    void estimateGas_pegoutToBridge_returnsThePegoutGas() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/pegout.txt");
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+
+        // A plain peg-out: 0.01 RBTC to the Bridge with no data and no gas, as a wallet sends it
+        CallArguments args = new CallArguments();
+        args.setFrom("0x" + world.getAccountByName("acc1").getAddress().toHexString());
+        args.setTo("0x" + PrecompiledContracts.BRIDGE_ADDR.toHexString());
+        args.setValue("0x2386f26fc10000");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam latest = new BlockIdentifierParam(BlockTag.LATEST.getTag());
+
+        // 21,000 base cost plus the Bridge's 23,000 for releaseBtc, what the signed peg-out uses
+        assertEquals("0xabe0", eth.estimateGas(callArgumentsParam, latest));
+    }
+
     /**
      * Verbatim {@code input} field of testnet tx
      * 0xddb735039288b9b8e08c9929e26577866e9a0f38edf8c61f01da69e827face96
