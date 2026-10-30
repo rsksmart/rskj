@@ -1,0 +1,9 @@
+# A sender holding 10 RBTC, enough for a peg-out to the Bridge
+account_new acc1 10000000000000000000
+
+block_build b01
+    parent g00
+    build
+
+block_connect b01
+assert_best b01
