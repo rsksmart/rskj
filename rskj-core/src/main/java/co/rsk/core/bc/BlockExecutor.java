@@ -22,8 +22,13 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.TransactionListExecutor;
+import co.rsk.core.bc.supply.SupplyBug;
+import co.rsk.core.bc.supply.SupplyConservationCheck;
+import co.rsk.core.bc.supply.SupplyDelta;
 import co.rsk.crypto.Keccak256;
+
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
@@ -34,6 +39,7 @@ import co.rsk.peg.union.UnionBridgeStorageProvider;
 import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
+import org.ethereum.config.NetworkName;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -107,6 +113,11 @@ public class BlockExecutor {
     private final boolean remascEnabled;
     private final Set<RskAddress> concurrentContractsDisallowed;
 
+    /**
+     * Deliberate supply bug, off unless --add-supply-bug was given. See {@link SupplyBug}.
+     */
+    private final SupplyBug supplyBug;
+
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
     /**
      * An array of ExecutorService's of size `Constants.getTransactionExecutionThreads()`. Each parallel list uses an executor
@@ -128,6 +139,11 @@ public class BlockExecutor {
         this.remascEnabled = systemProperties.isRemascEnabled();
         this.concurrentContractsDisallowed = Collections.unmodifiableSet(new HashSet<>(systemProperties.concurrentContractsDisallowed()));
         this.minSequentialSetGasLimit = systemProperties.getNetworkConstants().getMinSequentialSetGasLimit();
+        // isSupplyBugEnabled() is false unless --add-supply-bug was given, and is checked first so
+        // that the network is only looked up when the bug was actually asked for.
+        this.supplyBug = systemProperties.isSupplyBugEnabled()
+                ? SupplyBug.create(true, NetworkName.MAINNET == NetworkName.getByName(systemProperties.netName()))
+                : SupplyBug.DISABLED;
 
         int numOfParallelList = Constants.getTransactionExecutionThreads();
         this.execServices = new ExecutorService[numOfParallelList];
@@ -180,6 +196,11 @@ public class BlockExecutor {
      */
     public BlockResult executeAndFill(Block block, BlockHeader parent) {
         BlockResult result = executeForMining(block, parent, true, false, false);
+        if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT
+                || result == BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT) {
+            // A sentinel result carries no block, state or receipts; there is nothing to fill in.
+            return result;
+        }
         fill(block, result);
         return result;
     }
@@ -187,13 +208,18 @@ public class BlockExecutor {
     @VisibleForTesting
     public void executeAndFillAll(Block block, BlockHeader parent) {
         BlockResult result = executeForMining(block, parent, false, true, false);
+        if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT
+                || result == BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT) {
+            return;
+        }
         fill(block, result);
     }
 
     @VisibleForTesting
     public void executeAndFillReal(Block block, BlockHeader parent) {
         BlockResult result = executeForMining(block, parent, false, false, false);
-        if (result != BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
+        if (result != BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT
+                && result != BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT) {
             fill(block, result);
         }
     }
@@ -260,6 +286,13 @@ public class BlockExecutor {
      */
     public boolean validate(Block block, BlockResult result) {
         Metric metric = profiler.start(MetricKind.BLOCK_FINAL_STATE_VALIDATION);
+        if (result == BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT) {
+            logger.error("Block {} [{}] was rejected because it created native currency out of nothing",
+                    block.getNumber(), block.getPrintableHash());
+            profiler.stop(metric);
+            return false;
+        }
+
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             logger.error("Block {} [{}] execution was interrupted because of an invalid transaction", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
@@ -419,6 +452,12 @@ public class BlockExecutor {
 
         Repository track = repositoryLocator.startTrackingAt(parent);
 
+        // Balances as they stood before this block ran, for the block-level supply scope. Taken
+        // before any state is touched, and separate from `track` so it is unaffected by execution.
+        RepositorySnapshot parentState = repositoryLocator.snapshotAt(parent);
+        SupplyConservationCheck supplyCheck = new SupplyConservationCheck(block);
+        boolean supplyBugInjected = false;
+
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
         int i = 1;
@@ -476,6 +515,26 @@ public class BlockExecutor {
             }
 
             if (transactionExecuted) {
+                // Inject the deliberate bug into the first executed transaction, if it was asked
+                // for. This is a no-op unless --add-supply-bug was given.
+                if (!supplyBugInjected && supplyBug.isEnabled()) {
+                    supplyBug.mintFromNowhere(txSubTrack);
+                    supplyBugInjected = true;
+                }
+
+                // The primary check. txSubTrack holds this transaction's writes and nothing else,
+                // so its modified accounts are exactly this transaction's scope, and `track` still
+                // holds the balances as they were when the transaction started.
+                SupplyDelta txDelta = supplyCheck.checkTransaction(
+                        tx, txindex - 1, txSubTrack.getModifiedAccounts(), track::getBalance, txSubTrack::getBalance);
+
+                if (txDelta.isCreation()) {
+                    // Roll back rather than commit, so the creation leaves no trace in the state.
+                    txSubTrack.rollback();
+                    profiler.stop(metric);
+                    return BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT;
+                }
+
                 txSubTrack.commit();
             }
             registerExecutedTx(programTraceProcessor, vmTrace, executedTransactions, tx, txExecutor);
@@ -499,6 +558,17 @@ public class BlockExecutor {
             loggingTxDone();
         }
 
+
+        // The cross-check, and the last chance to reject before the state is persisted: the
+        // rejection must happen before saveOrCommitTrackState so a rejected block leaves no trace.
+        SupplyDelta blockDelta = supplyCheck.checkBlock(
+                track.getModifiedAccounts(), parentState::getBalance, track::getBalance);
+
+        if (blockDelta.isCreation()) {
+            track.rollback();
+            profiler.stop(metric);
+            return BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT;
+        }
 
         saveOrCommitTrackState(saveState, track);
 
@@ -545,6 +615,9 @@ public class BlockExecutor {
         ReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
         Repository track = repositoryLocator.startTrackingAt(parent, readWrittenKeysTracker);
 
+        RepositorySnapshot parentState = repositoryLocator.snapshotAt(parent);
+        SupplyConservationCheck supplyCheck = new SupplyConservationCheck(block);
+
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
         readWrittenKeysTracker.clear();
 
@@ -585,7 +658,9 @@ public class BlockExecutor {
                     Coin.ZERO,
                     remascEnabled,
                     concurrentContractsDisallowed,
-                    BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit)
+                    BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit),
+                    parentState::getBalance,
+                    supplyBug
             );
             completionService.submit(txListExecutor);
             transactionListExecutors.add(txListExecutor);
@@ -598,7 +673,11 @@ public class BlockExecutor {
                 if (!Boolean.TRUE.equals(success.get())) {
                     transactionListExecutors.forEach(TransactionListExecutor::stop);
                     profiler.stop(metric);
-                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+                    boolean supplyViolation = transactionListExecutors.stream()
+                            .anyMatch(TransactionListExecutor::hasSupplyViolation);
+                    return supplyViolation
+                            ? BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT
+                            : BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
             } catch (InterruptedException e) {
                 logger.warn("block: [{}]/[{}] execution was interrupted", block.getNumber(), block.getHash());
@@ -630,6 +709,7 @@ public class BlockExecutor {
         long totalGasUsed = 0;
 
         for (TransactionListExecutor tle : transactionListExecutors) {
+            supplyCheck.recordTransactionDeltas(tle.getSupplyDeltaSum());
             tle.getRepository().commit();
             deletedAccounts.addAll(tle.getDeletedAccounts());
             executedTransactions.putAll(tle.getExecutedTransactions());
@@ -660,15 +740,32 @@ public class BlockExecutor {
                 totalPaidFees,
                 remascEnabled,
                 Collections.emptySet(), // precompiled contracts are always allowed in a sequential list, as there's no concurrency in it
-                BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit)
+                BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit),
+                parentState::getBalance,
+                supplyBug
         );
         Boolean success = txListExecutor.call();
         if (!Boolean.TRUE.equals(success)) {
+            if (txListExecutor.hasSupplyViolation()) {
+                profiler.stop(metric);
+                return BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT;
+            }
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         }
+        supplyCheck.recordTransactionDeltas(txListExecutor.getSupplyDeltaSum());
 
         Coin totalBlockPaidFees = txListExecutor.getTotalFees();
         totalGasUsed += txListExecutor.getTotalGas();
+
+        // The cross-check, and the last chance to reject before the state is persisted.
+        SupplyDelta blockDelta = supplyCheck.checkBlock(
+                track.getModifiedAccounts(), parentState::getBalance, track::getBalance);
+
+        if (blockDelta.isCreation()) {
+            track.rollback();
+            profiler.stop(metric);
+            return BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT;
+        }
 
         saveOrCommitTrackState(saveState, track);
 
@@ -730,6 +827,10 @@ public class BlockExecutor {
         IReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
         Repository track = repositoryLocator.startTrackingAt(parent, readWrittenKeysTracker);
 
+        RepositorySnapshot parentState = repositoryLocator.snapshotAt(parent);
+        SupplyConservationCheck supplyCheck = new SupplyConservationCheck(block);
+        boolean supplyBugInjected = false;
+
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
         readWrittenKeysTracker.clear();
 
@@ -784,6 +885,25 @@ public class BlockExecutor {
             }
 
             if (transactionExecuted) {
+                if (!supplyBugInjected && supplyBug.isEnabled()) {
+                    supplyBug.mintFromNowhere(txSubTrack);
+                    supplyBugInjected = true;
+                }
+
+                // Fees are postponed on this path: gas is debited here but credited in bulk after
+                // the loop, so the fee is modelled explicitly as pending inflow.
+                SupplyDelta txDelta = SupplyDelta
+                        .between(txSubTrack.getModifiedAccounts(), track::getBalance, txSubTrack::getBalance)
+                        .withPendingInflow(paidFeesOf(txExecutor));
+
+                supplyCheck.checkTransaction(tx, txindex, txDelta);
+
+                if (txDelta.isCreation()) {
+                    txSubTrack.rollback();
+                    profiler.stop(metric);
+                    return BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT;
+                }
+
                 txSubTrack.commit();
             }
 
@@ -837,6 +957,15 @@ public class BlockExecutor {
             }
         }
 
+        SupplyDelta blockDelta = supplyCheck.checkBlock(
+                track.getModifiedAccounts(), parentState::getBalance, track::getBalance);
+
+        if (blockDelta.isCreation()) {
+            track.rollback();
+            profiler.stop(metric);
+            return BlockResult.SUPPLY_VIOLATION_BLOCK_RESULT;
+        }
+
         saveOrCommitTrackState(saveState, track);
 
         List<Transaction> executedTransactions = parallelizeTransactionHandler.getTransactionsInOrder();
@@ -870,6 +999,11 @@ public class BlockExecutor {
         }
 
         loggingTxExecuted();
+    }
+
+    private static Coin paidFeesOf(TransactionExecutor txExecutor) {
+        Coin paidFees = txExecutor.getPaidFees();
+        return paidFees == null ? Coin.ZERO : paidFees;
     }
 
     private Coin addTotalPaidFees(Coin totalPaidFees, TransactionExecutor txExecutor) {
