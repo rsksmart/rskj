@@ -110,6 +110,9 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
         String s = null;
         try {
             Transaction tx =  new ImmutableTransaction(rawData.getRawDataBytes());
+            if (tx.isLegacyGasLimitEncodedEmpty()) {
+                throw invalidParamError("Missing parameter, gasPrice, gas or value");
+            }
             tx.checkInvalidChain(constants);
 
             TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx);

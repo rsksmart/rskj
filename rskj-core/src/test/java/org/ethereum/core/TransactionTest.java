@@ -926,4 +926,12 @@ class TransactionTest {
         return executor;
     }
 
+    @Test
+    void nullGasLimit_isStoredAsEmpty() {
+        Transaction tx = new Transaction(null, null, null, null, null, null);
+
+        Assertions.assertArrayEquals(new byte[0], tx.getGasLimit());
+        Assertions.assertEquals(BigInteger.ZERO, tx.getGasLimitAsInteger());
+        Assertions.assertTrue(tx.isLegacyGasLimitEncodedEmpty());
+    }
 }

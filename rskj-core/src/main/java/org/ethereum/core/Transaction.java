@@ -425,6 +425,9 @@ public class Transaction {
         if (CommonParsingUtils.exceedsDataWordLength(gasLimit)) {
             throw new TransactionException("Gas Limit is not valid");
         }
+        if (isLegacyGasLimitEncodedEmpty()) {
+            throw new TransactionException("Gas Limit is not valid");
+        }
         if (CommonParsingUtils.exceedsDataWordLength(gasPrice)) {
             throw new TransactionException("Gas Price is not valid");
         }
@@ -455,6 +458,11 @@ public class Transaction {
                 throw new TransactionException("Sender is not valid");
             }
         }
+    }
+
+    /** Legacy validation has always rejected a gasLimit encoded as the empty string. */
+    public boolean isLegacyGasLimitEncodedEmpty() {
+        return typePrefix.type() == TransactionType.LEGACY && gasLimit.length == 0;
     }
 
     public Keccak256 getHash() {
@@ -537,7 +545,7 @@ public class Transaction {
     }
 
     public byte[] getGasLimit() {
-        return gasLimit == null ? null : gasLimit.clone();
+        return gasLimit.clone();
     }
 
     public byte[] getData() {
@@ -766,7 +774,7 @@ public class Transaction {
     }
 
     public BigInteger getGasLimitAsInteger() {
-        return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
+        return BigIntegers.fromUnsignedByteArray(gasLimit);
     }
 
     public BigInteger getNonceAsInteger() {

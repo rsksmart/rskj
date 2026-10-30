@@ -18,32 +18,32 @@
 
 package co.rsk.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+
 import co.rsk.bitcoinj.params.MainNetParams;
 import co.rsk.bitcoinj.params.RegTestParams;
-import co.rsk.bitcoinj.params.TestNet2Params;
+import co.rsk.bitcoinj.params.TestNet3Params;
+import co.rsk.bitcoinj.params.TestNet4Params;
 import co.rsk.cli.RskCli;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
-import org.ethereum.net.rlpx.Node;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.ethereum.net.rlpx.Node;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-
-/**
- * Created by ajlopez on 3/16/2016.
- */
 class RskSystemPropertiesTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
@@ -117,23 +117,19 @@ class RskSystemPropertiesTest {
         RskCli rskCli = new RskCli();
         rskCli.load(new String[]{});
 
-        RskSystemProperties rskSystemProperties = new RskSystemProperties(
-                new ConfigLoader(
-                        rskCli.getCliArgs()
-                )
-        );
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(new ConfigLoader(rskCli.getCliArgs()));
 
-        List<String> disabledModuleNames = Stream.of( "sco", "debug", "trace").collect(Collectors.toList());
+        List<String> disabledModuleNames = Stream.of( "sco", "debug", "trace").toList();
 
         Map<String, List<ModuleDescription>> moduleNameEnabledMap = rskSystemProperties.getRpcModules()
-                .stream()
-                .collect(Collectors.groupingBy(ModuleDescription::getName));
+            .stream()
+            .collect(Collectors.groupingBy(ModuleDescription::getName));
 
         assertTrue(disabledModuleNames.stream().noneMatch(k -> moduleNameEnabledMap.get(k).get(0).isEnabled()));
 
         List<String> enabledModuleNames = moduleNameEnabledMap.keySet()
-                .stream().filter(k -> disabledModuleNames.stream().noneMatch(k::equals))
-                .collect(Collectors.toList());
+            .stream().filter(k -> disabledModuleNames.stream().noneMatch(k::equals))
+            .toList();
 
         assertTrue(enabledModuleNames.stream().allMatch(k -> moduleNameEnabledMap.get(k).get(0).isEnabled()));
     }
@@ -142,42 +138,36 @@ class RskSystemPropertiesTest {
     void rskCliSnapNodes_ShouldSetSnapBootNodes() {
         RskCli rskCli = new RskCli();
         String[] snapNodesArgs = {
-                "--snap-nodes=enode://b2a304b30b3ff90aabcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc1e502@3.94.45.146:50501",
-                "--snap-nodes=enode://b2a304b30b3ff90bbbcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc10502@3.94.45.146:50501"
+            "--snap-nodes=enode://b2a304b30b3ff90aabcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc1e502@3.94.45.146:50501",
+            "--snap-nodes=enode://b2a304b30b3ff90bbbcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc10502@3.94.45.146:50501"
         };
         rskCli.load(snapNodesArgs);
 
-        RskSystemProperties rskSystemProperties = new RskSystemProperties(
-                new ConfigLoader(
-                        rskCli.getCliArgs()
-                )
-        );
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(new ConfigLoader(rskCli.getCliArgs()));
 
         Node expectedFirstSnapNode = new Node("enode://b2a304b30b3ff90aabcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc1e502@3.94.45.146:50501");
         Node expectedSecondSnapNode = new Node("enode://b2a304b30b3ff90bbbcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc10502@3.94.45.146:50501");
 
-        Assertions.assertEquals(2, rskSystemProperties.getSnapBootNodes().size());
-        Assertions.assertEquals(expectedFirstSnapNode.getHexId(), rskSystemProperties.getSnapBootNodes().get(0).getHexId());
-        Assertions.assertEquals(expectedSecondSnapNode.getHexId(), rskSystemProperties.getSnapBootNodes().get(1).getHexId());
-        Assertions.assertEquals(expectedFirstSnapNode.getId(), rskSystemProperties.getSnapBootNodes().get(0).getId());
-        Assertions.assertEquals(expectedSecondSnapNode.getId(), rskSystemProperties.getSnapBootNodes().get(1).getId());
+        assertEquals(2, rskSystemProperties.getSnapBootNodes().size());
+        assertEquals(expectedFirstSnapNode.getHexId(), rskSystemProperties.getSnapBootNodes().get(0).getHexId());
+        assertEquals(expectedSecondSnapNode.getHexId(), rskSystemProperties.getSnapBootNodes().get(1).getHexId());
+        assertEquals(expectedFirstSnapNode.getId(), rskSystemProperties.getSnapBootNodes().get(0).getId());
+        assertEquals(expectedSecondSnapNode.getId(), rskSystemProperties.getSnapBootNodes().get(1).getId());
     }
 
     @Test
     void rskCliSnapNodes_ShouldReturnZeroSnapBootNodesForInvalidNodeFormat() {
         RskCli rskCli = new RskCli();
         String[] snapNodesArgs = {
-                "--snap-nodes=http://www.google.es",
+            "--snap-nodes=http://www.google.es",
         };
 
         rskCli.load(snapNodesArgs);
 
-        Assertions.assertThrows(RuntimeException.class, () -> {
-            RskSystemProperties rskSystemProperties = new RskSystemProperties(
-                    new ConfigLoader(rskCli.getCliArgs())
-            );
+        assertThrows(RuntimeException.class, () -> {
+            RskSystemProperties rskSystemProperties = new RskSystemProperties(new ConfigLoader(rskCli.getCliArgs()));
 
-            Assertions.assertEquals(0, rskSystemProperties.getSnapBootNodes().size());
+            assertEquals(0, rskSystemProperties.getSnapBootNodes().size());
         });
     }
 
@@ -187,13 +177,9 @@ class RskSystemPropertiesTest {
         String[] snapNodesArgs = {"--sync-mode=snap"};
         rskCli.load(snapNodesArgs);
 
-        RskSystemProperties rskSystemProperties = new RskSystemProperties(
-                new ConfigLoader(
-                        rskCli.getCliArgs()
-                )
-        );
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(new ConfigLoader(rskCli.getCliArgs()));
 
-        Assertions.assertTrue(rskSystemProperties.isClientSnapshotSyncEnabled());
+        assertTrue(rskSystemProperties.isClientSnapshotSyncEnabled());
     }
 
     @Test
@@ -202,43 +188,41 @@ class RskSystemPropertiesTest {
         String[] snapNodesArgs = {"--sync-mode=full"};
         rskCli.load(snapNodesArgs);
 
-        RskSystemProperties rskSystemProperties = new RskSystemProperties(
-                new ConfigLoader(
-                        rskCli.getCliArgs()
-                )
-        );
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(new ConfigLoader(rskCli.getCliArgs()));
 
-        Assertions.assertFalse(rskSystemProperties.isClientSnapshotSyncEnabled());
+        assertFalse(rskSystemProperties.isClientSnapshotSyncEnabled());
     }
 
     @Test
     void testGetRpcModulesWithList() {
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
-                ConfigFactory.parseString("{" +
-                        "rpc.modules = [\n" +
-                        "  {\n" +
-                        "    name: \"eth\", \n" +
-                        "    version: \"1.0\",\n" +
-                        "    enabled: \"true\",\n" +
-                        "  },\n" +
-                        "  {\n" +
-                        "    name: \"web\", \n" +
-                        "    version: \"2.0\",\n" +
-                        "    enabled: false,\n" +
-                        "    timeout: 1000,\n" +
-                        "  }\n" +
-                        "  {\n" +
-                        "    name: \"net\", \n" +
-                        "    version: \"3.0\",\n" +
-                        "    enabled: true,\n" +
-                        "    methods: {\n" +
-                        "       enabled: [ \"evm_snapshot\", \"evm_revert\" ],\n" +
-                        "       disabled: [ \"evm_reset\"]\n" +
-                        "       timeout: { \"eth_getBlockByHash\" = 5000}\n" +
-                        "    }\n" +
-                        "  }\n" +
-                        "]\n" +
-                        " }").withFallback(rawConfig));
+            ConfigFactory.parseString("{" +
+                "rpc.modules = [\n" +
+                "  {\n" +
+                "    name: \"eth\", \n" +
+                "    version: \"1.0\",\n" +
+                "    enabled: \"true\",\n" +
+                "  },\n" +
+                "  {\n" +
+                "    name: \"web\", \n" +
+                "    version: \"2.0\",\n" +
+                "    enabled: false,\n" +
+                "    timeout: 1000,\n" +
+                "  }\n" +
+                "  {\n" +
+                "    name: \"net\", \n" +
+                "    version: \"3.0\",\n" +
+                "    enabled: true,\n" +
+                "    methods: {\n" +
+                "       enabled: [ \"evm_snapshot\", \"evm_revert\" ],\n" +
+                "       disabled: [ \"evm_reset\"]\n" +
+                "       timeout: { \"eth_getBlockByHash\" = 5000}\n" +
+                "    }\n" +
+                "  }\n" +
+                "]\n" +
+                " }"
+            ).withFallback(rawConfig)
+        );
         List<ModuleDescription> rpcModules = testSystemProperties.getRpcModules();
 
         Map<String, ModuleDescription> moduleDescriptionMap = rpcModules.stream()
@@ -260,41 +244,43 @@ class RskSystemPropertiesTest {
     @Test
     void testGetRpcModulesWithObject() {
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
-                ConfigFactory.parseString("{" +
-                        "rpc.modules = {\n" +
-                        "  eth {\n" +
-                        "    version: \"1.5\",\n" +
-                        "    enabled: \"true\",\n" +
-                        "  },\n" +
-                        "  web {\n" +
-                        "    version: \"2.0\",\n" +
-                        "    enabled: false,\n" +
-                        "  }\n" +
-                        "  net {\n" +
-                        "    version: \"3.0\",\n" +
-                        "    enabled: true,\n" +
-                        "    timeout: 9000,\n" +
-                        "    methods: {\n" +
-                        "       enabled: [ \"evm_snapshot\", \"evm_revert\" ],\n" +
-                        "       disabled: [ \"evm_reset\"]\n" +
-                        "       timeout: { \"eth_getBlockByHash\" = 30000}\n" +
-                        "    }\n" +
-                        "  }\n" +
-                        "}\n" +
-                        " }").withFallback(rawConfig));
+            ConfigFactory.parseString("{" +
+                    "rpc.modules = {\n" +
+                    "  eth {\n" +
+                    "    version: \"1.5\",\n" +
+                    "    enabled: \"true\",\n" +
+                    "  },\n" +
+                    "  web {\n" +
+                    "    version: \"2.0\",\n" +
+                    "    enabled: false,\n" +
+                    "  }\n" +
+                    "  net {\n" +
+                    "    version: \"3.0\",\n" +
+                    "    enabled: true,\n" +
+                    "    timeout: 9000,\n" +
+                    "    methods: {\n" +
+                    "       enabled: [ \"evm_snapshot\", \"evm_revert\" ],\n" +
+                    "       disabled: [ \"evm_reset\"]\n" +
+                    "       timeout: { \"eth_getBlockByHash\" = 30000}\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "}\n" +
+                    " }"
+            ).withFallback(rawConfig)
+        );
 
         List<ModuleDescription> rpcModules = testSystemProperties.getRpcModules();
 
         Map<String, ModuleDescription> moduleDescriptionMap = rpcModules.stream()
-                .collect(Collectors.toMap(ModuleDescription::getName, Function.identity()));
+            .collect(Collectors.toMap(ModuleDescription::getName, Function.identity()));
 
         assertTrue(moduleDescriptionMap.containsKey("eth"));
         ModuleDescription ethModule = moduleDescriptionMap.get("eth");
         assertEquals("1.5", ethModule.getVersion());
-        assertEquals(true, ethModule.isEnabled());
+        assertTrue(ethModule.isEnabled());
         ModuleDescription webModule = moduleDescriptionMap.get("web");
         assertEquals("2.0", webModule.getVersion());
-        assertEquals(false, webModule.isEnabled());
+        assertFalse(webModule.isEnabled());
         ModuleDescription netModule = moduleDescriptionMap.get("net");
         assertEquals(2, netModule.getEnabledMethods().size());
         assertEquals(1, netModule.getDisabledMethods().size());
@@ -311,9 +297,11 @@ class RskSystemPropertiesTest {
     void testGasPriceMultiplierWithNull() {
         // Set miner.gasPriceMultiplier to null which yields the same result as not finding the path
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
-                ConfigFactory.parseString("{" +
-                        "rpc.gasPriceMultiplier = null" +
-                        " }").withFallback(rawConfig));
+            ConfigFactory.parseString("{" +
+                "rpc.gasPriceMultiplier = null" +
+                " }"
+            ).withFallback(rawConfig)
+        );
 
         assertEquals(1.1, testSystemProperties.gasPriceMultiplier());
     }
@@ -321,40 +309,44 @@ class RskSystemPropertiesTest {
     @Test
     void testGasPriceMultiplierThrowsErrorForInvalidType() {
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
-                ConfigFactory.parseString("{" +
-                        "rpc.gasPriceMultiplier = invalid" +
-                        " }").withFallback(rawConfig));
+            ConfigFactory.parseString("{" +
+                "rpc.gasPriceMultiplier = invalid" +
+                " }"
+            ).withFallback(rawConfig)
+        );
 
-        Assertions.assertThrows(ConfigException.WrongType.class, testSystemProperties::gasPriceMultiplier);
+        assertThrows(ConfigException.WrongType.class, testSystemProperties::gasPriceMultiplier);
     }
 
     @Test
     void testGasPriceMultiplierThrowsErrorForNegativeValue() {
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
-                ConfigFactory.parseString("{" +
-                        "rpc.gasPriceMultiplier = -1" +
-                        " }").withFallback(rawConfig));
+            ConfigFactory.parseString("{" +
+                "rpc.gasPriceMultiplier = -1" +
+                " }"
+            ).withFallback(rawConfig)
+        );
 
-        Assertions.assertThrows(RskConfigurationException.class, testSystemProperties::gasPriceMultiplier);
+        assertThrows(RskConfigurationException.class, testSystemProperties::gasPriceMultiplier);
     }
 
     @Test
     void checkPeerLastSessionProperty(){
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
-                ConfigFactory.parseString("{" +
-                        "peer {\n" +
-                        "  discovery{ usePeersFromLastSession = true\n}" +
-                                "}" +
-                        " }").withFallback(rawConfig));
+            ConfigFactory.parseString("{" +
+                "peer {\n" +
+                "  discovery{ usePeersFromLastSession = true\n}" +
+                        "}" +
+                " }").withFallback(rawConfig));
 
         assertTrue(testSystemProperties.usePeersFromLastSession());
 
         testSystemProperties = new TestSystemProperties(rawConfig ->
-                ConfigFactory.parseString("{" +
-                        "peer {\n" +
-                        "  discovery{ usePeersFromLastSession = false\n}" +
-                        "}" +
-                        " }").withFallback(rawConfig));
+            ConfigFactory.parseString("{" +
+                "peer {\n" +
+                "  discovery{ usePeersFromLastSession = false\n}" +
+                "}" +
+                " }").withFallback(rawConfig));
         assertFalse(testSystemProperties.usePeersFromLastSession());
 
         testSystemProperties = new TestSystemProperties();
@@ -365,11 +357,11 @@ class RskSystemPropertiesTest {
     @Test
     void checkLastSessionPeersFilePathProperty(){
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
-                ConfigFactory.parseString("{" +
-                        "database {\n" +
-                        "  dir = \"/dbdir\"\n" +
-                        "}" +
-                        " }").withFallback(rawConfig));
+            ConfigFactory.parseString("{" +
+                "database {\n" +
+                "  dir = \"/dbdir\"\n" +
+                "}" +
+                " }").withFallback(rawConfig));
 
         assertEquals("/dbdir/lastPeers.properties", testSystemProperties.getLastKnewPeersFilePath().toString());
     }
@@ -380,43 +372,31 @@ class RskSystemPropertiesTest {
         String[] snapNodesArgs = {"--mainnet"};
         rskCli.load(snapNodesArgs);
 
-        RskSystemProperties rskSystemProperties = new RskSystemProperties(
-                new ConfigLoader(
-                        rskCli.getCliArgs()
-                )
-        );
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(new ConfigLoader(rskCli.getCliArgs()));
 
-        Assertions.assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), MainNetParams.get());
+        assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), MainNetParams.get());
     }
 
     @Test
-    void whenNetNameIsTestnet_shouldUseBitcoinjTestnetNetworkParams() {
+    void whenNetNameIsTestnet_shouldUseBitcoinjTestnet3NetworkParams() {
         RskCli rskCli = new RskCli();
         String[] snapNodesArgs = {"--testnet"};
         rskCli.load(snapNodesArgs);
 
-        RskSystemProperties rskSystemProperties = new RskSystemProperties(
-                new ConfigLoader(
-                        rskCli.getCliArgs()
-                )
-        );
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(new ConfigLoader(rskCli.getCliArgs()));
 
-        Assertions.assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), TestNet2Params.get());
+        assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), TestNet3Params.get());
     }
 
     @Test
-    void whenNetNameIsTestnet2_shouldUseBitcoinjTestnet2NetworkParams() {
+    void whenNetNameIsTestnet2_shouldUseBitcoinjTestnet4NetworkParams() {
         RskCli rskCli = new RskCli();
         String[] snapNodesArgs = {"--testnet2"};
         rskCli.load(snapNodesArgs);
 
-        RskSystemProperties rskSystemProperties = new RskSystemProperties(
-                new ConfigLoader(
-                        rskCli.getCliArgs()
-                )
-        );
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(new ConfigLoader(rskCli.getCliArgs()));
 
-        Assertions.assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), TestNet2Params.get());
+        assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), TestNet4Params.get());
     }
 
     @Test
@@ -425,12 +405,8 @@ class RskSystemPropertiesTest {
         String[] snapNodesArgs = {"--regtest"};
         rskCli.load(snapNodesArgs);
 
-        RskSystemProperties rskSystemProperties = new RskSystemProperties(
-                new ConfigLoader(
-                        rskCli.getCliArgs()
-                )
-        );
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(new ConfigLoader(rskCli.getCliArgs()));
 
-        Assertions.assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), RegTestParams.get());
+        assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), RegTestParams.get());
     }
 }

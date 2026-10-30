@@ -2,6 +2,7 @@ package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.Account;
@@ -12,6 +13,8 @@ import org.ethereum.core.BlockHeaderExtension;
 import org.ethereum.core.BlockHeaderExtensionV1;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.RLP;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -85,6 +88,20 @@ class BodyResponseMessageTest {
         Assertions.assertArrayEquals(extension.getEncoded(), message.getBlockHeaderExtension().getEncoded());
         message = encodeAndDecodeMessage(message);
         Assertions.assertArrayEquals(extension.getEncoded(), message.getBlockHeaderExtension().getEncoded());
+    }
+
+    @Test
+    void decodeMessage_remascWithGasLimitEncodedEmpty_isRejected() {
+        byte[] canonical = new RemascTransaction(1).getEncoded();
+        byte[] emptyGasLimit = RLP.encodeList(RLP.encodeElement(null), RLP.encodeElement(null), RLP.encodeElement(null),
+                RLP.encodeElement(PrecompiledContracts.REMASC_ADDR.getBytes()), RLP.encodeElement(null),
+                RLP.encodeElement(null), RLP.encodeElement(null), RLP.encodeElement(null), RLP.encodeElement(null));
+
+        BodyResponseMessage valid = new BodyResponseMessage(1, List.of(new RemascTransaction(canonical)), List.of(), null);
+        BodyResponseMessage invalid = new BodyResponseMessage(2, List.of(new RemascTransaction(emptyGasLimit)), List.of(), null);
+
+        Assertions.assertInstanceOf(RemascTransaction.class, encodeAndDecodeMessage(valid).getTransactions().get(0));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> encodeAndDecodeMessage(invalid));
     }
 
     private static Transaction createTransaction(int number) {
