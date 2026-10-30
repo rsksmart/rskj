@@ -60,7 +60,6 @@ public class TransactionBuilder {
     private Byte chainId = null;
     private boolean immutable;
     private Byte transactionType = null;
-    private Byte rskSubtype = null;
     private BigInteger maxFeePerGas = null;
     private BigInteger maxPriorityFeePerGas = null;
     private final List<SetCodeAuthorization> authorizations = new ArrayList<>();
@@ -126,8 +125,7 @@ public class TransactionBuilder {
     }
 
     public TransactionBuilder rskSubtype(byte rskSubtype) {
-        this.rskSubtype = rskSubtype;
-        return this;
+        throw new IllegalArgumentException(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
     }
 
     public TransactionBuilder maxFeePerGas(BigInteger maxFeePerGas) {
@@ -184,9 +182,7 @@ public class TransactionBuilder {
                                                 byte chainId, byte[] data, BigInteger value, byte[] privKeyBytes,
                                                 boolean immutable) {
         Transaction tx;
-        if (this.rskSubtype != null) {
-            tx = buildViaLegacyBuilder(to, nonce, gasLimit, gasPrice, chainId, data, value, true);
-        } else if (this.transactionType != null) {
+        if (this.transactionType != null) {
             TransactionType txType = TransactionType.fromByte(this.transactionType);
             if (txType == null || txType.isLegacy()) {
                 throw new IllegalArgumentException(String.format(
@@ -201,7 +197,7 @@ public class TransactionBuilder {
                         "transaction type not supported: 0x" + Integer.toHexString(this.transactionType & 0xFF));
             };
         } else {
-            tx = buildViaLegacyBuilder(to, nonce, gasLimit, gasPrice, chainId, data, value, false);
+            tx = buildViaLegacyBuilder(to, nonce, gasLimit, gasPrice, chainId, data, value);
         }
 
         tx.sign(privKeyBytes);
@@ -214,7 +210,7 @@ public class TransactionBuilder {
     }
 
     private Transaction buildViaLegacyBuilder(RskAddress to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice,
-                                               byte chainId, byte[] data, BigInteger value, boolean rskNamespace) {
+                                               byte chainId, byte[] data, BigInteger value) {
         org.ethereum.core.TransactionBuilder txBuilder = org.ethereum.core.Transaction.builder()
                 .receiveAddress(to)
                 .nonce(nonce)
@@ -229,9 +225,6 @@ public class TransactionBuilder {
         }
         if (this.maxPriorityFeePerGas != null) {
             txBuilder.maxPriorityFeePerGas(new Coin(this.maxPriorityFeePerGas));
-        }
-        if (rskNamespace) {
-            txBuilder.type(TransactionType.TYPE_2, this.rskSubtype);
         }
         return txBuilder.build();
     }

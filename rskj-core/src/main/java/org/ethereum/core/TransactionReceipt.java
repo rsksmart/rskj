@@ -69,6 +69,9 @@ public class TransactionReceipt {
         }
 
         TransactionTypePrefix prefix = TransactionTypePrefix.fromRawData(rlp);
+        if (prefix.isRskNamespace()) {
+            throw new IllegalArgumentException(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
+        }
         this.typePrefix = prefix;
         BytesSlice receiptData = TransactionTypePrefix.stripPrefix(rlp, prefix);
 
@@ -91,7 +94,6 @@ public class TransactionReceipt {
     /**
      * RSKIP-546 / RSKIP-545: standard Type 1, standard Type 2, and Type 4 receipts use
      * {@code rlp([status, cumulativeGasUsed, logsBloom, logs])} after the single-byte type prefix.
-     * RSK-namespace Type 2 and Type 3 use the legacy six-field body.
      */
     public static boolean usesFourFieldReceiptBody(TransactionTypePrefix prefix) {
         if (prefix instanceof StandardTypedPrefix st) {
@@ -212,7 +214,7 @@ public class TransactionReceipt {
         byte[] statusRLP = RLP.encodeElement(this.status);
 
         byte[] receiptData;
-        if (usesFourFieldReceiptEncodingForTransaction()) {
+        if (usesFourFieldReceiptEncoding()) {
             receiptData = RLP.encodeList(statusRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP);
         } else {
             byte[] postTxStateRLP = RLP.encodeElement(this.postTxState);
@@ -227,24 +229,20 @@ public class TransactionReceipt {
         return rlpEncoded;
     }
 
-    private boolean usesFourFieldReceiptEncodingForTransaction() {
-        if (transaction == null) {
-            return false;
-        }
-        return usesFourFieldReceiptBody(transaction.getTypePrefix());
+    private boolean usesFourFieldReceiptEncoding() {
+        return usesFourFieldReceiptBody(typePrefix);
     }
 
     private byte[] getReceiptTypePrefix() {
-        if (transaction != null) {
-            return transaction.getTypePrefix().toBytes();
-        }
         return typePrefix.toBytes();
     }
 
     public void setStatus(byte[] status) {
         if (Arrays.equals(status, FAILED_STATUS)){
+            this.rlpEncoded = null;
             this.status = FAILED_STATUS;
         } else if (Arrays.equals(status, SUCCESS_STATUS)){
+            this.rlpEncoded = null;
             this.status = SUCCESS_STATUS;
         }
     }

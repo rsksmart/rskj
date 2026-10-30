@@ -773,7 +773,6 @@ class Rskip546HardforkTest {
     @Test
     void networkSafety_rskip543ActiveButRskip546Inactive_blocksStandardType2() {
         // A node that activated RSKIP-543 but NOT RSKIP-546 must block standard Type 2 txs.
-        // Type 1 in the RSK namespace would be allowed, but standard EIP-1559 Type 2 is not.
         TestSystemProperties rskip543Only = new TestSystemProperties(rawConfig ->
                 rawConfig
                         .withValue("blockchain.config.consensusRules.rskip543",

@@ -36,13 +36,19 @@ import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.signature.Secp256k1;
+import org.ethereum.crypto.signature.Secp256k1Service;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.datasource.HashMapDB;
+import org.mockito.MockedStatic;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
@@ -53,6 +59,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.security.SignatureException;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -62,10 +69,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -78,6 +89,8 @@ import static org.mockito.Mockito.when;
 class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionExecutorHelperTest {
 
     private static final byte[] ARBITRARY_CONTRACT_CODE = Hex.decode("60006000f3");
+    /** Maps onto compressed-key header 31, which recovers successfully to the wrong authority. */
+    private static final int COMPRESSED_KEY_Y_PARITY = 4;
     private static final byte[] DELEGATED_PREFIX_ONLY = new byte[] {(byte) 0xef, 0x01, 0x00};
     private static final byte[] DELEGATED_WRONG_LENGTH = new byte[] {(byte) 0xef, 0x01, 0x00, 0x01};
     /** Stores 0x42 at slot 0, then stores ADDRESS at slot 1. */
@@ -88,6 +101,127 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
     // -------------------------------------------------------------------------
     // Invalid authorization handling
     // -------------------------------------------------------------------------
+
+    @Test
+    void tupleWithNonceAtMaxUint64MinusOne_isSkippedWhileSiblingTupleApplies() {
+        BigInteger maxUint64MinusOne = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
+
+        assertOnlyOffendingTupleIsSkipped(
+                createValidAuthorizationTuple(
+                        delegatedAddress, maxUint64MinusOne, constants.getChainId(), authorityKey));
+    }
+
+    @Test
+    void tupleWithOutOfRangeYParity_isSkippedWhileSiblingTupleApplies() {
+        SetCodeAuthorization signed = createValidAuthorizationTuple(
+                delegatedAddress, ZERO_NONCE, constants.getChainId(), authorityKey);
+
+        assertOnlyOffendingTupleIsSkipped(withSignature(signed, ECDSASignature.fromComponents(
+                BigIntegers.asUnsignedByteArray(signed.getSignature().getR()),
+                BigIntegers.asUnsignedByteArray(signed.getSignature().getS()),
+                (byte) (Transaction.LOWER_REAL_V + COMPRESSED_KEY_Y_PARITY))));
+    }
+
+    @Test
+    void tupleWithZeroSignatureR_isSkippedWhileSiblingTupleApplies() {
+        SetCodeAuthorization signed = createValidAuthorizationTuple(
+                delegatedAddress, ZERO_NONCE, constants.getChainId(), authorityKey);
+
+        assertOnlyOffendingTupleIsSkipped(withSignature(signed, ECDSASignature.fromComponents(
+                BigIntegers.asUnsignedByteArray(BigInteger.ZERO),
+                BigIntegers.asUnsignedByteArray(signed.getSignature().getS()),
+                signed.getSignature().getV())));
+    }
+
+    @Test
+    void tupleRecoveringZeroAuthority_isSkippedWhileSiblingTupleApplies() throws SignatureException {
+        SetCodeAuthorization offendingTuple = createValidAuthorizationTuple(
+                createRandomAddress(), ZERO_NONCE, constants.getChainId(), authorityKey);
+        SkippedTupleScenario scenario = prepareSkippedTupleScenario(offendingTuple);
+
+        ECKey zeroAddressKey = mock(ECKey.class);
+        when(zeroAddressKey.getAddress()).thenReturn(new byte[RskAddress.LENGTH_IN_BYTES]);
+
+        Secp256k1Service realService = Secp256k1.getInstance();
+        Secp256k1Service stubbedService = mock(Secp256k1Service.class, delegatesTo(realService));
+        doReturn(zeroAddressKey).when(stubbedService)
+                .signatureToKey(aryEq(offendingTuple.getSigningHash()), any());
+
+        try (MockedStatic<Secp256k1> secp256k1 = mockStatic(Secp256k1.class)) {
+            secp256k1.when(Secp256k1::getInstance).thenReturn(stubbedService);
+
+            assertTrue(newExecutorWithRealSignatureCache(scenario.tx(), scenario.repository())
+                    .executeTransaction());
+        }
+
+        assertSiblingTupleApplied(scenario);
+        assertAuthorityStateUnchanged(
+                scenario.repository(), RskAddress.ZERO_ADDRESS, EMPTY_CODE, ZERO_NONCE);
+    }
+
+    private void assertOnlyOffendingTupleIsSkipped(SetCodeAuthorization offendingTuple) {
+        SkippedTupleScenario scenario = prepareSkippedTupleScenario(offendingTuple);
+
+        assertTrue(newExecutorWithRealSignatureCache(scenario.tx(), scenario.repository())
+                .executeTransaction());
+
+        assertSiblingTupleApplied(scenario);
+    }
+
+    private SkippedTupleScenario prepareSkippedTupleScenario(SetCodeAuthorization offendingTuple) {
+        MutableRepository repository = createRepository();
+        ECKey siblingAuthorityKey = new ECKey();
+        RskAddress siblingAuthority = new RskAddress(siblingAuthorityKey.getAddress());
+
+        prepareAuthority(repository, authorityAddress, ZERO_NONCE, EMPTY_CODE);
+        prepareAuthority(repository, siblingAuthority, ZERO_NONCE, EMPTY_CODE);
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        prepareReceiver(repository);
+
+        SetCodeAuthorization siblingTuple = createValidAuthorizationTuple(
+                delegatedAddress, ZERO_NONCE, constants.getChainId(), siblingAuthorityKey);
+
+        Transaction built = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ZERO_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                2,
+                EMPTY_DATA,
+                offendingTuple,
+                siblingTuple
+        );
+        Transaction tx = Transaction.fromRaw(built.getEncoded());
+        assertArrayEquals(built.getEncoded(), tx.getEncoded(),
+                "Offending tuple must survive a raw encoding round trip unchanged");
+        assertEquals(built.getHash(), tx.getHash());
+        mockSuccessfulProgramInvokeForAnyRepository(tx);
+
+        return new SkippedTupleScenario(repository, tx, siblingAuthority);
+    }
+
+    private void assertSiblingTupleApplied(SkippedTupleScenario scenario) {
+        MutableRepository repository = scenario.repository();
+
+        assertAuthorityStateUnchanged(repository, authorityAddress, EMPTY_CODE, ZERO_NONCE);
+        assertAuthorityDelegatedTo(repository, scenario.siblingAuthority(), delegatedAddress);
+        assertEquals(ONE_NONCE, repository.getNonce(scenario.siblingAuthority()));
+        assertValueTransferredToReceiver(repository, receiver, 2);
+    }
+
+    private record SkippedTupleScenario(
+            MutableRepository repository,
+            Transaction tx,
+            RskAddress siblingAuthority
+    ) {}
+
+    private SetCodeAuthorization withSignature(SetCodeAuthorization base, ECDSASignature signature) {
+        return new SetCodeAuthorization(
+                base.getChainId(), base.getAddress(), base.getNonceBytes(), signature);
+    }
 
     @Test
     void wrongSignature_doesNotMutateAuthorityCodeOrNonce() {
@@ -264,7 +398,7 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
         mockSuccessfulProgramInvokeForAnyRepository(tx);
 
         TransactionExecutor executor = newExecutorWithRealSignatureCache(tx, repository);
-        assertTrue(executor.executeTransaction(), () -> "Type 4 tx with delegated sender must execute");
+        assertTrue(executor.executeTransaction(), "Type 4 tx with delegated sender must execute");
         assertEquals(ONE_NONCE, repository.getNonce(sender));
         assertArrayEquals(senderDelegation, normalizeCode(repository.getCode(sender)));
         assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
@@ -483,6 +617,60 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
         assertEquals(ONE_NONCE, repository.getNonce(authorityAddress));
         assertEquals(ONE_NONCE, repository.getNonce(sender),
                 "Outer transaction must still execute despite invalid authorization");
+    }
+
+    /**
+     * High-{@code s} must be skipped per tuple without sinking the transaction, so a following
+     * valid authorization still applies. Pins that low-{@code s} is enforced at execution, not
+     * decode time — otherwise this payload could not be constructed as a type-4 transaction.
+     */
+    @Test
+    void highSAuthorizationIsSkippedAndFollowingValidAuthorizationIsApplied() {
+        MutableRepository repository = createRepository();
+
+        prepareAuthority(repository, authorityAddress, ZERO_NONCE, EMPTY_CODE);
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        prepareReceiver(repository);
+        mockExecutionBlockForRealVm();
+
+        RskAddress highSDelegate = createRandomAddress();
+        SetCodeAuthorization highSAuthorization = Rskip545TestSupport.createHighSAuthorization(
+                authorityKey,
+                highSDelegate,
+                ZERO_NONCE,
+                constants.getChainId()
+        );
+        SetCodeAuthorization validAuthorization = createValidAuthorizationTuple(
+                delegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ZERO_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                0,
+                EMPTY_BYTE_ARRAY,
+                highSAuthorization,
+                validAuthorization
+        );
+
+        assertEquals(GasCost.TRANSACTION + 2 * GasCost.PER_EMPTY_ACCOUNT_COST, intrinsicGasCost(tx));
+
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction(),
+                "Outer transaction must still execute when a high-s authorization is skipped");
+        assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
+        assertEquals(ONE_NONCE, repository.getNonce(authorityAddress),
+                "Only the valid second tuple may bump the authority nonce");
+        assertEquals(ONE_NONCE, repository.getNonce(sender));
     }
 
     // -------------------------------------------------------------------------

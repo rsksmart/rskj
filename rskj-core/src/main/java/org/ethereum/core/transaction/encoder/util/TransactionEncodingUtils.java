@@ -17,6 +17,8 @@
  */
 package org.ethereum.core.transaction.encoder.util;
 
+import co.rsk.core.Coin;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.util.RLP;
 
 public final class TransactionEncodingUtils {
@@ -31,6 +33,14 @@ public final class TransactionEncodingUtils {
             return RLP.encodeElement(null);
         }
         return RLP.encodeElement(nonce);
+    }
+
+    /** Typed fee scalar: zero is the empty string, not {@code 0x00}. Legacy keeps {@code encodeCoinNonNullZero}. */
+    public static byte[] encodeFeeScalar(Coin coin) {
+        if (coin == null || coin.asBigInteger().signum() == 0) {
+            return RLP.encodeElement(null);
+        }
+        return RLP.encodeElement(BigIntegers.asUnsignedByteArray(coin.asBigInteger()));
     }
 
     /** RLP access list bytes for typed txs, or empty list {@link #EMPTY_ACCESS_LIST_RLP} when absent. */

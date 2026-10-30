@@ -57,7 +57,7 @@ public class RepositoryBuilder {
             track.updateAccountState(addr, state);
             byte[] code = parseData(accountTCK.getCode());
             if (accountTCK.isForcedContract() || code.length > 0 || !accountTCK.getStorage().isEmpty()) {
-                track.setupContract(addr);
+                track.initializeStorage(addr);
                 track.saveCode(addr, code);
                 saveStorageValues(track, addr, accountTCK.getStorage());
             }

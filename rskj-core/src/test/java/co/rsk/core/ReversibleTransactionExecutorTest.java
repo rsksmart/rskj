@@ -19,23 +19,79 @@
 
 package co.rsk.core;
 
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.exception.TransactionExecutionRejectedException;
+import co.rsk.db.RepositorySnapshot;
+import co.rsk.test.builders.BlockBuilder;
+import co.rsk.test.builders.AccountBuilder;
 import co.rsk.util.TestContract;
+import com.typesafe.config.ConfigValueFactory;
+import com.google.common.primitives.Bytes;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Rskip545TestSupport;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.transaction.SetCodeAuthorization;
+import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.parser.util.AccessListCodec;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.ContractRunner;
 import org.ethereum.util.RskTestFactory;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class ReversibleTransactionExecutorTest {
+
+    /**
+     * A plain peg-out costs the 21,000 intrinsic gas plus the Bridge's fixed 23,000 for releaseBtc
+     * (BridgeMethods.RELEASE_BTC, fixedCost(23000L)). That is what the real signed transaction uses.
+     */
+    private static final long PEGOUT_GAS = 44_000L;
+
+    /**
+     * A type-4 peg-out also pays EIP-7702's PER_EMPTY_ACCOUNT_COST of 25,000 for its one authorization,
+     * which delegates an unrelated, empty account and so earns no refund.
+     */
+    private static final long TYPE_4_PEGOUT_GAS = 69_000L;
+
+    /**
+     * Regtest P2PKH address of the compressed secp256k1 generator point, whose hash160
+     * 751e76e8199196d454941c45d1b3a323f1433bd6 is the BIP173 test vector's witness program.
+     */
+    private static final String GENERATOR_POINT_REGTEST_ADDRESS = "mrCDrCybB6J1vRfbwM5hemdJz73FwDBC8r";
 
     @TempDir
     public Path tempDir;
@@ -43,7 +99,7 @@ class ReversibleTransactionExecutorTest {
     private RskTestFactory factory;
     private ContractRunner contractRunner;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
-
+    private byte[] gasPrice = {0x07};
     @BeforeEach
     void setup() {
         factory = new RskTestFactory(tempDir);
@@ -64,21 +120,154 @@ class ReversibleTransactionExecutorTest {
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
 
-        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(
                 bestBlock,
                 bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                helloFn.encode(),
-                from
+                new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                        gasPrice, gasLimit, contractAddress.getBytes(), value, helloFn.encode(), from,
+                        null, (byte) 0, TransactionType.LEGACY, null, null, null
+                )
         );
 
-        Assertions.assertNull(result.getException());
-        Assertions.assertArrayEquals(
+        assertNull(result.getException());
+        assertArrayEquals(
                 new String[]{"chinchilla"},
                 helloFn.decodeResult(result.getHReturn()));
+    }
+
+    @Test
+    void executeTransaction_gasLimitAboveLongMax_runsTheCall() {
+        TestContract hello = TestContract.hello();
+        CallTransaction.Function helloFn = hello.functions.get("hello");
+        RskAddress contractAddress = contractRunner.addContract(hello.runtimeBytecode);
+
+        RskAddress from = TestUtils.generateAddress("from");
+        byte[] gasLimit = Hex.decode("ffffffffffffffff");
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                Hex.decode("00"), gasLimit, contractAddress.getBytes(), Hex.decode("00"), helloFn.encode(), from,
+                null, (byte) 0, TransactionType.LEGACY, null, null, null
+        );
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(bestBlock, bestBlock.getCoinbase(), params);
+
+        assertArrayEquals(new String[]{"chinchilla"}, helloFn.decodeResult(result.getHReturn()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("localCallsBelowIntrinsicGas")
+    void executeTransaction_gasBelowIntrinsicCost_isRejectedWithMessage(byte[] to, byte[] data, long intrinsic) {
+        RskAddress from = TestUtils.generateAddress("from");
+        byte[] gasLimit = BigInteger.valueOf(20000).toByteArray();
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+        RskAddress coinbase = bestBlock.getCoinbase();
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                gasPrice, gasLimit, to, new byte[]{0}, data, from,
+                null, (byte) 0, TransactionType.LEGACY, null, null, null
+        );
+
+        TransactionExecutionRejectedException ex = Assertions.assertThrows(TransactionExecutionRejectedException.class,
+                () -> reversibleTransactionExecutor.executeTransactionAtBlock(bestBlock, coinbase, params));
+        assertEquals("Not enough gas for transaction execution: tx needs: " + intrinsic + " tx sent: 20000", ex.getMessage());
+    }
+
+    private static Stream<Arguments> localCallsBelowIntrinsicGas() {
+        byte[] eoa = TestUtils.generateAddress("eoa").getBytes();
+        byte[] remasc = Hex.decode(PrecompiledContracts.REMASC_ADDR_STR);
+        return Stream.of(
+                Arguments.of(eoa, new byte[0], 21000L),      // plain call: used to throw InvalidGasException (-32603)
+                Arguments.of(remasc, new byte[0], 21000L),   // precompile call: same
+                Arguments.of(null, new byte[0], 53000L),     // empty create: same
+                Arguments.of(null, new byte[]{0}, 53006L)    // create with 1-byte initcode: used to silently succeed
+        );
+    }
+
+    @ParameterizedTest(name = "{0}, {3}, value {2}")
+    @MethodSource("pegoutScenarios")
+    void estimateGas_pegoutToBridge_usesThePegoutGas(String scenario, boolean rskip545Active, String valueInWeiHex, TransactionType type) {
+        RskTestFactory pegoutFactory = new RskTestFactory(tempDir.resolve("pegout"), pegoutConfig(rskip545Active));
+        Account sender = fundedPegoutSender(pegoutFactory);
+        Block bestBlock = pegoutFactory.getBlockchain().getBestBlock();
+        assertEquals(rskip545Active, pegoutFactory.getRskSystemProperties().getActivationConfig()
+                .isActive(ConsensusRule.RSKIP545, bestBlock.getNumber()));
+        RepositorySnapshot snapshot = pegoutFactory.getRepositoryLocator().snapshotAt(bestBlock.getHeader());
+
+        TransactionExecutor executor = pegoutFactory.getReversibleTransactionExecutor().estimateGas(
+                bestBlock, bestBlock.getCoinbase(), snapshot, pegoutParams(sender, valueInWeiHex, type));
+
+        assertNull(executor.getResult().getException());
+        assertEquals(type == TransactionType.TYPE_4 ? TYPE_4_PEGOUT_GAS : PEGOUT_GAS, executor.getResult().getGasUsed());
+        byte[] placeholderAddress = GENERATOR_POINT_REGTEST_ADDRESS.getBytes(StandardCharsets.US_ASCII);
+        assertTrue(executor.getResult().getLogInfoList().stream()
+                .anyMatch(log -> Bytes.indexOf(log.getData(), placeholderAddress) >= 0));
+    }
+
+    @ParameterizedTest(name = "{0}, {3}, value {2}")
+    @MethodSource("pegoutScenarios")
+    void executeTransactionAtBlock_pegoutToBridge_succeedsWithEmptyReturn(String scenario, boolean rskip545Active, String valueInWeiHex, TransactionType type) {
+        RskTestFactory pegoutFactory = new RskTestFactory(tempDir.resolve("pegout"), pegoutConfig(rskip545Active));
+        Account sender = fundedPegoutSender(pegoutFactory);
+        Block bestBlock = pegoutFactory.getBlockchain().getBestBlock();
+        assertEquals(rskip545Active, pegoutFactory.getRskSystemProperties().getActivationConfig()
+                .isActive(ConsensusRule.RSKIP545, bestBlock.getNumber()));
+
+        ProgramResult result = pegoutFactory.getReversibleTransactionExecutor().executeTransactionAtBlock(
+                bestBlock, bestBlock.getCoinbase(), pegoutParams(sender, valueInWeiHex, type));
+
+        assertNull(result.getException());
+        assertArrayEquals(new byte[0], result.getHReturn());
+    }
+
+    private static Stream<Arguments> pegoutScenarios() {
+        String pointZeroOneRbtcInWeiHex = "2386f26fc10000";
+        String oneRbtcInWeiHex = "0de0b6b3a7640000";
+        return Stream.of(
+                Arguments.of("RSKIP-545 active", true, pointZeroOneRbtcInWeiHex, TransactionType.LEGACY),
+                Arguments.of("RSKIP-545 active", true, oneRbtcInWeiHex, TransactionType.LEGACY),
+                Arguments.of("RSKIP-545 active", true, pointZeroOneRbtcInWeiHex, TransactionType.TYPE_4),
+                Arguments.of("RSKIP-545 active", true, oneRbtcInWeiHex, TransactionType.TYPE_4),
+                Arguments.of("RSKIP-545 disabled", false, pointZeroOneRbtcInWeiHex, TransactionType.LEGACY),
+                Arguments.of("RSKIP-545 disabled", false, oneRbtcInWeiHex, TransactionType.LEGACY)
+        );
+    }
+
+    private static TestSystemProperties pegoutConfig(boolean rskip545Active) {
+        if (rskip545Active) {
+            return new TestSystemProperties();
+        }
+        return new TestSystemProperties(rawConfig -> rawConfig
+                .withValue("blockchain.config.consensusRules.rskip545", ConfigValueFactory.fromAnyRef(-1)));
+    }
+
+    private static Account fundedPegoutSender(RskTestFactory pegoutFactory) {
+        // Genesis' gas limit is too low for the peg-out
+        Block block = new BlockBuilder(pegoutFactory.getBlockchain(), null, pegoutFactory.getBlockStore())
+                .trieStore(pegoutFactory.getTrieStore())
+                .parent(pegoutFactory.getBlockchain().getBestBlock())
+                .gasLimit(BigInteger.valueOf(10_000_000))
+                .build();
+        pegoutFactory.getBlockchain().setStatus(block, block.getCumulativeDifficulty());
+        return new AccountBuilder(pegoutFactory.getBlockchain(), pegoutFactory.getBlockStore(), pegoutFactory.getRepositoryLocator())
+                .name("pegoutSender")
+                .balance(new Coin(new BigInteger("10000000000000000000")))
+                .build();
+    }
+
+    private ReversibleTransactionExecutor.ReversibleTransactionParams pegoutParams(Account sender, String valueInWeiHex, TransactionType type) {
+        // A type-4 transaction needs at least one authorization. This one is signed by a fresh key, so it never delegates the sender.
+        List<SetCodeAuthorization> authorizationList = type == TransactionType.TYPE_4
+                ? List.of(Rskip545TestSupport.minimalAuthorization(Rskip545TestSupport.REGTEST_CHAIN_ID))
+                : null;
+        byte chainId = type == TransactionType.TYPE_4 ? Rskip545TestSupport.REGTEST_CHAIN_ID : 0;
+        return new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                gasPrice,
+                BigInteger.valueOf(100_000).toByteArray(),
+                PrecompiledContracts.BRIDGE_ADDR.getBytes(),
+                Hex.decode(valueInWeiHex),
+                new byte[0],
+                sender.getAddress(),
+                authorizationList, chainId, type, null, null, null
+        );
     }
 
     @Test
@@ -93,8 +282,8 @@ class ReversibleTransactionExecutorTest {
                 true
         );
 
-        Assertions.assertNull(result.getException());
-        Assertions.assertArrayEquals(
+        assertNull(result.getException());
+        assertArrayEquals(
                 new String[]{"greet me"},
                 greeterFn.decodeResult(result.getHReturn()));
     }
@@ -112,15 +301,13 @@ class ReversibleTransactionExecutorTest {
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
 
-        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(
                 bestBlock,
                 bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                greeterFn.encode("greet me"),
-                from
+                new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                        gasPrice, gasLimit, contractAddress.getBytes(), value, greeterFn.encode("greet me"), from,
+                        null, (byte) 0, TransactionType.LEGACY, null, null, null
+                )
         );
 
         Assertions.assertTrue(result.isRevert());
@@ -139,36 +326,337 @@ class ReversibleTransactionExecutorTest {
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
 
-        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(
                 bestBlock,
                 bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                callsFn.encodeSignature(),
-                from
+                new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                        gasPrice, gasLimit, contractAddress.getBytes(), value, callsFn.encodeSignature(), from,
+                        null, (byte) 0, TransactionType.LEGACY, null, null, null
+                )
         );
 
-        Assertions.assertNull(result.getException());
-        Assertions.assertArrayEquals(
+        assertNull(result.getException());
+        assertArrayEquals(
                 new String[]{"calls: 1"},
                 callsFn.decodeResult(result.getHReturn()));
 
-        ProgramResult result2 = reversibleTransactionExecutor.executeTransaction(
+        ProgramResult result2 = reversibleTransactionExecutor.executeTransactionAtBlock(
                 bestBlock,
                 bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                callsFn.encodeSignature(),
-                from
+                new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                        gasPrice, gasLimit, contractAddress.getBytes(), value, callsFn.encodeSignature(), from,
+                        null, (byte) 0, TransactionType.LEGACY, null, null, null
+                )
         );
 
-        Assertions.assertNull(result2.getException());
-        Assertions.assertArrayEquals(
+        assertNull(result2.getException());
+        assertArrayEquals(
                 new String[]{"calls: 1"},
                 callsFn.decodeResult(result2.getHReturn()));
+    }
+
+    @Test
+    void reversibleTransaction_type1_preservesAccessList() {
+        byte[] accessList = accessListBytes();
+
+        Transaction tx = executeAndCaptureTransaction(params(TransactionType.TYPE_1, accessList, null, null, null, new byte[]{0x07}));
+
+        assertEquals(TransactionType.TYPE_1, tx.getType());
+        assertEquals((byte) 33, tx.getChainId());
+        assertArrayEquals(accessList, tx.getAccessListBytes());
+        assertEquals(Coin.valueOf(7), tx.getGasPrice());
+        assertNull(tx.getMaxPriorityFeePerGas());
+        assertNull(tx.getMaxFeePerGas());
+        assertNull(tx.getAuthorizationList());
+    }
+
+    @Test
+    void reversibleTransaction_type2_preservesFeeCapsAndAccessList() {
+        byte[] accessList = accessListBytes();
+
+        Transaction tx = executeAndCaptureTransaction(params(TransactionType.TYPE_2, accessList, null, new byte[]{0x02}, new byte[]{0x05}, new byte[]{0x07}));
+
+        assertEquals(TransactionType.TYPE_2, tx.getType());
+        assertEquals((byte) 33, tx.getChainId());
+
+        assertArrayEquals(accessList, tx.getAccessListBytes());
+        assertEquals(Coin.valueOf(2), tx.getMaxPriorityFeePerGas());
+        assertEquals(Coin.valueOf(5), tx.getMaxFeePerGas());
+        // effective gas price = min(priority, maxFee)
+        assertEquals(Coin.valueOf(2), tx.getGasPrice());
+        assertNull(tx.getAuthorizationList());
+    }
+
+    @Test
+    void reversibleTransaction_type4_preservesAuthorizationFeesAndAccessList() {
+        byte[] accessList = accessListBytes();
+
+        SetCodeAuthorization authorization = Rskip545TestSupport.minimalAuthorization((byte) 33);
+
+        Transaction tx = executeAndCaptureTransaction(params(TransactionType.TYPE_4, accessList, List.of(authorization), new byte[]{0x02}, new byte[]{0x05}, new byte[]{0x07}));
+
+        assertEquals(TransactionType.TYPE_4, tx.getType());
+        assertEquals((byte) 33, tx.getChainId());
+
+        assertArrayEquals(accessList, tx.getAccessListBytes());
+
+        assertEquals(Coin.valueOf(2), tx.getMaxPriorityFeePerGas());
+        assertEquals(Coin.valueOf(5), tx.getMaxFeePerGas());
+
+        assertNotNull(tx.getAuthorizationList());
+        assertEquals(List.of(authorization), tx.getAuthorizationList());
+    }
+
+    @Test
+    void reversibleTransaction_type2WithPriorityOnly_defaultsMaxFeeToGasPrice() {
+        Transaction tx = executeAndCaptureTransaction(params(TransactionType.TYPE_2, null, null, new byte[]{0x03},
+                null, new byte[]{0x07}));
+
+        assertEquals(TransactionType.TYPE_2, tx.getType());
+
+        assertEquals(
+                Coin.valueOf(3),
+                tx.getMaxPriorityFeePerGas()
+        );
+
+        assertEquals(
+                Coin.valueOf(7),
+                tx.getMaxFeePerGas()
+        );
+    }
+
+    @Test
+    void reversibleTransaction_type2WithMaxFeeOnly_defaultsPriorityToGasPrice() {
+        Transaction tx = executeAndCaptureTransaction(params(TransactionType.TYPE_2, null, null, null, new byte[]{0x09}, gasPrice));
+
+        assertEquals(TransactionType.TYPE_2, tx.getType());
+
+        assertEquals(Coin.valueOf(7), tx.getMaxPriorityFeePerGas());
+        assertEquals(Coin.valueOf(9), tx.getMaxFeePerGas());
+    }
+
+    @Test
+    void reversibleTransaction_type4WithoutFeeCaps_usesGasPriceForBoth() {
+        SetCodeAuthorization authorization =
+                Rskip545TestSupport.minimalAuthorization((byte) 33);
+
+        Transaction tx = executeAndCaptureTransaction(params(TransactionType.TYPE_4, null, List.of(authorization),
+                null, null, gasPrice));
+
+        assertEquals(TransactionType.TYPE_4, tx.getType());
+
+        assertEquals(valueOf(gasPrice), tx.getMaxPriorityFeePerGas());
+        assertEquals(valueOf(gasPrice), tx.getMaxFeePerGas());
+        assertEquals(valueOf(gasPrice), tx.getGasPrice());
+    }
+
+    @Test
+    void reversibleTransaction_type4WithAllTypedFields_preservesAllFields() {
+        byte[] accessList = accessListBytes();
+
+        SetCodeAuthorization authorization = Rskip545TestSupport.minimalAuthorization((byte) 33);
+
+        Transaction tx = executeAndCaptureTransaction(
+                new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                        new byte[]{0x07},
+                        BigInteger.valueOf(500_000).toByteArray(),
+                        TestUtils.generateAddress("to").getBytes(),
+                        new byte[]{0},
+                        new byte[0],
+                        TestUtils.generateAddress("from"),
+                        List.of(authorization),
+                        (byte) 33,
+                        TransactionType.TYPE_4,
+                        accessList,
+                        new byte[]{0x03},
+                        new byte[]{0x09}
+                )
+        );
+
+        assertAll(
+                () -> assertEquals(TransactionType.TYPE_4, tx.getType()),
+                () -> assertEquals((byte) 33, tx.getChainId()),
+                () -> assertArrayEquals(accessList, tx.getAccessListBytes()),
+                () -> assertEquals(Coin.valueOf(3), tx.getMaxPriorityFeePerGas()),
+                () -> assertEquals(Coin.valueOf(9), tx.getMaxFeePerGas()),
+                () -> assertEquals(List.of(authorization), tx.getAuthorizationList())
+        );
+    }
+
+    static Stream<Arguments> transactionTypes() {
+        byte[] accessList = accessListBytes();
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
+
+        return Stream.of(
+                Arguments.of(TransactionType.LEGACY, null, null, null, null),
+                Arguments.of(TransactionType.TYPE_1, accessList, null, null, null),
+                Arguments.of(TransactionType.TYPE_2, accessList, null, new byte[]{0x02}, new byte[]{0x05}),
+                Arguments.of(TransactionType.TYPE_4, accessList, List.of(auth), new byte[]{0x02}, new byte[]{0x05})
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("transactionTypes")
+    void reversibleTransaction_buildsExpectedTransactionType(TransactionType expectedType, byte[] accessList, List<SetCodeAuthorization> authorizationList, byte[] priority, byte[] maxFee) {
+        Transaction tx = executeAndCaptureTransaction(params(expectedType, accessList, authorizationList, priority, maxFee, new byte[]{0x07}));
+
+        assertEquals(expectedType, tx.getType());
+        assertEquals((byte) 33, tx.getChainId());
+
+        if (expectedType == TransactionType.TYPE_1 || expectedType == TransactionType.TYPE_2 || expectedType == TransactionType.TYPE_4) {
+            assertArrayEquals(accessList, tx.getAccessListBytes());
+        } else {
+            assertNull(tx.getAccessListBytes());
+        }
+
+        if (expectedType == TransactionType.TYPE_2 || expectedType == TransactionType.TYPE_4) {
+            assertNotNull(tx.getMaxPriorityFeePerGas());
+            assertNotNull(tx.getMaxFeePerGas());
+        } else {
+            assertNull(tx.getMaxPriorityFeePerGas());
+            assertNull(tx.getMaxFeePerGas());
+        }
+
+        if (expectedType == TransactionType.TYPE_4) {
+            assertEquals(authorizationList, tx.getAuthorizationList());
+        } else {
+            assertNull(tx.getAuthorizationList());
+        }
+    }
+
+    @Test
+    void type4WithOnlyPriorityFee_defaultsMaxFeeFromGasPrice() {
+        SetCodeAuthorization authorization =
+                Rskip545TestSupport.minimalAuthorization((byte) 33);
+
+        Transaction tx = executeAndCaptureTransaction(params(TransactionType.TYPE_4, null, List.of(authorization), new byte[]{0x03}, null, gasPrice));
+        assertEquals(TransactionType.TYPE_4, tx.getType());
+
+        assertEquals(Coin.valueOf(3), tx.getMaxPriorityFeePerGas());
+        assertEquals(valueOf(gasPrice), tx.getMaxFeePerGas());
+    }
+
+    @Test
+    void type4WithOnlyMaxFee_defaultsPriorityFromGasPrice() {
+        SetCodeAuthorization authorization =
+                Rskip545TestSupport.minimalAuthorization((byte) 33);
+
+        Transaction tx = executeAndCaptureTransaction(params(TransactionType.TYPE_4, null, List.of(authorization), null, new byte[]{0x09}, gasPrice));
+        assertEquals(TransactionType.TYPE_4, tx.getType());
+        assertEquals(valueOf(gasPrice), tx.getMaxPriorityFeePerGas());
+        assertEquals(Coin.valueOf(9), tx.getMaxFeePerGas());
+    }
+
+    @Test
+    void reversibleTransaction_nonce128_isEncodedUnsigned() {
+        Transaction tx = executeAndCaptureTransaction(
+                params(TransactionType.LEGACY, null, null, null, null, gasPrice),
+                BigInteger.valueOf(128));
+
+        assertArrayEquals(new byte[]{(byte) 0x80}, tx.getNonce());
+    }
+
+    @Test
+    void reversibleTransaction_nonce128ContractCreation_computesCanonicalContractAddress() {
+        RskAddress from = TestUtils.generateAddress("from");
+        ReversibleTransactionExecutor.ReversibleTransactionParams createParams =
+                new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                        gasPrice,
+                        BigInteger.valueOf(500_000).toByteArray(),
+                        null,
+                        new byte[]{0},
+                        new byte[0],
+                        from,
+                        null,
+                        (byte) 33,
+                        TransactionType.LEGACY,
+                        null,
+                        null,
+                        null);
+
+        Transaction tx = executeAndCaptureTransaction(createParams, BigInteger.valueOf(128));
+
+        RskAddress expectedContractAddress = new RskAddress(HashUtil.calcNewAddr(from.getBytes(), new byte[]{(byte) 0x80}));
+        assertEquals(expectedContractAddress, tx.getContractAddress());
+    }
+
+    public static Coin valueOf(byte[] value) {
+        return new Coin(new BigInteger(1, value));
+    }
+
+    private static byte[] accessListBytes() {
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress("0x0000000000000000000000000000000000000001");
+        entry.setStorageKeys(List.of("0x" + "0".repeat(63) + "1"));
+
+        return AccessListCodec.encodeAccessList(List.of(entry));
+    }
+
+    private Transaction executeAndCaptureTransaction(ReversibleTransactionExecutor.ReversibleTransactionParams params) {
+        return executeAndCaptureTransaction(params, BigInteger.ZERO);
+    }
+
+    private Transaction executeAndCaptureTransaction(ReversibleTransactionExecutor.ReversibleTransactionParams params, BigInteger nonce) {
+
+        RepositorySnapshot snapshot = mock(RepositorySnapshot.class);
+        Repository track = mock(Repository.class);
+        TransactionExecutorFactory executorFactory = mock(TransactionExecutorFactory.class);
+        TransactionExecutor transactionExecutor = mock(TransactionExecutor.class);
+        PrecompiledContracts precompiledContracts = mock(PrecompiledContracts.class);
+
+        Block block = mock(Block.class);
+        RskAddress coinbase = TestUtils.generateAddress("coinbase");
+
+        when(snapshot.startTracking()).thenReturn(track);
+        when(track.getNonce(any(RskAddress.class))).thenReturn(nonce);
+
+        when(executorFactory.newInstance(
+                any(Transaction.class),
+                eq(0),
+                eq(coinbase),
+                eq(track),
+                eq(block),
+                eq(0L),
+                eq(precompiledContracts)
+        )).thenReturn(transactionExecutor);
+
+        when(transactionExecutor.setLocalCall(true)).thenReturn(transactionExecutor);
+        when(transactionExecutor.executeTransaction()).thenReturn(true);
+
+        ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(
+                        mock(co.rsk.db.RepositoryLocator.class),
+                        executorFactory,
+                        precompiledContracts);
+
+        executor.executeTransactionOnSnapshot(snapshot, block, coinbase, precompiledContracts, params);
+
+        ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
+
+        verify(executorFactory).newInstance(txCaptor.capture(), eq(0), eq(coinbase), eq(track), eq(block), eq(0L), eq(precompiledContracts));
+        return txCaptor.getValue();
+    }
+
+    private static ReversibleTransactionExecutor.ReversibleTransactionParams params(
+            TransactionType type,
+            byte[] accessList,
+            List<SetCodeAuthorization> authorizationList,
+            byte[] maxPriorityFeePerGas,
+            byte[] maxFeePerGas,
+            byte[] gasPrice) {
+
+        return new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                gasPrice,
+                BigInteger.valueOf(500_000).toByteArray(),
+                TestUtils.generateAddress("to").getBytes(),
+                new byte[]{0},
+                new byte[0],
+                TestUtils.generateAddress("from"),
+                authorizationList,
+                (byte) 33,
+                type,
+                accessList,
+                maxPriorityFeePerGas,
+                maxFeePerGas
+        );
     }
 }

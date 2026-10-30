@@ -18,8 +18,12 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.util.ByteUtil;
 
 import java.util.Arrays;
+import java.util.function.Predicate;
 
 public class DelegationCodeResolver {
 
@@ -53,5 +57,35 @@ public class DelegationCodeResolver {
     public static RskAddress extractDelegatedAddress(byte[] code) {
         byte[] addressBytes = Arrays.copyOfRange(code, PREFIX_SIZE, DELEGATION_CODE_SIZE);
         return new RskAddress(addressBytes);
+    }
+
+    public static byte[] getExecutionCode(
+            Repository repository,
+            RskAddress address,
+            Predicate<RskAddress> isPrecompile,
+            ActivationConfig.ForBlock activationConfig) {
+
+        if (!repository.isExist(address)) {
+            return ByteUtil.EMPTY_BYTE_ARRAY;
+        }
+
+        byte[] code = repository.getCode(address);
+
+        if (code == null || code.length == 0) {
+            return ByteUtil.EMPTY_BYTE_ARRAY;
+        }
+
+        if (!activationConfig.isActive(ConsensusRule.RSKIP545) || !isDelegatedCode(code)) {
+            return code;
+        }
+
+        RskAddress delegatedAddress = extractDelegatedAddress(code);
+
+        if (isPrecompile.test(delegatedAddress) || !repository.isExist(delegatedAddress)) {
+            return ByteUtil.EMPTY_BYTE_ARRAY;
+        }
+
+        byte[] delegatedCode = repository.getCode(delegatedAddress);
+        return delegatedCode == null ? ByteUtil.EMPTY_BYTE_ARRAY : delegatedCode;
     }
 }

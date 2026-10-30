@@ -33,7 +33,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class TransactionsMessageTest {
     @Test
@@ -58,7 +60,6 @@ class TransactionsMessageTest {
 
         Account sender1 = new AccountBuilder().name("sender1").build();
         Account sender2 = new AccountBuilder().name("sender2").build();
-        Account sender3 = new AccountBuilder().name("sender3").build();
         Account receiver = new AccountBuilder().name("receiver").build();
 
         txs.add(new TransactionBuilder()
@@ -71,13 +72,6 @@ class TransactionsMessageTest {
                 .value(BigInteger.valueOf(2000)).nonce(0)
                 .transactionType((byte) 1)
                 .build());
-//
-//        txs.add(new TransactionBuilder()
-//                .sender(sender3).receiver(receiver)
-//                .value(BigInteger.valueOf(3000)).nonce(0)
-//                .transactionType((byte) 2)
-//                .rskSubtype((byte) 3)
-//                .build());
 
         TransactionsMessage original = new TransactionsMessage(txs);
         byte[] encoded = original.getEncoded();
@@ -86,7 +80,7 @@ class TransactionsMessageTest {
         TransactionsMessage decoded = (TransactionsMessage) Message.create(blockFactory, encoded);
 
         Assertions.assertNotNull(decoded);
-//        Assertions.assertEquals(3, decoded.getTransactions().size());
+        Assertions.assertEquals(2, decoded.getTransactions().size());
 
         Transaction decodedLegacy = decoded.getTransactions().get(0);
         Assertions.assertTrue(decodedLegacy.getTypePrefix().isLegacy());
@@ -96,11 +90,6 @@ class TransactionsMessageTest {
         Assertions.assertTrue(decodedType1.getTypePrefix().isTyped());
         Assertions.assertFalse(decodedType1.getTypePrefix().isRskNamespace());
         Assertions.assertArrayEquals(txs.get(1).getHash().getBytes(), decodedType1.getHash().getBytes());
-
-//        Transaction decodedRsk = decoded.getTransactions().get(2);
-//        Assertions.assertTrue(decodedRsk.getTypePrefix().isRskNamespace());
-//        Assertions.assertEquals((byte) 3, decodedRsk.getTypePrefix().subtype());
-//        Assertions.assertArrayEquals(txs.get(2).getHash().getBytes(), decodedRsk.getHash().getBytes());
     }
 
     @Test

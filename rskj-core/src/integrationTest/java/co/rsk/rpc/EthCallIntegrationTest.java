@@ -116,10 +116,11 @@ class EthCallIntegrationTest {
     }
 
     /**
-     * Verifies that an eth_call with high gas consumption executes successfully.
+     * Verifies that an eth_call with high gas consumption runs until its gas is exhausted.
+     * The loop never ends on its own, so the call reports the execution failure as an error.
      */
     @Test
-    void ethCallWithHighGas_shouldExecuteSuccessfully() throws Exception {
+    void ethCallWithHighGas_runsUntilGasIsExhausted() throws Exception {
         String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s",
                 baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
 
@@ -135,8 +136,10 @@ class EthCallIntegrationTest {
 
             String body = response.body().string();
             JsonNode jsonResponse = objectMapper.readTree(body);
-            Assertions.assertTrue(jsonResponse.has("result"),
-                    "Expected 'result' field in response, got: " + body);
+            Assertions.assertTrue(jsonResponse.has("error"),
+                    "Expected 'error' field in response, got: " + body);
+            Assertions.assertEquals(-32015, jsonResponse.get("error").get("code").asInt(),
+                    "Expected error code -32015 (execution error), got: " + body);
             Assertions.assertTrue(elapsed >= 200,
                     String.format("Expected complex execution to take >= 200ms, took %dms", elapsed));
 

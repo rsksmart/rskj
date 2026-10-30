@@ -35,7 +35,11 @@ public class Type0TransactionEncoder implements TransactionEncoder {
         byte[] s;
 
         if (transaction.getSignature() != null) {
-            v = RLP.encodeByte((byte) (transaction.getChainId() == 0 ? transaction.getSignature().getV() : (transaction.getSignature().getV() - LOWER_REAL_V) + (transaction.getChainId() * 2 + CHAIN_ID_INC)));
+            int encodedV = transaction.getChainId() == 0
+                    ? transaction.getSignature().getV() & 0xFF
+                    : (transaction.getSignature().getV() - LOWER_REAL_V)
+                            + ((transaction.getChainId() & 0xFF) * 2 + (CHAIN_ID_INC & 0xFF));
+            v = RLP.encodeInt(encodedV);
             r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(transaction.getSignature().getR()));
             s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(transaction.getSignature().getS()));
         } else {
@@ -64,7 +68,7 @@ public class Type0TransactionEncoder implements TransactionEncoder {
 
     public byte[] encodeType0Fields(Transaction transaction, byte[] v, byte[] r, byte[] s) {
         byte[] nonce = TransactionEncodingUtils.encodeNonce(transaction.getNonce());
-        byte[] gasPrice = RLP.encodeCoinNonNullZero(transaction.getGasPrice());
+        byte[] gasPrice = RLP.encodeCoinNonNullZero(transaction.getEncodableGasPrice());
         byte[] gasLimit = RLP.encodeElement(transaction.getGasLimit());
         byte[] receiveAddress = RLP.encodeRskAddress(transaction.getReceiveAddress());
         byte[] value = RLP.encodeCoinNullZero(transaction.getValue());

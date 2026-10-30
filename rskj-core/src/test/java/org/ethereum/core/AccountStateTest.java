@@ -26,6 +26,8 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AccountStateTest {
 
@@ -66,5 +68,38 @@ class AccountStateTest {
         assertEquals(BigInteger.ZERO, result.getNonce());
         assertEquals(BigInteger.valueOf(2).pow(200), result.getBalance().asBigInteger());
         assertEquals(238, result.getStateFlags());
+    }
+
+    @Test
+    void freshAccountHasNoDelegationAuthorityByDefault() {
+        AccountState acct = new AccountState(BigInteger.ZERO, Coin.ZERO);
+        assertFalse(acct.hasDelegationAuthority());
+    }
+
+    @Test
+    void setDelegationAuthoritySetsTheFlag() {
+        AccountState acct = new AccountState(BigInteger.ZERO, Coin.ZERO);
+        acct.setDelegationAuthority();
+        assertTrue(acct.hasDelegationAuthority());
+    }
+
+    @Test
+    void encodeDecodeStateWithDelegationAuthorityIsPreserved() {
+        AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
+        acct.setDelegationAuthority();
+        AccountState result = new AccountState(acct.getEncoded());
+
+        assertTrue(result.hasDelegationAuthority());
+    }
+
+    @Test
+    void delegationAuthorityAndHibernateFlagsDoNotCollide() {
+        AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
+        acct.setDelegationAuthority();
+        acct.hibernate();
+        AccountState result = new AccountState(acct.getEncoded());
+
+        assertTrue(result.hasDelegationAuthority());
+        assertTrue(result.isHibernated());
     }
 }

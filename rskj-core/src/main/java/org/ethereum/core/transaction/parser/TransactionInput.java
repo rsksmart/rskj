@@ -102,11 +102,15 @@ public final class TransactionInput {
 
     public static TransactionInput fromCallArguments(CallArguments args, Supplier<String> nonceSupplier) {
         Objects.requireNonNull(args, "args");
+        TransactionTypePrefix typePrefix = TransactionTypePrefix.fromHex(args.getType(), args.getRskSubtype());
+        if (typePrefix.isRskNamespace()) {
+            throw invalidParamError(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
+        }
+
         if (args.getNonce() == null && nonceSupplier != null) {
             args.setNonce(nonceSupplier.get());
         }
 
-        TransactionTypePrefix typePrefix = TransactionTypePrefix.fromHex(args.getType(), args.getRskSubtype());
         BigInteger nonce = Optional.ofNullable(args.getNonce())
                 .map(HexUtils::strHexOrStrNumberToBigInteger)
                 .orElse(null);
@@ -117,7 +121,7 @@ public final class TransactionInput {
         Coin value = CommonParsingUtils.parseCoin(args.getValue());
         RskAddress receiveAddress = CommonParsingUtils.parseAddress(args.getTo());
         byte[] data = CommonParsingUtils.parseHexData(args.getData());
-        Byte chainId = parseOptionalChainId(args.getChainId());
+        Byte chainId = parseOptionalChainId(args.getChainId(), typePrefix.isTyped());
         byte[] accessListBytes = AccessListCodec.encodeAccessList(args.getAccessList());
         List<SetCodeAuthorization> authorizationList = args.getAuthorizationList() == null
                 ? null
@@ -128,11 +132,11 @@ public final class TransactionInput {
 
         return new TransactionInput(
                 typePrefix,
-                nonce == null ? null : nonce.toByteArray(),
+                nonce == null ? null : CommonParsingUtils.unsignedBytes(nonce),
                 gasPrice,
                 maxPriorityFeePerGas,
                 maxFeePerGas,
-                gasLimit.toByteArray(),
+                CommonParsingUtils.unsignedBytes(gasLimit),
                 receiveAddress,
                 value,
                 data,
@@ -240,12 +244,19 @@ public final class TransactionInput {
     }
 
     @Nullable
-    private static Byte parseOptionalChainId(String hex) {
+    private static Byte parseOptionalChainId(String hex, boolean typed) {
         if (hex == null) {
             return null;
         }
         try {
             byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
+            // Legacy keeps reading a negative decimal as its two's-complement byte.
+            if (typed) {
+                BigInteger value = HexUtils.strHexOrStrNumberToBigInteger(hex);
+                if (value.signum() < 0) {
+                    throw invalidParamError(CommonParsingUtils.invalidTypedChainIdMessage(value));
+                }
+            }
             if (bytes.length != 1) {
                 throw invalidParamError(ERR_INVALID_CHAIN_ID + hex);
             }
@@ -264,26 +275,42 @@ public final class TransactionInput {
         return chainId == 0 ? defaultChainId : chainId;
     }
 
+    /** Zero is rejected, not defaulted as in legacy: it would encode as an empty field the parser refuses. */
     static byte resolveTypedChainId(@Nullable Byte chainId) {
         if (chainId == null) {
             throw invalidParamError("Typed transaction requires chainId");
         }
+        BigInteger value = BigInteger.valueOf(Byte.toUnsignedInt(chainId));
+        if (!CommonParsingUtils.isValidTypedChainId(value)) {
+            throw invalidParamError(CommonParsingUtils.invalidTypedChainIdMessage(value));
+        }
         return chainId;
     }
 
-    static BigInteger resolveGasLimit(@Nullable byte[] gasLimitBytes) {
-        if (gasLimitBytes == null) {
-            return DEFAULT_GAS_LIMIT;
-        }
+    /** A present JSON-RPC chainId: typed values are range-checked, a legacy one is returned as written, 0 included. */
+    public static byte parseExplicitChainId(String hex, boolean typed) {
+        Byte chainId = parseOptionalChainId(Objects.requireNonNull(hex, "chainId"), typed);
+        return typed ? resolveTypedChainId(chainId) : chainId;
+    }
+
+    /**
+     * Callers pass {@code gasLimit()}, which clones through {@link ByteUtil#cloneBytes} and yields
+     * an empty array rather than null, so an omitted gas limit resolves to zero;
+     * {@link #DEFAULT_GAS_LIMIT} applies only on the {@code CallArguments} path.
+     */
+    static BigInteger resolveGasLimit(byte[] gasLimitBytes) {
         CommonParsingUtils.requireDataWordBytes(gasLimitBytes, "Gas Limit is not valid");
         return new BigInteger(1, gasLimitBytes);
     }
 
-    static byte[] resolveNonceBytes(@Nullable byte[] nonceBytes, boolean defaultToZero) {
-        if (nonceBytes != null) {
-            CommonParsingUtils.requireDataWordBytes(nonceBytes, "Nonce is not valid");
-            return nonceBytes;
-        }
-        return defaultToZero ? BigInteger.ZERO.toByteArray() : null;
+    /**
+     * Structured ingress accepts caller-supplied bytes, so the nonce is minimised here: leading
+     * zeros are dropped and zero becomes the empty string, giving one encoding per transaction.
+     * The width bound applies to the minimised value, not to the spelling received.
+     */
+    static byte[] resolveNonceBytes(byte[] nonceBytes) {
+        byte[] minimal = CommonParsingUtils.unsignedBytes(new BigInteger(1, nonceBytes));
+        CommonParsingUtils.requireDataWordBytes(minimal, "Nonce is not valid");
+        return minimal;
     }
 }

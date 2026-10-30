@@ -71,11 +71,9 @@ public class RskTestUtils {
     }
 
     public static Repository createRepository() {
-        HashMapDB store = new HashMapDB();
-        TrieStore trieStore = new TrieStoreImpl(store);
+        TrieStore trieStore = new TrieStoreImpl( new HashMapDB());
         Trie trie = new Trie(trieStore);
-        MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, trie);
-        MutableTrieCache mutableTrieCache = new MutableTrieCache(mutableTrie);
-        return new MutableRepository(mutableTrieCache);
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, trie)));
+
     }
 }
