@@ -348,7 +348,9 @@ public class TransactionPoolImpl implements TransactionPool {
         this.setBestBlock(newBlock);
 
         // before retracting, so a retracted transaction is not refused because of an entry
-        // the new state no longer allows
+        // the new state no longer allows. This also removes the pooled transactions mined in
+        // the new blocks, since their nonces are now consumed, so acceptBlock usually finds
+        // nothing left to remove.
         reconcileTransactionsWithStateNonce();
 
         if (fork != null) {
@@ -424,7 +426,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
             if (nonceComparison < 0) {
                 toRemove.add(tx.getHash());
-                logger.trace("Clear stale transaction, nonce: [{}] state nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), stateNonce, tx.getHash());
+                logger.trace("Clear transaction with consumed nonce (mined or stale), nonce: [{}] state nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), stateNonce, tx.getHash());
             } else if (nonceComparison > 0 && isDelegated.test(sender)) {
                 toRemove.add(tx.getHash());
                 logger.trace("Clear gapped transaction of delegated account, nonce: [{}] state nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), stateNonce, tx.getHash());
