@@ -17,6 +17,9 @@
  */
 package org.ethereum.core.transaction.parser;
 
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.SetCodeAuthorization;
@@ -42,6 +45,7 @@ import static org.ethereum.core.Rskip546TestSupport.EMPTY_ACCESS_LIST;
 import static org.ethereum.core.Rskip546TestSupport.REGTEST_CHAIN_ID;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.PRIVATE_KEY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class NonceGasLimitCanonicalEncodingTest {
@@ -111,6 +115,27 @@ class NonceGasLimitCanonicalEncodingTest {
     void legacyNonceOmittedAlsoResolvesToCanonicalZero() {
         Transaction rpcTx = Transaction.fromCallArguments(callArguments(TransactionType.LEGACY, null, DEFAULT_GAS_LIMIT), null, REGTEST_CHAIN_ID);
         assertArrayEquals(pinnedMinimalBytes(BigInteger.ZERO), rpcTx.getNonce());
+    }
+
+    @Test
+    void legacyZeroGasLimit_keepsTheCallersSpelling() {
+        Transaction zeroByte = CallTransaction.createRawTransaction(1, 1, 0, DEFAULT_RECEIVER, 0, new byte[0], REGTEST_CHAIN_ID);
+        Transaction empty = Transaction.builder()
+                .nonce(DEFAULT_NONCE)
+                .gasLimit(new byte[0])
+                .gasPrice(DEFAULT_GAS_PRICE)
+                .receiveAddress(DEFAULT_RECEIVER.getBytes())
+                .chainId(REGTEST_CHAIN_ID)
+                .build();
+
+        assertArrayEquals(new byte[]{0}, zeroByte.getGasLimit());
+        assertArrayEquals(new byte[0], empty.getGasLimit());
+
+        zeroByte.sign(PRIVATE_KEY);
+        Transaction rawTx = Transaction.fromRaw(zeroByte.getEncoded());
+
+        assertArrayEquals(new byte[]{0}, rawTx.getGasLimit());
+        assertDoesNotThrow(() -> rawTx.verify(new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
     }
 
     private static void assertCanonical(TransactionType type, BigInteger nonce, BigInteger gasLimit) {

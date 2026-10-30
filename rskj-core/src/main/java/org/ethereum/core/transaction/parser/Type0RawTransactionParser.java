@@ -76,7 +76,7 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
         RskAddress receiveAddress = CommonParsingUtils.defaultAddress(input.receiveAddress());
         byte[] data = CommonParsingUtils.nullToEmpty(input.data());
         byte chainId = TransactionInput.resolveLegacyChainId(input.chainId(), defaultChainId);
-        byte[] gasLimitBytes = CommonParsingUtils.unsignedBytes(gasLimit);
+        byte[] gasLimitBytes = gasLimit.signum() == 0 ? input.gasLimit() : CommonParsingUtils.unsignedBytes(gasLimit);
         CommonParsingUtils.requireLegacyScalarFields(nonce, gasPrice, gasLimitBytes, value);
 
         return new ParsedType0Transaction(

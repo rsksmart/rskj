@@ -26,6 +26,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -40,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -217,6 +219,36 @@ class BlockTxsFieldsValidationRuleTest {
         tx.sign(TestUtils.generateECKey("sender").getPrivKeyBytes());
 
         assertFalse(rule.isValid(block(tx), parent));
+    }
+
+    @Test
+    void legacyTransactionWithGasLimitEncodedEmpty_isRejectedAsByLegacyValidation() {
+        // legacy validation never accepted a gasLimit encoded as the empty string (0x80); zero spelled 0x00 is valid
+        Transaction empty = decodedLegacyTransaction(new byte[0]);
+        Transaction zeroByte = decodedLegacyTransaction(new byte[]{0});
+
+        assertArrayEquals(new byte[0], empty.getGasLimit());
+        assertFalse(rule.isValid(block(empty), parent));
+        assertTrue(rule.isValid(block(zeroByte), parent));
+    }
+
+    private Transaction decodedLegacyTransaction(byte[] gasLimit) {
+        Transaction tx = new Transaction(
+                new byte[0],
+                Coin.valueOf(1L),
+                gasLimit,
+                TestUtils.generateAddress("receiver"),
+                Coin.ZERO,
+                null,
+                CHAIN_ID,
+                false,
+                TransactionTypePrefix.legacy(),
+                null,
+                null,
+                null,
+                null);
+        tx.sign(TestUtils.generateECKey("sender").getPrivKeyBytes());
+        return new ImmutableTransaction(tx.getEncoded());
     }
 
     private Block block(Transaction... transactions) {
