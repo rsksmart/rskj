@@ -658,6 +658,10 @@ public final class BridgeSupportTestUtil {
         assertEquals(executionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
     }
 
+    public static void assertTransactionWasNotProcessed(BridgeStorageProvider bridgeStorageProvider, Sha256Hash transactionHash) throws IOException {
+        assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash).isEmpty());
+    }
+
     public static void assertReleaseWasRegistered(
         BridgeStorageProvider bridgeStorageProvider,
         FederationSupport federationSupport,
