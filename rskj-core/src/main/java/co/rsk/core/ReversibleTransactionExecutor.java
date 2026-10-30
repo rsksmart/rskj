@@ -126,7 +126,8 @@ public class ReversibleTransactionExecutor {
     private static class ReversibleTransaction extends Transaction {
 
         /**
-         * A fixed public-only key returned by {@link #getKey()}.
+         * A fixed public-only key returned by {@link #getKey()}: the generator point G, which is the public key of
+         * private key 1. A simulated peg-out therefore logs this key's BTC address, not the sender's.
          */
         private static final ECKey PLACEHOLDER_KEY = ECKey.fromPublicOnly(ECKey.CURVE.getG());
 

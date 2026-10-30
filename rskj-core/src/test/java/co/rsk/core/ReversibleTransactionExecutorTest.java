@@ -82,6 +82,12 @@ class ReversibleTransactionExecutorTest {
     private static final long PEGOUT_GAS = 44_000L;
 
     /**
+     * A type-4 peg-out also pays EIP-7702's PER_EMPTY_ACCOUNT_COST of 25,000 for its one authorization,
+     * which delegates an unrelated, empty account and so earns no refund.
+     */
+    private static final long TYPE_4_PEGOUT_GAS = 69_000L;
+
+    /**
      * Regtest P2PKH address of the compressed secp256k1 generator point, whose hash160
      * 751e76e8199196d454941c45d1b3a323f1433bd6 is the BIP173 test vector's witness program.
      */
@@ -176,9 +182,9 @@ class ReversibleTransactionExecutorTest {
         );
     }
 
-    @ParameterizedTest(name = "{0}, value {2}")
+    @ParameterizedTest(name = "{0}, {3}, value {2}")
     @MethodSource("pegoutScenarios")
-    void estimateGas_pegoutToBridge_usesThePegoutGas(String scenario, boolean rskip545Active, String valueInWeiHex) {
+    void estimateGas_pegoutToBridge_usesThePegoutGas(String scenario, boolean rskip545Active, String valueInWeiHex, TransactionType type) {
         RskTestFactory pegoutFactory = new RskTestFactory(tempDir.resolve("pegout"), pegoutConfig(rskip545Active));
         Account sender = fundedPegoutSender(pegoutFactory);
         Block bestBlock = pegoutFactory.getBlockchain().getBestBlock();
@@ -187,18 +193,18 @@ class ReversibleTransactionExecutorTest {
         RepositorySnapshot snapshot = pegoutFactory.getRepositoryLocator().snapshotAt(bestBlock.getHeader());
 
         TransactionExecutor executor = pegoutFactory.getReversibleTransactionExecutor().estimateGas(
-                bestBlock, bestBlock.getCoinbase(), snapshot, pegoutParams(sender, valueInWeiHex));
+                bestBlock, bestBlock.getCoinbase(), snapshot, pegoutParams(sender, valueInWeiHex, type));
 
         assertNull(executor.getResult().getException());
-        assertEquals(PEGOUT_GAS, executor.getResult().getGasUsed());
+        assertEquals(type == TransactionType.TYPE_4 ? TYPE_4_PEGOUT_GAS : PEGOUT_GAS, executor.getResult().getGasUsed());
         byte[] placeholderAddress = GENERATOR_POINT_REGTEST_ADDRESS.getBytes(StandardCharsets.US_ASCII);
         assertTrue(executor.getResult().getLogInfoList().stream()
                 .anyMatch(log -> Bytes.indexOf(log.getData(), placeholderAddress) >= 0));
     }
 
-    @ParameterizedTest(name = "{0}, value {2}")
+    @ParameterizedTest(name = "{0}, {3}, value {2}")
     @MethodSource("pegoutScenarios")
-    void executeTransactionAtBlock_pegoutToBridge_succeedsWithEmptyReturn(String scenario, boolean rskip545Active, String valueInWeiHex) {
+    void executeTransactionAtBlock_pegoutToBridge_succeedsWithEmptyReturn(String scenario, boolean rskip545Active, String valueInWeiHex, TransactionType type) {
         RskTestFactory pegoutFactory = new RskTestFactory(tempDir.resolve("pegout"), pegoutConfig(rskip545Active));
         Account sender = fundedPegoutSender(pegoutFactory);
         Block bestBlock = pegoutFactory.getBlockchain().getBestBlock();
@@ -206,7 +212,7 @@ class ReversibleTransactionExecutorTest {
                 .isActive(ConsensusRule.RSKIP545, bestBlock.getNumber()));
 
         ProgramResult result = pegoutFactory.getReversibleTransactionExecutor().executeTransactionAtBlock(
-                bestBlock, bestBlock.getCoinbase(), pegoutParams(sender, valueInWeiHex));
+                bestBlock, bestBlock.getCoinbase(), pegoutParams(sender, valueInWeiHex, type));
 
         assertNull(result.getException());
         assertArrayEquals(new byte[0], result.getHReturn());
@@ -216,10 +222,12 @@ class ReversibleTransactionExecutorTest {
         String pointZeroOneRbtcInWeiHex = "2386f26fc10000";
         String oneRbtcInWeiHex = "0de0b6b3a7640000";
         return Stream.of(
-                Arguments.of("RSKIP-545 active", true, pointZeroOneRbtcInWeiHex),
-                Arguments.of("RSKIP-545 active", true, oneRbtcInWeiHex),
-                Arguments.of("RSKIP-545 disabled", false, pointZeroOneRbtcInWeiHex),
-                Arguments.of("RSKIP-545 disabled", false, oneRbtcInWeiHex)
+                Arguments.of("RSKIP-545 active", true, pointZeroOneRbtcInWeiHex, TransactionType.LEGACY),
+                Arguments.of("RSKIP-545 active", true, oneRbtcInWeiHex, TransactionType.LEGACY),
+                Arguments.of("RSKIP-545 active", true, pointZeroOneRbtcInWeiHex, TransactionType.TYPE_4),
+                Arguments.of("RSKIP-545 active", true, oneRbtcInWeiHex, TransactionType.TYPE_4),
+                Arguments.of("RSKIP-545 disabled", false, pointZeroOneRbtcInWeiHex, TransactionType.LEGACY),
+                Arguments.of("RSKIP-545 disabled", false, oneRbtcInWeiHex, TransactionType.LEGACY)
         );
     }
 
@@ -245,7 +253,12 @@ class ReversibleTransactionExecutorTest {
                 .build();
     }
 
-    private ReversibleTransactionExecutor.ReversibleTransactionParams pegoutParams(Account sender, String valueInWeiHex) {
+    private ReversibleTransactionExecutor.ReversibleTransactionParams pegoutParams(Account sender, String valueInWeiHex, TransactionType type) {
+        // A type-4 transaction needs at least one authorization. This one is signed by a fresh key, so it never delegates the sender.
+        List<SetCodeAuthorization> authorizationList = type == TransactionType.TYPE_4
+                ? List.of(Rskip545TestSupport.minimalAuthorization(Rskip545TestSupport.REGTEST_CHAIN_ID))
+                : null;
+        byte chainId = type == TransactionType.TYPE_4 ? Rskip545TestSupport.REGTEST_CHAIN_ID : 0;
         return new ReversibleTransactionExecutor.ReversibleTransactionParams(
                 gasPrice,
                 BigInteger.valueOf(100_000).toByteArray(),
@@ -253,7 +266,7 @@ class ReversibleTransactionExecutorTest {
                 Hex.decode(valueInWeiHex),
                 new byte[0],
                 sender.getAddress(),
-                null, (byte) 0, TransactionType.LEGACY, null, null, null
+                authorizationList, chainId, type, null, null, null
         );
     }
 
