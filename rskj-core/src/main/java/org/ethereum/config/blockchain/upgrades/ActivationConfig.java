@@ -39,7 +39,8 @@ public class ActivationConfig {
      * Rules that must be active at or before the height of the rule used as key, whenever that rule is active.
      * Keys are checked in {@link ConsensusRule} order, so a config with several violations always reports the same one.
      */
-    private static final Map<ConsensusRule, List<ConsensusRule>> ACTIVATION_DEPENDENCIES = Collections.unmodifiableMap(
+    @VisibleForTesting
+    static final Map<ConsensusRule, List<ConsensusRule>> ACTIVATION_DEPENDENCIES = Collections.unmodifiableMap(
             new EnumMap<>(Map.of(
                     ConsensusRule.RSKIP545, List.of(
                             ConsensusRule.RSKIP543,

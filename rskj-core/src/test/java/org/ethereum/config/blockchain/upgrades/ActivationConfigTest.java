@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class ActivationConfigTest {
@@ -362,6 +363,26 @@ class ActivationConfigTest {
                 exception.getMessage());
     }
 
+    @Test
+    void testedDependenciesMatchTheProductionTable() {
+        // a pair added to the production table but not to activationDependencies() would otherwise go untested
+        Map<ConsensusRule, Set<ConsensusRule>> productionDependencies = ActivationConfig.ACTIVATION_DEPENDENCIES
+                .entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> Set.copyOf(entry.getValue())));
+
+        assertEquals(expectedDependencies(), productionDependencies);
+    }
+
+    /**
+     * The pairs of {@link #activationDependencies()}, grouped by dependent rule.
+     */
+    private static Map<ConsensusRule, Set<ConsensusRule>> expectedDependencies() {
+        return activationDependencies().collect(Collectors.groupingBy(
+                dependency -> ConsensusRule.fromConfigKey(dependency.dependentKey()),
+                Collectors.mapping(dependency -> ConsensusRule.fromConfigKey(dependency.requiredKey()),
+                        Collectors.toSet())));
+    }
+
     private static Stream<Dependency> activationDependencies() {
         return Stream.of(
                 // RSKIP546 also requires RSKIP543, so it activates with RSKIP545
@@ -412,11 +433,10 @@ class ActivationConfigTest {
                 .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
                 .getConfig("blockchain.config");
 
-        assertRequiredRulesActivateNoLaterThan(network, blockchainConfig, ConsensusRule.RSKIP545,
-                ConsensusRule.RSKIP543, ConsensusRule.RSKIP544, ConsensusRule.RSKIP546, ConsensusRule.RSKIP692,
-                ConsensusRule.RSKIP701);
-        assertRequiredRulesActivateNoLaterThan(network, blockchainConfig, ConsensusRule.RSKIP546,
-                ConsensusRule.RSKIP543);
+        for (Map.Entry<ConsensusRule, Set<ConsensusRule>> dependency : expectedDependencies().entrySet()) {
+            assertRequiredRulesActivateNoLaterThan(network, blockchainConfig, dependency.getKey(),
+                    dependency.getValue());
+        }
     }
 
     /**
@@ -425,7 +445,7 @@ class ActivationConfigTest {
      * which any rule could switch on: wherever the dependent rule is active, the required rules must be active too.
      */
     private static void assertRequiredRulesActivateNoLaterThan(
-            String network, Config blockchainConfig, ConsensusRule dependent, ConsensusRule... requiredRules) {
+            String network, Config blockchainConfig, ConsensusRule dependent, Set<ConsensusRule> requiredRules) {
         ActivationConfig activationConfig = ActivationConfig.read(blockchainConfig);
 
         Set<Long> candidateHeights = new TreeSet<>();
