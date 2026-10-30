@@ -7,6 +7,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.assertTransactionWasNotProcessed;
 import static co.rsk.peg.BridgeSupportTestUtil.buildPMTAndRecreateChainForTxIdRegistration;
 import static co.rsk.peg.BridgeSupportTestUtil.buildPegoutRequestTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.getReleaseFromPegoutsWFC;
+import static co.rsk.peg.BridgeSupportTestUtil.recreateChainFromPmt;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -153,6 +154,36 @@ class RegisterTransactionIT {
             setUpBridgeSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
             assertPegoutIsPending(pegout);
         }
+
+        @Test
+        void registerPegoutTransaction_withHeightTooDeepToSearch_shouldRevert() throws IOException, BlockStoreException {
+            // arrange
+            moveBtcChainHeadOneBlockPastSearchDepthLimit();
+            Transaction registerPegoutTransaction = buildRegisterPegoutTransaction(pegout, pmt.bitcoinSerialize());
+
+            // act & assert
+            assertThrows(VMException.class, () -> executeBridgeTransaction(registerPegoutTransaction, PEGOUT_REGISTRATION_BLOCK_NUMBER));
+
+            // assert
+            // fresh storage providers only see what was saved
+            setUpBridgeSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
+            assertPegoutIsPending(pegout);
+        }
+
+        private void moveBtcChainHeadOneBlockPastSearchDepthLimit() throws BlockStoreException {
+            // with the chain head below the block index activation height, blocks are only searched
+            // down to bestChainHeight - maxDepthToSearchBlocksBelowIndexActivation
+            int bestChainHeight = BTC_BLOCK_WITH_PEGOUT_HEIGHT + BRIDGE_CONSTANTS.getMaxDepthToSearchBlocksBelowIndexActivation() + 1;
+            setUpBridgeSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
+            recreateChainFromPmt(
+                buildBtcBlockStore(),
+                bestChainHeight,
+                pmt,
+                BTC_BLOCK_WITH_PEGOUT_HEIGHT,
+                NETWORK_PARAMETERS
+            );
+            bridgeStorageProvider.save();
+        }
     }
 
     private void fundActiveFederationWithOneUtxo() {
@@ -187,18 +218,21 @@ class RegisterTransactionIT {
 
     private PartialMerkleTree includeOnBtcAndGetPmt(BtcTransaction btcTransaction) throws BlockStoreException {
         setUpBridgeSupport(PEGOUT_REGISTRATION_BLOCK_NUMBER);
-        BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(
-            repository,
-            BRIDGE_CONSTANTS,
-            bridgeStorageProvider,
-            ALL_ACTIVATIONS
-        );
         return buildPMTAndRecreateChainForTxIdRegistration(
             bridgeStorageProvider,
             BRIDGE_CONSTANTS,
             BTC_BLOCK_WITH_PEGOUT_HEIGHT,
             btcTransaction,
-            btcBlockStore
+            buildBtcBlockStore()
+        );
+    }
+
+    private BtcBlockStoreWithCache buildBtcBlockStore() {
+        return btcBlockStoreFactory.newInstance(
+            repository,
+            BRIDGE_CONSTANTS,
+            bridgeStorageProvider,
+            ALL_ACTIVATIONS
         );
     }
 
