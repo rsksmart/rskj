@@ -96,3 +96,6 @@ doc/rpc/openrpc.json
 
 # VS Code
 .vscode/
+
+# Claude Code personal instructions
+CLAUDE.local.md
