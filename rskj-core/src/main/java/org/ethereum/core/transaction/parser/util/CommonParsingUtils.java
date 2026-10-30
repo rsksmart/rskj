@@ -21,7 +21,9 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.core.Transaction;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -244,6 +246,15 @@ public final class CommonParsingUtils {
 
     public static byte[] nullToEmpty(byte[] value) {
         return value == null ? new byte[0] : value;
+    }
+
+    /** Decodes RPC hex text, reporting text that is not hex as an invalid parameter. */
+    public static byte[] decodeHex(String value, String errorMessage) {
+        try {
+            return HexUtils.stringHexToByteArray(value);
+        } catch (DecoderException e) {
+            throw RskJsonRpcRequestException.invalidParamError(errorMessage);
+        }
     }
 
     public static  byte[] parseHexData(String data) {

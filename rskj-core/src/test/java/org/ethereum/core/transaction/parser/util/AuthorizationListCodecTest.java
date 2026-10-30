@@ -31,6 +31,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -287,14 +288,37 @@ class AuthorizationListCodecTest {
                 "Expected address length error, got: " + ex.getMessage());
     }
 
-    @Test
-    void parseFromCallArguments_invalidSignatureHex_throws() {
+    @ParameterizedTest
+    @CsvSource({
+            "chainId, 0xzz, Authorization list entry chainId must be a hex or decimal quantity at index 1",
+            "chainId, zz, Authorization list entry chainId must be a hex or decimal quantity at index 1",
+            "address, 0xzz, Authorization list entry address must be a 20-byte hex value at index 1",
+            "nonce, 0xzz, Authorization list entry nonce must be a hex or decimal quantity at index 1",
+            "nonce, zz, Authorization list entry nonce must be a hex or decimal quantity at index 1",
+            "yParity, 0xzz, Authorization list entry yParity must be a hex or decimal quantity at index 1",
+            "yParity, zz, Authorization list entry yParity must be a hex or decimal quantity at index 1",
+            "r, 0xzz, Authorization list entry r must be hex at index 1",
+            "s, 0xzz, Authorization list entry s must be hex at index 1",
+    })
+    void parseFromCallArguments_fieldNotHex_throwsInvalidParams(String field, String value, String expectedMessage) {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry valid = validEntry(reference, reference.getSignature());
         CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
-        entry.setR("not-hex");
+        switch (field) {
+            case "chainId" -> entry.setChainId(value);
+            case "address" -> entry.setAddress(value);
+            case "nonce" -> entry.setNonce(value);
+            case "yParity" -> entry.setYParity(value);
+            case "r" -> entry.setR(value);
+            case "s" -> entry.setS(value);
+            default -> throw new IllegalArgumentException(field);
+        }
 
-        assertThrows(org.bouncycastle.util.encoders.DecoderException.class,
-                () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(valid, entry)));
+
+        assertEquals(-32602, ex.getCode());
+        assertEquals(expectedMessage, ex.getMessage());
     }
 
     // -------------------------------------------------------------------------
@@ -708,26 +732,6 @@ class AuthorizationListCodecTest {
             SetCodeAuthorization auth = (SetCodeAuthorization) parseEntry.invoke(null, entry, 0);
 
             assertEquals(BigInteger.ZERO, new BigInteger(1, auth.getNonceBytes()));
-        }
-    }
-
-    @Test
-    void parseCallArgumentsEntry_nullSignatureBytes_throws() throws Exception {
-        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
-        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
-        String rHex = entry.getR();
-
-        Method parseEntry = AuthorizationListCodec.class.getDeclaredMethod(
-                "parseCallArgumentsEntry", CallArguments.AuthorizationListEntry.class, int.class);
-        parseEntry.setAccessible(true);
-
-        try (MockedStatic<HexUtils> hex = Mockito.mockStatic(HexUtils.class, Mockito.CALLS_REAL_METHODS)) {
-            hex.when(() -> HexUtils.stringHexToByteArray(eq(rHex))).thenReturn(null);
-
-            InvocationTargetException ex = assertThrows(InvocationTargetException.class,
-                    () -> parseEntry.invoke(null, entry, 0));
-            assertTrue(ex.getCause() instanceof RskJsonRpcRequestException);
-            assertTrue(ex.getCause().getMessage().contains("signature r/s must be hex"));
         }
     }
 

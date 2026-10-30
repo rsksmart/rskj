@@ -18,7 +18,6 @@
 package org.ethereum.core.transaction.parser.util;
 
 import co.rsk.core.RskAddress;
-import co.rsk.util.HexUtils;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -30,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.ethereum.core.transaction.parser.util.CommonParsingUtils.decodeHex;
 import static org.ethereum.core.transaction.parser.util.CommonParsingUtils.reencodeCanonical;
 import static org.ethereum.core.transaction.parser.util.CommonParsingUtils.requireByteStringFramed;
 import static org.ethereum.core.transaction.parser.util.CommonParsingUtils.requireListFramed;
@@ -131,20 +131,20 @@ public final class AccessListCodec {
             if (entry.getAddress() == null) {
                 throw RskJsonRpcRequestException.invalidParamError("Access list entry missing address at index " + i);
             }
-            byte[] addressBytes = HexUtils.stringHexToByteArray(entry.getAddress());
-            if (addressBytes == null || addressBytes.length != 20) {
-                throw RskJsonRpcRequestException.invalidParamError(
-                        "Access list entry address must be a 20-byte hex value at index " + i);
+            String addressError = "Access list entry address must be a 20-byte hex value at index " + i;
+            byte[] addressBytes = decodeHex(entry.getAddress(), addressError);
+            if (addressBytes.length != 20) {
+                throw RskJsonRpcRequestException.invalidParamError(addressError);
             }
             byte[] encodedAddress = RLP.encodeElement(addressBytes);
 
             List<String> storageKeys = entry.getStorageKeys() != null ? entry.getStorageKeys() : Collections.emptyList();
             byte[][] encodedKeys = new byte[storageKeys.size()][];
             for (int k = 0; k < storageKeys.size(); k++) {
-                byte[] keyBytes = HexUtils.stringHexToByteArray(storageKeys.get(k));
-                if (keyBytes == null || keyBytes.length != 32) {
-                    throw RskJsonRpcRequestException.invalidParamError(
-                            "Access list storage key must be a 32-byte hex value at entry " + i + ", key " + k);
+                String keyError = "Access list storage key must be a 32-byte hex value at entry " + i + ", key " + k;
+                byte[] keyBytes = decodeHex(storageKeys.get(k), keyError);
+                if (keyBytes.length != 32) {
+                    throw RskJsonRpcRequestException.invalidParamError(keyError);
                 }
                 encodedKeys[k] = RLP.encodeElement(keyBytes);
             }
