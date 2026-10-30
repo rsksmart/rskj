@@ -377,7 +377,7 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         assertFalse(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(authorityAddress.getBytes())));
     }
 
-    /** Plan T06 @base (council C#24): with RSKIP701 off the delegated account is marked and earns the refund too. */
+    /** With RSKIP701 off the delegated account is marked and earns the refund too. */
     @ParameterizedTest(name = "RSKIP701 refund of a delegated account and of a contract {0}")
     @MethodSource("activationStates")
     void delegatedAccountEarnsNoRefundWhileAContractEarnsTheCappedRefund(String phase, boolean activated) {
@@ -494,7 +494,7 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
     }
 
-    /** Plan T19 (council C#24): a designator-shaped contract with no flag is marked; cleared with RSKIP701, deleted without. */
+    /** A designator-shaped contract with no flag is marked; cleared with RSKIP701, deleted without. */
     @ParameterizedTest(name = "RSKIP701 case 13: designator-shaped code without the flag {0}")
     @MethodSource("activationStates")
     void contractWithDelegationIndicatorCodeAndNoFlagIsCleared(String phase, boolean activated) {
@@ -647,9 +647,8 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     // -------------------------------------------------------------------------
 
     /**
-     * Plan T01/T04 negative (council C#10 a): the tx goes to delegated A, whose delegate CALLs C (nonce 1), and C
-     * runs SELFDESTRUCT. C is the account that destroys itself, so it is marked and cleared and earns the refund;
-     * A only forwarded the call.
+     * The tx goes to delegated A, whose delegate CALLs C (nonce 1), and C runs SELFDESTRUCT. C is the account that
+     * destroys itself, so it is marked and cleared and earns the refund; A only forwarded the call.
      */
     @ParameterizedTest(name = "RSKIP701: contract destroyed by a call from a delegated account {0}")
     @MethodSource("activationStates")
@@ -692,7 +691,7 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     }
 
     /**
-     * Plan T04 negative (council C#10 b): K (nonce 1) uses {0} on delegated A, whose delegate D runs SELFDESTRUCT.
+     * K (nonce 1) uses {0} on delegated A, whose delegate D runs SELFDESTRUCT.
      * The code runs in the context of K, so K is the account that destroys itself; A is only the code address.
      */
     @ParameterizedTest(name = "RSKIP701: contract running the code of a delegated account through {0} {2}")
@@ -732,9 +731,9 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     // -------------------------------------------------------------------------
 
     /**
-     * Plan T26 (council C#13): A sends its own set-code transaction (tx nonce 1, tuple nonce 2) that calls A, and
-     * the delegate runs SELFDESTRUCT. With RSKIP701 A keeps nonce 3, so its own past nonce-0 transaction cannot be
-     * replayed. Without it A is deleted, its nonce goes back to 0 and the old transaction is valid again.
+     * A sends its own set-code transaction (tx nonce 1, tuple nonce 2) that calls A, and the delegate runs
+     * SELFDESTRUCT. With RSKIP701 A keeps nonce 3, so its own past nonce-0 transaction cannot be replayed. Without it A
+     * is deleted, its nonce goes back to 0 and the old transaction is valid again.
      */
     @ParameterizedTest(name = "RSKIP701: replay of the authority own past transaction {0}")
     @MethodSource("activationStates")
@@ -774,9 +773,9 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     }
 
     /**
-     * Plan row for several fates in one transaction (council C#14): X destroys E (nonce 0), destroys C (nonce 1)
-     * and calls delegated A, whose delegate runs SELFDESTRUCT. E is deleted, C is cleared, A is intact, and the
-     * refund counts the two marked accounts. X writes four slots first so that the gas/2 cap does not hide the count.
+     * Several fates in one transaction: X destroys E (nonce 0), destroys C (nonce 1) and calls delegated A, whose
+     * delegate runs SELFDESTRUCT. E is deleted, C is cleared, A is intact, and the refund counts the two marked
+     * accounts. X writes four slots first so that the gas/2 cap does not hide the count.
      */
     @ParameterizedTest(name = "RSKIP701: deleted, cleared and delegated in one transaction {0}")
     @MethodSource("activationStates")
@@ -822,8 +821,8 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     }
 
     /**
-     * Plan T06 halt (council C#17): the delegate writes slot 1 after SELFDESTRUCT. SELFDESTRUCT halts the frame, so
-     * slot 1 stays unset and the caller sees a successful CALL. With RSKIP701 the account keeps slot 0 = 42.
+     * The delegate writes slot 1 after SELFDESTRUCT. SELFDESTRUCT halts the frame, so slot 1 stays unset and the caller
+     * sees a successful CALL. With RSKIP701 the account keeps slot 0 = 42.
      */
     @ParameterizedTest(name = "RSKIP701: SELFDESTRUCT in a delegated account halts {0}")
     @MethodSource("activationStates")
@@ -856,9 +855,8 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     }
 
     /**
-     * Plan T21 VM path (council C#18): Y does CREATE2 with init code that runs SELFDESTRUCT, then Y reverts. The
-     * child's marks and its creation are not merged into the caller, so the prefunded child address keeps its
-     * balance and nothing is deleted or cleared.
+     * Y does CREATE2 with init code that runs SELFDESTRUCT, then Y reverts. The child's marks and its creation are not
+     * merged into the caller, so the prefunded child address keeps its balance and nothing is deleted or cleared.
      */
     @ParameterizedTest(name = "RSKIP701: SELFDESTRUCT in the init code of a reverted CREATE2 {0}")
     @MethodSource("activationStates")
@@ -892,9 +890,9 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
     }
 
     /**
-     * Plan T21 VM path (council C#18): W runs CREATE with init code that calls C (nonce 1, which runs SELFDESTRUCT)
-     * and then returns 1000 bytes it cannot pay to deposit. The creation fails (RSKIP453 early return), so the mark
-     * of C made inside it is dropped and C keeps everything.
+     * W runs CREATE with init code that calls C (nonce 1, which runs SELFDESTRUCT) and then returns 1000 bytes it
+     * cannot pay to deposit. The creation fails (RSKIP453 early return), so the mark of C made inside it is dropped and
+     * C keeps everything.
      */
     @ParameterizedTest(name = "RSKIP701: SELFDESTRUCT inside a creation whose code deposit runs out of gas {0}")
     @MethodSource("activationStates")

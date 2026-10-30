@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Plan T22 as a block test (council C#7): cardamom1000 (and so RSKIP701) activates at block {@link #ACTIVATION}.
+ * cardamom1000 (and so RSKIP701) activates at block {@link #ACTIVATION}.
  * Block 1 creates two CREATE2 children with nonce 1. C1 is destroyed in block N-1 and is deleted; C2 is destroyed
  * in block N and is cleared. Block N+1 re-creates both: only C1 can be re-created.
  * A node with the same config imports every block with the same state roots; a node without RSKIP701 imports the
