@@ -56,7 +56,7 @@ public class PegUtils {
     /**
      * Checks if all utxos sent to the <b>fedWallet</b> are equal or above the minimum pegin value.
      * If no utxo is sent to the <b>fedWallet </b>or there is at least 1 utxo sent to the <b>fedWallet</b> that is below minimum,
-     * this method will return false. It will return true when all utxos sent to the <b>fedWallet</b> are above the minimum pegin value.
+     * this method will return false. It will return true when all utxos sent to the <b>fedWallet</b> are equal to or above the minimum pegin value.
      *
      * @param btcTx
      * @param fedWallet
