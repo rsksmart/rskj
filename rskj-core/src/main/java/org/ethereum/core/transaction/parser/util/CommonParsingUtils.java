@@ -33,7 +33,6 @@ import java.util.function.Supplier;
 /**
  * Shared field checks for the transaction parsers. {@code requireCanonical*} checks are typed-only:
  * received RLP is validated, never rewritten, since the signature commits to its bytes.
- * Each {@code requireCanonical*ScalarFields} mirrors a bounds sibling; keep their fields in step.
  */
 public final class CommonParsingUtils {
 
@@ -157,24 +156,6 @@ public final class CommonParsingUtils {
         requireDataWordCoin(value, "Value is not valid");
     }
 
-    /** Encoding counterpart of {@link #requireLegacyScalarFields}, used by Type-1 only. Fields may be {@code null}. */
-    public static void requireCanonicalGasPriceScalarFields(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] value) {
-        requireCanonicalScalar(nonce, "Nonce");
-        requireCanonicalScalar(gasPrice, "Gas Price");
-        requireCanonicalScalar(gasLimit, "Gas Limit");
-        requireCanonicalScalar(value, "Value");
-    }
-
-    /** Encoding counterpart of {@link #requireTypedScalarFields}, for Type-2 and Type-4. */
-    public static void requireCanonicalTypedScalarFields(byte[] nonce, byte[] gasLimit, byte[] value,
-                                                         byte[] maxPriorityFeePerGas, byte[] maxFeePerGas) {
-        requireCanonicalScalar(nonce, "Nonce");
-        requireCanonicalScalar(gasLimit, "Gas Limit");
-        requireCanonicalScalar(value, "Value");
-        requireCanonicalScalar(maxPriorityFeePerGas, "Max priority fee per gas");
-        requireCanonicalScalar(maxFeePerGas, "Max fee per gas");
-    }
-
     public static void requireTypedScalarFields(byte[] nonce, byte[] gasLimit, Coin value, Coin... feeFields) {
         requireDataWordBytes(nonce, "Nonce is not valid");
         requireDataWordBytes(gasLimit, "Gas Limit is not valid");
@@ -197,30 +178,11 @@ public final class CommonParsingUtils {
         }
     }
 
-    /** Requires every non-list envelope field to be framed as an RLP byte string. */
-    public static void requireByteStringFields(RLPList txFields, int... listFieldIndices) {
-        for (int i = 0; i < txFields.size(); i++) {
-            if (isListField(i, listFieldIndices)) {
-                continue;
-            }
-            requireByteStringFramed(txFields.get(i), "Transaction field at index " + i);
-        }
-    }
-
-    /** Single-element {@link #requireByteStringFields}; a length check alone cannot tell a list from a byte string. */
+    /** Requires an envelope field to be framed as an RLP byte string; a length check alone cannot tell a list from a byte string. */
     public static void requireByteStringFramed(RLPElement field, String fieldLabel) {
         if (field instanceof RLPList) {
             throw new IllegalArgumentException(fieldLabel + " must be encoded as an RLP byte string");
         }
-    }
-
-    private static boolean isListField(int index, int... listFieldIndices) {
-        for (int listFieldIndex : listFieldIndices) {
-            if (listFieldIndex == index) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /** Re-encodes a decoded element minimally, for comparison with the bytes received. */
