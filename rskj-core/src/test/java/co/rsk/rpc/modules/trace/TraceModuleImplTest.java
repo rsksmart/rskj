@@ -520,22 +520,7 @@ class TraceModuleImplTest {
         processor.processCommands(DslParser.fromResource("dsl/eth_module/estimateGas/selfdestructDelegatedAccount.txt"));
         RskAddress authority = world.getAccountByName("authority").getAddress();
         RskAddress beneficiary = world.getAccountByName("accB").getAddress();
-        processor.processCommands(new DslParser("transaction_build destroy\n" +
-                "    sender acc1\n" +
-                "    nonce 3\n" +
-                "    receiverAddress " + authority.toHexString() + "\n" +
-                "    value 0\n" +
-                "    data 000000000000000000000000" + beneficiary.toHexString() + "\n" +
-                "    gas 200000\n" +
-                "    build\n" +
-                "block_build b02\n" +
-                "    parent b01\n" +
-                "    gasLimit 6800000\n" +
-                "    transactions destroy\n" +
-                "    build\n" +
-                "block_connect b02\n" +
-                "assert_best b02\n" +
-                "assert_tx_success destroy\n"));
+        mineDestroyInB02(processor, 3, authority, 0, beneficiary);
 
         RepositorySnapshot afterDestroy = world.getRepositoryLocator()
                 .snapshotAt(world.getBlockChain().getBestBlock().getHeader());
@@ -555,9 +540,9 @@ class TraceModuleImplTest {
     }
 
     /**
-     * Plan T20 (council C#1): SELFDESTRUCT in a CREATE2 child with nonce 1. With RSKIP701 the child is cleared,
-     * without it it is deleted; the trace is the same in both cases: the root call and one "suicide" frame. There is
-     * no storage-clear frame, because finalization clears or deletes through the repository, not through Storage.
+     * SELFDESTRUCT in a CREATE2 child with nonce 1. With RSKIP701 the child is cleared, without it it is deleted;
+     * the trace is the same in both cases: the root call and one "suicide" frame. There is no storage-clear frame,
+     * because finalization clears or deletes through the repository, not through Storage.
      */
     @ParameterizedTest(name = "rskip701 active: {0}")
     @ValueSource(booleans = {true, false})
@@ -576,22 +561,7 @@ class TraceModuleImplTest {
         RskAddress beneficiary = world.getAccountByName("accB").getAddress();
         Assertions.assertEquals(BigInteger.ONE, world.getRepositoryLocator()
                 .snapshotAt(world.getBlockChain().getBestBlock().getHeader()).getNonce(child));
-        processor.processCommands(new DslParser("transaction_build destroy\n" +
-                "    sender acc1\n" +
-                "    nonce 1\n" +
-                "    receiverAddress " + child.toHexString() + "\n" +
-                "    value 1000\n" +
-                "    data 000000000000000000000000" + beneficiary.toHexString() + "\n" +
-                "    gas 200000\n" +
-                "    build\n" +
-                "block_build b02\n" +
-                "    parent b01\n" +
-                "    gasLimit 6800000\n" +
-                "    transactions destroy\n" +
-                "    build\n" +
-                "block_connect b02\n" +
-                "assert_best b02\n" +
-                "assert_tx_success destroy\n"));
+        mineDestroyInB02(processor, 1, child, 1000, beneficiary);
 
         RepositorySnapshot afterDestroy = world.getRepositoryLocator()
                 .snapshotAt(world.getBlockChain().getBestBlock().getHeader());
@@ -609,6 +579,27 @@ class TraceModuleImplTest {
         Assertions.assertEquals("0x" + beneficiary.toHexString(), suicide.get("action").get("refundAddress").asText());
         Assertions.assertEquals("0x3e8", suicide.get("action").get("balance").asText());
         Assertions.assertEquals("[0]", suicide.get("traceAddress").toString());
+    }
+
+    /** Mines block b02 with one successful transaction from acc1 that passes the beneficiary as its call data. */
+    private static void mineDestroyInB02(WorldDslProcessor processor, long nonce, RskAddress receiver, long value,
+                                         RskAddress beneficiary) throws DslProcessorException {
+        processor.processCommands(new DslParser("transaction_build destroy\n" +
+                "    sender acc1\n" +
+                "    nonce " + nonce + "\n" +
+                "    receiverAddress " + receiver.toHexString() + "\n" +
+                "    value " + value + "\n" +
+                "    data 000000000000000000000000" + beneficiary.toHexString() + "\n" +
+                "    gas 200000\n" +
+                "    build\n" +
+                "block_build b02\n" +
+                "    parent b01\n" +
+                "    gasLimit 6800000\n" +
+                "    transactions destroy\n" +
+                "    build\n" +
+                "block_connect b02\n" +
+                "assert_best b02\n" +
+                "assert_tx_success destroy\n"));
     }
 
     private static void retrieveSuicideInvocationTrace(World world, ReceiptStore receiptStore, String txname) {
