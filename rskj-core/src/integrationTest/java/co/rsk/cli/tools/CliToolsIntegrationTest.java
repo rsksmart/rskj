@@ -84,8 +84,11 @@ class CliToolsIntegrationTest {
             String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
             String logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
             String rskConfFile = String.format("%s/integration-test-rskj.conf", integrationTestResourcesPath);
-            port = IntegrationTestUtils.findFreePort();
-            peerPort = IntegrationTestUtils.findFreePort();
+            // RPC and peer ports must differ: two separate findFreePort() calls
+            // can return the same port and the node then fails with BindException.
+            int[] freePorts = IntegrationTestUtils.findFreePorts(2);
+            port = freePorts[0];
+            peerPort = freePorts[1];
             try (Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath))) {
                 jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
                         .map(p -> p.getFileName().toString())
