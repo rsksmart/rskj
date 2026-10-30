@@ -104,31 +104,79 @@ class P2shP2wshErpFederationTest {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @Tag("test segwit tx build using real txs")
-    class SegwitTxBuild {
+    class FedWith16Members {
         private final List<BtcECKey> btcMembersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{
                 "fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10",
-                "fed11", "fed12", "fed13", "fed14", "fed15", "fed16", "fed17", "fed18", "fed19", "fed20"
-            },
-            true
-        );
-        private final List<BtcECKey> erpPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{
-                "erp1", "erp2", "erp3", "erp4","erp5", "erp6", "erp7", "erp8","erp9", "erp10",
-                "erp11", "erp12", "erp13", "erp14","erp15", "erp16", "erp17", "erp18","erp19", "erp20"
+                "fed11", "fed12", "fed13", "fed14", "fed15", "fed16"
             },
             true
         );
 
-        private final byte[] emptyByte = new byte[] {};
+        private Federation federation;
+
+        @BeforeEach
+        void setup() {
+            federation = P2shP2wshErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(btcMembersKeys)
+                .build();
+        }
+
+        @Test
+        void getRedeemScript_with16Members_shouldEncodeNAsOpcode() {
+            // Act
+            List<ScriptChunk> chunks = federation.getRedeemScript().getChunks();
+
+            // Assert
+            // OP_NOTIF, OP_M, member keys..., OP_N, OP_CHECKMULTISIG
+            ScriptChunk thresholdChunk = chunks.get(1);
+            assertEquals(ScriptOpCodes.OP_9, thresholdChunk.opcode);
+
+            ScriptChunk numberOfMembersChunk = chunks.get(btcMembersKeys.size() + 2);
+            assertEquals(ScriptOpCodes.OP_16, numberOfMembersChunk.opcode);
+            assertNull(numberOfMembersChunk.data);
+        }
+
+        @Test
+        void getRedeemScript_with17Members_shouldEncodeNAsPushData() {
+            // Arrange
+            List<BtcECKey> btc17MembersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{
+                    "fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10",
+                    "fed11", "fed12", "fed13", "fed14", "fed15", "fed16", "fed17"
+                },
+                true
+            );
+
+            // Act
+            federation = P2shP2wshErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(btc17MembersKeys)
+                .build();
+            List<ScriptChunk> chunks = federation.getRedeemScript().getChunks();
+
+            // Assert
+            byte data = 0x11; // 17 in hex
+            // OP_NOTIF, OP_M, member keys..., OP_PUSHDATA1 data, OP_CHECKMULTISIG, ...
+            ScriptChunk numberOfMembersChunk = chunks.get(btc17MembersKeys.size() + 2);
+            assertEquals(1, numberOfMembersChunk.opcode);
+            assertArrayEquals(new byte[]{ data }, numberOfMembersChunk.data);
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("test segwit tx build using real txs")
+    class SegwitTxBuild {
         private static final int FIRST_INPUT_INDEX = 0;
+        private final byte[] emptyByte = new byte[] {};
 
         private NetworkParameters networkParameters;
 
         private Coin prevTxSentValue;
         private Coin fee;
 
+        private List<BtcECKey> btcMembersKeys;
+        private List<BtcECKey> erpPublicKeys;
         private Federation federation;
         private int federationFormatVersion;
         private Script redeemScript;
@@ -137,6 +185,24 @@ class P2shP2wshErpFederationTest {
         private Address receiver;
         private BtcTransaction tx;
 
+        @BeforeEach
+        void setupKeys() {
+            btcMembersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{
+                    "fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10",
+                    "fed11", "fed12", "fed13", "fed14", "fed15", "fed16", "fed17", "fed18", "fed19", "fed20"
+                },
+                true
+            );
+
+            erpPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{
+                    "erp1", "erp2", "erp3", "erp4","erp5", "erp6", "erp7", "erp8","erp9", "erp10",
+                    "erp11", "erp12", "erp13", "erp14","erp15", "erp16", "erp17", "erp18","erp19", "erp20"
+                },
+                true
+            );
+        }
 
         private void setUpFederation() {
             long erpActivationDelay = 30;
@@ -173,7 +239,6 @@ class P2shP2wshErpFederationTest {
             }
         }
 
-
         private static Stream<Arguments> spendFromP2shP2wshErpFedArgsProvider() {
             BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
             BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
@@ -190,8 +255,7 @@ class P2shP2wshErpFederationTest {
 
         @ParameterizedTest
         @MethodSource("spendFromP2shP2wshErpFedArgsProvider")
-        void spendFromP2shP2wshErpFedEmergencyKeys(
-            BridgeConstants bridgeConstants) {
+        void spendFromP2shP2wshErpFedEmergencyKeys(BridgeConstants bridgeConstants) {
             // Arrange
             List<BtcECKey> erpKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
                 new String[]{"erp1", "erp2", "erp3", "erp4"},
@@ -261,6 +325,67 @@ class P2shP2wshErpFederationTest {
                 p2wshP2shErpFederation.getP2SHScript(),
                 Script.ALL_VERIFY_FLAGS
             ));
+        }
+
+        @Test
+        void fedData_forRealP2shP2wshFed_testnet_with16Members_shouldReturnExpectedData() {
+            // arrange
+            networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+            btcMembersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{
+                    "fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10",
+                    "fed11", "fed12", "fed13", "fed14", "fed15", "fed16"
+                },
+                true
+            );
+            erpPublicKeys = BridgeTestNetConstants.getInstance().getFederationConstants().getErpFedPubKeysList();
+            setUpFederation();
+            redeemScript = federation.getRedeemScript();
+            outputScript = federation.getP2SHScript();
+
+            // data from https://mempool.space/testnet/tx/f797fbb2b0ce886194bbed6ffc1fb4fc822566a2605d4976e9ac85756011a0fd
+            prevTxHash = Sha256Hash.wrap("f797fbb2b0ce886194bbed6ffc1fb4fc822566a2605d4976e9ac85756011a0fd");
+            receiver = Address.fromBase58(networkParameters,"miopNaMkx6yqnJkE8VvLSeQXeN59XgZqdn");
+            prevTxSentValue = Coin.valueOf(10_000);
+            fee = Coin.valueOf(1_000);
+
+            // act
+            // data from https://mempool.space/testnet/tx/ff6d28d2527f7d1c8ad8a168da38b1ce758f07c1d3e8ed6d745d4ce6dc7d9d06
+            // recreate signed tx
+            arrangeSignedTx();
+
+            // assert
+            String expectedAddress = "2Mv92MMrHEdfJFH7ESZzvkhSHB1gxy6KTYW";
+            assertAddress(expectedAddress, federation.getAddress());
+
+            byte[] expectedP2SHScript = Hex.decode("1fbc2af67f1609359e178d092fd92a8c7ee82c3f");
+            assertP2shScript(expectedP2SHScript);
+
+            byte[] expectedHashedRedeemScriptProgram = Hex.decode("5380965e0720170c5ab9098ede81f407eac30919c4cac517e9fd4a4ed63054b5");
+            assertScriptSig(expectedHashedRedeemScriptProgram);
+
+            // redeem script
+            byte[] expectedRedeemScriptProgram = Hex.decode("6459210211310637a4062844098b46278059298cc948e1ff314ca9ec75c82e0d0b8ad22c210274564db76110474ac0d7e09080c182855b22a864cc201ed55217b23301f52f222102867f0e693a2553bf2bc13a5efa0b516b28e66317fbe8e484dd3f375bcb48ec592102881af2910c909f224557353dd28e3729363cf5c24232f26d25c92dac72a3dcdb21029c75b3257e0842c4be48e57e39bf2735c74a76c4b1c0b08d1cc66bf5b8748cc12102a46cbe93287cb51a398a157de2b428f21a94f46affdd916ce921bd10db6520332102d335ef4eeb74330c3a53f529f9741fa096412c7982ed681fcf69763894f34f892103163b86a62b4eeeb52f67cb16ce13a8622a066f2a063280749b956a97705dfc3d21033267e382e076cbaa199d49ea7362535f95b135de181caf66b391f541bf39ab0e210343e106d90183e2eef7d5cb7538a634439bf1301d731787c6736922ff19e750ed21034461d4263b907cfc5ebb468f19d6a133b567f3cc4855e8725faaf60c6e388bca21036e92e6555d2e70af4f5a4f888145356e60bb1a5bc00786a8e9f50152090b2f692103ab54da6b69407dcaaa85f6904687052c93f1f9dd0633f1321b3e624fcd30144b2103bd5b51b1c5d799da190285c8078a2712b8e5dc6f73c799751e6256bb89a4bd042103be060191c9632184f2a0ab2638eeed04399372f37fc7a3cff5291cfd6426cf352103e6def9ef0597336eb58d24f955b6b63756cf7b3885322f9d0cf5a2a12f7e459b60ae67011eb27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f53ae68");
+            assertRedeemScript(expectedRedeemScriptProgram);
+
+            // witness script
+            TransactionWitness witness = tx.getWitness(FIRST_INPUT_INDEX);
+
+            List<byte[]> expectedSigs = Arrays.asList(
+                Hex.decode("3045022100fc091a8225acb389745e20e33269f0423b6372d590818a78ef17c5914820c52d022008957c8375748f4b6bf236caae0b08a03584b682447b72ae53418813d1bf421601"),
+                Hex.decode("30450221009fe648d3d9872ecdf50ac6182d7b35448964a64d307589a007789dd4de5cbaf80220708dfbcd0a7d2a608ceb61ee7a87c6a7115bbdcd5b0b14e69d77eb86856c253801"),
+                Hex.decode("3045022100d3db172fb36d24fecf9e7dae19e0473a1f6509ce378fa455737e5189073c168d022033b35a20fbe688e97d54862faf4ed18feed7f5b02875b07bdc6d0b6fde89350e01"),
+                Hex.decode("30440220307ea6906e4c1e53a8e00bcc9b8f04e7fb47cb97b4fc6e881bb87497db5b90aa0220501a24bb8d8b831462313779fd6ef50ab11d37d5fddf4a22bd8fc4fc000823da01"),
+                Hex.decode("3045022100e3386fe2d2bad7ed6f9917af74ec5f0e224fec041fe6e6bacdec57442a7deb4202204f5b308157a685ac6329f8cb64abbe747cffe95fd4cb3fed9bb5181ae6345f4f01"),
+                Hex.decode("304402205461eb3ed876a008d80ebe804172c7b86c86fcb5a92853ca3ce90dd6c6107a7802201a98f2a7c7abc97de90eb9803ff6de4f5a11c03b3a5b7c302bb9fb99efb72f0a01"),
+                Hex.decode("3045022100fc4571157fd4d0a829adc13fbce512485f3b6e1cbefb0a7ada1137eeb3a7d86b022051d4185b3f1908b68a91374450d9aa2b5f220493661e8382797944505d4f90ac01"),
+                Hex.decode("3045022100caa352377c4b17f93ec8cfaedcdaa36cce38166be46ca091f21fdb08c9720c4402207ed0a7430b37e2163412fff0bb2551f907646cca1959d6464dd6b9c89facf24301"),
+                Hex.decode("304402203fd7a92f5e0edc09a8ea052989f978afb72bd48e22efe0841ec2427738487b7f02204d3b58ad600627b1a45c6abc1671bcce87a045ed4706c8bc6b3eead810c2f1b101")
+            );
+            assertWitnessScript(witness, expectedRedeemScriptProgram, expectedSigs);
+
+            Sha256Hash expectedTxHash = Sha256Hash.wrap("ff6d28d2527f7d1c8ad8a168da38b1ce758f07c1d3e8ed6d745d4ce6dc7d9d06");
+            assertTxHash(expectedTxHash);
         }
 
         @Test
