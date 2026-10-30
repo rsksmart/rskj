@@ -85,6 +85,8 @@ class Rskip546HardforkTest {
                                 ConfigValueFactory.fromAnyRef(ACTIVATION))
                         .withValue("blockchain.config.consensusRules.rskip546",
                                 ConfigValueFactory.fromAnyRef(ACTIVATION))
+                        .withValue("blockchain.config.consensusRules.rskip545",
+                                ConfigValueFactory.fromAnyRef(-1))
         );
 
         DslParser parser = DslParser.fromResource(
@@ -459,6 +461,8 @@ class Rskip546HardforkTest {
                                     ConfigValueFactory.fromAnyRef(ACTIVATION))
                             .withValue("blockchain.config.consensusRules.rskip546",
                                     ConfigValueFactory.fromAnyRef(ACTIVATION))
+                            .withValue("blockchain.config.consensusRules.rskip545",
+                                    ConfigValueFactory.fromAnyRef(-1))
             );
             World w = new World(config);
             Account sender = new AccountBuilder(w).name("sender").balance(Coin.valueOf(1_000_000_000_000L)).build();
@@ -503,6 +507,8 @@ class Rskip546HardforkTest {
                                     ConfigValueFactory.fromAnyRef(ACTIVATION))
                             .withValue("blockchain.config.consensusRules.rskip546",
                                     ConfigValueFactory.fromAnyRef(ACTIVATION))
+                            .withValue("blockchain.config.consensusRules.rskip545",
+                                    ConfigValueFactory.fromAnyRef(-1))
             );
 
             Transaction typedTx = Rskip546TestSupport.unsignedType1(
@@ -537,6 +543,8 @@ class Rskip546HardforkTest {
                                     ConfigValueFactory.fromAnyRef(1))
                             .withValue("blockchain.config.consensusRules.rskip546",
                                     ConfigValueFactory.fromAnyRef(1))
+                            .withValue("blockchain.config.consensusRules.rskip545",
+                                    ConfigValueFactory.fromAnyRef(-1))
             );
             World w = new World(config);
             Account sender = new AccountBuilder(w).name("sender").balance(Coin.valueOf(1_000_000_000_000L)).build();
@@ -577,6 +585,8 @@ class Rskip546HardforkTest {
                             .withValue("blockchain.config.consensusRules.rskip543",
                                     ConfigValueFactory.fromAnyRef(-1))
                             .withValue("blockchain.config.consensusRules.rskip546",
+                                    ConfigValueFactory.fromAnyRef(-1))
+                            .withValue("blockchain.config.consensusRules.rskip545",
                                     ConfigValueFactory.fromAnyRef(-1))
             );
             World wOff = new World(configOff);
@@ -758,6 +768,8 @@ class Rskip546HardforkTest {
                                 ConfigValueFactory.fromAnyRef(-1))
                         .withValue("blockchain.config.consensusRules.rskip546",
                                 ConfigValueFactory.fromAnyRef(-1))
+                        .withValue("blockchain.config.consensusRules.rskip545",
+                                ConfigValueFactory.fromAnyRef(-1))
         );
 
         Transaction typedTx = world.getTransactionByName("txTransitionType1");
@@ -779,6 +791,8 @@ class Rskip546HardforkTest {
                                 ConfigValueFactory.fromAnyRef(0))
                         .withValue("blockchain.config.consensusRules.rskip546",
                                 ConfigValueFactory.fromAnyRef(-1))
+                        .withValue("blockchain.config.consensusRules.rskip545",
+                                ConfigValueFactory.fromAnyRef(-1))
         );
 
         Transaction type2Tx = world.getTransactionByName("txPostType2");
@@ -797,6 +811,8 @@ class Rskip546HardforkTest {
                         .withValue("blockchain.config.consensusRules.rskip543",
                                 ConfigValueFactory.fromAnyRef(0))
                         .withValue("blockchain.config.consensusRules.rskip546",
+                                ConfigValueFactory.fromAnyRef(-1))
+                        .withValue("blockchain.config.consensusRules.rskip545",
                                 ConfigValueFactory.fromAnyRef(-1))
         );
 
