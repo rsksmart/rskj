@@ -61,7 +61,6 @@ class SelfdestructPreservesNonceDslTest {
     private static final String PROBE_P = "3b7333f16708e73a68ef9171cf7a6ebbd78c954f";
     private static final long LATE_VALUE = 1000;
     private static final long PLAIN_CALL_GAS = 21_000;
-    private static final long RECREATE_GAS_LIMIT = 200_000;
     private static final String SAME_BLOCK_STATE_ROOT = "aaf71281a88c23c9f58b7ae297a59ef5e0e2d428d3182d42302fe22b8a634f4c";
 
     @Test
@@ -120,9 +119,9 @@ class SelfdestructPreservesNonceDslTest {
     }
 
     /**
-     * Plan T08/T11/T12 same block (council C#4): K is created, destroyed (and written to after its mark), called,
-     * probed, paid and re-created, all in block b01. Every step after the destroy sees the cleared account through
-     * the block's stacked caches. b02 tries the re-create again.
+     * K is created, destroyed (and written to after its mark), probed, called, paid and re-created, all in block b01.
+     * Every step after the destroy sees the cleared account through the block's stacked caches. b02 tries the
+     * re-create again.
      */
     @Test
     void create2ContractClearedInTheBlockItWasCreatedIsSeenAsClearedByTheLaterTransactionsOfThatBlock()
@@ -139,8 +138,8 @@ class SelfdestructPreservesNonceDslTest {
         assertEquals(Coin.valueOf(LATE_VALUE), afterBlock.getBalance(CONTRACT_K), "the value paid after the clear stays");
         assertEquals(PLAIN_CALL_GAS, gasUsed(world, "callK"), "K has no code, so the call runs nothing");
         assertProbe(afterBlock, MutableRepository.KECCAK_256_OF_EMPTY_ARRAY.getBytes());
-        assertRefusedCreation(world, "recreateK", RECREATE_GAS_LIMIT);
-        assertRefusedCreation(world, "recreateKLater", RECREATE_GAS_LIMIT);
+        assertRefusedCreation(world, "recreateK");
+        assertRefusedCreation(world, "recreateKLater");
         assertEquals(BigInteger.ONE, snapshotAtBest(world).getNonce(CONTRACT_K));
         assertEquals(0, snapshotAtBest(world).getCodeLength(CONTRACT_K));
         assertEquals(SAME_BLOCK_STATE_ROOT, Hex.toHexString(world.getBlockByName("b01").getStateRoot()),
@@ -158,10 +157,10 @@ class SelfdestructPreservesNonceDslTest {
         assertEquals(0, afterBlock.getStorageKeysCount(CONTRACT_K));
         assertEquals(Coin.valueOf(LATE_VALUE), afterBlock.getBalance(CONTRACT_K));
         assertEquals(PLAIN_CALL_GAS, gasUsed(world, "callK"));
-        // The plain call to the deleted K (no EIP-161 on RSK) created it again as an empty account before the probe
-        assertProbe(afterBlock, MutableRepository.KECCAK_256_OF_EMPTY_ARRAY.getBytes());
+        // The probe runs before the plain call re-creates K (no EIP-161 on RSK), so it sees no account
+        assertProbe(afterBlock, null);
         // RSKIP131: K was marked in this block, so a CREATE2 at K in a later transaction of the same block is refused
-        assertRefusedCreation(world, "recreateK", RECREATE_GAS_LIMIT);
+        assertRefusedCreation(world, "recreateK");
         assertTrue(world.getTransactionReceiptByName("recreateKLater").isSuccessful());
         assertEquals(BigInteger.ONE, snapshotAtBest(world).getNonce(CONTRACT_K));
         assertTrue(snapshotAtBest(world).getCodeLength(CONTRACT_K) > 0);
@@ -220,11 +219,6 @@ class SelfdestructPreservesNonceDslTest {
     private static void assertSuccessfulCreation(World world, String transactionName) {
         assertTrue(world.getTransactionReceiptByName(transactionName).isSuccessful());
         assertTrue(gasUsed(world, transactionName) < CALL_GAS_LIMIT);
-    }
-
-    private static void assertRefusedCreation(World world, String transactionName, long gasLimit) {
-        assertFalse(world.getTransactionReceiptByName(transactionName).isSuccessful());
-        assertEquals(gasLimit, gasUsed(world, transactionName));
     }
 
     /** The probe stored EXTCODEHASH(K) in slot 0, EXTCODESIZE(K) + 1 in slot 1 and BALANCE(K) + 1 in slot 2. */
