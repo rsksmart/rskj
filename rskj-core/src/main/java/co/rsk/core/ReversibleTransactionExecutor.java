@@ -24,6 +24,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 
@@ -147,6 +148,12 @@ public class ReversibleTransactionExecutor {
 
     private static class UnsignedTransaction extends Transaction {
 
+        /**
+         * A fixed public-only key returned by {@link #getKey()}: the generator point G, which is the public key of
+         * private key 1. A simulated peg-out therefore logs this key's BTC address, not the sender's.
+         */
+        private static final ECKey PLACEHOLDER_KEY = ECKey.fromPublicOnly(ECKey.CURVE.getG());
+
         private UnsignedTransaction(
                 byte[] nonce,
                 byte[] gasPrice,
@@ -164,6 +171,17 @@ public class ReversibleTransactionExecutor {
             // We only allow executing unsigned transactions
             // in the context of a reversible transaction execution.
             return true;
+        }
+
+        /**
+         * A simulated transaction carries no signature, so there is no public key to recover from it.
+         * Native contracts that need the sender's public key still have to run, for example the Bridge
+         * deriving the BTC destination of a peg-out from it. They get a fixed placeholder key instead.
+         * Which key is used does not change the gas, and a fixed key keeps repeated simulations identical.
+         */
+        @Override
+        public ECKey getKey() {
+            return PLACEHOLDER_KEY;
         }
     }
 }
