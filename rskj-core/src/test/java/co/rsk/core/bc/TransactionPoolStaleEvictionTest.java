@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.validators.BlockValidator;
@@ -54,6 +55,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -173,9 +175,10 @@ class TransactionPoolStaleEvictionTest {
         Transaction executable = tx(delegatedAccount, 1, 1000);
         Assertions.assertTrue(pool.addTransaction(executable).pendingTransactionsWereAdded());
 
-        connect(delegating);
+        Block block = connect(delegating);
 
         Assertions.assertEquals(Set.of(executable.getHash()), poolHashes());
+        assertPoolKeepsWhatAdmissionAccepts(block, delegatedAccount, executable);
     }
 
     @Test
@@ -206,6 +209,7 @@ class TransactionPoolStaleEvictionTest {
         Assertions.assertTrue(isDelegatedAt(block, accountA));
 
         Assertions.assertEquals(Set.of(executable.getHash()), poolHashes());
+        assertPoolKeepsWhatAdmissionAccepts(block, accountA, stale, executable, gapped);
     }
 
     @Test
@@ -272,6 +276,7 @@ class TransactionPoolStaleEvictionTest {
         Block delegating = connect(genesis, setCode(accountB, accountA, 0));
         Assertions.assertEquals(BigInteger.ONE, stateNonce(delegating, accountA));
         Assertions.assertTrue(isDelegatedAt(delegating, accountA));
+        assertPoolKeepsWhatAdmissionAccepts(delegating, accountA, stale, gapped);
 
         Transaction next = tx(accountA, 1, 1000);
         TransactionPoolAddResult result = pool.addTransaction(next);
@@ -295,6 +300,7 @@ class TransactionPoolStaleEvictionTest {
 
         Assertions.assertEquals(List.of(queued), pool.getPendingTransactions());
         Assertions.assertTrue(pool.getQueuedTransactions().isEmpty());
+        assertPoolKeepsWhatAdmissionAccepts(delegating, accountA, queued);
 
         Block mined = connect(delegating, pool.getPendingTransactions().toArray(new Transaction[0]));
         Assertions.assertEquals(BigInteger.TWO, stateNonce(mined, accountA));
@@ -325,6 +331,44 @@ class TransactionPoolStaleEvictionTest {
         Assertions.assertTrue(isDelegatedAt(block, delegatedAccount));
         Assertions.assertEquals(BigInteger.ONE, stateNonce(block, delegatedAccount));
         return block;
+    }
+
+    /**
+     * Asserts that the pool holds exactly those of the account's candidate transactions that
+     * admission accepts against the state at {@code best}. A new pool at that block is offered
+     * the candidates in nonce order, so a change to the admission rules that the reconciliation
+     * on a new best block does not follow, or the reverse, fails here.
+     */
+    private void assertPoolKeepsWhatAdmissionAccepts(Block best, Account account, Transaction... candidates) {
+        TransactionPoolImpl admissionPool = new TransactionPoolImpl(
+                context.getRskSystemProperties(),
+                context.getRepositoryLocator(),
+                context.getBlockStore(),
+                context.getBlockFactory(),
+                null,
+                context.getTransactionExecutorFactory(),
+                context.getReceivedTxSignatureCache(),
+                context.getRskSystemProperties().txOutdatedThreshold(),
+                context.getRskSystemProperties().txOutdatedTimeout(),
+                new TxQuotaChecker(System::currentTimeMillis, context.getReceivedTxSignatureCache()),
+                context.getGasPriceTracker());
+        admissionPool.processBest(best);
+
+        List<Transaction> inNonceOrder = Arrays.stream(candidates)
+                .sorted(Comparator.comparing(Transaction::getNonceAsInteger))
+                .collect(Collectors.toList());
+        for (Transaction candidate : inNonceOrder) {
+            admissionPool.addTransaction(candidate);
+        }
+
+        Assertions.assertEquals(hashesOf(admissionPool, account), hashesOf(pool, account));
+    }
+
+    private Set<Keccak256> hashesOf(TransactionPoolImpl transactionPool, Account account) {
+        return Stream.concat(transactionPool.getPendingTransactions().stream(), transactionPool.getQueuedTransactions().stream())
+                .filter(t -> t.getSender().equals(account.getAddress()))
+                .map(Transaction::getHash)
+                .collect(Collectors.toSet());
     }
 
     private byte[] codeAt(Block block, Account account) {
