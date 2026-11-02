@@ -671,7 +671,8 @@ class ParallelExecutionStateTest {
                 "    build\n" +
                 "\n" +
                 "block_connect b01\n" +
-                "assert_tx_success tx01 tx01b\n" +
+                "assert_tx_success tx01\n" +
+                "assert_tx_success tx01b\n" +
                 "\n" +
                 // Zero gas price: a test block has no REMASC transaction, so only the last sublist's fees reach
                 // REMASC, and fees in two parallel sublists would make the state root differ from the miner's
@@ -691,7 +692,8 @@ class ParallelExecutionStateTest {
                 "    build\n" +
                 "\n" +
                 buildBlockWithTwoTxs +
-                "assert_tx_success tx02 tx03\n";
+                "assert_tx_success tx02\n" +
+                "assert_tx_success tx03\n";
     }
 
     // 2. A is in a parallel sublist without enough gas available: B is placed in the sequential sublist
