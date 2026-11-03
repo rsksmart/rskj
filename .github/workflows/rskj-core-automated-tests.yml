@@ -1,27 +1,29 @@
 name: RSKj Core Automated Tests
 
-# Umbrella check: on an rskj PR (or manual dispatch), trigger the three external
-# test suites against this rskj change in parallel, wait for all of them, and
-# surface a single concise pass/fail report.
+# Umbrella workflow. On an rskj PR or a manual run (workflow_dispatch), it starts
+# the test suites in other repos against this rskj ref, waits for all of them,
+# and writes one table.
 #
-#   JSON-RPC  -> rsksmart/rskj-json-rpc-tests   (rskj-json-rpc-tests.yml,     test_branch)
-#   Hardhat   -> rsksmart/rskj-hardhat-tests     (rskj-smart-contract-tests.yml, hardhat_branch)
-#   K6        -> rsksmart/rskj-k6-tests           (rskj-k6-tests.yml,           test_branch)
+#   Suite     Test repo                     Workflow                       test_input
+#   JSON-RPC  rsksmart/rskj-json-rpc-tests  rskj-json-rpc-tests.yml        test_branch
+#   Hardhat   rsksmart/rskj-hardhat-tests   rskj-smart-contract-tests.yml  hardhat_branch
+#   K6        rsksmart/rskj-k6-tests        rskj-k6-tests.yml              test_branch
+#   Sync      rsksmart/rskj-sync-tests      pr.yml                         test_branch
 #
-# gh / gh api / jq are all preinstalled on the runner. Cross-repo auth uses a
-# short-lived GitHub App installation token, minted per suite via
-# actions/create-github-app-token (pinned by SHA) from the GH_APP_ID /
-# GH_APP_PRIVATE_KEY secrets. The App is installed on the three test repos with
-# Actions: read+write and Contents: read. Each token lasts ~1h, which comfortably
-# covers a job's dispatch + poll-to-completion (all suites finish well under that,
-# and timeout-minutes keeps every job inside the token's lifetime). The dispatch
-# endpoint returns the created run id directly via return_run_details=true
-# (GitHub, 2026-02-19), so there is no poll-to-correlate step.
+# JSON-RPC, Hardhat and K6 are the required suites: a failure fails the required
+# check (Automated Regression Report). Sync is advisory: a failure is a warning.
 #
-# The per-suite dispatch + poll logic lives once in the reusable workflow
-# .github/workflows/_dispatch-suite.yml; the three suite jobs below are thin
-# callers that pass per-suite parameters and expose its conclusion / run_url
-# outputs to the report job.
+# Sync runs only on demand: start a manual run and set "run_sync". A Sync run
+# takes about 30 min and downloads a 1.7 GiB testnet snapshot. That costs too
+# much for every push. Run Sync when a change can affect consensus.
+#
+# Each suite job gets a GitHub App token from the GH_APP_ID and
+# GH_APP_PRIVATE_KEY secrets. The App needs Actions read and write, and Contents
+# read, on the test repos. The Sync steps get their own token. These steps can
+# fail, but a failure changes only the Sync row, never the required check.
+#
+# _dispatch-suite.yml starts each suite and waits for its conclusion. For token
+# lifetime and poll limits, see that file.
 
 on:
   pull_request:
@@ -45,10 +47,17 @@ on:
         description: "rskj-k6-tests branch (default: auto-match, else main)"
         type: string
         required: false
+      sync_branch:
+        description: "rskj-sync-tests branch (default: auto-match, else main)"
+        type: string
+        required: false
+      run_sync:
+        description: "Also run the sync suite (about 30 min and a 1.7 GiB download)"
+        type: boolean
+        default: false
 
-# Least privilege at the top level; the only job that needs a write scope
-# (pull-requests: write, for the sticky PR comment) declares it itself.
-# Declare default permissions as read only.
+# Read-only by default. Only the report job sets a write scope:
+# pull-requests: write, for the sticky PR comment.
 permissions: read-all
 
 concurrency:
@@ -68,39 +77,37 @@ jobs:
       jsonrpc_ref: ${{ steps.refs.outputs.jsonrpc_ref }}
       hardhat_ref: ${{ steps.refs.outputs.hardhat_ref }}
       k6_ref: ${{ steps.refs.outputs.k6_ref }}
+      sync_ref: ${{ steps.refs.outputs.sync_ref }}
+      sync_fallback: ${{ steps.refs.outputs.sync_fallback }}
     steps:
-      # App secrets are withheld from fork pull_request runs (GitHub does not expose
-      # secrets to runs triggered by forks). An empty private key is our fork-PR
-      # signal: detect it here so the rest of the workflow degrades gracefully
-      # (skip + stay green) instead of failing token mint / every gh call.
+      # GitHub gives no secrets to a run from a fork PR. This step sets has_token,
+      # so that a fork PR skips the suites and stays green, and the token step and
+      # the gh calls do not fail.
       - name: Check cross-repo App credentials
         id: token
         env:
           APP_ID: ${{ secrets.GH_APP_ID }}
           APP_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
-          # Only a PR whose head is a fork has secrets withheld by GitHub. Same-repo
-          # PRs and workflow_dispatch always have them (head.repo.fork is empty on
-          # dispatch → treated as non-fork).
+          # Empty on a manual run, so a manual run counts as non-fork. Same-repo PRs
+          # and manual runs always get the secrets.
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
         run: |
-          # Require BOTH secrets: a present key with a missing/misconfigured id
-          # would still fail token mint later, in a less obvious way.
+          # Both secrets are necessary. A key without a correct ID fails later, at
+          # the token step, with a less clear error.
           if [ -n "$APP_ID" ] && [ -n "$APP_KEY" ]; then
             echo "has_token=true" >> "$GITHUB_OUTPUT"
           elif [ "$IS_FORK" = "true" ]; then
-            # Fork PR: secrets are legitimately unavailable. Skip + stay green —
-            # the PR cannot supply them, so we do not block it.
+            # Fork PR: the PR cannot supply the secrets. Skip and stay green.
             echo "has_token=false" >> "$GITHUB_OUTPUT"
             echo "::warning::GH_APP_ID / GH_APP_PRIVATE_KEY unavailable (fork PR — secrets are withheld); downstream suites will be skipped."
           else
-            # Non-fork run with missing secrets means they were removed or
-            # misconfigured on this repo. Fail loudly rather than silently
-            # skipping, which would defeat this check's required-gate purpose.
+            # Non-fork run: the secrets were removed or are wrong in this repo.
+            # Fail. A skip would turn the required check green with no tests.
             echo "::error::GH_APP_ID / GH_APP_PRIVATE_KEY are missing on a non-fork run; configure the GitHub App secrets so the cross-repo suites can be dispatched."
             exit 1
           fi
 
-      # Mint a short-lived (~1h) installation token scoped to the three test repos.
+      # App token for the three required suites. It lasts about 1 h.
       - name: Generate GitHub App token
         id: app-token
         if: steps.token.outputs.has_token == 'true'
@@ -109,16 +116,32 @@ jobs:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
           owner: rsksmart
-          # Comma-separated single line: this action version does not split a
-          # multi-line block into a list (it took the whole newline-joined string
-          # as one repo name and 404'd looking up its installation).
+          # Use one comma-separated line. The action read a multi-line value as
+          # one repo name, and the installation lookup failed with 404.
+          # List only the required suites. If the App cannot reach a repo in this
+          # list, this token fails, and the required check fails too.
           repositories: rskj-json-rpc-tests,rskj-hardhat-tests,rskj-k6-tests
+
+      # App token for the Sync branch lookup, only when run_sync is set. If this
+      # step fails, the job continues, and Sync uses sync_branch or main.
+      - name: Generate GitHub App token for the advisory sync suite
+        id: sync-app-token
+        if: steps.token.outputs.has_token == 'true' && inputs.run_sync == true
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: rsksmart
+          repositories: rskj-sync-tests
+          permission-contents: read
 
       - name: Resolve rskj + per-suite test refs
         id: refs
         if: steps.token.outputs.has_token == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SYNC_TOKEN: ${{ steps.sync-app-token.outputs.token }}
           EVENT: ${{ github.event_name }}
           HEAD_REF: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
@@ -126,42 +149,53 @@ jobs:
           IN_JSONRPC: ${{ inputs.jsonrpc_branch }}
           IN_HARDHAT: ${{ inputs.hardhat_branch }}
           IN_K6: ${{ inputs.k6_branch }}
+          IN_SYNC: ${{ inputs.sync_branch }}
+          RUN_SYNC: ${{ inputs.run_sync == true }}
         run: |
           set -euo pipefail
 
-          # rskj ref: PR head branch on PRs; the dispatch input (or the dispatched
-          # ref) on manual runs. The three suites build the node from this.
+          # The rskj ref: the PR head branch on a PR. On a manual run: rskj_branch,
+          # or the ref that started the run. All suites build the node from this ref.
           if [ "$EVENT" = "workflow_dispatch" ]; then
             RSKJ_REF="${IN_RSKJ:-$REF_NAME}"
           else
             RSKJ_REF="$HEAD_REF"
           fi
 
-          # Validate the ref before it is ever interpolated, unencoded, into a
-          # gh api REST path below (resolve_ref's "repos/<repo>/branches/$RSKJ_REF").
-          # github.head_ref and the workflow_dispatch inputs are caller-controlled
-          # and the dispatch inputs are not constrained to real ref syntax, so a
-          # crafted value containing ".." or path/control characters could redirect
-          # the call. Restrict to safe git-ref characters and reject any "..".
+          # The caller controls this ref, and resolve_ref puts it, not encoded, in a
+          # REST path (repos/<repo>/branches/<ref>). A ".." or a control character
+          # can change that path. So allow only safe ref characters, and no "..".
           case "$RSKJ_REF" in
             ""|*..*) echo "::error::invalid rskj ref (empty or contains '..'): '$RSKJ_REF'"; exit 1;;
             *[!A-Za-z0-9._/-]*) echo "::error::rskj ref has disallowed characters: '$RSKJ_REF'"; exit 1;;
           esac
 
+          # The branch inputs get the same character check. Each input goes,
+          # as typed, into $GITHUB_OUTPUT below. A newline in an input adds a line
+          # there, which fails this job or adds an output. An empty input is
+          # correct: it means "use the matching branch". The error does not show
+          # the value, because a newline in the value can start a workflow command.
+          # Without run_sync, Sync does not use sync_branch, so it gets no check.
+          for pair in "jsonrpc_branch:$IN_JSONRPC" "hardhat_branch:$IN_HARDHAT" \
+                      "k6_branch:$IN_K6" "sync_branch:$IN_SYNC"; do
+            input="${pair%%:*}"; value="${pair#*:}"
+            [ "$input" != "sync_branch" ] || [ "$RUN_SYNC" = "true" ] || continue
+            case "$value" in
+              *..*|*[!A-Za-z0-9._/-]*) echo "::error::$input is not a plain branch name (letters, digits and . _ / - only, no '..')"; exit 1;;
+            esac
+          done
+
           echo "rskj_ref=$RSKJ_REF" >> "$GITHUB_OUTPUT"
           echo "rskj ref: $RSKJ_REF"
 
-          # Matching-branch convention: if a branch named "$RSKJ_REF" exists in a
-          # test repo, run that branch there (so companion test/workflow changes on
-          # a same-named branch are exercised); otherwise fall back to main. An
-          # explicit dispatch input always wins.
+          # Matching branch: if a test repo has a branch with the rskj ref's name,
+          # the suite runs that branch (for companion test changes). If not, the
+          # suite runs main. A branch input always wins.
           #
-          # Only a genuine 404 (branch absent) may fall back to main. Any OTHER API
-          # failure (rate limit, auth, transient outage) must fail the job loudly:
-          # silently treating it as "branch missing" would exercise the wrong test
-          # branch and could produce a false-green run. Result is returned in
-          # RESOLVED so the non-404 error path can `return 1` and trip `set -e` in
-          # the caller (an `exit` inside $(...) would only leave the subshell).
+          # Only a 404 (no such branch) gives main. Any other API error (rate limit,
+          # auth, outage) fails the job, because main can give a false green.
+          # resolve_ref sets RESOLVED instead of printing, because an `exit` inside
+          # $(...) only leaves the subshell. So `return 1` reaches `set -e`.
           resolve_ref() {
             repo="$1"; override="$2"
             if [ -n "$override" ]; then
@@ -180,16 +214,46 @@ jobs:
           resolve_ref rsksmart/rskj-hardhat-tests "$IN_HARDHAT"; HARDHAT_REF="$RESOLVED"
           resolve_ref rsksmart/rskj-k6-tests "$IN_K6"; K6_REF="$RESOLVED"
 
+          # Sync uses its own token, which can be missing. Because Sync is advisory,
+          # a lookup error gives main and does not fail this job.
+          # SYNC_FALLBACK gives the Sync row a reason when main was not looked up.
+          # A lookup error or a missing token does not prove that the branch is absent.
+          SYNC_REF=""
+          SYNC_FALLBACK=""
+          if [ "$RUN_SYNC" != "true" ]; then
+            :
+          elif [ -n "${SYNC_TOKEN:-}" ]; then
+            OLD_TOKEN="$GH_TOKEN"
+            GH_TOKEN="$SYNC_TOKEN"; export GH_TOKEN
+            # In an `if`, a failed lookup does not trip `set -e`. `>/dev/null` hides
+            # the "refusing to fall back" error, because Sync does fall back (see the
+            # warning). The redirect makes no subshell, so RESOLVED and err stay set.
+            if resolve_ref rsksmart/rskj-sync-tests "$IN_SYNC" >/dev/null; then
+              SYNC_REF="$RESOLVED"
+            else
+              SYNC_REF="${IN_SYNC:-main}"
+              SYNC_FALLBACK="branch lookup failed"
+              echo "::warning::could not resolve a branch in rsksmart/rskj-sync-tests (${err:-no error recorded}); the advisory sync suite will run '$SYNC_REF'"
+            fi
+            GH_TOKEN="$OLD_TOKEN"; export GH_TOKEN
+          else
+            # No token, so no lookup: use sync_branch or main.
+            SYNC_REF="${IN_SYNC:-main}"
+            [ -n "$IN_SYNC" ] || SYNC_FALLBACK="no token to look up the branch"
+            echo "::warning::no App token for rsksmart/rskj-sync-tests (is the App installed on it?); the advisory sync suite will run '$SYNC_REF'"
+          fi
+
           {
             echo "jsonrpc_ref=$JSONRPC_REF"
             echo "hardhat_ref=$HARDHAT_REF"
             echo "k6_ref=$K6_REF"
+            echo "sync_ref=$SYNC_REF"
+            echo "sync_fallback=$SYNC_FALLBACK"
           } >> "$GITHUB_OUTPUT"
-          echo "json-rpc ref: $JSONRPC_REF | hardhat ref: $HARDHAT_REF | k6 ref: $K6_REF"
+          echo "json-rpc ref: $JSONRPC_REF | hardhat ref: $HARDHAT_REF | k6 ref: $K6_REF | sync ref: $SYNC_REF"
 
-  # Each suite is dispatched + polled by the shared reusable workflow
-  # (_dispatch-suite.yml); these jobs only supply the per-suite parameters. Their
-  # named outputs (conclusion / run_url) are consumed by the report job below.
+  # _dispatch-suite.yml starts each suite and waits for it. These jobs give only
+  # the parameters. The report job reads their conclusion and run_url outputs.
   json_rpc:
     name: JSON-RPC suite
     needs: resolve
@@ -238,22 +302,67 @@ jobs:
       app_id: ${{ secrets.GH_APP_ID }}
       app_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
-  # This is the authoritative gate: it always runs (if: always()), consolidates
-  # the three suite conclusions, and exits non-zero on any failure. Pin THIS check
-  # (name: "Automated Regression Report") as the required status check in branch
-  # protection — never the per-suite checks, whose names change if the suites are
-  # refactored (e.g. the reusable-workflow extraction renamed them to
-  # "<suite> suite / <suite>"). Its name is intentionally stable for that reason.
+  # Advisory, on demand. Sync replays testnet blocks through this rskj build and
+  # compares them with the public network. When this job fails, the run shows red
+  # in the Actions tab, but the required check stays green. This is correct:
+  # branch protection reads the check, not the run.
+  #
+  # Time limits (read this when the Sync row shows `timed_out`):
+  #   - _dispatch-suite.yml waits about 50 min (100 x 30 s; timeout-minutes: 55).
+  #   - The job timeouts in the suite's pr.yml add up to 76 min on the longest
+  #     path (12 + 8 + 50 + 6; see "KNOWN TENSION" there).
+  #   - Two real runs took about 33 min (rsksmart/rskj-sync-tests runs
+  #     34852163884 on 2026-09-14 and 37937319735 on 2026-10-09). So a normal
+  #     run has about 17 min to spare.
+  # A slower run shows `timed_out`, never a tick. Its verdict is in the linked
+  # run. A longer wait needs a poll limit per suite in _dispatch-suite.yml and a
+  # new App token after about 1 h.
+  sync:
+    name: Sync suite
+    needs: resolve
+    if: needs.resolve.outputs.has_token == 'true' && inputs.run_sync == true
+    uses: ./.github/workflows/_dispatch-suite.yml
+    with:
+      name: Sync
+      repo: rskj-sync-tests
+      workflow: pr.yml
+      test_input: test_branch
+      rskj_ref: ${{ needs.resolve.outputs.rskj_ref }}
+      test_ref: ${{ needs.resolve.outputs.sync_ref }}
+    secrets:
+      app_id: ${{ secrets.GH_APP_ID }}
+      app_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+  # The required check. It always runs, collects the suite conclusions, and fails
+  # if a suite outside ADVISORY_SUITES did not succeed. In branch protection,
+  # require this check ("Automated Regression Report"), never the suite checks:
+  # their names change when the jobs change. Keep this name stable.
   report:
     name: Automated Regression Report
-    needs: [resolve, json_rpc, hardhat, k6]
+    needs: [resolve, json_rpc, hardhat, k6, sync]
     if: always()
     runs-on: ubuntu-latest
     # Only this job writes with GITHUB_TOKEN (the sticky PR comment). The other
-    # jobs use the App token, so they keep the top-level contents: read default.
+    # jobs use App tokens and keep the read-only default.
     permissions:
       pull-requests: write
     steps:
+      # App token to download the sync report. continue-on-error is on purpose:
+      # this token must not fail the required check. Do not add continue-on-error
+      # to a suite job: a suite failure must stay visible. Without this token, the
+      # Sync row shows "unknown", never a tick.
+      - name: Generate App token for the sync suite's artifacts
+        id: sync-token
+        if: needs.resolve.outputs.has_token == 'true' && inputs.run_sync == true
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: rsksmart
+          repositories: rskj-sync-tests
+          permission-actions: read
+
       - name: Build report, comment and gate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -274,35 +383,85 @@ jobs:
           K6_RESULT: ${{ needs.k6.result }}
           K6_URL: ${{ needs.k6.outputs.run_url }}
           K6_REF: ${{ needs.resolve.outputs.k6_ref }}
+          SYNC_CONCLUSION: ${{ needs.sync.outputs.conclusion }}
+          SYNC_RESULT: ${{ needs.sync.result }}
+          SYNC_URL: ${{ needs.sync.outputs.run_url }}
+          SYNC_REF: ${{ needs.resolve.outputs.sync_ref }}
+          SYNC_FALLBACK: ${{ needs.resolve.outputs.sync_fallback }}
+          SYNC_TOKEN: ${{ steps.sync-token.outputs.token }}
+          SYNC_REQUESTED: ${{ inputs.run_sync == true }}
+          # A failure of a suite in this list is only a warning. Sync is here because:
+          #   - Sync depends on a public testnet node and a snapshot feed.
+          #   - A new consensus rule in rskj makes Sync fail until its config has
+          #     the rule.
+          # To make Sync required, the gate must read the verdict, not the
+          # conclusion: a run that compared nothing (INFRA, SKIPPED) also succeeds.
+          ADVISORY_SUITES: "sync"
         run: |
           set -euo pipefail
 
-          # Fork PR (has_token == "false"): the App credentials were legitimately
-          # unavailable, so no token could be minted and nothing was dispatched.
-          # Report the skip and stay green — the PR cannot supply the secret, so we
-          # do not block it. A missing-secret failure on a non-fork run is a
-          # different case: resolve exits non-zero there, leaving has_token empty,
-          # which falls through to the normal report below and gates the PR red.
+          # Fork PR (has_token is "false"): no suite ran. Report the skip and stay
+          # green, because the PR cannot supply the secrets. Missing secrets on a
+          # non-fork run are different: resolve fails, has_token is empty, and the
+          # report below fails the required check.
           if [ "$HAS_TOKEN" = "false" ]; then
             {
               echo "### RSKj Core Automated Tests — ⏭️ skipped"
               echo ""
               echo "GitHub App credentials (\`GH_APP_ID\` / \`GH_APP_PRIVATE_KEY\`) were"
               echo "unavailable (expected on fork PRs, where secrets are withheld). The"
-              echo "JSON-RPC / Hardhat / K6 suites were not dispatched."
+              echo "JSON-RPC / Hardhat / K6 / Sync suites were not dispatched."
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
-          # A suite that failed at the infrastructure level (token mint, dispatch,
-          # runner death, job timeout) never wrote its `conclusion` output, so it
-          # arrives here empty. Fall back to the job's own result (failure /
-          # cancelled / skipped) so the table and gate report the real outcome
-          # instead of a blank "no result" cell. The gate already fails closed on a
-          # non-success value either way; this only makes the report honest.
+          # A suite job that broke early (token, dispatch, runner, job timeout) has
+          # no `conclusion` output. Use the job result instead (failure, cancelled,
+          # skipped), so the table shows what happened. The gate fails on an empty
+          # conclusion too, so the gate result does not change.
           JSONRPC_CONCLUSION="${JSONRPC_CONCLUSION:-$JSONRPC_RESULT}"
           HARDHAT_CONCLUSION="${HARDHAT_CONCLUSION:-$HARDHAT_RESULT}"
           K6_CONCLUSION="${K6_CONCLUSION:-$K6_RESULT}"
+          SYNC_CONCLUSION="${SYNC_CONCLUSION:-$SYNC_RESULT}"
+
+          # The Sync row shows the verdict from the sync report (PASS, WARN, INFRA,
+          # SKIPPED, FAIL), not the conclusion. The run succeeds for every verdict
+          # except FAIL, so a conclusion can show a tick for a run that compared
+          # nothing. Without a verdict, the row never shows a tick:
+          #   - success or failure shows "unknown" (failure must not look like FAIL);
+          #   - timed_out, cancelled and skipped show their names.
+          SYNC_OUTCOME=""
+          SYNC_DETAIL=""
+          SYNC_DISPLAY=""
+          # run_url ends in the run ID. The URL comes from another repo's API, so
+          # check that the ID is a number before gh uses it.
+          SYNC_RUN_ID="${SYNC_URL##*/}"
+          case "$SYNC_RUN_ID" in
+            ""|*[!0-9]*) SYNC_RUN_ID="";;
+          esac
+          if [ "$SYNC_REQUESTED" = "true" ] && [ -n "$SYNC_RUN_ID" ] && [ -n "${SYNC_TOKEN:-}" ] \
+             && GH_TOKEN="$SYNC_TOKEN" gh run download "$SYNC_RUN_ID" \
+                  -R rsksmart/rskj-sync-tests -n sync-report -D sync-report >/dev/null 2>&1; then
+            # `// empty` keeps a JSON null out of the table. tr replaces the
+            # characters that break a markdown row or a ::warning:: line.
+            SYNC_OUTCOME=$(jq -r '.outcome // empty' sync-report/sync-report.json 2>/dev/null \
+              | tr -d '\n' | tr '|`' '  ' | head -c 32 || true)
+            SYNC_DETAIL=$(jq -r '(.reason // "no reason recorded") + (if .firstBlock then " (first block \(.firstBlock.height))" else "" end)' \
+              sync-report/sync-report.json 2>/dev/null | tr '\n' ' ' | tr '|`' '  ' | head -c 300 || true)
+          fi
+
+          if [ "$SYNC_REQUESTED" != "true" ]; then
+            :
+          elif [ -n "$SYNC_OUTCOME" ]; then
+            SYNC_DISPLAY="$SYNC_OUTCOME"
+          elif [ "$SYNC_CONCLUSION" = "success" ]; then
+            # The run succeeded but gave no verdict. Never a tick.
+            SYNC_DISPLAY="unknown (report artifact unavailable)"
+          elif [ "$SYNC_CONCLUSION" = "failure" ]; then
+            SYNC_DISPLAY="unknown (job: failure)"
+          else
+            SYNC_DISPLAY="$SYNC_CONCLUSION"
+          fi
 
           emoji() {
             case "$1" in
@@ -311,6 +470,13 @@ jobs:
               cancelled) echo "🚫";;
               timed_out) echo "⏱️";;
               skipped) echo "⏭️";;
+              # Sync verdicts. They are upper case, so they do not clash with the
+              # conclusions above. Any other value shows ❓.
+              PASS) echo "✅";;
+              WARN) echo "⚠️";;
+              INFRA) echo "⚠️";;
+              SKIPPED) echo "⏭️";;
+              FAIL) echo "❌";;
               "") echo "⚠️";;
               *) echo "❓";;
             esac
@@ -322,7 +488,7 @@ jobs:
               "$1" "$(emoji "$2")" "${2:-no result}" "${3:-?}" "${4:-#}"
           }
 
-          # Header + table, reused for the summary and the PR comment.
+          # The table, for the step summary and the sticky PR comment.
           REPORT_FILE="$(mktemp)"
           {
             echo "### RSKj Core Automated Tests"
@@ -334,18 +500,55 @@ jobs:
             row "JSON-RPC" "$JSONRPC_CONCLUSION" "$JSONRPC_REF" "$JSONRPC_URL"
             row "Hardhat"  "$HARDHAT_CONCLUSION" "$HARDHAT_REF" "$HARDHAT_URL"
             row "K6"       "$K6_CONCLUSION"      "$K6_REF"      "$K6_URL"
+            if [ "$SYNC_REQUESTED" = "true" ]; then
+              row "Sync"     "$SYNC_DISPLAY"       "${SYNC_REF}${SYNC_FALLBACK:+ ($SYNC_FALLBACK)}" "$SYNC_URL"
+              echo ""
+              if [ -n "$SYNC_OUTCOME" ]; then
+                echo "Sync is advisory and never fails this check. ${SYNC_DETAIL}"
+              elif [ "$SYNC_CONCLUSION" = "timed_out" ]; then
+                # timed_out has two causes: _dispatch-suite.yml stopped waiting,
+                # or the sync run timed out. Both set run_url first, so the row
+                # links to the run.
+                echo "Sync is advisory and never fails this check. It timed out, or ran longer than this run waits for it (~50 min), so its verdict isn't here. See the linked run."
+              else
+                echo "Sync is advisory and never fails this check. Its result couldn't be read (the run didn't finish, or its report is missing)."
+              fi
+            fi
           } > "$REPORT_FILE"
 
           cat "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
 
-          # Determine overall result up front (drives the final gate).
+          # Warnings for the Sync row. The gate below sees only the conclusion,
+          # and the conclusion is success for WARN, INFRA and SKIPPED too.
+          if [ "$SYNC_REQUESTED" != "true" ]; then
+            :
+          elif [ -n "$SYNC_OUTCOME" ] && [ "$SYNC_OUTCOME" != "PASS" ]; then
+            echo "::warning::advisory suite sync reported $SYNC_OUTCOME: ${SYNC_DETAIL:-no reason recorded}"
+          elif [ -z "$SYNC_OUTCOME" ] && [ "$SYNC_CONCLUSION" = "success" ]; then
+            echo "::warning::sync suite: the run finished but its report couldn't be read, so the row shows 'unknown'"
+          fi
+
+          # Overall result for the gate. A suite in ADVISORY_SUITES only warns.
+          # Sync counts only when run_sync is set.
           OVERALL=success
-          for c in "$JSONRPC_CONCLUSION" "$HARDHAT_CONCLUSION" "$K6_CONCLUSION"; do
-            [ "$c" = "success" ] || OVERALL=failure
+          is_advisory() { case " $ADVISORY_SUITES " in *" $1 "*) return 0;; *) return 1;; esac; }
+          PAIRS=("json_rpc:$JSONRPC_CONCLUSION" "hardhat:$HARDHAT_CONCLUSION" "k6:$K6_CONCLUSION")
+          if [ "$SYNC_REQUESTED" = "true" ]; then
+            PAIRS+=("sync:$SYNC_CONCLUSION")
+          fi
+          for pair in "${PAIRS[@]}"; do
+            name="${pair%%:*}"; c="${pair#*:}"
+            if [ "$c" != "success" ]; then
+              if is_advisory "$name"; then
+                echo "::warning::advisory suite $name did not succeed ($c)"
+              else
+                OVERALL=failure
+              fi
+            fi
           done
 
-          # Sticky PR comment: upsert by a hidden marker so each push updates the
-          # same comment instead of stacking new ones. Uses the built-in token.
+          # Sticky PR comment: a hidden marker finds the old comment, so each push
+          # updates that comment and does not add a new one. Uses GITHUB_TOKEN.
           if [ "$EVENT" = "pull_request" ] && [ -n "${PR_NUMBER:-}" ]; then
             MARKER="<!-- rskj-core-automated-tests -->"
             BODY_FILE="$(mktemp)"
@@ -364,9 +567,9 @@ jobs:
             fi
           fi
 
-          # Authoritative gate.
+          # The gate: fail the required check if a required suite did not succeed.
           if [ "$OVERALL" != "success" ]; then
             echo "::error::one or more downstream suites did not succeed (JSON-RPC=$JSONRPC_CONCLUSION, Hardhat=$HARDHAT_CONCLUSION, K6=$K6_CONCLUSION)"
             exit 1
           fi
-          echo "All downstream suites passed."
+          echo "All gating downstream suites passed."
