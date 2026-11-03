@@ -579,12 +579,53 @@ class FederationChangeIT {
         activateMigration();
     }
 
-    // TODO(juli): once registerPegoutTransaction is implemented, add a version of this test with allActivations
-    //  that registers the pegout change through registerPegoutTransaction
     @Test
     void rollbackPendingFederation_afterPartiallyBuilt_forVetiver_wipesStateAndAllowsNewFederationChangeToProceed() throws Exception {
         // Arrange
         setUp(VETIVER_ACTIVATIONS);
+        var originalFederation = createOriginalSegwitFederation();
+
+        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
+        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
+
+        // Start a federation change but only partially build the pending federation
+        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
+        var firstNewMember = NEW_FEDERATION_MEMBERS.get(0);
+        voteToAddFederatorPublicKeysToPendingFederation(
+            firstNewMember.getBtcPublicKey(),
+            firstNewMember.getRskPublicKey(),
+            firstNewMember.getMstPublicKey()
+        );
+        assertEquals(1, federationSupport.getPendingFederationSize());
+
+        // Act: roll back before the pending federation is complete
+        voteToRollbackPendingFederation();
+
+        // Assert: the aborted federation change left no trace behind
+        assertFalse(federationSupport.getProposedFederation().isPresent());
+        assertEquals(originalFederation, federationSupport.getActiveFederation());
+        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender1");
+        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender1");
+
+        // A brand-new federation change should proceed normally from here, unaffected by the rolled-back
+        // attempt or the vote it partially cast for the first new member
+        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
+        voteToAddFederatorPublicKeysToPendingFederation();
+
+        var pendingFederation = federationStorageProvider.getPendingFederation();
+        assertPendingFederationIsBuiltAsExpected(pendingFederation);
+
+        voteToCommitPendingFederation(originalFederation);
+        var newFederationOpt = federationSupport.getProposedFederation();
+        assertTrue(newFederationOpt.isPresent());
+        var expectedProposedFederation = createExpectedProposedFederation();
+        assertEquals(expectedProposedFederation, newFederationOpt.get());
+    }
+
+    @Test
+    void rollbackPendingFederation_afterPartiallyBuilt_wipesStateAndAllowsNewFederationChangeToProceed() throws Exception {
+        // Arrange
+        setUp(ALL_ACTIVATIONS);
         var originalFederation = createOriginalSegwitFederation();
 
         assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
