@@ -12,8 +12,10 @@ import static co.rsk.peg.BridgeSupportTestUtil.assertLogUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.assertFederationsPendingBtcUTXOsWereSaved;
 import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutTxSigHashWasNotSaved;
 import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutTxSigHashWasSaved;
+import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.createValidPmtForTransactions;
+import static co.rsk.peg.BridgeSupportTestUtil.createValidPmtForTransactionsHashes;
 import static co.rsk.peg.BridgeSupportTestUtil.recreateChainFromPmt;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
@@ -399,8 +401,6 @@ class FederationChangeIT {
         assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
     }
 
-    // TODO(juli): assertPegoutsShouldWorkToFed saves the pegout tx sighash itself, which the bridge no longer does
-    //  after RSKIP643. Once registerPegoutTransaction is implemented, register the pegout change through it instead
     @Test
     void changeFederation_withAllActivations_fromSegwitToSegwit_splitMigrationOutputs() throws Exception {
         // Arrange
@@ -1441,18 +1441,47 @@ class FederationChangeIT {
 
     private void assertPegoutsShouldWorkToFed(Federation federation, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
         var pegout = createPegout(federation, senderSeed);
-        // save pegout index
-        BitcoinUtils.getSigHashForPegoutIndex(pegout)
-            .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
-
         int utxosSizeBeforeRegisteringPegout = federationUtxosReference.size();
-        registerBtcTransaction(pegout);
+
+        if (activations.isActive(ConsensusRule.RSKIP643)) {
+            executeAndAssertRegisterPegoutTransaction(federation, pegout);
+        } else {
+            // save pegout index, as the bridge does when creating the pegout
+            BitcoinUtils.getSigHashForPegoutIndex(pegout)
+                .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
+            registerBtcTransaction(pegout);
+        }
 
         // assert pegout was processed
         assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(pegout.getHash()));
         // assert utxo was registered
         assertEquals(utxosSizeBeforeRegisteringPegout + 1, federationUtxosReference.size());
         verifyLogUtxosRegistered(
+            pegout,
+            List.of(PEGOUT_CHANGE_VALUE),
+            List.of(PEGOUT_CHANGE_OUTPUT_INDEX),
+            federation.getAddress()
+        );
+    }
+
+    private void executeAndAssertRegisterPegoutTransaction(Federation federation, BtcTransaction pegout) throws Exception {
+        // save the pegout change as federations pending utxos, as the bridge does when creating the pegout
+        var pegoutChangeOutput = pegout.getOutput(PEGOUT_CHANGE_OUTPUT_INDEX);
+        var pegoutChangeUtxo = new UTXO(
+            pegout.getHash(),
+            PEGOUT_CHANGE_OUTPUT_INDEX,
+            pegoutChangeOutput.getValue(),
+            0,
+            false,
+            pegoutChangeOutput.getScriptPubKey()
+        );
+        federationSupport.storeFederationsPendingBtcUTXOs(pegout.getHash(), List.of(pegoutChangeUtxo));
+        registerPegoutTransaction(pegout);
+        assertReleaseWasRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            (int) currentBlock.getNumber(),
             pegout,
             List.of(PEGOUT_CHANGE_VALUE),
             List.of(PEGOUT_CHANGE_OUTPUT_INDEX),
@@ -1647,6 +1676,22 @@ class FederationChangeIT {
         bridgeSupport.registerBtcTransaction(
             REGISTRATION_TX,
             btcTx.bitcoinSerialize(),
+            btcBlockWithPmtHeight,
+            pmtWithTransactions.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+    }
+
+    private void registerPegoutTransaction(BtcTransaction pegoutTx) throws Exception {
+        // registerPegoutTransaction validates the pmt against the block merkle root, built from txids even for segwit txs
+        pmtWithTransactions = createValidPmtForTransactionsHashes(List.of(pegoutTx.getHash()), NETWORK_PARAMS);
+        btcBlockWithPmtHeight = BRIDGE_CONSTANTS.getBtcHeightWhenPegoutTxIndexActivates() + BRIDGE_CONSTANTS.getPegoutTxIndexGracePeriodInBtcBlocks();
+        var chainHeight = btcBlockWithPmtHeight + BRIDGE_CONSTANTS.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, NETWORK_PARAMS);
+        bridgeStorageProvider.save();
+
+        bridgeSupport.registerPegoutTransaction(
+            pegoutTx.getHash(),
             btcBlockWithPmtHeight,
             pmtWithTransactions.bitcoinSerialize()
         );
