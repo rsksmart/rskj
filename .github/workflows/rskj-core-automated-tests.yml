@@ -89,6 +89,7 @@ jobs:
       hardhat_ref: ${{ steps.refs.outputs.hardhat_ref }}
       k6_ref: ${{ steps.refs.outputs.k6_ref }}
       sync_ref: ${{ steps.refs.outputs.sync_ref }}
+      sync_fallback: ${{ steps.refs.outputs.sync_fallback }}
     steps:
       # App secrets are withheld from fork pull_request runs (GitHub does not expose
       # secrets to runs triggered by forks). An empty private key is our fork-PR
@@ -189,6 +190,19 @@ jobs:
             *[!A-Za-z0-9._/-]*) echo "::error::rskj ref has disallowed characters: '$RSKJ_REF'"; exit 1;;
           esac
 
+          # The four branch inputs get the same character check. Each input goes,
+          # as typed, into $GITHUB_OUTPUT below. A newline in an input adds a line
+          # there, which fails this job or adds an output. An empty input is
+          # correct: it means "use the matching branch". The error does not show
+          # the value, because a newline in the value can start a workflow command.
+          for pair in "jsonrpc_branch:$IN_JSONRPC" "hardhat_branch:$IN_HARDHAT" \
+                      "k6_branch:$IN_K6" "sync_branch:$IN_SYNC"; do
+            input="${pair%%:*}"; value="${pair#*:}"
+            case "$value" in
+              *..*|*[!A-Za-z0-9._/-]*) echo "::error::$input is not a plain branch name (letters, digits and . _ / - only, no '..')"; exit 1;;
+            esac
+          done
+
           echo "rskj_ref=$RSKJ_REF" >> "$GITHUB_OUTPUT"
           echo "rskj ref: $RSKJ_REF"
 
@@ -223,7 +237,10 @@ jobs:
 
           # Sync (on demand only) uses its own token, which may be missing.
           # Any lookup error falls back to main instead of failing this job.
+          # SYNC_FALLBACK gives the Sync row a reason when main was not looked up.
+          # A lookup error or a missing token does not prove that the branch is absent.
           SYNC_REF=""
+          SYNC_FALLBACK=""
           if [ "$RUN_SYNC" != "true" ]; then
             :
           elif [ -n "${SYNC_TOKEN:-}" ]; then
@@ -237,12 +254,14 @@ jobs:
               SYNC_REF="$RESOLVED"
             else
               SYNC_REF="${IN_SYNC:-main}"
+              SYNC_FALLBACK="branch lookup failed"
               echo "::warning::could not resolve a branch in rsksmart/rskj-sync-tests (${err:-no error recorded}); the advisory sync suite will run '$SYNC_REF'"
             fi
             GH_TOKEN="$OLD_TOKEN"; export GH_TOKEN
           else
             # No token: we can't look the branch up, so use the input or main.
             SYNC_REF="${IN_SYNC:-main}"
+            [ -n "$IN_SYNC" ] || SYNC_FALLBACK="no token to look up the branch"
             echo "::warning::no App token for rsksmart/rskj-sync-tests (is the App installed on it?); the advisory sync suite will run '$SYNC_REF'"
           fi
 
@@ -251,6 +270,7 @@ jobs:
             echo "hardhat_ref=$HARDHAT_REF"
             echo "k6_ref=$K6_REF"
             echo "sync_ref=$SYNC_REF"
+            echo "sync_fallback=$SYNC_FALLBACK"
           } >> "$GITHUB_OUTPUT"
           echo "json-rpc ref: $JSONRPC_REF | hardhat ref: $HARDHAT_REF | k6 ref: $K6_REF | sync ref: $SYNC_REF"
 
@@ -392,6 +412,7 @@ jobs:
           SYNC_RESULT: ${{ needs.sync.result }}
           SYNC_URL: ${{ needs.sync.outputs.run_url }}
           SYNC_REF: ${{ needs.resolve.outputs.sync_ref }}
+          SYNC_FALLBACK: ${{ needs.resolve.outputs.sync_fallback }}
           SYNC_TOKEN: ${{ steps.sync-token.outputs.token }}
           SYNC_REQUESTED: ${{ inputs.run_sync == true }}
           # Suites whose failure is a warning, not a failure of this check.
@@ -437,7 +458,9 @@ jobs:
           # WARN, INFRA, SKIPPED, FAIL) from its report. The run itself
           # "succeeds" for all but FAIL, so its conclusion alone would show a
           # tick for a run that compared nothing. If the report can't be read,
-          # show "unknown", never a tick.
+          # show "unknown", never a tick. A `failure` without a verdict also shows
+          # "unknown", so that it does not look like the verdict FAIL. timed_out,
+          # cancelled and skipped keep their names.
           SYNC_OUTCOME=""
           SYNC_DETAIL=""
           SYNC_DISPLAY=""
@@ -465,6 +488,8 @@ jobs:
           elif [ "$SYNC_CONCLUSION" = "success" ]; then
             # The run succeeded but gave no verdict. Never a tick.
             SYNC_DISPLAY="unknown (report artifact unavailable)"
+          elif [ "$SYNC_CONCLUSION" = "failure" ]; then
+            SYNC_DISPLAY="unknown (job: failure)"
           else
             SYNC_DISPLAY="$SYNC_CONCLUSION"
           fi
@@ -507,7 +532,7 @@ jobs:
             row "Hardhat"  "$HARDHAT_CONCLUSION" "$HARDHAT_REF" "$HARDHAT_URL"
             row "K6"       "$K6_CONCLUSION"      "$K6_REF"      "$K6_URL"
             if [ "$SYNC_REQUESTED" = "true" ]; then
-              row "Sync"     "$SYNC_DISPLAY"       "$SYNC_REF"    "$SYNC_URL"
+              row "Sync"     "$SYNC_DISPLAY"       "${SYNC_REF}${SYNC_FALLBACK:+ ($SYNC_FALLBACK)}" "$SYNC_URL"
               echo ""
               if [ -n "$SYNC_OUTCOME" ]; then
                 echo "Sync is advisory and never fails this check. ${SYNC_DETAIL}"
