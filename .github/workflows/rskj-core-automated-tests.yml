@@ -170,14 +170,16 @@ jobs:
             *[!A-Za-z0-9._/-]*) echo "::error::rskj ref has disallowed characters: '$RSKJ_REF'"; exit 1;;
           esac
 
-          # The four branch inputs get the same character check. Each input goes,
+          # The branch inputs get the same character check. Each input goes,
           # as typed, into $GITHUB_OUTPUT below. A newline in an input adds a line
           # there, which fails this job or adds an output. An empty input is
           # correct: it means "use the matching branch". The error does not show
           # the value, because a newline in the value can start a workflow command.
+          # Without run_sync, Sync does not use sync_branch, so it gets no check.
           for pair in "jsonrpc_branch:$IN_JSONRPC" "hardhat_branch:$IN_HARDHAT" \
                       "k6_branch:$IN_K6" "sync_branch:$IN_SYNC"; do
             input="${pair%%:*}"; value="${pair#*:}"
+            [ "$input" != "sync_branch" ] || [ "$RUN_SYNC" = "true" ] || continue
             case "$value" in
               *..*|*[!A-Za-z0-9._/-]*) echo "::error::$input is not a plain branch name (letters, digits and . _ / - only, no '..')"; exit 1;;
             esac
