@@ -26,13 +26,22 @@ import org.ethereum.util.RLPList;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
-public class BlockHeaderExtensionV1 implements BlockHeaderExtension {
-    private byte[] logsBloom;
-    private short[] txExecutionSublistsEdges;
+/**
+ * RSKIP-351 block header extension, version 1.
+ *
+ * <p>Immutable value object: wire layout is
+ * {@code [logsBloom, edges?]}; the hash covers
+ * {@code keccak256(logsBloom)} instead of the raw logsBloom, plus the
+ * edges slot when present.
+ */
+public final class BlockHeaderExtensionV1 implements BlockHeaderExtension {
+    private final byte[] logsBloom;
+    private final short[] txExecutionSublistsEdges;
 
     public BlockHeaderExtensionV1(byte[] logsBloom, short[] edges) {
-        this.logsBloom = logsBloom;
+        this.logsBloom = logsBloom != null ? Arrays.copyOf(logsBloom, logsBloom.length) : null;
         this.txExecutionSublistsEdges = edges != null ? Arrays.copyOf(edges, edges.length) : null;
     }
 
@@ -51,42 +60,46 @@ public class BlockHeaderExtensionV1 implements BlockHeaderExtension {
 
     @Override
     public byte[] getHash() {
-        return HashUtil.keccak256(this.getEncodedForHash());
+        List<byte[]> fieldsToEncode = Lists.newArrayList(RLP.encodeElement(HashUtil.keccak256(this.logsBloom)));
+        addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
+        return HashUtil.keccak256(RLP.encodeList(fieldsToEncode.toArray(new byte[][]{})));
     }
 
     @Override
     public byte[] getEncoded() {
-        List<byte[]> fieldToEncodeList = Lists.newArrayList(RLP.encodeElement(this.getLogsBloom()));
-        this.addElementsEncoded(fieldToEncodeList);
-        return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+        List<byte[]> fieldsToEncode = Lists.newArrayList(RLP.encodeElement(this.logsBloom));
+        addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
+        return RLP.encodeList(fieldsToEncode.toArray(new byte[][]{}));
     }
 
-    public byte[] getLogsBloom() {
-        return this.logsBloom;
-    }
-
-    public void setLogsBloom(byte[] logsBloom) {
-        this.logsBloom = Arrays.copyOf(logsBloom, logsBloom.length);
-    }
-
-    public short[] getTxExecutionSublistsEdges() {
-        return this.txExecutionSublistsEdges != null ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length) : null;
-    }
-
-    public void setTxExecutionSublistsEdges(short[] edges) {
-        this.txExecutionSublistsEdges = edges != null ? Arrays.copyOf(edges, edges.length) : null;
-    }
-
-    protected void addElementsEncoded(List<byte[]> fieldToEncodeList) {
-        short[] internalExecutionSublistsEdges = this.getTxExecutionSublistsEdges();
-        if (internalExecutionSublistsEdges != null) {
-            fieldToEncodeList.add(ByteUtil.shortsToRLP(internalExecutionSublistsEdges));
+    private void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
+        if (this.txExecutionSublistsEdges != null) {
+            fieldsToEncode.add(ByteUtil.shortsToRLP(this.txExecutionSublistsEdges));
         }
     }
 
-    private byte[] getEncodedForHash() {
-        List<byte[]> fieldToEncodeList = Lists.newArrayList(RLP.encodeElement(HashUtil.keccak256(this.getLogsBloom())));
-        this.addElementsEncoded(fieldToEncodeList);
-        return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+    @Override
+    public byte[] getLogsBloom() {
+        return this.logsBloom != null ? Arrays.copyOf(this.logsBloom, this.logsBloom.length) : null;
+    }
+
+    @Override
+    public BlockHeaderExtensionV1 withLogsBloom(byte[] logsBloom) {
+        // Pinned quirk: a null logsBloom throws NullPointerException here, while the
+        // constructor accepts null.
+        return new BlockHeaderExtensionV1(
+                Objects.requireNonNull(logsBloom, "logsBloom"), this.txExecutionSublistsEdges);
+    }
+
+    @Override
+    public short[] getTxExecutionSublistsEdges() {
+        return this.txExecutionSublistsEdges != null
+                ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length)
+                : null;
+    }
+
+    @Override
+    public BlockHeaderExtensionV1 withTxExecutionSublistsEdges(short[] edges) {
+        return new BlockHeaderExtensionV1(this.logsBloom, edges);
     }
 }
