@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Named.named;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -100,6 +101,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -118,6 +120,9 @@ import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class FederationChangeIT {
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0);
@@ -579,10 +584,18 @@ class FederationChangeIT {
         activateMigration();
     }
 
-    @Test
-    void rollbackPendingFederation_afterPartiallyBuilt_forVetiver_wipesStateAndAllowsNewFederationChangeToProceed() throws Exception {
+    private static Stream<Arguments> vetiverAndAllActivationsArgs() {
+        return Stream.of(
+            Arguments.of(named("vetiver", VETIVER_ACTIVATIONS)),
+            Arguments.of(named("allActivations", ALL_ACTIVATIONS))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("vetiverAndAllActivationsArgs")
+    void rollbackPendingFederation_afterPartiallyBuilt_wipesStateAndAllowsNewFederationChangeToProceed(ActivationConfig.ForBlock activations) throws Exception {
         // Arrange
-        setUp(VETIVER_ACTIVATIONS);
+        setUp(activations);
         var originalFederation = createOriginalSegwitFederation();
 
         assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
@@ -622,54 +635,12 @@ class FederationChangeIT {
         assertEquals(expectedProposedFederation, newFederationOpt.get());
     }
 
-    @Test
-    void rollbackPendingFederation_afterPartiallyBuilt_wipesStateAndAllowsNewFederationChangeToProceed() throws Exception {
+    @ParameterizedTest
+    @MethodSource("vetiverAndAllActivationsArgs")
+    void svpValidationPeriodExpiresWithoutSuccessfulSpendTx_processesSvpFailureAndAllowsFederationElectionAgain(ActivationConfig.ForBlock activations) throws Exception {
         // Arrange
-        setUp(ALL_ACTIVATIONS);
+        setUp(activations);
         var originalFederation = createOriginalSegwitFederation();
-
-        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
-        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
-
-        // Start a federation change but only partially build the pending federation
-        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
-        var firstNewMember = NEW_FEDERATION_MEMBERS.get(0);
-        voteToAddFederatorPublicKeysToPendingFederation(
-            firstNewMember.getBtcPublicKey(),
-            firstNewMember.getRskPublicKey(),
-            firstNewMember.getMstPublicKey()
-        );
-        assertEquals(1, federationSupport.getPendingFederationSize());
-
-        // Act: roll back before the pending federation is complete
-        voteToRollbackPendingFederation();
-
-        // Assert: the aborted federation change left no trace behind
-        assertFalse(federationSupport.getProposedFederation().isPresent());
-        assertEquals(originalFederation, federationSupport.getActiveFederation());
-        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender1");
-        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender1");
-
-        // A brand-new federation change should proceed normally from here, unaffected by the rolled-back
-        // attempt or the vote it partially cast for the first new member
-        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
-        voteToAddFederatorPublicKeysToPendingFederation();
-
-        var pendingFederation = federationStorageProvider.getPendingFederation();
-        assertPendingFederationIsBuiltAsExpected(pendingFederation);
-
-        voteToCommitPendingFederation(originalFederation);
-        var newFederationOpt = federationSupport.getProposedFederation();
-        assertTrue(newFederationOpt.isPresent());
-        var expectedProposedFederation = createExpectedProposedFederation();
-        assertEquals(expectedProposedFederation, newFederationOpt.get());
-    }
-
-    @Test
-    void svpValidationPeriodExpiresWithoutSuccessfulSpendTx_processesSvpFailureAndAllowsFederationElectionAgain() throws Exception {
-        // Arrange
-        setUp(VETIVER_ACTIVATIONS);
-        var originalFederation = createOriginalP2shErpFederation();
 
         assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
         assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
