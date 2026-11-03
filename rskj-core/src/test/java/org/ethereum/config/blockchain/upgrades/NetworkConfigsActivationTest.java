@@ -42,7 +42,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.ethereum.TestUtils;
 import org.junit.jupiter.api.Test;
@@ -69,7 +68,7 @@ class NetworkConfigsActivationTest {
                 .filter(n -> n.endsWith(".conf"))
                 .map(n -> n.substring(0, n.length() - ".conf".length()))
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
             assertFalse(names.isEmpty(), "no network configs found under " + configDir());
             return names;
         }
