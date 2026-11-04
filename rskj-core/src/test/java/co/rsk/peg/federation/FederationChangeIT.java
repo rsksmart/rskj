@@ -1363,18 +1363,19 @@ class FederationChangeIT {
             BitcoinUtils.getSigHashForPegoutIndex(pegout)
                 .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
             registerBtcTransaction(pegout);
+
+            // assert pegout was processed
+            assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(pegout.getHash()));
+            verifyLogUtxosRegistered(
+                pegout,
+                List.of(PEGOUT_CHANGE_VALUE),
+                List.of(PEGOUT_CHANGE_OUTPUT_INDEX),
+                federation.getAddress()
+            );
         }
 
-        // assert pegout was processed
-        assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(pegout.getHash()));
         // assert utxo was registered
         assertEquals(utxosSizeBeforeRegisteringPegout + 1, federationUtxosReference.size());
-        verifyLogUtxosRegistered(
-            pegout,
-            List.of(PEGOUT_CHANGE_VALUE),
-            List.of(PEGOUT_CHANGE_OUTPUT_INDEX),
-            federation.getAddress()
-        );
     }
 
     private void executeAndAssertRegisterPegoutTransaction(Federation federation, BtcTransaction pegout) throws Exception {
