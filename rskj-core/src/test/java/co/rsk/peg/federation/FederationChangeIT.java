@@ -1143,7 +1143,7 @@ class FederationChangeIT {
 
     private void verifyLogUtxosRegistered(
         BtcTransaction btcTransaction,
-        List<Coin> expectedValuesInSatoshis,
+        List<Coin> expectedOutputValuesInSatoshis,
         List<Long> expectedOutputIndexes,
         Address expectedFederationAddress
     ) {
@@ -1151,7 +1151,7 @@ class FederationChangeIT {
             assertLogUtxosRegistered(
                 logs,
                 btcTransaction.getHash(),
-                expectedValuesInSatoshis,
+                expectedOutputValuesInSatoshis,
                 expectedOutputIndexes,
                 expectedFederationAddress
             );

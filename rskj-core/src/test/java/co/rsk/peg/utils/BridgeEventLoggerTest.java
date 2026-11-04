@@ -133,14 +133,14 @@ class BridgeEventLoggerTest {
     void logUtxosRegistered() {
         // arrange
         Sha256Hash btcTxHash = btcTxMock.getHash();
-        List<Coin> values = List.of(Coin.COIN);
+        List<Coin> outputValues = List.of(Coin.COIN);
         List<Long> outputIndexes = List.of(0L);
         Address federationBtcAddress = P2shP2wshErpFederationBuilder.builder().build().getAddress();
 
         // act & assert
         assertThrows(UnsupportedOperationException.class, () -> eventLogger.logUtxosRegistered(
             btcTxHash,
-            values,
+            outputValues,
             outputIndexes,
             federationBtcAddress
         ));
