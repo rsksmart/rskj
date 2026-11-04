@@ -166,6 +166,10 @@ class FederationChangeIT {
     private static final Coin PEGOUT_CHANGE_VALUE = Coin.COIN.multiply(10);
     // pegout change output comes after the user output
     private static final long PEGOUT_CHANGE_OUTPUT_INDEX = 1;
+    // Before RSKIP643, registerBtcTransaction identifies a pegout through the pegout tx index, so the tx must be
+    // in a block past its activation. registerPegoutTransaction only needs the confirmations on top of this height.
+    private static final int BTC_BLOCK_WITH_PMT_HEIGHT =
+        BRIDGE_CONSTANTS.getBtcHeightWhenPegoutTxIndexActivates() + BRIDGE_CONSTANTS.getPegoutTxIndexGracePeriodInBtcBlocks();
     // svp fund tx change output comes after the proposed and flyover proposed federation outputs
     private static final int SVP_FUND_TX_CHANGE_OUTPUT_INDEX = 2;
     // svp spend tx sends everything back to the active federation in its only output
@@ -228,7 +232,6 @@ class FederationChangeIT {
     private LockingCapSupport lockingCapSupport;
     private BridgeSupport bridgeSupport;
     private PartialMerkleTree pmtWithTransactions;
-    private int btcBlockWithPmtHeight;
     private int nextUtxoHashSeed = 1000;
 
     @Test
@@ -1588,7 +1591,7 @@ class FederationChangeIT {
         bridgeSupport.registerFlyoverBtcTransaction(
             FLYOVER_REGISTRATION_TX,
             flyoverPeginBtcTx.bitcoinSerialize(),
-            btcBlockWithPmtHeight,
+            BTC_BLOCK_WITH_PMT_HEIGHT,
             pmtWithTransactions.bitcoinSerialize(),
             DERIVATION_ARGUMENTS_HASH,
             userRefundBtcAddress,
@@ -1605,7 +1608,7 @@ class FederationChangeIT {
         bridgeSupport.registerBtcTransaction(
             REGISTRATION_TX,
             btcTx.bitcoinSerialize(),
-            btcBlockWithPmtHeight,
+            BTC_BLOCK_WITH_PMT_HEIGHT,
             pmtWithTransactions.bitcoinSerialize()
         );
         bridgeSupport.save();
@@ -1614,14 +1617,13 @@ class FederationChangeIT {
     private void registerPegoutTransaction(BtcTransaction pegoutTx) throws Exception {
         // registerPegoutTransaction validates the pmt against the block merkle root, built from txids even for segwit txs
         pmtWithTransactions = createValidPmtForTransactionsHashes(List.of(pegoutTx.getHash()), NETWORK_PARAMS);
-        btcBlockWithPmtHeight = BRIDGE_CONSTANTS.getBtcHeightWhenPegoutTxIndexActivates() + BRIDGE_CONSTANTS.getPegoutTxIndexGracePeriodInBtcBlocks();
-        var chainHeight = btcBlockWithPmtHeight + BRIDGE_CONSTANTS.getBtc2RskMinimumAcceptableConfirmations();
-        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, NETWORK_PARAMS);
+        var chainHeight = BTC_BLOCK_WITH_PMT_HEIGHT + BRIDGE_CONSTANTS.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, BTC_BLOCK_WITH_PMT_HEIGHT, NETWORK_PARAMS);
         bridgeStorageProvider.save();
 
         bridgeSupport.registerPegoutTransaction(
             pegoutTx.getHash(),
-            btcBlockWithPmtHeight,
+            BTC_BLOCK_WITH_PMT_HEIGHT,
             pmtWithTransactions.bitcoinSerialize()
         );
         bridgeSupport.save();
@@ -1629,9 +1631,8 @@ class FederationChangeIT {
 
     private void setUpForTransactionRegistration(BtcTransaction btcTx) throws Exception {
         pmtWithTransactions = createValidPmtForTransactions(List.of(btcTx), NETWORK_PARAMS);
-        btcBlockWithPmtHeight = BRIDGE_CONSTANTS.getBtcHeightWhenPegoutTxIndexActivates() + BRIDGE_CONSTANTS.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
-        var chainHeight = btcBlockWithPmtHeight + BRIDGE_CONSTANTS.getBtc2RskMinimumAcceptableConfirmations();
-        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, NETWORK_PARAMS);
+        var chainHeight = BTC_BLOCK_WITH_PMT_HEIGHT + BRIDGE_CONSTANTS.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, BTC_BLOCK_WITH_PMT_HEIGHT, NETWORK_PARAMS);
         bridgeStorageProvider.save();
     }
 
