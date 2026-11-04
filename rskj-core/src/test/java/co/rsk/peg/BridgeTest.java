@@ -1159,7 +1159,7 @@ class BridgeTest {
         }
 
         @Test
-        void registerPegoutTransaction_withNegativeHeight_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+        void registerPegoutTransaction_withNegativeHeight_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException, VMException {
             // arrange
             setUpPegoutFromActiveFed();
             setUpBridgeForRegistration();
@@ -1178,12 +1178,21 @@ class BridgeTest {
                 pmt.bitcoinSerialize()
             );
 
-            // act & assert
-            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+            // act
+            bridge.execute(data);
+
+            // assert
+            assertReleaseWasNotRegistered(
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                pegout
+            );
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
         }
 
         @Test
-        void registerPegoutTransaction_withNotEnoughConfirmations_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+        void registerPegoutTransaction_withNotEnoughConfirmations_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException, VMException {
             // arrange
             setUpPegoutFromActiveFed();
             setUpBridgeForRegistration();
@@ -1205,8 +1214,17 @@ class BridgeTest {
                 pmt.bitcoinSerialize()
             );
 
-            // act & assert
-            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+            // act
+            bridge.execute(data);
+
+            // assert
+            assertReleaseWasNotRegistered(
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                pegout
+            );
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
         }
 
         @Test
@@ -1231,7 +1249,14 @@ class BridgeTest {
             );
 
             // act & assert
-            executeTransactionAndAssertThrowsVMEWithoutTxRegistration(data, pegout);
+            assertThrows(VMException.class, () -> bridge.execute(data));
+            assertReleaseWasNotRegistered(
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                pegout
+            );
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
         }
 
         @Test
@@ -1258,11 +1283,18 @@ class BridgeTest {
             );
 
             // act & assert
-            executeTransactionAndAssertThrowsVMEWithoutTxRegistration(data, pegout);
+            assertThrows(VMException.class, () -> bridge.execute(data));
+            assertReleaseWasNotRegistered(
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                pegout
+            );
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
         }
 
         @Test
-        void registerPegoutTransaction_withPmtNotInMerkleRoot_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+        void registerPegoutTransaction_withPmtNotInMerkleRoot_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException, VMException {
             // arrange
             setUpPegoutFromActiveFed();
             setUpBridgeForRegistration();
@@ -1280,8 +1312,17 @@ class BridgeTest {
                 pmtForAnotherTx.bitcoinSerialize()
             );
 
-            // act & assert
-            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+            // act
+            bridge.execute(data);
+
+            // assert
+            assertReleaseWasNotRegistered(
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                pegout
+            );
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
         }
 
         @Test
@@ -1309,11 +1350,18 @@ class BridgeTest {
             );
 
             // act & assert
-            executeTransactionAndAssertThrowsVMEWithoutTxRegistration(data, pegout);
+            assertThrows(VMException.class, () -> bridge.execute(data));
+            assertReleaseWasNotRegistered(
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                pegout
+            );
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
         }
 
         @Test
-        void registerPegoutTransaction_withInvalidMerkleRootForThatTx_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+        void registerPegoutTransaction_withInvalidMerkleRootForThatTx_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException, VMException {
             // arrange
             setUpPegoutFromActiveFed();
             setUpBridgeForRegistration();
@@ -1327,12 +1375,21 @@ class BridgeTest {
                 pmt.bitcoinSerialize()
             );
 
-            // act & assert
-            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+            // act
+            bridge.execute(data);
+
+            // assert
+            assertReleaseWasNotRegistered(
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                pegout
+            );
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
         }
 
         @Test
-        void registerPegoutTransaction_withTxWithoutPendingUtxos_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+        void registerPegoutTransaction_withTxWithoutPendingUtxos_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException, VMException {
             // arrange
             setUpPegoutFromActiveFed();
             setUpBridgeForRegistration();
@@ -1344,13 +1401,22 @@ class BridgeTest {
                 pmtForTxWithoutPendingUtxos.bitcoinSerialize()
             );
 
-            // act & assert
-            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+            // act
+            bridge.execute(data);
+
+            // assert
+            assertReleaseWasNotRegistered(
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                pegout
+            );
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
             assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(ANOTHER_BTC_TX_HASH).isEmpty());
         }
 
         @Test
-        void registerPegoutTransaction_withSvpFundTxWhileSvpIsOngoing_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+        void registerPegoutTransaction_withSvpFundTxWhileSvpIsOngoing_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException, VMException {
             // arrange
             setUpPegoutFromActiveFed();
             setUpBridgeForRegistration();
@@ -1370,8 +1436,17 @@ class BridgeTest {
                 pmt.bitcoinSerialize()
             );
 
-            // act & assert
-            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+            // act
+            bridge.execute(data);
+
+            // assert
+            assertReleaseWasNotRegistered(
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                pegout
+            );
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
         }
 
         @Test
@@ -1403,8 +1478,10 @@ class BridgeTest {
                 .executionBlock(rskExecutionBlock)
                 .build();
 
-            // act & assert
-            assertDoesNotThrow(() -> bridge.execute(data));
+            // act
+            bridge.execute(data);
+
+            // assert
             assertUtxosAreEqual(activeFederationUtxosAfterFirstRegistration, federationSupport.getActiveFederationBtcUTXOs());
             assertEquals(logsAfterFirstRegistration, logs);
             assertEquals(
@@ -1413,29 +1490,6 @@ class BridgeTest {
             );
         }
 
-
-
-        private void executeTransactionAndAssertThrowsVMEWithoutTxRegistration(byte[] data, BtcTransaction pegout) throws IOException {
-            assertThrows(VMException.class, () -> bridge.execute(data));
-            assertReleaseWasNotRegistered(
-                bridgeStorageProvider,
-                federationSupport,
-                logs,
-                pegout
-            );
-            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
-        }
-
-        private void executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(byte[] data, BtcTransaction pegout) throws IOException {
-            assertDoesNotThrow(() -> bridge.execute(data));
-            assertReleaseWasNotRegistered(
-                bridgeStorageProvider,
-                federationSupport,
-                logs,
-                pegout
-            );
-            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
-        }
 
         private void recreateChainWithEnoughConfirmationsFromPmt(PartialMerkleTree pmt) throws BlockStoreException {
             int bestChainHeightWithMinimumAcceptableConfirmations = BTC_BLOCK_WITH_PEGOUT_HEIGHT
