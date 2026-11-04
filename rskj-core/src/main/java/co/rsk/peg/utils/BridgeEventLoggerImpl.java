@@ -321,16 +321,16 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logUtxosRegistered(Sha256Hash btcTxHash, List<Coin> valuesInSatoshis, List<Long> outputIndexes, Address federationBtcAddress) {
-        validateUtxosRegisteredArgs(btcTxHash, valuesInSatoshis, outputIndexes, federationBtcAddress);
+    public void logUtxosRegistered(Sha256Hash btcTxHash, List<Coin> outputValuesInSatoshis, List<Long> outputIndexes, Address federationBtcAddress) {
+        validateUtxosRegisteredArgs(btcTxHash, outputValuesInSatoshis, outputIndexes, federationBtcAddress);
 
         CallTransaction.Function event = BridgeEvents.UTXOS_REGISTERED.getEvent();
         List<DataWord> encodedTopics = getEncodedBtcTxHashTopics(event, btcTxHash);
 
-        byte[] serializedValuesInSatoshis = UtxoUtils.encodeOutpointValues(valuesInSatoshis);
+        byte[] serializedOutputValuesInSatoshis = UtxoUtils.encodeOutpointValues(outputValuesInSatoshis);
         byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
         byte[] encodedData = event.encodeEventData(
-            serializedValuesInSatoshis,
+            serializedOutputValuesInSatoshis,
             serializedOutputIndexes,
             federationBtcAddress.toString()
         );
@@ -339,17 +339,17 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logFlyoverUtxosRegistered(Sha256Hash btcTxHash, List<Coin> valuesInSatoshis, List<Long> outputIndexes, Address federationBtcAddress, Keccak256 flyoverDerivationHash) {
-        validateUtxosRegisteredArgs(btcTxHash, valuesInSatoshis, outputIndexes, federationBtcAddress);
+    public void logFlyoverUtxosRegistered(Sha256Hash btcTxHash, List<Coin> outputValuesInSatoshis, List<Long> outputIndexes, Address federationBtcAddress, Keccak256 flyoverDerivationHash) {
+        validateUtxosRegisteredArgs(btcTxHash, outputValuesInSatoshis, outputIndexes, federationBtcAddress);
         requireNonNull(flyoverDerivationHash);
 
         CallTransaction.Function event = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
         List<DataWord> encodedTopics = getEncodedBtcTxHashTopics(event, btcTxHash);
 
-        byte[] serializedValuesInSatoshis = UtxoUtils.encodeOutpointValues(valuesInSatoshis);
+        byte[] serializedOutputValuesInSatoshis = UtxoUtils.encodeOutpointValues(outputValuesInSatoshis);
         byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
         byte[] encodedData = event.encodeEventData(
-            serializedValuesInSatoshis,
+            serializedOutputValuesInSatoshis,
             serializedOutputIndexes,
             federationBtcAddress.toString(),
             flyoverDerivationHash.getBytes()
@@ -423,24 +423,24 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     private void validateUtxosRegisteredArgs(
         Sha256Hash btcTxHash,
-        List<Coin> valuesInSatoshis,
+        List<Coin> outputValuesInSatoshis,
         List<Long> outputIndexes,
         Address federationBtcAddress
     ) {
         requireNonNull(btcTxHash);
         requireNonNull(federationBtcAddress);
-        requireNonNull(valuesInSatoshis);
+        requireNonNull(outputValuesInSatoshis);
         requireNonNull(outputIndexes);
-        validateArgumentsSize(valuesInSatoshis, outputIndexes);
+        validateArgumentsSize(outputValuesInSatoshis, outputIndexes);
         validateUniqueOutputIndexes(outputIndexes);
     }
 
-    private static void validateArgumentsSize(List<Coin> valuesInSatoshis, List<Long> outputIndexes) {
-        if (valuesInSatoshis.size() != outputIndexes.size()) {
-            throw new IllegalArgumentException("valuesInSatoshis and outputIndexes must have the same size");
+    private static void validateArgumentsSize(List<Coin> outputValuesInSatoshis, List<Long> outputIndexes) {
+        if (outputValuesInSatoshis.size() != outputIndexes.size()) {
+            throw new IllegalArgumentException("outputValuesInSatoshis and outputIndexes must have the same size");
         }
-        if (valuesInSatoshis.isEmpty()) {
-            throw new IllegalArgumentException("valuesInSatoshis and outputIndexes must not be empty");
+        if (outputValuesInSatoshis.isEmpty()) {
+            throw new IllegalArgumentException("outputValuesInSatoshis and outputIndexes must not be empty");
         }
     }
 

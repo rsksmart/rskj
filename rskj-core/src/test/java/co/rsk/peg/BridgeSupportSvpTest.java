@@ -1951,21 +1951,21 @@ class BridgeSupportSvpTest {
             assertEquals(1, getLogsBySignature(logs, BridgeEvents.UTXOS_REGISTERED.getEvent()).size());
         }
 
-        private void assertLogUtxosRegisteredForSvpSpendTransaction(Coin expectedValueSent) {
+        private void assertLogUtxosRegisteredForSvpSpendTransaction(Coin expectedOutputValueSent) {
             assertLogUtxosRegistered(
                 logs,
                 svpSpendTransaction.getHash(),
-                List.of(expectedValueSent),
+                List.of(expectedOutputValueSent),
                 List.of(OUTPUT_INDEX_FOR_SPEND_TX_OUTPUT_TO_FED),
                 activeFederation.getAddress()
             );
         }
 
-        private void assertLogUtxosRegisteredForPegin(BtcTransaction pegin, Coin expectedValueSent) {
+        private void assertLogUtxosRegisteredForPegin(BtcTransaction pegin, Coin expectedOutputValueSent) {
             assertLogUtxosRegistered(
                 logs,
                 pegin.getHash(),
-                List.of(expectedValueSent),
+                List.of(expectedOutputValueSent),
                 List.of(OUTPUT_INDEX_FOR_PEGIN_OUTPUT_TO_FED),
                 activeFederation.getAddress()
             );
