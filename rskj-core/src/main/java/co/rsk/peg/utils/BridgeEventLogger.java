@@ -88,7 +88,7 @@ public interface BridgeEventLogger {
         throw new UnsupportedOperationException();
     }
 
-    default void logFlyoverUtxosRegistered(Sha256Hash btcTxHash, List<Coin> valuesInSatoshis, List<Long> outputIndexes, Address federationBtcAddress, Keccak256 flyoverDerivationHash) {
+    default void logFlyoverUtxosRegistered(Sha256Hash btcTxHash, List<Coin> outputValuesInSatoshis, List<Long> outputIndexes, Address federationBtcAddress, Keccak256 flyoverDerivationHash) {
         throw new UnsupportedOperationException();
     }
 

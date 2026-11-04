@@ -999,11 +999,11 @@ public class BridgeSupport {
             return;
         }
 
-        List<Coin> valuesInSatoshis = registeredUtxos.stream().map(UTXO::getValue).toList();
+        List<Coin> outputValuesInSatoshis = registeredUtxos.stream().map(UTXO::getValue).toList();
         List<Long> outputIndexes = registeredUtxos.stream().map(UTXO::getIndex).toList();
         eventLogger.logFlyoverUtxosRegistered(
             btcTxHash,
-            valuesInSatoshis,
+            outputValuesInSatoshis,
             outputIndexes,
             federationAddress,
             flyoverDerivationHash

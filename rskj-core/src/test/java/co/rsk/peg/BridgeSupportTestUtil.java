@@ -606,7 +606,7 @@ public final class BridgeSupportTestUtil {
     public static void assertLogFlyoverUtxosRegistered(
         List<LogInfo> logs,
         Sha256Hash btcTxHash,
-        List<Coin> expectedValuesInSatoshis,
+        List<Coin> expectedOutputValuesInSatoshis,
         List<Long> expectedOutputIndexes,
         Address expectedFederationAddress,
         Keccak256 expectedFlyoverDerivationHash
@@ -615,11 +615,11 @@ public final class BridgeSupportTestUtil {
         byte[] btcTxHashSerialized = btcTxHash.getBytes();
         List<DataWord> encodedTopics = getEncodedTopics(flyoverUtxosRegisteredEvent, btcTxHashSerialized);
 
-        byte[] serializedValuesInSatoshis = UtxoUtils.encodeOutpointValues(expectedValuesInSatoshis);
+        byte[] serializedOutputValuesInSatoshis = UtxoUtils.encodeOutpointValues(expectedOutputValuesInSatoshis);
         byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(expectedOutputIndexes);
         byte[] encodedData = getEncodedData(
             flyoverUtxosRegisteredEvent,
-            serializedValuesInSatoshis,
+            serializedOutputValuesInSatoshis,
             serializedOutputIndexes,
             expectedFederationAddress.toString(),
             expectedFlyoverDerivationHash.getBytes()

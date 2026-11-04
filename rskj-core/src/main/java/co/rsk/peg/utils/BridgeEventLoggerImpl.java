@@ -339,17 +339,17 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logFlyoverUtxosRegistered(Sha256Hash btcTxHash, List<Coin> valuesInSatoshis, List<Long> outputIndexes, Address federationBtcAddress, Keccak256 flyoverDerivationHash) {
-        validateUtxosRegisteredArgs(btcTxHash, valuesInSatoshis, outputIndexes, federationBtcAddress);
+    public void logFlyoverUtxosRegistered(Sha256Hash btcTxHash, List<Coin> outputValuesInSatoshis, List<Long> outputIndexes, Address federationBtcAddress, Keccak256 flyoverDerivationHash) {
+        validateUtxosRegisteredArgs(btcTxHash, outputValuesInSatoshis, outputIndexes, federationBtcAddress);
         requireNonNull(flyoverDerivationHash);
 
         CallTransaction.Function event = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
         List<DataWord> encodedTopics = getEncodedBtcTxHashTopics(event, btcTxHash);
 
-        byte[] serializedValuesInSatoshis = UtxoUtils.encodeOutpointValues(valuesInSatoshis);
+        byte[] serializedOutputValuesInSatoshis = UtxoUtils.encodeOutpointValues(outputValuesInSatoshis);
         byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(outputIndexes);
         byte[] encodedData = event.encodeEventData(
-            serializedValuesInSatoshis,
+            serializedOutputValuesInSatoshis,
             serializedOutputIndexes,
             federationBtcAddress.toString(),
             flyoverDerivationHash.getBytes()

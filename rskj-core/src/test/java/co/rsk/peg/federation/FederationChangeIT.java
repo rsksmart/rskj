@@ -1164,7 +1164,7 @@ class FederationChangeIT {
     private void verifyLogFlyoverUtxosRegistered(
         int logsSizeBeforeCheckpoint,
         BtcTransaction flyoverPeginBtcTx,
-        List<Coin> expectedValuesInSatoshis,
+        List<Coin> expectedOutputValuesInSatoshis,
         List<Long> expectedOutputIndexes,
         Address expectedFederationAddress,
         Keccak256 expectedFlyoverDerivationHash
@@ -1176,7 +1176,7 @@ class FederationChangeIT {
             assertLogFlyoverUtxosRegistered(
                 logs.subList(logsSizeBeforeCheckpoint, logs.size()),
                 flyoverPeginBtcTx.getHash(),
-                expectedValuesInSatoshis,
+                expectedOutputValuesInSatoshis,
                 expectedOutputIndexes,
                 expectedFederationAddress,
                 expectedFlyoverDerivationHash
