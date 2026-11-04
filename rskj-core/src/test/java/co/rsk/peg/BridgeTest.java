@@ -990,6 +990,7 @@ class BridgeTest {
         private static final Coin CHANGE_VALUE = Coin.COIN.div(4);
         private static final Coin PEGOUT_REQUEST_VALUE = INPUT_VALUE.subtract(CHANGE_VALUE);
         private static final long OUTPUT_INDEX_FOR_PEGOUT_CHANGE = 1L;
+        private static final Sha256Hash ANOTHER_BTC_TX_HASH = BitcoinTestUtils.createHash(3);
 
         private final CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
         private static final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeys(20, "active");
@@ -1158,6 +1159,57 @@ class BridgeTest {
         }
 
         @Test
+        void registerPegoutTransaction_withNegativeHeight_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+            // arrange
+            setUpPegoutFromActiveFed();
+            setUpBridgeForRegistration();
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+                bridgeStorageProvider,
+                bridgeMainNetConstants,
+                BTC_BLOCK_WITH_PEGOUT_HEIGHT,
+                pegout,
+                btcBlockStore
+            );
+            int negativeHeight = -1;
+            byte[] data = registerPegoutTransactionFunction.encode(
+                pegout.getHash().getBytes(),
+                negativeHeight,
+                pmt.bitcoinSerialize()
+            );
+
+            // act & assert
+            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+        }
+
+        @Test
+        void registerPegoutTransaction_withNotEnoughConfirmations_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+            // arrange
+            setUpPegoutFromActiveFed();
+            setUpBridgeForRegistration();
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            PartialMerkleTree pmt = createValidPmtForTransactionsHashes(List.of(pegout.getHash()), networkParameters);
+            // confirmations are counted as bestChainHeight - height + 1
+            int bestChainHeightWithOneConfirmationLessThanAcceptable = BTC_BLOCK_WITH_PEGOUT_HEIGHT
+                + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations() - 2;
+            recreateChainFromPmt(
+                btcBlockStore,
+                bestChainHeightWithOneConfirmationLessThanAcceptable,
+                pmt,
+                BTC_BLOCK_WITH_PEGOUT_HEIGHT,
+                networkParameters
+            );
+            bridgeStorageProvider.save();
+            byte[] data = encodeRegisterPegoutTransaction(
+                pegout.getHash(),
+                pmt.bitcoinSerialize()
+            );
+
+            // act & assert
+            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+        }
+
+        @Test
         void registerPegoutTransaction_withWrongPmtSize_shouldThrowVMException() throws BlockStoreException, IOException {
             // arrange
             setUpPegoutFromActiveFed();
@@ -1210,6 +1262,29 @@ class BridgeTest {
         }
 
         @Test
+        void registerPegoutTransaction_withPmtNotInMerkleRoot_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+            // arrange
+            setUpPegoutFromActiveFed();
+            setUpBridgeForRegistration();
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            buildPMTAndRecreateChainForTxIdRegistration(
+                bridgeStorageProvider,
+                bridgeMainNetConstants,
+                BTC_BLOCK_WITH_PEGOUT_HEIGHT,
+                pegout,
+                btcBlockStore
+            );
+            PartialMerkleTree pmtForAnotherTx = createValidPmtForTransactionsHashes(List.of(ANOTHER_BTC_TX_HASH), networkParameters);
+            byte[] data = encodeRegisterPegoutTransaction(
+                pegout.getHash(),
+                pmtForAnotherTx.bitcoinSerialize()
+            );
+
+            // act & assert
+            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+        }
+
+        @Test
         void registerPegoutTransaction_withBlockBelowDepthLimit_shouldThrowVMException() throws BlockStoreException, IOException {
             // arrange
             setUpPegoutFromActiveFed();
@@ -1237,6 +1312,109 @@ class BridgeTest {
             executeTransactionAndAssertThrowsVMEWithoutTxRegistration(data, pegout);
         }
 
+        @Test
+        void registerPegoutTransaction_withInvalidMerkleRootForThatTx_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+            // arrange
+            setUpPegoutFromActiveFed();
+            setUpBridgeForRegistration();
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            // the block at the pegout height contains another tx, so its merkle root is not the pegout pmt one
+            PartialMerkleTree pmtForAnotherTx = createValidPmtForTransactionsHashes(List.of(ANOTHER_BTC_TX_HASH), networkParameters);
+            recreateChainWithEnoughConfirmationsFromPmt(pmtForAnotherTx);
+            PartialMerkleTree pmt = createValidPmtForTransactionsHashes(List.of(pegout.getHash()), networkParameters);
+            byte[] data = encodeRegisterPegoutTransaction(
+                pegout.getHash(),
+                pmt.bitcoinSerialize()
+            );
+
+            // act & assert
+            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+        }
+
+        @Test
+        void registerPegoutTransaction_withTxWithoutPendingUtxos_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+            // arrange
+            setUpPegoutFromActiveFed();
+            setUpBridgeForRegistration();
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            PartialMerkleTree pmtForTxWithoutPendingUtxos = createValidPmtForTransactionsHashes(List.of(ANOTHER_BTC_TX_HASH), networkParameters);
+            recreateChainWithEnoughConfirmationsFromPmt(pmtForTxWithoutPendingUtxos);
+            byte[] data = encodeRegisterPegoutTransaction(
+                ANOTHER_BTC_TX_HASH,
+                pmtForTxWithoutPendingUtxos.bitcoinSerialize()
+            );
+
+            // act & assert
+            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+            assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(ANOTHER_BTC_TX_HASH).isEmpty());
+        }
+
+        @Test
+        void registerPegoutTransaction_withSvpFundTxWhileSvpIsOngoing_shouldNotThrowNorRegisterTx() throws BlockStoreException, IOException {
+            // arrange
+            setUpPegoutFromActiveFed();
+            setUpBridgeForRegistration();
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            // the svp fund tx has to be registered through registerBtcTransaction while the svp is ongoing,
+            // so marking the pegout as the unsigned svp fund tx makes registerPegoutTransaction skip it
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(pegout.getHash());
+            PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+                bridgeStorageProvider,
+                bridgeMainNetConstants,
+                BTC_BLOCK_WITH_PEGOUT_HEIGHT,
+                pegout,
+                btcBlockStore
+            );
+            byte[] data = encodeRegisterPegoutTransaction(
+                pegout.getHash(),
+                pmt.bitcoinSerialize()
+            );
+
+            // act & assert
+            executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(data, pegout);
+        }
+
+        @Test
+        void registerPegoutTransaction_withTxAlreadyProcessed_shouldNotThrowNorRegisterTxAgain() throws BlockStoreException, IOException, VMException {
+            // arrange
+            setUpPegoutFromActiveFed();
+            setUpBridgeForRegistration();
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+                bridgeStorageProvider,
+                bridgeMainNetConstants,
+                BTC_BLOCK_WITH_PEGOUT_HEIGHT,
+                pegout,
+                btcBlockStore
+            );
+            byte[] data = encodeRegisterPegoutTransaction(
+                pegout.getHash(),
+                pmt.bitcoinSerialize()
+            );
+            bridge.execute(data);
+            List<UTXO> activeFederationUtxosAfterFirstRegistration = List.copyOf(federationSupport.getActiveFederationBtcUTXOs());
+            List<LogInfo> logsAfterFirstRegistration = List.copyOf(logs);
+
+            long nextRegistrationBlockNumber = pegoutRegistrationBlockNumber + 1;
+            setUpBridgeAndFederationSupport(nextRegistrationBlockNumber);
+            bridge = bridgeBuilder
+                .activationConfig(allActivationsConfig)
+                .bridgeSupport(bridgeSupport)
+                .executionBlock(rskExecutionBlock)
+                .build();
+
+            // act & assert
+            assertDoesNotThrow(() -> bridge.execute(data));
+            assertUtxosAreEqual(activeFederationUtxosAfterFirstRegistration, federationSupport.getActiveFederationBtcUTXOs());
+            assertEquals(logsAfterFirstRegistration, logs);
+            assertEquals(
+                Optional.of(pegoutRegistrationBlockNumber),
+                bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(pegout.getHash())
+            );
+        }
+
+
+
         private void executeTransactionAndAssertThrowsVMEWithoutTxRegistration(byte[] data, BtcTransaction pegout) throws IOException {
             assertThrows(VMException.class, () -> bridge.execute(data));
             assertReleaseWasNotRegistered(
@@ -1246,6 +1424,30 @@ class BridgeTest {
                 pegout
             );
             assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+        }
+
+        private void executeTransactionAndAssertDoesNotThrowWithoutTxRegistration(byte[] data, BtcTransaction pegout) throws IOException {
+            assertDoesNotThrow(() -> bridge.execute(data));
+            assertReleaseWasNotRegistered(
+                bridgeStorageProvider,
+                federationSupport,
+                logs,
+                pegout
+            );
+            assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+        }
+
+        private void recreateChainWithEnoughConfirmationsFromPmt(PartialMerkleTree pmt) throws BlockStoreException {
+            int bestChainHeightWithMinimumAcceptableConfirmations = BTC_BLOCK_WITH_PEGOUT_HEIGHT
+                + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
+            recreateChainFromPmt(
+                btcBlockStore,
+                bestChainHeightWithMinimumAcceptableConfirmations,
+                pmt,
+                BTC_BLOCK_WITH_PEGOUT_HEIGHT,
+                networkParameters
+            );
+            bridgeStorageProvider.save();
         }
 
         private void setUpBridgeForRegistration() {
