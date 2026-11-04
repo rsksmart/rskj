@@ -81,13 +81,13 @@ public enum BridgeEvents {
     }),
     UTXOS_REGISTERED("utxos_registered", new CallTransaction.Param[] {
         new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
-        new CallTransaction.Param(false, Fields.VALUES, SolidityType.getType(SolidityType.BYTES)),
+        new CallTransaction.Param(false, Fields.OUTPUT_VALUES, SolidityType.getType(SolidityType.BYTES)),
         new CallTransaction.Param(false, Fields.OUTPUT_INDEXES, SolidityType.getType(SolidityType.BYTES)),
         new CallTransaction.Param(false, Fields.FEDERATION_BTC_ADDRESS, SolidityType.getType(SolidityType.STRING))
     }),
     FLYOVER_UTXOS_REGISTERED("flyover_utxos_registered", new CallTransaction.Param[] {
         new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
-        new CallTransaction.Param(false, Fields.VALUES, SolidityType.getType(SolidityType.BYTES)),
+        new CallTransaction.Param(false, Fields.OUTPUT_VALUES, SolidityType.getType(SolidityType.BYTES)),
         new CallTransaction.Param(false, Fields.OUTPUT_INDEXES, SolidityType.getType(SolidityType.BYTES)),
         new CallTransaction.Param(false, Fields.FEDERATION_BTC_ADDRESS, SolidityType.getType(SolidityType.STRING)),
         new CallTransaction.Param(false, Fields.FLYOVER_DERIVATION_HASH, SolidityType.getType(SolidityType.BYTES32))
@@ -134,7 +134,7 @@ public enum BridgeEvents {
         private static final String RELEASE_RSK_TX_HASHES = "releaseRskTxHashes";
         private static final String SENDER = "sender";
         private static final String UTXO_OUTPOINT_VALUES = "utxoOutpointValues";
-        private static final String VALUES = "values";
+        private static final String OUTPUT_VALUES = "outputValues";
         private static final String OUTPUT_INDEXES = "outputIndexes";
         private static final String FEDERATION_BTC_ADDRESS = "federationBtcAddress";
         private static final String REQUESTER = "requester";

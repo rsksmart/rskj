@@ -876,14 +876,14 @@ class BridgeSupportRegisterBtcTransactionTest {
         private void verifyLogUtxosRegistered(
             ActivationConfig.ForBlock activations,
             BtcTransaction btcTransaction,
-            List<Coin> expectedValuesInSatoshis,
+            List<Coin> expectedOutputValuesInSatoshis,
             List<Long> expectedOutputIndexes,
             Federation expectedFederation
         ) {
             if (activations.isActive(ConsensusRule.RSKIP643)) {
                 verify(bridgeEventLogger, times(1)).logUtxosRegistered(
                     btcTransaction.getHash(),
-                    expectedValuesInSatoshis,
+                    expectedOutputValuesInSatoshis,
                     expectedOutputIndexes,
                     expectedFederation.getAddress()
                 );
@@ -5087,12 +5087,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             private void assertLogUtxosRegisteredForMigration(BtcTransaction migrationTx) {
                 // every migration output is sent to the active federation
                 List<TransactionOutput> migrationOutputs = migrationTx.getOutputs();
-                List<Coin> valuesInSatoshis = migrationOutputs.stream().map(TransactionOutput::getValue).toList();
+                List<Coin> outputValuesInSatoshis = migrationOutputs.stream().map(TransactionOutput::getValue).toList();
                 List<Long> outputsIndexes = migrationOutputs.stream().map(output -> (long) output.getIndex()).toList();
                 assertLogUtxosRegistered(
                     logs,
                     migrationTx.getHash(),
-                    valuesInSatoshis,
+                    outputValuesInSatoshis,
                     outputsIndexes,
                     activeFederation.getAddress()
                 );
