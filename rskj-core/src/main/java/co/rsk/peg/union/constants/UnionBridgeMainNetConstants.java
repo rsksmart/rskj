@@ -4,6 +4,7 @@ import static co.rsk.core.RskAddress.ZERO_ADDRESS;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizerFactory;
 import java.math.BigInteger;
 
@@ -26,12 +27,12 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
 
         // TODO: Replace with actual authorizers
         changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            ZERO_ADDRESS
+            new RskAddress("624e1844183096932c013db4995923fc9fe580f9")
         );
 
         // TODO: Replace with actual authorizers
         changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            ZERO_ADDRESS
+            new RskAddress("39bbfc0ffd207dbe53e51506f4b8fceac9629bdf")
         );
     }
 
