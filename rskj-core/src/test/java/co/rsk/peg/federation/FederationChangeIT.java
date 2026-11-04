@@ -1378,17 +1378,7 @@ class FederationChangeIT {
     }
 
     private void executeAndAssertRegisterPegoutTransaction(Federation federation, BtcTransaction pegout) throws Exception {
-        // save the pegout change as federations pending utxos, as the bridge does when creating the pegout
-        var pegoutChangeOutput = pegout.getOutput(PEGOUT_CHANGE_OUTPUT_INDEX);
-        var pegoutChangeUtxo = new UTXO(
-            pegout.getHash(),
-            PEGOUT_CHANGE_OUTPUT_INDEX,
-            pegoutChangeOutput.getValue(),
-            0,
-            false,
-            pegoutChangeOutput.getScriptPubKey()
-        );
-        federationSupport.storeFederationsPendingBtcUTXOs(pegout.getHash(), List.of(pegoutChangeUtxo));
+        storePegoutChangeAsFederationsPendingBtcUTXOs(pegout);
         registerPegoutTransaction(pegout);
         assertReleaseWasRegistered(
             bridgeStorageProvider,
@@ -1400,6 +1390,20 @@ class FederationChangeIT {
             List.of(PEGOUT_CHANGE_OUTPUT_INDEX),
             federation.getAddress()
         );
+    }
+
+    private void storePegoutChangeAsFederationsPendingBtcUTXOs(BtcTransaction pegout) {
+        // save the pegout change as federations pending utxos, as the bridge does when creating the pegout
+        var pegoutChangeOutput = pegout.getOutput(PEGOUT_CHANGE_OUTPUT_INDEX);
+        var pegoutChangeUtxo = new UTXO(
+            pegout.getHash(),
+            PEGOUT_CHANGE_OUTPUT_INDEX,
+            pegoutChangeOutput.getValue(),
+            0,
+            false,
+            pegoutChangeOutput.getScriptPubKey()
+        );
+        federationSupport.storeFederationsPendingBtcUTXOs(pegout.getHash(), List.of(pegoutChangeUtxo));
     }
 
     private void assertPeginsShouldNotWorkToFed(Federation federation, String senderSeed) throws Exception {
@@ -1482,10 +1486,21 @@ class FederationChangeIT {
         var activeFederationUtxosSizeBeforeRegisteringPegout = federationSupport.getActiveFederationBtcUTXOs().size();
         var retiringFederationUtxosSizeBeforeRegisteringPegout = federationSupport.getRetiringFederationBtcUTXOs().size();
 
-        registerBtcTransaction(pegout);
+        if (activations.isActive(ConsensusRule.RSKIP643)) {
+            // the pegout change is pending to a federation that is not live, so its utxo gets discarded
+            storePegoutChangeAsFederationsPendingBtcUTXOs(pegout);
+            registerPegoutTransaction(pegout);
 
-        // assert pegout was not processed
-        assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(pegout.getHash()));
+            // assert pegout was processed and its pending utxos were discarded
+            assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(pegout.getHash()));
+            assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
+        } else {
+            registerBtcTransaction(pegout);
+
+            // assert pegout was not processed
+            assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(pegout.getHash()));
+        }
+
         // assert no utxos were registered
         assertEquals(activeFederationUtxosSizeBeforeRegisteringPegout, federationSupport.getActiveFederationBtcUTXOs().size());
         assertEquals(retiringFederationUtxosSizeBeforeRegisteringPegout, federationSupport.getRetiringFederationBtcUTXOs().size());
