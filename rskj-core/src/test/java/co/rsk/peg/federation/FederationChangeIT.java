@@ -5,7 +5,6 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
-import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasNotEmitted;
 import static co.rsk.peg.BridgeSupportTestUtil.assertFederatorSigning;
 import static co.rsk.peg.BridgeSupportTestUtil.assertLogFlyoverUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.assertLogUtxosRegistered;
@@ -944,12 +943,17 @@ class FederationChangeIT {
 
         assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
         Coin svpFundTxChangeValue = svpFundTx.getOutput(SVP_FUND_TX_CHANGE_OUTPUT_INDEX).getValue();
-        verifyLogUtxosRegistered(
-            svpFundTx,
-            List.of(svpFundTxChangeValue),
-            List.of((long) SVP_FUND_TX_CHANGE_OUTPUT_INDEX),
-            federationSupport.getActiveFederationAddress()
-        );
+        if (activations.isActive(ConsensusRule.RSKIP643)) {
+            assertLogUtxosRegistered(
+                logs,
+                svpFundTx.getHash(),
+                List.of(svpFundTxChangeValue),
+                List.of((long) SVP_FUND_TX_CHANGE_OUTPUT_INDEX),
+                federationSupport.getActiveFederationAddress()
+            );
+        } else {
+            assertUtxosRegisteredWasNotEmitted(svpFundTx);
+        }
         var svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
         assertFalse(svpFundTxHashUnsigned.isPresent());
         var svpFundTransactionSigned = bridgeStorageProvider.getSvpFundTxSigned();
@@ -1018,12 +1022,17 @@ class FederationChangeIT {
 
         assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
         Coin svpSpendTxValueSentToActiveFed = svpSpendTx.getOutput(SVP_SPEND_TX_OUTPUT_INDEX_TO_ACTIVE_FED).getValue();
-        verifyLogUtxosRegistered(
-            svpSpendTx,
-            List.of(svpSpendTxValueSentToActiveFed),
-            List.of((long) SVP_SPEND_TX_OUTPUT_INDEX_TO_ACTIVE_FED),
-            federationSupport.getActiveFederationAddress()
-        );
+        if (activations.isActive(ConsensusRule.RSKIP643)) {
+            assertLogUtxosRegistered(
+                logs,
+                svpSpendTx.getHash(),
+                List.of(svpSpendTxValueSentToActiveFed),
+                List.of((long) SVP_SPEND_TX_OUTPUT_INDEX_TO_ACTIVE_FED),
+                federationSupport.getActiveFederationAddress()
+            );
+        } else {
+            assertUtxosRegisteredWasNotEmitted(svpSpendTx);
+        }
         var svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
         assertFalse(svpSpendTxHashUnsigned.isPresent());
         var newFederationOpt = federationSupport.getProposedFederation();
@@ -1056,26 +1065,6 @@ class FederationChangeIT {
 
     private void assertNoEventWasEmittedSince(int logsSizeBeforeCheckpoint) {
         assertEquals(logsSizeBeforeCheckpoint, logs.size());
-    }
-
-    private void verifyLogUtxosRegistered(
-        BtcTransaction btcTransaction,
-        List<Coin> expectedOutputValuesInSatoshis,
-        List<Long> expectedOutputIndexes,
-        Address expectedFederationAddress
-    ) {
-        if (activations.isActive(ConsensusRule.RSKIP643)) {
-            assertLogUtxosRegistered(
-                logs,
-                btcTransaction.getHash(),
-                expectedOutputValuesInSatoshis,
-                expectedOutputIndexes,
-                expectedFederationAddress
-            );
-        } else {
-            // before RSKIP643 no utxos_registered event is ever emitted in the whole flow
-            assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
-        }
     }
 
     private void verifyLogFlyoverUtxosRegistered(
@@ -1285,12 +1274,17 @@ class FederationChangeIT {
         // assert utxo was registered
         assertEquals(utxosSizeBeforeRegisteringPeginV1 + 1, federationUtxosReference.size());
         assertPeginBtcEventWasEmitted(logsSizeBeforePegin, pegin, expectedReceiver, PEGIN_VALUE, expectedProtocolVersion);
-        verifyLogUtxosRegistered(
-            pegin,
-            List.of(PEGIN_VALUE),
-            List.of(PEGIN_OUTPUT_INDEX_TO_FED),
-            federationAddress
-        );
+        if (activations.isActive(ConsensusRule.RSKIP643)) {
+            assertLogUtxosRegistered(
+                logs,
+                pegin.getHash(),
+                List.of(PEGIN_VALUE),
+                List.of(PEGIN_OUTPUT_INDEX_TO_FED),
+                federationAddress
+            );
+        } else {
+            assertUtxosRegisteredWasNotEmitted(pegin);
+        }
 
         // assert funds were actually transferred from the bridge to the receiver
         var peginAmountInWeis = co.rsk.core.Coin.fromBitcoin(PEGIN_VALUE);
@@ -1369,12 +1363,7 @@ class FederationChangeIT {
 
             // assert pegout was processed
             assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(pegout.getHash()));
-            verifyLogUtxosRegistered(
-                pegout,
-                List.of(PEGOUT_CHANGE_VALUE),
-                List.of(PEGOUT_CHANGE_OUTPUT_INDEX),
-                federation.getAddress()
-            );
+            assertUtxosRegisteredWasNotEmitted(pegout);
         }
 
         // assert utxo was registered
