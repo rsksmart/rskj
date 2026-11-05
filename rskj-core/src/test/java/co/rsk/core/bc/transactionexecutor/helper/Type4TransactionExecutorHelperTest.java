@@ -254,6 +254,9 @@ public abstract class Type4TransactionExecutorHelperTest {
         when(authorizationTracker.getCode(authorityAddress))
                 .thenReturn(delegatedAddress);
 
+        when(authorizationTracker.getBalance(authorityAddress))
+                .thenReturn(Coin.ZERO);
+
         when(authorizationTracker.getNonce(authorityAddress))
                 .thenReturn(nonce);
     }

@@ -207,9 +207,9 @@ class Rskip545DslTest {
     }
 
     @Test
-    void type4_firstSelfAuth_onEmptyAuthority_gasUsedEqualsIntrinsic() {
-        assertEquals(SINGLE_AUTH_INTRINSIC, gasUsedInBlock("b01", "txType4SelfAuth"),
-                "Empty authority: full PER_EMPTY_ACCOUNT_COST kept (no refund)");
+    void type4_firstSelfAuth_onFundedAuthority_gasUsedReflectsRefund() {
+        assertEquals(SINGLE_AUTH_INTRINSIC - DELEGATION_REPLACEMENT_REFUND, gasUsedInBlock("b01", "txType4SelfAuth"),
+                "Funded authority: PER_EMPTY_ACCOUNT_COST - PER_AUTH_BASE_COST refunded on first delegation");
     }
 
     @Test
@@ -217,14 +217,14 @@ class Rskip545DslTest {
         long firstAuthGas = gasUsedInBlock("b01", "txType4SelfAuth");
         long reAuthGas = gasUsedInBlock("b02", "txType4WithValue");
 
-        assertEquals(DELEGATION_REPLACEMENT_REFUND, firstAuthGas - reAuthGas,
-                "Replacing delegation refunds PER_EMPTY_ACCOUNT_COST - PER_AUTH_BASE_COST");
+        assertEquals(firstAuthGas, reAuthGas,
+                "A funded authority gets the same refund whether it is delegating for the first time or replacing a delegation");
         assertEquals(SINGLE_AUTH_INTRINSIC - DELEGATION_REPLACEMENT_REFUND, reAuthGas);
     }
 
     @Test
-    void type4_externalAuth_onEmptyAuthority_gasUsedEqualsIntrinsic() {
-        assertEquals(SINGLE_AUTH_INTRINSIC, gasUsedInBlock("b04", "txType4ExternalAuth"));
+    void type4_externalAuth_onFundedAuthority_gasUsedReflectsRefund() {
+        assertEquals(SINGLE_AUTH_INTRINSIC - DELEGATION_REPLACEMENT_REFUND, gasUsedInBlock("b04", "txType4ExternalAuth"));
     }
 
     static Stream<Arguments> delegatedAuthorityGasCases() {
