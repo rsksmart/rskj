@@ -588,6 +588,174 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
     }
 
     @Test
+    void exceptionalHalt_firstDelegationOfFundedEoa_refundSurvivesHalt() {
+        MutableRepository repository = createRepository();
+
+        // Funded EOA, no code, nonce 0: not EIP-161 empty, so its first delegation is refunded.
+        repository.addBalance(authorityAddress, Coin.valueOf(1_000_000));
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        saveCode(repository, receiver, new byte[]{(byte) 0xfe}); // INVALID -> exceptional halt
+        mockExecutionBlockForRealVm();
+
+        SetCodeAuthorization authorization = createValidAuthorizationTuple(
+                delegatedAddress, ZERO_NONCE, constants.getChainId(), authorityKey);
+
+        long gasLimit = 600_000L;
+        Transaction tx = createSignedType4Transaction(
+                senderKey, constants.getChainId(), ZERO_NONCE, gasLimit, 1, 1,
+                receiver, 0, EMPTY_BYTE_ARRAY, authorization);
+
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction());
+        assertNotNull(executor.getResult().getException(), "INVALID must produce an exceptional halt");
+        assertEquals(DELEGATION_REPLACEMENT_REFUND, executor.getResult().getDeductedRefund(), "The authorization refund must survive the halt");
+        assertEquals(gasLimit - DELEGATION_REPLACEMENT_REFUND, new BigInteger(1, executor.getReceipt().getGasUsed()).longValueExact(), "A halt consumes the gas limit; only the authorization refund is given back");
+        assertEquals(Coin.valueOf(gasLimit - DELEGATION_REPLACEMENT_REFUND), executor.getPaidFees());
+        assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
+    }
+
+    @Test
+    void invalidTupleNonce_onFundedAuthority_isNotRefunded() {
+        assertInvalidTupleOnFundedAuthorityIsNotRefunded(createValidAuthorizationTuple(
+                delegatedAddress, ONE_NONCE, constants.getChainId(), authorityKey));
+    }
+
+    @Test
+    void invalidTupleChainId_onFundedAuthority_isNotRefunded() {
+        byte wrongChainId = (byte) (constants.getChainId() + 1);
+        assertInvalidTupleOnFundedAuthorityIsNotRefunded(createValidAuthorizationTuple(
+                delegatedAddress, ZERO_NONCE, wrongChainId, authorityKey));
+    }
+
+    private void assertInvalidTupleOnFundedAuthorityIsNotRefunded(SetCodeAuthorization invalidTuple) {
+        MutableRepository repository = createRepository();
+
+        repository.addBalance(authorityAddress, Coin.valueOf(1_000_000));
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        prepareReceiver(repository);
+        mockExecutionBlockForRealVm();
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey, constants.getChainId(), ZERO_NONCE, 600_000, 1, 1,
+                receiver, 0, EMPTY_BYTE_ARRAY, invalidTuple);
+
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction());
+        assertEquals(0L, executor.getResult().getDeductedRefund(), "A skipped tuple must not be refunded, even when its authority is funded");
+        assertEquals(GasCost.TRANSACTION + GasCost.PER_EMPTY_ACCOUNT_COST, new BigInteger(1, executor.getReceipt().getGasUsed()).longValueExact());
+        assertArrayEquals(EMPTY_CODE, normalizeCode(repository.getCode(authorityAddress)));
+        assertEquals(ZERO_NONCE, repository.getNonce(authorityAddress));
+    }
+
+    @Test
+    void selfAuthorization_senderDrainedToZeroBalanceByGasPurchase_isRefunded() {
+        MutableRepository repository = createRepository();
+
+        long gasLimit = 100_000L;
+        // Exactly gasLimit * gasPrice: buying the gas leaves the sender with balance 0 and no code,
+        // so only its bumped nonce keeps it from being EIP-161 empty when the tuple runs.
+        fundSender(repository, ZERO_NONCE, gasLimit);
+        prepareReceiver(repository);
+        mockExecutionBlockForRealVm();
+
+        SetCodeAuthorization selfAuthorization = createValidAuthorizationTuple(
+                delegatedAddress, ONE_NONCE, constants.getChainId(), senderKey);
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey, constants.getChainId(), ZERO_NONCE, gasLimit, 1, 1,
+                receiver, 0, EMPTY_BYTE_ARRAY, selfAuthorization);
+
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction());
+        long expectedGasUsed = GasCost.TRANSACTION + GasCost.PER_EMPTY_ACCOUNT_COST - DELEGATION_REPLACEMENT_REFUND;
+        assertEquals(DELEGATION_REPLACEMENT_REFUND, executor.getResult().getDeductedRefund());
+        assertEquals(expectedGasUsed, new BigInteger(1, executor.getReceipt().getGasUsed()).longValueExact());
+        assertEquals(Coin.valueOf(gasLimit - expectedGasUsed), repository.getBalance(sender), "Unused and refunded gas is returned to the sender");
+        assertAuthorityDelegatedTo(repository, sender, delegatedAddress);
+        assertEquals(BigInteger.TWO, repository.getNonce(sender));
+    }
+
+    @Test
+    void mixedAuthorities_onlyNonEmptyOnesAreRefunded() {
+        MutableRepository repository = createRepository();
+
+        ECKey fundedKey = new ECKey();
+        RskAddress funded = new RskAddress(fundedKey.getAddress());
+        ECKey delegatedKey = new ECKey();
+        RskAddress alreadyDelegated = new RskAddress(delegatedKey.getAddress());
+
+        // authorityAddress is absent (empty); funded has balance only; alreadyDelegated has code.
+        repository.addBalance(funded, Coin.valueOf(1_000_000));
+        prepareAuthority(repository, alreadyDelegated, ONE_NONCE, DelegationCodeResolver.createDelegatedCode(createRandomAddress()));
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        prepareReceiver(repository);
+        mockExecutionBlockForRealVm();
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey, constants.getChainId(), ZERO_NONCE, 600_000, 1, 1,
+                receiver, 0, EMPTY_BYTE_ARRAY,
+                createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, constants.getChainId(), authorityKey),
+                createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, constants.getChainId(), fundedKey),
+                createValidAuthorizationTuple(delegatedAddress, ONE_NONCE, constants.getChainId(), delegatedKey));
+
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction());
+        assertEquals(2 * DELEGATION_REPLACEMENT_REFUND, executor.getResult().getDeductedRefund(), "Only the funded and the already delegated authorities are refunded");
+        assertEquals(GasCost.TRANSACTION + 3 * GasCost.PER_EMPTY_ACCOUNT_COST - 2 * DELEGATION_REPLACEMENT_REFUND, new BigInteger(1, executor.getReceipt().getGasUsed()).longValueExact());
+        assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
+        assertAuthorityDelegatedTo(repository, funded, delegatedAddress);
+        assertAuthorityDelegatedTo(repository, alreadyDelegated, delegatedAddress);
+    }
+
+    /**
+     * a 0-value transfer to a new address leaves an account with nonce 0, balance 0 and no code in the trie. Such an authority
+     * exists but is EIP-161 empty, and RSKIP-545 defines "not empty" by EIP-161, not by existence, so its delegation is charged the full PER_EMPTY_ACCOUNT_COST.
+     */
+    @Test
+    void authorityCreatedByZeroValueTransfer_existsButIsEip161Empty_isNotRefunded() {
+        MutableRepository repository = createRepository();
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        prepareReceiver(repository);
+        mockExecutionBlockForRealVm();
+
+        Transaction zeroValueTransfer = Transaction.builder()
+                .nonce(ZERO_NONCE)
+                .gasLimit(BigInteger.valueOf(100_000))
+                .gasPrice(Coin.valueOf(1))
+                .receiveAddress(authorityAddress)
+                .value(Coin.ZERO)
+                .data(EMPTY_DATA)
+                .build();
+        zeroValueTransfer.sign(senderKey.getPrivKeyBytes());
+
+        assertFalse(repository.isExist(authorityAddress));
+        assertTrue(newRealVmExecutor(zeroValueTransfer, repository).executeTransaction());
+
+        assertTrue(repository.isExist(authorityAddress), "The 0-value transfer must leave the account in the trie");
+        assertEquals(ZERO_NONCE, repository.getNonce(authorityAddress));
+        assertEquals(Coin.ZERO, repository.getBalance(authorityAddress));
+        assertArrayEquals(EMPTY_CODE, normalizeCode(repository.getCode(authorityAddress)));
+
+        Transaction type4 = createSignedType4Transaction(
+                senderKey, constants.getChainId(), ONE_NONCE, 600_000, 1, 1,
+                receiver, 0, EMPTY_BYTE_ARRAY,
+                createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, constants.getChainId(), authorityKey));
+
+        TransactionExecutor executor = newRealVmExecutor(type4, repository);
+
+        assertTrue(executor.executeTransaction());
+        assertEquals(0L, executor.getResult().getDeductedRefund(),
+                "An existing but EIP-161 empty authority is charged as a new account");
+        assertEquals(GasCost.TRANSACTION + GasCost.PER_EMPTY_ACCOUNT_COST,
+                new BigInteger(1, executor.getReceipt().getGasUsed()).longValueExact());
+        assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
+    }
+
+    @Test
     void duplicateAuthorizationTuple_chargesUpfrontCostOnRealRepository() {
         MutableRepository repository = createRepository();
 
