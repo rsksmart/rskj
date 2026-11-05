@@ -183,10 +183,9 @@ class Rskip545OriginInvariantDslTest {
     }
 
     @Test
-    void type4_originTopFrame_gasUsed_exceedsIntrinsicForDelegatedExecution() {
+    void type4_originTopFrame_gasUsed_exceedsRefundedAuthCostForDelegatedExecution() {
         long used = gasUsedInBlock("b01", "txOriginTopFrame");
-        assertTrue(used > SINGLE_AUTH_INTRINSIC,
-                "Delegated probe execution must consume gas beyond auth intrinsic cost");
+        assertTrue(used > RE_AUTH_BASELINE, "Delegated probe execution must consume gas beyond the refunded auth cost");
     }
 
     @Test
@@ -195,14 +194,6 @@ class Rskip545OriginInvariantDslTest {
         assertTrue(nested > RE_AUTH_BASELINE,
                 "Nested CALL execution must add gas beyond the re-auth baseline "
                         + "(SINGLE_AUTH_INTRINSIC - DELEGATION_REPLACEMENT_REFUND)");
-    }
-
-    @Test
-    void type4_originNestedCall_gasUsed_lowerThanFirstSelfAuthDueToReplacementRefund() {
-        long topFrame = gasUsedInBlock("b01", "txOriginTopFrame");
-        long nested = gasUsedInBlock("b02", "txOriginNestedCall");
-        assertTrue(nested < topFrame,
-                "Second self-auth replaces delegation and refunds PER_EMPTY_ACCOUNT_COST - PER_AUTH_BASE_COST");
     }
 
     @Test

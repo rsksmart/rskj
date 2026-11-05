@@ -537,6 +537,57 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
     }
 
     @Test
+    void sameEmptyAuthorityTwiceInOneList_onlySecondTupleIsRefunded() {
+        MutableRepository repository = createRepository();
+
+        // EIP-161 empty authority: nonce 0, balance 0, no code.
+        prepareAuthority(repository, authorityAddress, ZERO_NONCE, EMPTY_CODE);
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        prepareReceiver(repository);
+        mockExecutionBlockForRealVm();
+
+        // First tuple clears the code (delegate to 0x0), so after it the authority still has
+        // no code and no balance; only its bumped nonce makes it non-empty for the second tuple.
+        SetCodeAuthorization clearingTuple = createValidAuthorizationTuple(
+                RskAddress.ZERO_ADDRESS,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+        SetCodeAuthorization secondTuple = createValidAuthorizationTuple(
+                RskAddress.ZERO_ADDRESS,
+                ONE_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ZERO_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                0,
+                EMPTY_BYTE_ARRAY,
+                clearingTuple,
+                secondTuple
+        );
+
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction());
+        assertEquals(DELEGATION_REPLACEMENT_REFUND, executor.getResult().getDeductedRefund(),
+                "First tuple sees an empty authority (no refund); second sees nonce 1 (refund)");
+        assertEquals(GasCost.TRANSACTION + 2 * GasCost.PER_EMPTY_ACCOUNT_COST - DELEGATION_REPLACEMENT_REFUND,
+                new BigInteger(1, executor.getReceipt().getGasUsed()).longValueExact());
+        assertArrayEquals(EMPTY_CODE, normalizeCode(repository.getCode(authorityAddress)), "Both tuples cleared the code");
+        assertEquals(Coin.ZERO, repository.getBalance(authorityAddress));
+        assertEquals(BigInteger.TWO, repository.getNonce(authorityAddress), "Both tuples applied");
+    }
+
+    @Test
     void duplicateAuthorizationTuple_chargesUpfrontCostOnRealRepository() {
         MutableRepository repository = createRepository();
 

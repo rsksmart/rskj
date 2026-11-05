@@ -209,6 +209,36 @@ class EthModuleType4CallSimulationTest {
     }
 
     @Test
+    void firstSelfDelegationOfFundedEoa_receiptGasUsedReflectsRefund() {
+        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), const42, SELF_SPONSORED_NONCE, CHAIN_ID);
+
+        Transaction type4 = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(CHAIN_ID)
+                .nonce(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(200_000))
+                .maxPriorityFeePerGas(co.rsk.core.Coin.valueOf(1_000_000_000L))
+                .maxFeePerGas(co.rsk.core.Coin.valueOf(2_000_000_000L))
+                .receiveAddress(authorityB.getAddress())
+                .data(new byte[0])
+                .value(co.rsk.core.Coin.ZERO)
+                .authorizationList(List.of(selfAuth))
+                .build();
+        type4.sign(plainEoaWithNoCode.getEcKey().getPrivKeyBytes());
+
+        mine(world.getBlockChain().getBestBlock(), List.of(type4));
+
+        TransactionReceipt receipt = world.getReceiptStore()
+                .getInMainChain(type4.getHash().getBytes(), world.getBlockStore())
+                .orElseThrow()
+                .getReceipt();
+        long expected = GasCost.TRANSACTION + GasCost.PER_EMPTY_ACCOUNT_COST
+                - (GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST);
+        assertEquals(36_500L, expected);
+        assertEquals(expected, receipt.getCumulativeGasLong(), "only tx in its block, so cumulative gas is its gasUsed");
+    }
+
+    @Test
     void selfAuthorization_arbitraryAuthorityAccount_delegationStillApplies() {
         assertEquals("0x", callHex(authorityA.getAddress(), new byte[0], null));
 

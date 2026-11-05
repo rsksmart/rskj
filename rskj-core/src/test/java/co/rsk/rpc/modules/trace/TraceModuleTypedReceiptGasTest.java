@@ -162,11 +162,11 @@ class TraceModuleTypedReceiptGasTest {
     /**
      * Regression guard for the rejected approach: subtracting the previous block transaction's
      * cumulative gas. Cumulative gas restarts per RSKIP-144 sublist, so the delta is 0 at the
-     * sublist 1 boundary and 10000 at the sequential boundary. txType2Second is deliberately not
+     * sublist 1 boundary and 500 at the sequential boundary. txType2Second is deliberately not
      * listed: it sits mid-sublist, where the naive delta happens to be right.
      */
     @ParameterizedTest
-    @CsvSource({"txType2, 0", "txType4, 10000"})
+    @CsvSource({"txType2, 0", "txType4, 500"})
     void naiveBlockOrderDelta_wouldReportWrongGas(String txName, long naiveDelta) {
         assertEquals(naiveDelta, naiveBlockOrderDelta(txName),
                 "fixture no longer reproduces the sublist-boundary delta");

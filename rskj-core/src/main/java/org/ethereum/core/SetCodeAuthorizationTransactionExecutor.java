@@ -17,6 +17,7 @@
  */
 package org.ethereum.core;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.ECKey;
@@ -46,7 +47,7 @@ public class SetCodeAuthorizationTransactionExecutor {
         verifyAuthorityCode(code);
         verifyAuthorityNonce(authorization.getNonceAsInteger(), currentNonce);
 
-        long refund = calculateRefund(code);
+        long refund = calculateRefund(code, currentNonce, repository.getBalance(authority));
 
         writeDelegation(authority, authorization.getAddress(), repository);
 
@@ -107,8 +108,9 @@ public class SetCodeAuthorizationTransactionExecutor {
         }
     }
 
-    private long calculateRefund(byte[] code) {
-        boolean isEmpty = code == null || code.length == 0;
+    private long calculateRefund(byte[] code, BigInteger nonce, Coin balance) {
+        boolean hasCode = code != null && code.length > 0;
+        boolean isEmpty = !hasCode && nonce.signum() == 0 && balance.equals(Coin.ZERO);
         return isEmpty ? 0L : GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST;
     }
 
