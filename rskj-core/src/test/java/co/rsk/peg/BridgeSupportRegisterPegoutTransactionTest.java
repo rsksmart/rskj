@@ -3,7 +3,7 @@ package co.rsk.peg;
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.addPegoutRequestsToQueue;
-import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasNotEmitted;
+import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasNotRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.buildExpectedUtxosRegistered;
 import static co.rsk.peg.BridgeSupportTestUtil.buildPMTAndRecreateChainForSegwitTransactionRegistration;
@@ -325,7 +325,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // assert
-        assertPegoutWasNotRegistered(anotherPegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            anotherPegout
+        );
     }
 
     @Test
@@ -349,7 +354,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         bridgeSupport.save();
 
         // assert
-        assertPegoutWasNotRegistered(pegin);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegin
+        );
         assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegin.getHash()));
     }
 
@@ -374,7 +384,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         bridgeSupport.save();
 
         // assert
-        assertPegoutWasNotRegistered(flyoverPegin);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            flyoverPegin
+        );
         assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(flyoverPegin.getHash()));
     }
 
@@ -399,7 +414,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         bridgeSupport.save();
 
         // assert
-        assertPegoutWasNotRegistered(unknownTransaction);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            unknownTransaction
+        );
         assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(unknownTransaction.getHash()));
     }
 
@@ -427,7 +447,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // assert
-        assertPegoutWasNotRegistered(pegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegout
+        );
         assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
 
@@ -455,7 +480,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // assert
-        assertPegoutWasNotRegistered(pegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegout
+        );
         assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
 
@@ -713,7 +743,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // assert
-        assertPegoutWasNotRegistered(svpFundTx);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            svpFundTx
+        );
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(svpFundTx.getHash()));
         assertEquals(Optional.of(svpFundTx.getHash()), bridgeStorageProvider.getSvpFundTxHashUnsigned());
         assertTrue(bridgeStorageProvider.getSvpFundTxSigned().isEmpty());
@@ -742,7 +777,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // assert
-        assertPegoutWasNotRegistered(svpSpendTx);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            svpSpendTx
+        );
         assertFalse(federationSupport.hasFederationsPendingBtcUTXOs(svpSpendTx.getHash()));
         assertEquals(Optional.of(svpSpendTx.getHash()), bridgeStorageProvider.getSvpSpendTxHashUnsigned());
     }
@@ -829,7 +869,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // assert
-        assertPegoutWasNotRegistered(pegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegout
+        );
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
 
@@ -851,7 +896,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // assert
-        assertPegoutWasNotRegistered(pegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegout
+        );
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
 
@@ -876,7 +926,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // assert
-        assertPegoutWasNotRegistered(pegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegout
+        );
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
 
@@ -925,7 +980,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // assert
-        assertPegoutWasNotRegistered(pegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegout
+        );
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
 
@@ -952,7 +1012,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         );
 
         // assert
-        assertPegoutWasNotRegistered(pegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegout
+        );
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
 
@@ -985,7 +1050,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         ));
 
         bridgeSupport.save();
-        assertPegoutWasNotRegistered(pegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegout
+        );
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
 
@@ -1021,7 +1091,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         ));
 
         bridgeSupport.save();
-        assertPegoutWasNotRegistered(pegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegout
+        );
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
 
@@ -1053,7 +1128,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
         bridgeSupport.save();
 
         // assert
-        assertPegoutWasNotRegistered(pegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegout
+        );
         assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(pegoutWtxid).isEmpty());
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
@@ -1078,7 +1158,12 @@ class BridgeSupportRegisterPegoutTransactionTest {
             pmt.bitcoinSerialize()
         ));
         bridgeSupport.save();
-        assertPegoutWasNotRegistered(pegout);
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            pegout
+        );
         assertTrue(federationSupport.hasFederationsPendingBtcUTXOs(pegout.getHash()));
     }
 
@@ -1226,12 +1311,6 @@ class BridgeSupportRegisterPegoutTransactionTest {
             expectedOutputIndexes,
             activeFederation.getAddress()
         );
-    }
-
-    private void assertPegoutWasNotRegistered(BtcTransaction release) throws IOException {
-        assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
-        assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(release.getHash()).isEmpty());
-        assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
     }
 
     private void setUpBridgeAndFederationSupportWithActiveFederationRetiring() {
