@@ -90,6 +90,29 @@ class Web3InformationRetrieverTest {
     }
 
     @Test
+    void getBlock_numberLargerThanLong() {
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class, () -> target.getBlock("0x10000000000000000"));
+
+        assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
+    }
+
+    @Test
+    void getBlock_numberThatWouldWrapToNegative() {
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class, () -> target.getBlock("0xffffffffffffffff"));
+
+        assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
+    }
+
+    @Test
+    void getBlock_largestRepresentableNumber() {
+        Optional<Block> result = target.getBlock("0x7fffffffffffffff");
+
+        assertFalse(result.isPresent());
+    }
+
+    @Test
     void getBlock_hash() {
         String hash = "0x0000000000000000000000000000000000000000000000000000000000000002";
         byte[] bytesHash = HexUtils.stringHexToByteArray(hash);
