@@ -683,6 +683,17 @@ public final class BridgeSupportTestUtil {
         );
     }
 
+    public static void assertReleaseWasNotRegistered(
+        BridgeStorageProvider bridgeStorageProvider,
+        FederationSupport federationSupport,
+        List<LogInfo> logs,
+        BtcTransaction releaseTransaction
+    ) throws IOException {
+        assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
+        assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(releaseTransaction.getHash()).isEmpty());
+        assertEventWasNotEmitted(logs, BridgeEvents.UTXOS_REGISTERED.getEvent());
+    }
+
     private static void assertLogAddSignature(List<LogInfo> logs, FederationMember federationMember, byte[] rskTxHash) {
         CallTransaction.Function addSignatureEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
         ECKey federatorRskPublicKey = federationMember.getRskPublicKey();
