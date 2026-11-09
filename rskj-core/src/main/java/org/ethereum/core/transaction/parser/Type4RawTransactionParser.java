@@ -28,7 +28,8 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.Rskip546FeeValidation;
 import org.ethereum.core.transaction.parser.util.Type4TransactionValidation;
 import org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema;
-import org.ethereum.core.transaction.parser.util.TypedTransactionCodec;
+import org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.ListField;
+import org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.ValidatedEnvelope;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
@@ -36,15 +37,18 @@ import java.math.BigInteger;
 import java.util.List;
 
 import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.bytes;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.chainId;
 import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.coinScalar;
 import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.list;
 import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.nonNullAddress;
 import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.scalar;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.signatureR;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.signatureS;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.yParity;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class Type4RawTransactionParser implements RawTransactionTypeParser<ParsedType4Transaction>{
 
-    private static final int CHAIN_ID_INDEX = 0;
     private static final int NONCE_INDEX = 1;
     private static final int MAX_PRIORITY_FEE_PER_GAS_INDEX = 2;
     private static final int MAX_FEE_PER_GAS_INDEX = 3;
@@ -52,15 +56,14 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
     private static final int TO_INDEX = 5;
     private static final int VALUE_INDEX = 6;
     private static final int DATA_INDEX = 7;
-    private static final int ACCESS_LIST_INDEX = 8;
-    private static final int AUTHORIZATION_LIST_INDEX = 9;
-    private static final int Y_PARITY_INDEX = 10;
-    private static final int R_INDEX = 11;
-    private static final int S_INDEX = 12;
+
+    private static final ListField<byte[]> ACCESS_LIST = list(AccessListCodec::requireRawAccessListBytes);
+    private static final ListField<List<SetCodeAuthorization>> AUTHORIZATION_LIST =
+            list(AuthorizationListCodec::requireRawAuthorizationList);
 
     private static final TypedEnvelopeSchema SCHEMA = TypedEnvelopeSchema.of(
             TransactionType.TYPE_4.getTypeName(),
-            bytes(), // chainId
+            chainId(),
             scalar(0, "Nonce is not valid", "Nonce"),
             coinScalar(3, "Gas Price is not valid", "Max priority fee per gas"),
             coinScalar(4, "Gas Price is not valid", "Max fee per gas"),
@@ -68,44 +71,17 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
             nonNullAddress("Set-code transaction must have a non-null destination"),
             coinScalar(2, "Value is not valid", "Value"),
             bytes(), // data
-            list(), // access list
-            list(), // authorization list
-            bytes(), // yParity
-            bytes(), // r
-            bytes() // s
+            ACCESS_LIST,
+            AUTHORIZATION_LIST,
+            yParity(),
+            signatureR(),
+            signatureS()
     );
-
-    /** Values the semantic phase parses; a plain holder, since a record would compare the array by reference. */
-    private static final class SemanticFields {
-        private final byte[] accessListBytes;
-        private final List<SetCodeAuthorization> authorizationList;
-        private final Coin maxPriorityFeePerGas;
-        private final Coin maxFeePerGas;
-
-        private SemanticFields(byte[] accessListBytes, List<SetCodeAuthorization> authorizationList,
-                               Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
-            this.accessListBytes = accessListBytes;
-            this.authorizationList = authorizationList;
-            this.maxPriorityFeePerGas = maxPriorityFeePerGas;
-            this.maxFeePerGas = maxFeePerGas;
-        }
-    }
 
     @Override
     public ParsedType4Transaction parse(TransactionTypePrefix typePrefix, RLPList txFields) {
-        SemanticFields semantic = SCHEMA.validate(txFields, fields -> {
-            byte[] accessListBytes = AccessListCodec.requireRawAccessListBytes(fields.get(ACCESS_LIST_INDEX));
-            CommonParsingUtils.requireListFramed(fields.get(AUTHORIZATION_LIST_INDEX), "Authorization list");
-            byte[] authorizationListBytes = AuthorizationListCodec.requireAuthorizationListBytes(
-                    fields.get(AUTHORIZATION_LIST_INDEX).getRLPRawData());
-            var authorizationList = AuthorizationListCodec.decodeListUnchecked(authorizationListBytes);
-            Coin maxPriorityFeePerGas = CommonParsingUtils.defaultValue(
-                    RLP.parseCoinNonNullZero(fields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData()));
-            Coin maxFeePerGas = CommonParsingUtils.defaultValue(
-                    RLP.parseCoinNonNullZero(fields.get(MAX_FEE_PER_GAS_INDEX).getRLPData()));
-            Rskip546FeeValidation.requireFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
-            return new SemanticFields(accessListBytes, authorizationList, maxPriorityFeePerGas, maxFeePerGas);
-        });
+        ValidatedEnvelope envelope = SCHEMA.validate(txFields, fields -> Rskip546FeeValidation.requireFeeCapRelationship(
+                fee(fields, MAX_PRIORITY_FEE_PER_GAS_INDEX), fee(fields, MAX_FEE_PER_GAS_INDEX)));
 
         byte[] nonce = CommonParsingUtils.nullToEmpty(txFields.get(NONCE_INDEX).getRLPData());
         byte[] gasLimit = CommonParsingUtils.nullToEmpty(txFields.get(GAS_LIMIT_INDEX).getRLPData());
@@ -120,11 +96,11 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
                 receiveAddress,
                 value,
                 data,
-                TypedTransactionCodec.parseTypedSignatureState(txFields, CHAIN_ID_INDEX, Y_PARITY_INDEX, R_INDEX, S_INDEX),
-                semantic.accessListBytes,
-                semantic.maxPriorityFeePerGas,
-                semantic.maxFeePerGas,
-                semantic.authorizationList
+                envelope.signature(),
+                envelope.get(ACCESS_LIST),
+                fee(txFields, MAX_PRIORITY_FEE_PER_GAS_INDEX),
+                fee(txFields, MAX_FEE_PER_GAS_INDEX),
+                envelope.get(AUTHORIZATION_LIST)
         );
         Type4TransactionValidation.validateParsed(parsed);
         return parsed;
@@ -174,6 +150,11 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
         );
         Type4TransactionValidation.validateParsed(parsed);
         return parsed;
+    }
+
+    /** A fee field; zero-length is zero, as in the envelope's canonical encoding. */
+    private static Coin fee(RLPList txFields, int index) {
+        return CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(index).getRLPData()));
     }
 
     private Coin parseRequiredCoin(Coin value, String errorMessage) {
