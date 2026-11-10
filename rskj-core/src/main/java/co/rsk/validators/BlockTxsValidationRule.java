@@ -22,6 +22,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.panic.PanicProcessor;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -42,10 +44,12 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
 
     private final RepositoryLocator repositoryLocator;
     private final SignatureCache signatureCache;
+    private final ActivationConfig activationConfig;
 
-    public BlockTxsValidationRule(RepositoryLocator repositoryLocator, SignatureCache signatureCache) {
+    public BlockTxsValidationRule(RepositoryLocator repositoryLocator, SignatureCache signatureCache, ActivationConfig activationConfig) {
         this.repositoryLocator = repositoryLocator;
         this.signatureCache = signatureCache;
+        this.activationConfig = activationConfig;
     }
 
     /**
@@ -68,7 +72,9 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             return true;
         }
 
-        RepositorySnapshot parentRepo = repositoryLocator.snapshotAt(parent.getHeader());
+        boolean avoidStaticCheck = activationConfig.isActive(ConsensusRule.RSKIP545, block.getNumber());
+
+        RepositorySnapshot parentRepo = avoidStaticCheck ? null : repositoryLocator.snapshotAt(parent.getHeader());
 
         Map<RskAddress, BigInteger> curNonce = new HashMap<>();
 
@@ -78,6 +84,10 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             } catch (RuntimeException e) {
                 logger.warn("Unable to verify transaction", e);
                 return false;
+            }
+
+            if (avoidStaticCheck) {
+                continue;
             }
 
             RskAddress sender = signatureCache != null ? tx.getSender(signatureCache) : tx.getSender();

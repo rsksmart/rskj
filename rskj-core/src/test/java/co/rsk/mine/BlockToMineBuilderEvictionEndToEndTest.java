@@ -161,7 +161,7 @@ class BlockToMineBuilderEvictionEndToEndTest {
     @Test
     void build_whenTxExecutionThrowsError_doesNotPropagateAndEvictsTxFromPool() {
         // given the pool serves the failing tx for this build.
-        when(minerUtils.filterTransactions(any(), any(), any(), any(), any(), anyBoolean(), any()))
+        when(minerUtils.filterTransactions(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean(), any()))
                 .thenReturn(new ArrayList<>(Collections.singletonList(includedTx)));
 
         List<BlockHeader> mainchainHeaders = Collections.singletonList(genesis.getHeader());
@@ -182,7 +182,7 @@ class BlockToMineBuilderEvictionEndToEndTest {
     @Test
     void build_afterErrorTxEvicted_subsequentBuildProducesBlockAndIsNotRePoisoned() {
         // given the pool serves the failing tx on the first build; once evicted it no longer serves it.
-        when(minerUtils.filterTransactions(any(), any(), any(), any(), any(), anyBoolean(), any()))
+        when(minerUtils.filterTransactions(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean(), any()))
                 .thenReturn(new ArrayList<>(Collections.singletonList(includedTx)))
                 .thenReturn(new ArrayList<>());
 

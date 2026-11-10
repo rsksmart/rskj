@@ -23,6 +23,9 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +35,12 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class BlockTxsValidationRuleTest {
@@ -41,6 +49,7 @@ class BlockTxsValidationRuleTest {
     private RepositorySnapshot repositorySnapshot;
     private Block parent;
     private SignatureCache signatureCache;
+    private RepositoryLocator repositoryLocator;
 
     @BeforeEach
     void setup() {
@@ -48,13 +57,76 @@ class BlockTxsValidationRuleTest {
         BlockHeader parentHeader = mock(BlockHeader.class);
         when(parent.getHeader()).thenReturn(parentHeader);
 
-        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        repositoryLocator = mock(RepositoryLocator.class);
         repositorySnapshot = mock(RepositorySnapshot.class);
         when(repositoryLocator.snapshotAt(parentHeader)).thenReturn(repositorySnapshot);
 
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
-        rule = new BlockTxsValidationRule(repositoryLocator, signatureCache);
+        rule = new BlockTxsValidationRule(repositoryLocator, signatureCache, ActivationConfigsForTest.allBut(ConsensusRule.RSKIP545));
+    }
+
+    private static final long RSKIP545_ACTIVATION_HEIGHT = 1000;
+
+    private BlockTxsValidationRule ruleWithRskip545ActiveFrom(long activationHeight) {
+        ActivationConfig activationConfig = mock(ActivationConfig.class);
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP545), anyLong()))
+                .thenAnswer(invocation -> (long) invocation.getArgument(1) >= activationHeight);
+        return new BlockTxsValidationRule(repositoryLocator, signatureCache, activationConfig);
+    }
+
+    @Test
+    void rskip545Active_acceptsTxWithNonceAheadOfParentAfterOtherSenderTx() {
+        RskAddress otherSender = TestUtils.generateAddress("otherSender");
+        RskAddress sender = TestUtils.generateAddress("sender");
+        initialNonce(otherSender, 10);
+        initialNonce(sender, 5);
+
+        Block block = block(RSKIP545_ACTIVATION_HEIGHT, transaction(otherSender, 10), transaction(sender, 6));
+
+        Assertions.assertTrue(ruleWithRskip545ActiveFrom(RSKIP545_ACTIVATION_HEIGHT).isValid(block, parent));
+    }
+
+    @Test
+    void rskip545Active_stillRejectsTxWithInvalidSignature() {
+        RskAddress sender = TestUtils.generateAddress("sender");
+        initialNonce(sender, 5);
+        Transaction badTx = transaction(sender, 5);
+        doThrow(new IllegalArgumentException("bad signature")).when(badTx).verify(any(SignatureCache.class));
+
+        Block block = block(RSKIP545_ACTIVATION_HEIGHT, badTx);
+
+        Assertions.assertFalse(ruleWithRskip545ActiveFrom(RSKIP545_ACTIVATION_HEIGHT).isValid(block, parent));
+    }
+
+    @Test
+    void rskip545Active_doesNotReadParentState() {
+        RskAddress sender = TestUtils.generateAddress("sender");
+
+        Block block = block(RSKIP545_ACTIVATION_HEIGHT, transaction(sender, 3));
+
+        Assertions.assertTrue(ruleWithRskip545ActiveFrom(RSKIP545_ACTIVATION_HEIGHT).isValid(block, parent));
+        verify(repositoryLocator, never()).snapshotAt(any());
+    }
+
+    @Test
+    void rskip545Boundary_blockBeforeActivationKeepsStaticCheck() {
+        RskAddress sender = TestUtils.generateAddress("sender");
+        initialNonce(sender, 5);
+
+        Block block = block(RSKIP545_ACTIVATION_HEIGHT - 1, transaction(sender, 5), transaction(sender, 7));
+
+        Assertions.assertFalse(ruleWithRskip545ActiveFrom(RSKIP545_ACTIVATION_HEIGHT).isValid(block, parent));
+    }
+
+    @Test
+    void rskip545Boundary_activationBlockSkipsStaticCheck() {
+        RskAddress sender = TestUtils.generateAddress("sender");
+        initialNonce(sender, 5);
+
+        Block block = block(RSKIP545_ACTIVATION_HEIGHT, transaction(sender, 5), transaction(sender, 7));
+
+        Assertions.assertTrue(ruleWithRskip545ActiveFrom(RSKIP545_ACTIVATION_HEIGHT).isValid(block, parent));
     }
 
     @Test
@@ -134,7 +206,12 @@ class BlockTxsValidationRuleTest {
     }
 
     private Block block(Transaction... transactions) {
+        return block(1, transactions);
+    }
+
+    private Block block(long number, Transaction... transactions) {
         Block block = mock(Block.class);
+        when(block.getNumber()).thenReturn(number);
         when(block.getTransactionsList()).thenReturn(Arrays.asList(transactions));
         return block;
     }

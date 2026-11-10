@@ -129,6 +129,102 @@ class MinerUtilsTest {
     }
 
     @Test
+    void rskip545Enabled_nonceMismatchIsNotFilteredAndLeftToExecution() {
+        Transaction tx = TransactionBuilder.createMockTransaction(config, 0, 50000, 2, 0, 0, 0);
+        List<Transaction> txs = new LinkedList<>();
+        txs.add(tx);
+
+        Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
+        accountNounces.put(tx.getSender(signatureCache), BigInteger.valueOf(0));
+
+
+        List<Transaction> txsToRemove = new LinkedList<>();
+        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, Mockito.mock(Repository.class), ONE_COIN, true, true, signatureCache);
+        Assertions.assertEquals(1, res.size());
+        Assertions.assertEquals(0, txsToRemove.size());
+    }
+
+    @Test
+    void rskip545Disabled_nonceMismatchIsStillFiltered() {
+        Transaction tx = TransactionBuilder.createMockTransaction(config, 0, 50000, 2, 0, 0, 0);
+        List<Transaction> txs = new LinkedList<>();
+        txs.add(tx);
+        Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
+        accountNounces.put(tx.getSender(signatureCache), BigInteger.valueOf(0));
+
+        List<Transaction> txsToRemove = new LinkedList<>();
+        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, Mockito.mock(Repository.class), ONE_COIN, true, false, signatureCache);
+        Assertions.assertEquals(0, res.size());
+        Assertions.assertEquals(0, txsToRemove.size());
+    }
+
+    @Test
+    void rskip545Enabled_lowGasPriceIsStillRemoved() {
+        Transaction tx = TransactionBuilder.createMockTransaction(config, 0, 50000, 1, 0, 0, 0);
+        List<Transaction> txs = new LinkedList<>();
+        txs.add(tx);
+        Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
+        Coin minGasPrice = Coin.valueOf(2L);
+
+        LinkedList<Transaction> txsToRemove = new LinkedList<>();
+        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, Mockito.mock(Repository.class), minGasPrice, true, true, signatureCache);
+        Assertions.assertEquals(0, res.size());
+        Assertions.assertEquals(1, txsToRemove.size());
+    }
+
+    @Test
+    void rskip545Enabled_txsWithSkippedNoncesFromSameSenderAllPass() {
+        Transaction otherSenderTx = TransactionBuilder.createMockTransaction(config, 0, 50000, 2, 10, 0, 1);
+        Transaction senderTx6 = TransactionBuilder.createMockTransaction(config, 0, 50000, 2, 6, 0, 2);
+        Transaction senderTx8 = TransactionBuilder.createMockTransaction(config, 0, 50000, 2, 8, 0, 2);
+        List<Transaction> txs = new LinkedList<>(Arrays.asList(otherSenderTx, senderTx6, senderTx8));
+
+        Repository repository = Mockito.mock(Repository.class);
+        Mockito.when(repository.getNonce(otherSenderTx.getSender(signatureCache))).thenReturn(BigInteger.valueOf(10));
+        Mockito.when(repository.getNonce(senderTx6.getSender(signatureCache))).thenReturn(BigInteger.valueOf(5));
+
+        List<Transaction> txsToRemove = new LinkedList<>();
+        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, new HashMap<>(), repository, ONE_COIN, true, true, signatureCache);
+
+        Assertions.assertEquals(Arrays.asList(otherSenderTx, senderTx6, senderTx8), res);
+        Assertions.assertEquals(0, txsToRemove.size());
+    }
+
+    @Test
+    void rskip545Disabled_txsWithSkippedNoncesFromSameSenderAreSkipped() {
+        Transaction otherSenderTx = TransactionBuilder.createMockTransaction(config, 0, 50000, 2, 10, 0, 1);
+        Transaction senderTx6 = TransactionBuilder.createMockTransaction(config, 0, 50000, 2, 6, 0, 2);
+        Transaction senderTx8 = TransactionBuilder.createMockTransaction(config, 0, 50000, 2, 8, 0, 2);
+        List<Transaction> txs = new LinkedList<>(Arrays.asList(otherSenderTx, senderTx6, senderTx8));
+
+        Repository repository = Mockito.mock(Repository.class);
+        Mockito.when(repository.getNonce(otherSenderTx.getSender(signatureCache))).thenReturn(BigInteger.valueOf(10));
+        Mockito.when(repository.getNonce(senderTx6.getSender(signatureCache))).thenReturn(BigInteger.valueOf(5));
+
+        List<Transaction> txsToRemove = new LinkedList<>();
+        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, new HashMap<>(), repository, ONE_COIN, true, false, signatureCache);
+
+        Assertions.assertEquals(Collections.singletonList(otherSenderTx), res);
+        Assertions.assertEquals(0, txsToRemove.size());
+    }
+
+    @Test
+    void rskip545Enabled_doesNotReadParentStateNorTrackNonces() {
+        Transaction tx1 = TransactionBuilder.createMockTransaction(config, 0, 50000, 2, 3, 0, 1);
+        Transaction tx2 = TransactionBuilder.createMockTransaction(config, 0, 50000, 2, 7, 0, 2);
+        List<Transaction> txs = new LinkedList<>(Arrays.asList(tx1, tx2));
+        Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
+        Repository repository = Mockito.mock(Repository.class);
+
+        List<Transaction> txsToRemove = new LinkedList<>();
+        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, ONE_COIN, true, true, signatureCache);
+
+        Assertions.assertEquals(2, res.size());
+        Assertions.assertTrue(accountNounces.isEmpty());
+        Mockito.verifyNoInteractions(repository);
+    }
+
+    @Test
     void invalidGasPriceTransactionTest() {
         Transaction tx = TransactionBuilder.createMockTransaction(config, 0, 50000, 1, 0, 0, 0);
         List<Transaction> txs = new LinkedList<>();

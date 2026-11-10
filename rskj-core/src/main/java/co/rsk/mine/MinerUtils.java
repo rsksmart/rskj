@@ -153,6 +153,11 @@ public class MinerUtils {
     }
 
     public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, SignatureCache signatureCache) {
+        return filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice, isRskip252Enabled, false, signatureCache);
+    }
+
+
+    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, boolean isRskip545Enabled, SignatureCache signatureCache) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
@@ -161,14 +166,6 @@ public class MinerUtils {
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
                 RskAddress txSender = tx.getSender(signatureCache);
                 logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
-
-                BigInteger expectedNonce;
-
-                if (accountNonces.containsKey(txSender)) {
-                    expectedNonce = accountNonces.get(txSender).add(BigInteger.ONE);
-                } else {
-                    expectedNonce = originalRepo.getNonce(txSender);
-                }
 
                 if (isLowGasPriced(minGasPrice, tx)) {
                     txsToRemove.add(tx);
@@ -182,12 +179,15 @@ public class MinerUtils {
                     continue;
                 }
 
-                if (!expectedNonce.equals(txNonce)) {
-                    logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hash);
-                    continue;
-                }
 
-                accountNonces.put(txSender, txNonce);
+                if (!isRskip545Enabled) {
+                    BigInteger expectedNonce = accountNonces.containsKey(txSender) ? accountNonces.get(txSender).add(BigInteger.ONE) : originalRepo.getNonce(txSender);
+                    if (!expectedNonce.equals(txNonce)) {
+                        logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hash);
+                        continue;
+                    }
+                    accountNonces.put(txSender, txNonce);
+                }
 
                 logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
             } catch (Exception e) {
