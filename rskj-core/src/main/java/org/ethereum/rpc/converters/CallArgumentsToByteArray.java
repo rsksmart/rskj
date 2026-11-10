@@ -179,15 +179,19 @@ public class CallArgumentsToByteArray {
         return TransactionInput.parseExplicitChainId(hex, type != TransactionType.LEGACY);
     }
 
+    /**
+     * Returns the call's gas limit, capped at {@code gasCap} when the cap is positive. The gas is read as
+     * an unsigned number of any width, so a value that does not fit in a signed long is still capped.
+     */
     public byte[] gasLimitForCall(long gasCap) {
         byte[] gasLimitBytes = this.getGasLimit();
-        long gasLimit = ByteUtil.byteArrayToLong(gasLimitBytes);
 
         if (gasCap <= 0) {
             return gasLimitBytes;
         }
 
-        if(gasLimit > gasCap) {
+        BigInteger gasLimit = new BigInteger(1, gasLimitBytes);
+        if (gasLimit.compareTo(BigInteger.valueOf(gasCap)) > 0) {
             LOGGER.warn("provided gasLimit ({}) exceeds the gas cap," +
                     " using the gas cap ({})", gasLimit, gasCap);
             return ByteUtil.longToBytes(gasCap);

@@ -20,6 +20,7 @@ package org.ethereum.rpc.converters;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.util.HexUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
@@ -156,6 +157,68 @@ class CallArgumentsToByteArrayTest {
 
         Assertions.assertEquals(1, ByteUtil.byteArrayToLong(
                 callArgumentsToByteArray.gasLimitForCall(config.getCallGasCap())));
+    }
+
+    private static final long CALL_GAS_CAP = 10_000_000L;
+    private static final String CALL_GAS_CAP_AS_8_BYTES = "0000000000989680";
+
+    private static Stream<Arguments> gasAboveTheCallGasCap() {
+        return Stream.of(
+                Arguments.of("0x989681"),               // cap + 1
+                Arguments.of("0x7fffffffffffffff"),     // 2^63 - 1
+                Arguments.of("0x8000000000000000"),     // 2^63
+                Arguments.of("0xffffffffffffffff"),     // 2^64 - 1
+                Arguments.of("0x010000000000000000"),   // 2^64, nine bytes
+                Arguments.of("0x" + "ff".repeat(32)),   // 2^256 - 1
+                Arguments.of("-9223372036854775808")    // decimal, two's complement 0x8000000000000000
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("gasAboveTheCallGasCap")
+    void gasLimitForCall_gasAboveTheCap_returnsTheCap(String gas) {
+        CallArguments callArguments = new CallArguments();
+        callArguments.setGas(gas);
+
+        byte[] gasLimit = new CallArgumentsToByteArray(callArguments).gasLimitForCall(CALL_GAS_CAP);
+
+        Assertions.assertArrayEquals(Hex.decode(CALL_GAS_CAP_AS_8_BYTES), gasLimit);
+    }
+
+    private static Stream<Arguments> gasAtOrBelowTheCallGasCap() {
+        return Stream.of(
+                Arguments.of("0x989680", "989680"),                         // the cap itself
+                Arguments.of("0x000000000000000001", "000000000000000001")  // 1, zero-padded to nine bytes
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("gasAtOrBelowTheCallGasCap")
+    void gasLimitForCall_gasAtOrBelowTheCap_isReturnedUnchanged(String gas, String expectedBytes) {
+        CallArguments callArguments = new CallArguments();
+        callArguments.setGas(gas);
+
+        byte[] gasLimit = new CallArgumentsToByteArray(callArguments).gasLimitForCall(CALL_GAS_CAP);
+
+        Assertions.assertArrayEquals(Hex.decode(expectedBytes), gasLimit);
+    }
+
+    private static Stream<Arguments> gasWithTheCapDisabled() {
+        return Stream.of(
+                Arguments.of("0xffffffffffffffff", "ffffffffffffffff"),
+                Arguments.of("0x010000000000000000", "010000000000000000")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("gasWithTheCapDisabled")
+    void gasLimitForCall_capDisabled_returnsTheGasUnchanged(String gas, String expectedBytes) {
+        CallArguments callArguments = new CallArguments();
+        callArguments.setGas(gas);
+
+        byte[] gasLimit = new CallArgumentsToByteArray(callArguments).gasLimitForCall(0);
+
+        Assertions.assertArrayEquals(Hex.decode(expectedBytes), gasLimit);
     }
 
     @Test
