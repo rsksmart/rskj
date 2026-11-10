@@ -25,6 +25,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP98;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.values;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -426,17 +427,48 @@ class ActivationConfigTest {
     @ParameterizedTest
     @ValueSource(strings = {"main", "testnet", "testnet2", "regtest"})
     void requiredRulesActivateNoLaterThanTheirDependents_shippedNetworkConfigs(String network) {
-        // same layering as ConfigLoader: the network file overrides the defaults in reference.conf; paths that
-        // depend on the environment are left unresolved, the activation heights do not use them
-        Config blockchainConfig = ConfigFactory.parseResourcesAnySyntax("config/" + network)
-                .withFallback(ConfigFactory.parseResourcesAnySyntax("reference.conf"))
-                .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
-                .getConfig("blockchain.config");
+        Config blockchainConfig = shippedBlockchainConfig(network);
 
         for (Map.Entry<ConsensusRule, Set<ConsensusRule>> dependency : expectedDependencies().entrySet()) {
             assertRequiredRulesActivateNoLaterThan(network, blockchainConfig, dependency.getKey(),
                     dependency.getValue());
         }
+    }
+
+    /**
+     * The "no later than" check above holds trivially where cardamom1000 = -1 (main, testnet, testnet2), because
+     * none of the rules it checks is active at any height. RSKIP701 and RSKIP545 must name the same upgrade, so they move together whatever
+     * height that upgrade is given later.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"reference", "main", "testnet", "testnet2", "regtest"})
+    void rskip701AndRskip545NameTheSameUpgrade_shippedConfigs(String network) {
+        Config blockchainConfig = "reference".equals(network)
+                ? referenceBlockchainConfig()
+                : shippedBlockchainConfig(network);
+
+        String rskip545 = blockchainConfig.getString("consensusRules.rskip545");
+        String rskip701 = blockchainConfig.getString("consensusRules.rskip701");
+
+        assertEquals(rskip545, rskip701, network + ": RSKIP701 and RSKIP545 must activate with the same upgrade");
+        // a height instead of an upgrade name would pin the rule to that height and let the upgrade move alone
+        assertDoesNotThrow(() -> NetworkUpgrade.named(rskip701),
+                network + ": RSKIP701 must name an upgrade, not a height");
+    }
+
+    private static Config referenceBlockchainConfig() {
+        return ConfigFactory.parseResourcesAnySyntax("reference.conf")
+                .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
+                .getConfig("blockchain.config");
+    }
+
+    private static Config shippedBlockchainConfig(String network) {
+        // same layering as ConfigLoader: the network file overrides the defaults in reference.conf; paths that
+        // depend on the environment are left unresolved, the activation heights do not use them
+        return ConfigFactory.parseResourcesAnySyntax("config/" + network)
+                .withFallback(ConfigFactory.parseResourcesAnySyntax("reference.conf"))
+                .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
+                .getConfig("blockchain.config");
     }
 
     /**
