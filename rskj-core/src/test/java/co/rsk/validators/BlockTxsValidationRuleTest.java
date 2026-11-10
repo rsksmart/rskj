@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
@@ -27,12 +28,16 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.core.transaction.SetCodeAuthorization;
+import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -127,6 +132,54 @@ class BlockTxsValidationRuleTest {
         Block block = block(RSKIP545_ACTIVATION_HEIGHT, transaction(sender, 5), transaction(sender, 7));
 
         Assertions.assertTrue(ruleWithRskip545ActiveFrom(RSKIP545_ACTIVATION_HEIGHT).isValid(block, parent));
+    }
+
+
+    @Test
+    void validAuthorityTransactionAfterSponsorTupleBumpedItsNonce() {
+        ECKey sponsorKey = new ECKey();
+        ECKey authorityKey = new ECKey();
+        RskAddress sponsor = new RskAddress(sponsorKey.getAddress());
+        RskAddress authority = new RskAddress(authorityKey.getAddress());
+        RskAddress delegate = TestUtils.generateAddress("delegate");
+        initialNonce(sponsor, 10);
+        initialNonce(authority, 5);
+
+        SetCodeAuthorization tuple = Rskip545TestSupport.createSignedAuthorization(
+                authorityKey, delegate, BigInteger.valueOf(5), Rskip545TestSupport.REGTEST_CHAIN_ID);
+
+        Transaction sponsorTx = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(Rskip545TestSupport.REGTEST_CHAIN_ID)
+                .nonce(BigInteger.valueOf(10))
+                .gasLimit(BigInteger.valueOf(100_000))
+                .maxPriorityFeePerGas(Coin.valueOf(1))
+                .maxFeePerGas(Coin.valueOf(1))
+                .receiveAddress(delegate)
+                .value(Coin.ZERO)
+                .data(new byte[0])
+                .authorizationList(List.of(tuple))
+                .build();
+        sponsorTx.sign(sponsorKey.getPrivKeyBytes());
+
+        Transaction authorityTx = legacyTx(authorityKey, 6, delegate, 21_000);
+
+        Block block = block(RSKIP545_ACTIVATION_HEIGHT, sponsorTx, authorityTx);
+
+        Assertions.assertTrue(ruleWithRskip545ActiveFrom(RSKIP545_ACTIVATION_HEIGHT).isValid(block, parent));
+    }
+
+    private static Transaction legacyTx(ECKey senderKey, long nonce, RskAddress to, long gasLimit) {
+        Transaction tx = Transaction.builder()
+                .chainId(Rskip545TestSupport.REGTEST_CHAIN_ID)
+                .nonce(BigInteger.valueOf(nonce))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(gasLimit))
+                .receiveAddress(to)
+                .value(BigInteger.ZERO)
+                .build();
+        tx.sign(senderKey.getPrivKeyBytes());
+        return tx;
     }
 
     @Test
