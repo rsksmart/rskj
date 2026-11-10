@@ -67,6 +67,12 @@ public class RskCli implements Runnable {
     @CommandLine.Option(names = {"--skip-java-check"}, description = "Skip Java version check")
     private boolean skipJavaCheck;
 
+    @CommandLine.Option(names = {"--add-supply-bug"},
+            description = "TESTING ONLY. Deliberately create rBTC out of nothing during block execution, "
+                    + "so that the supply conservation check can be seen to reject a block. "
+                    + "Refused on mainnet. Never use in production.")
+    private boolean addSupplyBug;
+
     // CLI OPTIONS
     @CommandLine.Option(names = {"-rpccors"}, description = "Set RPC CORS")
     private String rpcCors;
@@ -131,6 +137,10 @@ public class RskCli implements Runnable {
 
         if (skipJavaCheck) {
             activatedFlags.add(NodeCliFlags.SKIP_JAVA_CHECK);
+        }
+
+        if (addSupplyBug) {
+            activatedFlags.add(NodeCliFlags.ADD_SUPPLY_BUG);
         }
 
         if (rpcCors != null) {

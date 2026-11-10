@@ -22,6 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.trie.Trie;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -92,6 +93,10 @@ class BlockExecutorInvalidTxTest {
         // track.startTracking() is called per-tx inside the execution loop; stub it so
         // txSubTrack is not null when rollback()/commit() are called on it.
         lenient().when(track.startTracking()).thenReturn(mock(Repository.class));
+        // The supply conservation check reads the parent state to establish the balances a block
+        // started from. These tests drive a mocked locator, so give it something to return.
+        lenient().when(repositoryLocator.snapshotAt(any(BlockHeader.class)))
+                .thenReturn(mock(RepositorySnapshot.class));
 
         blockExecutor = new BlockExecutor(repositoryLocator, transactionExecutorFactory, systemProperties);
     }
