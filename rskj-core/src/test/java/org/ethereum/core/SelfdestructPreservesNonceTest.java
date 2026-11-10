@@ -377,13 +377,8 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         assertFalse(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(authorityAddress.getBytes())));
     }
 
-    /** With RSKIP701 off the delegated account is marked and earns the refund too. */
-    @ParameterizedTest(name = "RSKIP701 refund of a delegated account and of a contract {0}")
-    @MethodSource("activationStates")
-    void delegatedAccountEarnsNoRefundWhileAContractEarnsTheCappedRefund(String phase, boolean activated) {
-        if (!activated) {
-            deactivateRskip701KeepingRskip545();
-        }
+    @Test
+    void delegatedAccountEarnsNoRefundWhileAContractEarnsTheCappedRefund() {
         MutableRepository delegatedArm = createRepository();
         installContract(delegatedArm, CONTRACT_D, BigInteger.ONE, CODE_D, 0);
         createAccountWithBalance(delegatedArm, authorityAddress, BALANCE_A);
@@ -406,13 +401,8 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         assertEquals(gasBeforeRefunds, delegated.getResult().getGasUsedBeforeRefunds(),
                 "SELFDESTRUCT charges the same gas in a delegated account and in a contract");
         assertEquals(Math.min(GasCost.SUICIDE_REFUND, gasBeforeRefunds / 2), contract.getResult().getDeductedRefund());
-        if (activated) {
-            assertEquals(0, delegated.getResult().getDeductedRefund());
-            assertTrue(delegatedArm.isActiveDelegatedEOA(authorityAddress));
-        } else {
-            assertEquals(contract.getResult().getDeductedRefund(), delegated.getResult().getDeductedRefund());
-            assertFalse(delegatedArm.isExist(authorityAddress));
-        }
+        assertEquals(0, delegated.getResult().getDeductedRefund());
+        assertTrue(delegatedArm.isActiveDelegatedEOA(authorityAddress));
     }
 
     @ParameterizedTest(name = "RSKIP701 case 12: balance received after marking {0}")
@@ -494,13 +484,9 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
     }
 
-    /** A designator-shaped contract with no flag is marked; cleared with RSKIP701, deleted without. */
-    @ParameterizedTest(name = "RSKIP701 case 13: designator-shaped code without the flag {0}")
-    @MethodSource("activationStates")
-    void contractWithDelegationIndicatorCodeAndNoFlagIsCleared(String phase, boolean activated) {
-        if (!activated) {
-            deactivateRskip701KeepingRskip545();
-        }
+    /** A designator-shaped contract with no flag is marked and cleared. */
+    @Test
+    void contractWithDelegationIndicatorCodeAndNoFlagIsCleared() {
         MutableRepository repository = createRepository();
         installContract(repository, CONTRACT_D, BigInteger.ONE, CODE_D, 0);
         installContract(repository, CONTRACT_P, BigInteger.ONE, DelegationCodeResolver.createDelegatedCode(CONTRACT_D), BALANCE_C);
@@ -513,11 +499,7 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
 
         assertTrue(executor.getResult().getDeleteAccounts().contains(DataWord.valueOf(CONTRACT_P.getBytes())),
                 "The code of D runs in the context of P and marks P");
-        if (activated) {
-            assertClearedAccount(repository, CONTRACT_P, BigInteger.ONE);
-        } else {
-            assertFalse(repository.isExist(CONTRACT_P));
-        }
+        assertClearedAccount(repository, CONTRACT_P, BigInteger.ONE);
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
     }
 
@@ -650,12 +632,8 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
      * The tx goes to delegated A, whose delegate CALLs C (nonce 1), and C runs SELFDESTRUCT. C is the account that
      * destroys itself, so it is marked and cleared and earns the refund; A only forwarded the call.
      */
-    @ParameterizedTest(name = "RSKIP701: contract destroyed by a call from a delegated account {0}")
-    @MethodSource("activationStates")
-    void contractCalledByADelegatedAccountIsMarkedAndTheDelegatedAccountIsUntouched(String phase, boolean activated) {
-        if (!activated) {
-            deactivateRskip701KeepingRskip545();
-        }
+    @Test
+    void contractCalledByADelegatedAccountIsMarkedAndTheDelegatedAccountIsUntouched() {
         MutableRepository repository = createRepository();
         installContract(repository, CONTRACT_C, BigInteger.ONE, CODE_D, BALANCE_C);
         installContract(repository, CONTRACT_E, BigInteger.ONE, codeCallingWithCallData(CONTRACT_C), 0);
@@ -671,36 +649,20 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         assertEquals(Set.of(DataWord.valueOf(CONTRACT_C.getBytes())), executor.getResult().getDeleteAccounts());
         long gasBeforeRefunds = executor.getResult().getGasUsedBeforeRefunds();
         assertEquals(Math.min(GasCost.SUICIDE_REFUND, gasBeforeRefunds / 2), executor.getResult().getDeductedRefund());
-        if (activated) {
-            assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
-        } else {
-            assertFalse(repository.isExist(CONTRACT_C));
-        }
+        assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
         assertEquals(Coin.valueOf(BALANCE_A), repository.getBalance(authorityAddress));
         assertEquals(BigInteger.ONE, repository.getNonce(authorityAddress));
         assertArrayEquals(DelegationCodeResolver.createDelegatedCode(CONTRACT_E), repository.getCode(authorityAddress));
     }
 
-    static Stream<Arguments> codeSharingCallOpcodesAndActivationStates() {
-        return Stream.of(
-                Arguments.of("DELEGATECALL", OP_DELEGATECALL, "after activation", true),
-                Arguments.of("DELEGATECALL", OP_DELEGATECALL, "before activation", false),
-                Arguments.of("CALLCODE", OP_CALLCODE, "after activation", true),
-                Arguments.of("CALLCODE", OP_CALLCODE, "before activation", false));
-    }
-
     /**
      * K (nonce 1) uses {0} on delegated A, whose delegate D runs SELFDESTRUCT.
      * The code runs in the context of K, so K is the account that destroys itself; A is only the code address.
      */
-    @ParameterizedTest(name = "RSKIP701: contract running the code of a delegated account through {0} {2}")
-    @MethodSource("codeSharingCallOpcodesAndActivationStates")
-    void contractRunningADelegatedAccountsCodeIsMarkedAndTheDelegatedAccountIsUntouched(
-            String opcodeName, byte opcode, String phase, boolean activated) {
-        if (!activated) {
-            deactivateRskip701KeepingRskip545();
-        }
+    @ParameterizedTest(name = "RSKIP701: contract running the code of a delegated account through {0}")
+    @MethodSource("codeSharingCallOpcodes")
+    void contractRunningADelegatedAccountsCodeIsMarkedAndTheDelegatedAccountIsUntouched(String opcodeName, byte opcode) {
         MutableRepository repository = createRepository();
         installContract(repository, CONTRACT_D, BigInteger.ONE, CODE_D, 0);
         installContract(repository, CONTRACT_X, BigInteger.ONE, codeForwardingTo(opcode, authorityAddress), BALANCE_C);
@@ -714,11 +676,7 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
                 signedCall(BigInteger.ONE, CONTRACT_X, beneficiaryWord(BENEFICIARY_B)));
 
         assertEquals(Set.of(DataWord.valueOf(CONTRACT_X.getBytes())), executor.getResult().getDeleteAccounts());
-        if (activated) {
-            assertClearedAccount(repository, CONTRACT_X, BigInteger.ONE);
-        } else {
-            assertFalse(repository.isExist(CONTRACT_X));
-        }
+        assertClearedAccount(repository, CONTRACT_X, BigInteger.ONE);
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_C), repository.getBalance(BENEFICIARY_B));
         assertEquals(Coin.valueOf(BALANCE_A), repository.getBalance(authorityAddress));
         assertEquals(BigInteger.ONE, repository.getNonce(authorityAddress));
@@ -777,12 +735,8 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
      * delegate runs SELFDESTRUCT. E is deleted, C is cleared, A is intact, and the refund counts the two marked
      * accounts. X writes four slots first so that the gas/2 cap does not hide the count.
      */
-    @ParameterizedTest(name = "RSKIP701: deleted, cleared and delegated in one transaction {0}")
-    @MethodSource("activationStates")
-    void oneTransactionDeletesClearsAndKeepsAccordingToEachAccount(String phase, boolean activated) {
-        if (!activated) {
-            deactivateRskip701KeepingRskip545();
-        }
+    @Test
+    void oneTransactionDeletesClearsAndKeepsAccordingToEachAccount() {
         RskAddress contractNonceZero = CONTRACT_Y;
         MutableRepository repository = createRepository();
         installContract(repository, CONTRACT_D, BigInteger.ONE, CODE_D, 0);
@@ -804,32 +758,21 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
                 "the cap must not hide the number of marked accounts, gas before refunds: " + gasBeforeRefunds);
         assertFalse(repository.isExist(contractNonceZero));
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_Y + BALANCE_C + BALANCE_A), repository.getBalance(BENEFICIARY_B));
-        if (activated) {
-            assertEquals(2, executor.getResult().getDeleteAccounts().size());
-            assertEquals(2 * GasCost.SUICIDE_REFUND, executor.getResult().getDeductedRefund());
-            assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
-            assertEquals(BigInteger.ONE, repository.getNonce(authorityAddress));
-            assertArrayEquals(DelegationCodeResolver.createDelegatedCode(CONTRACT_D), repository.getCode(authorityAddress));
-            assertEquals(DataWord.valueOf(42), repository.getStorageValue(authorityAddress, DataWord.ZERO));
-            assertEquals(Coin.ZERO, repository.getBalance(authorityAddress));
-        } else {
-            assertEquals(3, executor.getResult().getDeleteAccounts().size());
-            assertEquals(3 * GasCost.SUICIDE_REFUND, executor.getResult().getDeductedRefund());
-            assertFalse(repository.isExist(CONTRACT_C));
-            assertFalse(repository.isExist(authorityAddress));
-        }
+        assertEquals(2, executor.getResult().getDeleteAccounts().size());
+        assertEquals(2 * GasCost.SUICIDE_REFUND, executor.getResult().getDeductedRefund());
+        assertClearedAccount(repository, CONTRACT_C, BigInteger.ONE);
+        assertEquals(BigInteger.ONE, repository.getNonce(authorityAddress));
+        assertArrayEquals(DelegationCodeResolver.createDelegatedCode(CONTRACT_D), repository.getCode(authorityAddress));
+        assertEquals(DataWord.valueOf(42), repository.getStorageValue(authorityAddress, DataWord.ZERO));
+        assertEquals(Coin.ZERO, repository.getBalance(authorityAddress));
     }
 
     /**
      * The delegate writes slot 1 after SELFDESTRUCT. SELFDESTRUCT halts the frame, so slot 1 stays unset and the caller
      * sees a successful CALL. With RSKIP701 the account keeps slot 0 = 42.
      */
-    @ParameterizedTest(name = "RSKIP701: SELFDESTRUCT in a delegated account halts {0}")
-    @MethodSource("activationStates")
-    void selfdestructInADelegatedAccountHaltsTheFrameAndTheCallSucceeds(String phase, boolean activated) {
-        if (!activated) {
-            deactivateRskip701KeepingRskip545();
-        }
+    @Test
+    void selfdestructInADelegatedAccountHaltsTheFrameAndTheCallSucceeds() {
         // CODE_D followed by PUSH1 1 PUSH1 1 SSTORE: never reached
         byte[] codeWritingAfterSelfdestruct = ByteUtil.merge(CODE_D, Hex.decode("6001600155"));
         MutableRepository repository = createRepository();
@@ -845,13 +788,9 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
 
         assertEquals(DataWord.ONE, repository.getStorageValue(CONTRACT_X, DataWord.ZERO), "the CALL returns 1");
         assertEquals(Coin.valueOf(BALANCE_B + BALANCE_A), repository.getBalance(BENEFICIARY_B));
-        if (activated) {
-            assertEquals(DataWord.valueOf(42), repository.getStorageValue(authorityAddress, DataWord.ZERO));
-            assertNull(repository.getStorageValue(authorityAddress, DataWord.ONE), "nothing runs after SELFDESTRUCT");
-            assertEquals(BigInteger.ONE, repository.getNonce(authorityAddress));
-        } else {
-            assertFalse(repository.isExist(authorityAddress));
-        }
+        assertEquals(DataWord.valueOf(42), repository.getStorageValue(authorityAddress, DataWord.ZERO));
+        assertNull(repository.getStorageValue(authorityAddress, DataWord.ONE), "nothing runs after SELFDESTRUCT");
+        assertEquals(BigInteger.ONE, repository.getNonce(authorityAddress));
     }
 
     /**
@@ -937,7 +876,8 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
 
     /**
      * Keeps RSKIP545 on so that delegated accounts exist with RSKIP701 off. ActivationConfig.read rejects this
-     * combination, so no node runs it; it isolates the RSKIP701 gate on the delegated-account paths.
+     * combination, so no node runs it. Only the two replay tests use it, as negative controls: they show the replay
+     * does happen without RSKIP701, so the arm with RSKIP701 on cannot pass for another reason.
      */
     private void deactivateRskip701KeepingRskip545() {
         activateAllBut(ConsensusRule.RSKIP701);
