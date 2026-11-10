@@ -453,8 +453,9 @@ import static org.mockito.Mockito.when;
          // INVALID -> real exceptional halt.
          mockReceiver(receiver, new byte[]{(byte) 0xfe});
 
-         mockAuthorizationAccount(authorizationTracker, authorityAddress, ONE_NONCE, EMPTY_CODE);
-         var authorization = createValidAuthorizationTuple(createRandomAddress(), ONE_NONCE, constants.getChainId(), authorityKey);
+         // EIP-161 empty authority (zero nonce, zero balance, no code): no refund.
+         mockAuthorizationAccount(authorizationTracker, authorityAddress, ZERO_NONCE, EMPTY_CODE);
+         var authorization = createValidAuthorizationTuple(createRandomAddress(), ZERO_NONCE, constants.getChainId(), authorityKey);
 
          long gasLimit = 600_000L;
          long gasPrice = 1L;

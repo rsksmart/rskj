@@ -17,6 +17,7 @@
  */
 package co.rsk.core.bc.transactionexecutor;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
@@ -77,6 +78,7 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
     void setUp() {
         executor = new SetCodeAuthorizationTransactionExecutor();
         repository = mock(Repository.class);
+        when(repository.getBalance(any())).thenReturn(Coin.ZERO);
     }
 
     @Test
@@ -173,7 +175,7 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 
         verify(repository).saveCode(eq(authority), aryEq(EMPTY_CODE));
         verify(repository).increaseNonce(authority);
-        assertEquals(0L, refund);
+        assertEquals(9500L, refund);
     }
 
     @Test
@@ -498,18 +500,41 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 
 
     @Test
-    void calculateRefund_shouldReturnZeroForEmptyCode() {
+    void calculateRefund_shouldReturnZeroForEip161EmptyAuthority() {
         ECKey authorityKey = new ECKey();
         RskAddress authority = new RskAddress(authorityKey.getAddress());
-        RskAddress delegatedAddress = RskAddress.ZERO_ADDRESS;
-        byte[] tupleNonce = new byte[]{0x01};
+        var tuple = createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS, new byte[0], ZERO_CHAIN_ID, authorityKey);
 
-        var tuple = createValidAuthorizationTuple(delegatedAddress, tupleNonce, ZERO_CHAIN_ID, authorityKey);
+        when(repository.getCode(authority)).thenReturn(new byte[]{});
+        when(repository.getNonce(authority)).thenReturn(ZERO);
+        long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
+        assertEquals(0L, refund);
+    }
+
+    @Test
+    void calculateRefund_shouldReturnExpectedRefundForEmptyCodeWithNonce() {
+        ECKey authorityKey = new ECKey();
+        RskAddress authority = new RskAddress(authorityKey.getAddress());
+        byte[] tupleNonce = new byte[]{0x01};
+        var tuple = createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS, tupleNonce, ZERO_CHAIN_ID, authorityKey);
 
         when(repository.getCode(authority)).thenReturn(new byte[]{});
         when(repository.getNonce(authority)).thenReturn(new BigInteger(1, tupleNonce));
         long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
-        assertEquals(0L, refund);
+        assertEquals(9500L, refund);
+    }
+
+    @Test
+    void calculateRefund_shouldReturnExpectedRefundForEmptyCodeWithBalance() {
+        ECKey authorityKey = new ECKey();
+        RskAddress authority = new RskAddress(authorityKey.getAddress());
+        var tuple = createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS, new byte[0], ZERO_CHAIN_ID, authorityKey);
+
+        when(repository.getCode(authority)).thenReturn(new byte[]{});
+        when(repository.getNonce(authority)).thenReturn(ZERO);
+        when(repository.getBalance(authority)).thenReturn(Coin.valueOf(1));
+        long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
+        assertEquals(9500L, refund);
     }
 
     @Test
@@ -618,7 +643,7 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 
         long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
 
-        assertEquals(0L, refund);
+        assertEquals(9500L, refund);
         verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
         verify(repository).increaseNonce(authority);
      }
@@ -643,7 +668,7 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 
         long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
 
-        assertEquals(0L, refund);
+        assertEquals(9500L, refund);
         verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
         verify(repository).increaseNonce(authority);
      }
