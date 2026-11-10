@@ -151,7 +151,40 @@ class ReversibleTransactionExecutorTest {
 
         ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(bestBlock, bestBlock.getCoinbase(), params);
 
+        assertNull(result.getException());
         assertArrayEquals(new String[]{"chinchilla"}, helloFn.decodeResult(result.getHReturn()));
+    }
+
+    @Test
+    void executeTransaction_directPrecompileCallWithGasLimitAboveLongMax_runsTheCall() {
+        RskAddress from = TestUtils.generateAddress("from");
+        byte[] identity = Hex.decode(PrecompiledContracts.IDENTITY_ADDR_STR);
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                Hex.decode("00"), Hex.decode("ffffffffffffffff"), identity, Hex.decode("00"), Hex.decode("010203"), from,
+                null, (byte) 0, TransactionType.LEGACY, null, null, null
+        );
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(bestBlock, bestBlock.getCoinbase(), params);
+
+        assertNull(result.getException());
+        assertArrayEquals(Hex.decode("010203"), result.getHReturn());
+    }
+
+    @Test
+    void executeTransaction_valueTransferWithGasLimitAboveLongMax_runsTheCall() {
+        RskAddress from = TestUtils.generateAddress("from");
+        RskAddress to = TestUtils.generateAddress("to");
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                Hex.decode("00"), Hex.decode("ffffffffffffffff"), to.getBytes(), Hex.decode("01"), null, from,
+                null, (byte) 0, TransactionType.LEGACY, null, null, null
+        );
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(bestBlock, bestBlock.getCoinbase(), params);
+
+        assertNull(result.getException());
+        assertArrayEquals(new byte[0], result.getHReturn());
     }
 
     @ParameterizedTest
