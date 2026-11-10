@@ -715,8 +715,12 @@ class SelfdestructPreservesNonceTest extends Type4TransactionExecutorHelperTest 
         TransactionExecutor t4 = newRealVmExecutor(createSignedType4Transaction(authorityKey, constants.getChainId(), BigInteger.ONE,
                 600_000, 1, 1, authorityAddress, 0, beneficiaryWord(BENEFICIARY_B), ownTuple), repository);
         assertTrue(t4.executeTransaction(), "the authority sends its own set-code transaction");
-        // Fund A again so that only the nonce decides whether the old transaction is valid
-        execute(repository, signedTransfer(senderKey, BigInteger.ZERO, authorityAddress, 200_000));
+        // Credit A directly so that only the nonce decides whether the old transaction is valid. A signed transfer to A
+        // would run its delegate's SELFDESTRUCT again while RSKIP701 is active and leave A with nothing.
+        repository.addBalance(authorityAddress, Coin.valueOf(200_000));
+        Coin pastTxMaxCost = pastTx.getValue().add(pastTx.getGasPrice().multiply(pastTx.getGasLimitAsInteger()));
+        assertTrue(repository.getBalance(authorityAddress).compareTo(pastTxMaxCost) >= 0,
+                "A can afford the old transaction, so only the nonce decides");
 
         boolean replayed = newRealVmExecutor(pastTx, repository).executeTransaction();
 
