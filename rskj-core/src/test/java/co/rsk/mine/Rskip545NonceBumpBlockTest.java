@@ -29,6 +29,7 @@ import co.rsk.core.bc.BlockResult;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
+import co.rsk.validators.BlockTxsValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -538,6 +539,37 @@ class Rskip545NonceBumpBlockTest {
     }
 
     /**
+     * Setup: Authority with nonce 0, Sponsor with nonce 0.
+     * Txs (crafted, not executed by a miner, which would discard the stale tx):
+     *   1. Type4 from Sponsor (nonce 0) to RECEIVER with Tuple (Authority, nonce 0, delegate noop)
+     *   2. Type0 from Authority (nonce 0) to RECEIVER, a nonce the tuple already consumed
+     * Expected: the static rule no longer checks nonces (and the old one would have accepted nonce 0 here, since it
+     *   matches the parent state), so execution must reject it: both nodes return INVALID_BLOCK, the best block
+     *   and Authority's nonce are unchanged.
+     */
+    @ParameterizedTest(name = "rskip144 = {0}")
+    @ValueSource(ints = {0, -1})
+    void validateBlock_authorityTxReusesNonceConsumedByEarlierTuple_blockIsRejected(int rskip144) {
+        Network network = new Network(rskip144);
+        long n = network.nonceOf(network.authority);
+        Block parent = network.miner.getBlockChain().getBestBlock();
+
+        Block malformed = network.unexecutedBlock(
+                type4(network.sponsor, network.nonceOf(network.sponsor), RECEIVER, tuple(network.authority, network.noop, n)),
+                transfer(network.authority, n));
+
+        BlockTxsValidationRule staticRule = new BlockTxsValidationRule(
+                network.follower.getRepositoryLocator(),
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
+                network.follower.getConfig().getActivationConfig());
+        assertTrue(staticRule.isValid(malformed, parent), "the static rule must let the block through, so the rejection comes from execution");
+        assertEquals(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, network.executeOnFollower(malformed), "execution must reject the reused nonce");
+
+        network.assertRejectedByBothNodes(malformed, parent);
+        network.assertNonce(network.authority, n);
+    }
+
+    /**
      * Setup: RSKIP-144 active; Authority with nonce 0, Sponsor with nonce 0, Sponsor2 with nonce 0.
      * Txs (crafted, not executed by a miner), sublist edges [1, 2]:
      *   sublist 1: Type4 from Sponsor (nonce 0) to ADDRESS_B with Tuple (Authority, nonce 0, delegate noop)
@@ -673,6 +705,25 @@ class Rskip545NonceBumpBlockTest {
             return blockToMineBuilder
                     .build(Collections.singletonList(miner.getBlockChain().getBestBlock().getHeader()), new byte[0])
                     .getBlock();
+        }
+
+        /**
+         * Builds a block on the miner's best block with these txs WITHOUT executing them (default sublist edges).
+         * Used to craft blocks an honest miner would never build.
+         */
+        Block unexecutedBlock(Transaction... txs) {
+            return new BlockBuilder(miner.getBlockChain(), miner.getBridgeSupportFactory(), miner.getBlockStore())
+                    .trieStore(miner.getTrieStore())
+                    .parent(miner.getBlockChain().getBestBlock())
+                    .transactions(Arrays.asList(txs))
+                    .buildWithoutExecution();
+        }
+
+        void assertRejectedByBothNodes(Block block, Block expectedBest) {
+            assertEquals(ImportResult.INVALID_BLOCK, miner.getBlockChain().tryToConnect(block), "miner node must reject the block");
+            assertEquals(ImportResult.INVALID_BLOCK, follower.getBlockChain().tryToConnect(block), "second node must reject the block");
+            assertEquals(expectedBest.getHash(), miner.getBlockChain().getBestBlock().getHash(), "miner node best block must not change");
+            assertEquals(expectedBest.getHash(), follower.getBlockChain().getBestBlock().getHash(), "second node best block must not change");
         }
 
         /**

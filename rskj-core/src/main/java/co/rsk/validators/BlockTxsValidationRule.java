@@ -53,9 +53,10 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
     }
 
     /**
-     * Validate a transactions list.
-     * It validates each transaction nonce againts the expeced sender account nonce
-     * It allows many transactions with the same sender
+     * Validates the block's transaction signatures. Before RSKIP-545 it also checks each sender's nonce
+     * sequence against the parent state: several txs from the same sender are allowed as long as their
+     * nonces are consecutive. From RSKIP-545 on, nonces can move without the sender's own tx (authorization
+     * tuples, CREATE in delegated code), so the nonce check is left to block execution.
      *
      * @return true if the transactions are valid, false if any transaction is invalid
      */
@@ -72,9 +73,9 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             return true;
         }
 
-        boolean avoidStaticCheck = activationConfig.isActive(ConsensusRule.RSKIP545, block.getNumber());
+        boolean skipNonceCheck = activationConfig.isActive(ConsensusRule.RSKIP545, block.getNumber());
 
-        RepositorySnapshot parentRepo = avoidStaticCheck ? null : repositoryLocator.snapshotAt(parent.getHeader());
+        RepositorySnapshot parentRepo = skipNonceCheck ? null : repositoryLocator.snapshotAt(parent.getHeader());
 
         Map<RskAddress, BigInteger> curNonce = new HashMap<>();
 
@@ -86,7 +87,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
                 return false;
             }
 
-            if (avoidStaticCheck) {
+            if (skipNonceCheck) {
                 continue;
             }
 

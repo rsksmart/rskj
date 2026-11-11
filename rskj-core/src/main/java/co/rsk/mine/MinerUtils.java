@@ -152,11 +152,6 @@ public class MinerUtils {
         return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, signatureCache, txsToRemove);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, SignatureCache signatureCache) {
-        return filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice, isRskip252Enabled, false, signatureCache);
-    }
-
-
     public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, boolean isRskip545Enabled, SignatureCache signatureCache) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
@@ -179,14 +174,8 @@ public class MinerUtils {
                     continue;
                 }
 
-
-                if (!isRskip545Enabled) {
-                    BigInteger expectedNonce = accountNonces.containsKey(txSender) ? accountNonces.get(txSender).add(BigInteger.ONE) : originalRepo.getNonce(txSender);
-                    if (!expectedNonce.equals(txNonce)) {
-                        logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hash);
-                        continue;
-                    }
-                    accountNonces.put(txSender, txNonce);
+                if (!isRskip545Enabled && !tryAdvanceNonce(hash, txSender, txNonce, accountNonces, originalRepo)) {
+                    continue;
                 }
 
                 logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
@@ -203,6 +192,17 @@ public class MinerUtils {
         logger.debug("Ending getTransactions {}", txsResult.size());
 
         return txsResult;
+    }
+
+    private static boolean tryAdvanceNonce(Keccak256 hash, RskAddress txSender, BigInteger txNonce, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo) {
+        BigInteger lastNonce = accountNonces.get(txSender);
+        BigInteger expectedNonce = lastNonce != null ? lastNonce.add(BigInteger.ONE) : originalRepo.getNonce(txSender);
+        if (!expectedNonce.equals(txNonce)) {
+            logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hash);
+            return false;
+        }
+        accountNonces.put(txSender, txNonce);
+        return true;
     }
 
     private static byte[] generateRandomPrefix() {

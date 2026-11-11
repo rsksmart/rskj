@@ -95,7 +95,7 @@ class MinerUtilsTest {
         Repository repository = Mockito.mock(Repository.class);
         Mockito.when(repository.getNonce(tx.getSender(signatureCache))).thenReturn(BigInteger.valueOf(0));
 
-        List<Transaction> res = minerUtils.filterTransactions(new LinkedList<>(), txs, accountNounces, repository, ONE_COIN, true, signatureCache);
+        List<Transaction> res = minerUtils.filterTransactions(new LinkedList<>(), txs, accountNounces, repository, ONE_COIN, true, false, signatureCache);
         Assertions.assertEquals(1, res.size());
     }
 
@@ -109,7 +109,7 @@ class MinerUtilsTest {
         accountNounces.put(tx.getSender(signatureCache), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
 
-        List<Transaction> res = minerUtils.filterTransactions(new LinkedList<>(), txs, accountNounces, repository, ONE_COIN, true, signatureCache);
+        List<Transaction> res = minerUtils.filterTransactions(new LinkedList<>(), txs, accountNounces, repository, ONE_COIN, true, false, signatureCache);
         Assertions.assertEquals(1, res.size());
     }
 
@@ -123,7 +123,7 @@ class MinerUtilsTest {
         Repository repository = Mockito.mock(Repository.class);
 
         List<Transaction> txsToRemove = new LinkedList<>();
-        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, ONE_COIN, true, signatureCache);
+        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, ONE_COIN, true, false, signatureCache);
         Assertions.assertEquals(0, res.size());
         Assertions.assertEquals(0, txsToRemove.size());
     }
@@ -236,7 +236,7 @@ class MinerUtilsTest {
         Coin minGasPrice = Coin.valueOf(2L);
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
-        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice, true, signatureCache);
+        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice, true, false, signatureCache);
         Assertions.assertEquals(0, res.size());
         Assertions.assertEquals(1, txsToRemove.size());
     }
@@ -254,7 +254,7 @@ class MinerUtilsTest {
         Coin minGasPrice = Coin.valueOf(2L);
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
-        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice, true, signatureCache);
+        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice, true, false, signatureCache);
         Assertions.assertEquals(0, res.size());
         Assertions.assertEquals(1, txsToRemove.size());
     }
@@ -276,7 +276,7 @@ class MinerUtilsTest {
         Repository repository = Mockito.mock(Repository.class);
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
-        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice, false, signatureCache);
+        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice, false, false, signatureCache);
 
         Assertions.assertEquals(2, res.size());
         Assertions.assertEquals(0, txsToRemove.size());
@@ -299,7 +299,7 @@ class MinerUtilsTest {
         Repository repository = Mockito.mock(Repository.class);
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
-        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice, true, signatureCache);
+        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice, true, false, signatureCache);
 
         Assertions.assertEquals(1, res.size());
         Assertions.assertEquals(txLessGasPriceThanCap, res.get(0));
