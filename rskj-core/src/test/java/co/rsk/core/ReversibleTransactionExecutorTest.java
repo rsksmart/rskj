@@ -187,6 +187,38 @@ class ReversibleTransactionExecutorTest {
         assertArrayEquals(new byte[0], result.getHReturn());
     }
 
+    /**
+     * The contract 5a60005260206000f3 is GAS, PUSH1 0, MSTORE, PUSH1 0x20, PUSH1 0, RETURN: it returns the gas left
+     * when GAS runs. Any gas limit of 2^63 or more must run with exactly Long.MAX_VALUE.
+     * Expected word, by hand from the gas schedule:
+     * 0x7fffffffffffffff (Long.MAX_VALUE)
+     * - 21000 (intrinsic cost of a call with no data, GasCost.TRANSACTION)
+     * - 2 (GAS opcode, base tier, spent before it reads the remaining gas)
+     * = 0x7fffffffffffffff - 0x520a = 0x7fffffffffffadf5.
+     */
+    @ParameterizedTest
+    @MethodSource("gasLimitsAtOrAboveTwoToThe63")
+    void executeTransaction_gasLimitAtOrAboveTwoToThe63_runsWithLongMaxGas(String gasLimitHex) {
+        RskAddress contractAddress = contractRunner.addContract("0x5a60005260206000f3");
+        RskAddress from = TestUtils.generateAddress("from");
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                Hex.decode("00"), Hex.decode(gasLimitHex), contractAddress.getBytes(), Hex.decode("00"), null, from,
+                null, (byte) 0, TransactionType.LEGACY, null, null, null
+        );
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(bestBlock, bestBlock.getCoinbase(), params);
+
+        assertNull(result.getException());
+        assertArrayEquals(
+                Hex.decode("0000000000000000000000000000000000000000000000007fffffffffffadf5"),
+                result.getHReturn());
+    }
+
+    private static Stream<String> gasLimitsAtOrAboveTwoToThe63() {
+        return Stream.of("8000000000000000", "ffffffffffffffff");
+    }
+
     @ParameterizedTest
     @MethodSource("localCallsBelowIntrinsicGas")
     void executeTransaction_gasBelowIntrinsicCost_isRejectedWithMessage(byte[] to, byte[] data, long intrinsic) {
