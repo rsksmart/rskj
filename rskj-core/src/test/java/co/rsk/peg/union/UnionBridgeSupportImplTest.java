@@ -1,7 +1,8 @@
 package co.rsk.peg.union;
 
-import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedData;
-import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedTopics;
+import static co.rsk.peg.BridgeSupportTestUtil.assertLogUnionLockingCapIncreased;
+import static co.rsk.peg.BridgeSupportTestUtil.assertLogUnionRbtcReleased;
+import static co.rsk.peg.BridgeSupportTestUtil.assertLogUnionTransferPermissionsSet;
 import static co.rsk.peg.union.UnionBridgeSupportImpl.MAX_EVENT_DATA_LENGTH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
@@ -13,7 +14,6 @@ import static org.mockito.Mockito.when;
 import co.rsk.RskTestUtils;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -30,7 +30,6 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
-import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -365,7 +364,7 @@ class UnionBridgeSupportImplTest {
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLockingCapWasSet(newLockingCap);
         assertNewLockingCapWasNotStored(newLockingCap);
-        assertLogUnionLockingCapIncreased(initialLockingCap, newLockingCap);
+        assertLogUnionLockingCapIncreased(logs, changeLockingCapAuthorizer, initialLockingCap, newLockingCap);
 
         // call save and assert that the new locking cap is stored
         unionBridgeSupport.save();
@@ -404,7 +403,7 @@ class UnionBridgeSupportImplTest {
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLockingCapWasSet(moreThanMaxRbtc);
         assertNewLockingCapWasNotStored(moreThanMaxRbtc);
-        assertLogUnionLockingCapIncreased(storedLockingCap, moreThanMaxRbtc);
+        assertLogUnionLockingCapIncreased(logs, changeLockingCapAuthorizer, storedLockingCap, moreThanMaxRbtc);
 
         // call save and assert that the new locking cap is stored
         unionBridgeSupport.save();
@@ -802,7 +801,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        assertLogUnionRbtcReleased(amountToRelease);
+        assertLogUnionRbtcReleased(logs, mainnetUnionBridgeContractAddress, amountToRelease);
 
         // call save and assert that the amount is stored
         unionBridgeSupport.save();
@@ -837,7 +836,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        assertLogUnionRbtcReleased(amountToRelease);
+        assertLogUnionRbtcReleased(logs, mainnetUnionBridgeContractAddress, amountToRelease);
 
         // call save and assert that the amount is stored
         unionBridgeSupport.save();
@@ -972,7 +971,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        assertLogUnionRbtcReleased(amountToRelease);
+        assertLogUnionRbtcReleased(logs, mainnetUnionBridgeContractAddress, amountToRelease);
 
         // call save and assert that the amount is stored
         unionBridgeSupport.save();
@@ -1000,7 +999,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        assertLogUnionRbtcReleased(minimumPeginTxValue);
+        assertLogUnionRbtcReleased(logs, mainnetUnionBridgeContractAddress, minimumPeginTxValue);
 
         // call save and assert that the amount is stored
         unionBridgeSupport.save();
@@ -1062,7 +1061,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        assertLogUnionRbtcReleased(amountToRelease);
+        assertLogUnionRbtcReleased(logs, mainnetUnionBridgeContractAddress, amountToRelease);
 
         // assert that weisTransferredToUnionBridge is no stored yet
         assertNoWeisTransferredIsStored();
@@ -1094,7 +1093,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
+        assertLogUnionTransferPermissionsSet(logs, changeTransferPermissionsAuthorizer, requestEnabled, releaseEnabled);
 
         // call save and assert that the permissions are stored
         unionBridgeSupport.save();
@@ -1119,7 +1118,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
+        assertLogUnionTransferPermissionsSet(logs, changeTransferPermissionsAuthorizer, requestEnabled, releaseEnabled);
 
         // call save and assert that the permissions are stored
         unionBridgeSupport.save();
@@ -1183,25 +1182,9 @@ class UnionBridgeSupportImplTest {
     }
 
 
-    private void assertLogUnionTransferPermissionsSet(boolean requestEnabled, boolean releaseEnabled) {
-        CallTransaction.Function transferPermissionsEvent = BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
-        byte[][] encodedTopicsSerialized = transferPermissionsEvent.encodeEventTopics(
-            changeTransferPermissionsAuthorizer.toHexString());
-        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsSerialized);
-        byte[] encodedData = transferPermissionsEvent.encodeEventData(requestEnabled, releaseEnabled);
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
     private void assertUnionBridgeEntersPauseModeWhenMalFunctioning() {
         assertTransferPermissionsWereStored(false, false);
-
-        CallTransaction.Function transferPermissionsEvent = BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
-        byte[][] encodedTopicsSerialized = transferPermissionsEvent.encodeEventTopics(BRIDGE_ADDR.toHexString());
-        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsSerialized);
-        byte[] encodedData = transferPermissionsEvent.encodeEventData(false, false);
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
+        assertLogUnionTransferPermissionsSet(logs, BRIDGE_ADDR, false, false);
     }
 
     @Test
@@ -1347,7 +1330,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
         assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
 
-        assertLogUnionLockingCapIncreased(storedLockingCap, newLockingCap);
+        assertLogUnionLockingCapIncreased(logs, changeLockingCapAuthorizer, storedLockingCap, newLockingCap);
 
         // act
         unionBridgeSupport.save();
@@ -1749,23 +1732,4 @@ class UnionBridgeSupportImplTest {
         assertTrue(logs.isEmpty(), "No events should have been emitted");
     }
 
-    private void assertLogUnionLockingCapIncreased(Coin previousLockingCap, Coin newLockingCap) {
-        CallTransaction.Function unionLockingCapIncreasedEvent = BridgeEvents.UNION_LOCKING_CAP_INCREASED.getEvent();
-        byte[][] encodedTopicsSerialized = unionLockingCapIncreasedEvent.encodeEventTopics(
-            UnionBridgeSupportImplTest.changeLockingCapAuthorizer.toHexString());
-        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsSerialized);
-        byte[] encodedData = unionLockingCapIncreasedEvent.encodeEventData(previousLockingCap.asBigInteger(), newLockingCap.asBigInteger());
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    private void assertLogUnionRbtcReleased(Coin amountReleased) {
-        CallTransaction.Function releaseUnionRbtcEvent = BridgeEvents.UNION_RBTC_RELEASED.getEvent();
-        byte[][] encodedTopicsSerialized = releaseUnionRbtcEvent.encodeEventTopics(
-            mainnetUnionBridgeContractAddress.toHexString());
-        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsSerialized);
-        byte[] encodedData = releaseUnionRbtcEvent.encodeEventData(amountReleased.asBigInteger());
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
 }

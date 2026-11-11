@@ -733,13 +733,7 @@ class BridgeSupportAddSignatureTest {
         commonAssertLogs(eventLogs);
         assertTopics(3, eventLogs);
 
-        assertEvent(
-            eventLogs,
-            0,
-            BridgeEvents.ADD_SIGNATURE.getEvent(),
-            new Object[]{rskTxHash.getBytes(), expectedRskAddress},
-            new Object[]{federatorBtcPubKey.getPubKey()}
-        );
+        assertLogAddSignature(eventLogs, rskTxHash.getBytes(), expectedRskAddress, federatorBtcPubKey);
     }
 
     @Nested
@@ -1197,12 +1191,6 @@ class BridgeSupportAddSignatureTest {
                 logs
             );
         }
-    }
-
-    private static void assertEvent(List<LogInfo> logs, int index, CallTransaction.Function event, Object[] topics, Object[] params) {
-        final LogInfo log = logs.get(index);
-        assertEquals(LogInfo.byteArrayToList(event.encodeEventTopics(topics)), log.getTopics());
-        assertArrayEquals(event.encodeEventData(params), log.getData());
     }
 
     private void assertTopics(int topics, List<LogInfo> logs) {

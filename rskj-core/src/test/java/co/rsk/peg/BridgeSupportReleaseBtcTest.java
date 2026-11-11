@@ -17,6 +17,8 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
+import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
@@ -71,6 +73,9 @@ class BridgeSupportReleaseBtcTest {
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
+    private static final RskAddress SENDER_ADDRESS = new RskAddress(SENDER.getAddress());
+    // the btc address the pegouts are sent to, derived from the sender public key
+    private static final Address SENDER_BTC_ADDRESS = BtcECKey.fromPublicOnly(SENDER.getPubKey(true)).toAddress(NETWORK_PARAMETERS);
 
     private Federation activeFederation;
     private Repository repository;
@@ -260,12 +265,7 @@ class BridgeSupportReleaseBtcTest {
         verify(bridgeEventLogger, times(1)).logUpdateCollections(any());
         verify(bridgeEventLogger, times(1)).logBatchPegoutCreated(any(), any());
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent();
-        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
-
-        Object btcDestinationAddress = event.decodeEventData(firstLog.getData())[0];
-        assertInstanceOf(byte[].class, btcDestinationAddress);
+        assertLogReleaseRequestReceivedLegacy(logInfo, SENDER_ADDRESS, SENDER_BTC_ADDRESS, value);
     }
 
     @Test
@@ -302,13 +302,7 @@ class BridgeSupportReleaseBtcTest {
         verify(bridgeEventLogger, times(1)).logUpdateCollections(any());
         verify(bridgeEventLogger, times(1)).logBatchPegoutCreated(any(), any());
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
-        Object btcDestinationAddress = event.decodeEventData(firstLog.getData())[0];
-        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[1];
-
-        assertInstanceOf(String.class, btcDestinationAddress);
-        assertEquals(pegoutRequestValue.toBitcoin().longValue(), amount.longValue());
+        assertLogReleaseRequestReceivedBeforeLovell(logInfo, SENDER_ADDRESS, SENDER_BTC_ADDRESS, pegoutRequestValue.toBitcoin());
     }
 
     @Test
@@ -344,13 +338,7 @@ class BridgeSupportReleaseBtcTest {
         verify(bridgeEventLogger, times(1)).logBatchPegoutCreated(any(), any());
         verify(bridgeEventLogger, times(1)).logPegoutTransactionCreated(any(), any());
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
-        Object btcDestinationAddress = event.decodeEventData(firstLog.getData())[0];
-        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[1];
-
-        assertInstanceOf(String.class, btcDestinationAddress);
-        assertEquals(pegoutRequestValue.asBigInteger(), amount);
+        assertLogReleaseRequestReceived(logInfo, SENDER_ADDRESS, SENDER_BTC_ADDRESS, pegoutRequestValue);
     }
 
     @Test
@@ -481,12 +469,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(1, logInfo.size());
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
-        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
-
-        Object btcDestinationAddress = event.decodeEventData(firstLog.getData())[0];
-        assertInstanceOf(String.class, btcDestinationAddress);
+        assertLogReleaseRequestReceived(logInfo, SENDER_ADDRESS, SENDER_BTC_ADDRESS, co.rsk.core.Coin.fromBitcoin(value));
     }
 
     @Test
@@ -570,12 +553,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(1, logInfo.size());
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent();
-        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
-
-        Object btcDestinationAddress = event.decodeEventData(firstLog.getData())[0];
-        assertInstanceOf(byte[].class, btcDestinationAddress);
+        assertLogReleaseRequestReceivedLegacy(logInfo, SENDER_ADDRESS, SENDER_BTC_ADDRESS, value);
     }
 
     @Test
@@ -602,12 +580,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(1, logInfo.size());
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
-        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
-
-        Object btcDestinationAddress = event.decodeEventData(firstLog.getData())[0];
-        assertInstanceOf(String.class, btcDestinationAddress);
+        assertLogReleaseRequestReceived(logInfo, SENDER_ADDRESS, SENDER_BTC_ADDRESS, co.rsk.core.Coin.fromBitcoin(value));
     }
 
     @Test
@@ -1378,14 +1351,8 @@ class BridgeSupportReleaseBtcTest {
             RejectedPegoutReason.LOW_AMOUNT
         );
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
-        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
-
         // Same case in the log, the value should be rounded down to the nearest satoshi.
-        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
-        long expectedAmountLogged = expectedRefundValue.toBitcoin().longValue();
-        assertEquals(expectedAmountLogged, amount.longValue());
+        assertLogReleaseRequestRejectedBeforeLovell(logInfo, senderAddress, expectedRefundValue.toBitcoin(), RejectedPegoutReason.LOW_AMOUNT);
     }
 
     @Test
@@ -1422,12 +1389,7 @@ class BridgeSupportReleaseBtcTest {
             RejectedPegoutReason.LOW_AMOUNT
         );
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
-        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
-
-        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
-        assertEquals(pegoutRequestValue.asBigInteger(), amount);
+        assertLogReleaseRequestRejected(logInfo, senderAddress, pegoutRequestValue, RejectedPegoutReason.LOW_AMOUNT);
     }
 
     @Test
@@ -1468,15 +1430,9 @@ class BridgeSupportReleaseBtcTest {
             RejectedPegoutReason.CALLER_CONTRACT
         );
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
-        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
-
-        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
         // Pre lovell, the logged value should be rounded down to the nearest satoshi.
         co.rsk.core.Coin expectedLoggedValue = pegoutRequestValue.subtract(extraWeis);
-        long expectedAmountLogged = expectedLoggedValue.toBitcoin().longValue();
-        assertEquals(expectedAmountLogged, amount.longValue());
+        assertLogReleaseRequestRejectedBeforeLovell(logInfo, senderAddress, expectedLoggedValue.toBitcoin(), RejectedPegoutReason.CALLER_CONTRACT);
     }
 
     @Test
@@ -1515,12 +1471,7 @@ class BridgeSupportReleaseBtcTest {
             RejectedPegoutReason.CALLER_CONTRACT
         );
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
-        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
-
-        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
-        assertEquals(pegoutRequestValue.asBigInteger(), amount);
+        assertLogReleaseRequestRejected(logInfo, senderAddress, pegoutRequestValue, RejectedPegoutReason.CALLER_CONTRACT);
     }
 
     @Test
@@ -1578,14 +1529,8 @@ class BridgeSupportReleaseBtcTest {
             RejectedPegoutReason.FEE_ABOVE_VALUE
         );
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
-        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
-
-        // Same case in the log, the value should be rounded down to the nearest satoshi.
-        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
-        long expectedAmountLogged = expectedRefundValue.toBitcoin().longValue();
-        assertEquals(expectedAmountLogged, amount.longValue());
+        // Pre lovell, the logged value should be rounded down to the nearest satoshi.
+        assertLogReleaseRequestRejectedBeforeLovell(logInfo, senderAddress, expectedRefundValue.toBitcoin(), RejectedPegoutReason.FEE_ABOVE_VALUE);
     }
 
     @Test
@@ -1639,12 +1584,7 @@ class BridgeSupportReleaseBtcTest {
             RejectedPegoutReason.FEE_ABOVE_VALUE
         );
 
-        LogInfo firstLog = logInfo.get(0);
-        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
-        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
-
-        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
-        assertEquals(pegoutRequestValue.asBigInteger(), amount);
+        assertLogReleaseRequestRejected(logInfo, senderAddress, pegoutRequestValue, RejectedPegoutReason.FEE_ABOVE_VALUE);
     }
 
     @Nested
@@ -1999,6 +1939,54 @@ class BridgeSupportReleaseBtcTest {
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
+
+    private static void assertLogReleaseRequestReceivedLegacy(
+        List<LogInfo> logs,
+        RskAddress sender,
+        Address btcDestinationAddress,
+        Coin amountInSatoshis
+    ) {
+        // Before fingerroot, the btc destination address is logged as its hash160
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent();
+        List<DataWord> expectedTopics = getEncodedTopics(event, sender.toHexString());
+        byte[] expectedData = getEncodedData(event, btcDestinationAddress.getHash160(), amountInSatoshis.getValue());
+
+        assertFirstLog(logs, expectedTopics, expectedData);
+    }
+
+    private static void assertLogReleaseRequestReceivedBeforeLovell(
+        List<LogInfo> logs,
+        RskAddress sender,
+        Address btcDestinationAddress,
+        Coin amountInSatoshis
+    ) {
+        // Before lovell, the amount is logged in satoshis
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
+        List<DataWord> expectedTopics = getEncodedTopics(event, sender.toHexString());
+        byte[] expectedData = getEncodedData(event, btcDestinationAddress.toString(), amountInSatoshis.getValue());
+
+        assertFirstLog(logs, expectedTopics, expectedData);
+    }
+
+    private static void assertLogReleaseRequestRejectedBeforeLovell(
+        List<LogInfo> logs,
+        RskAddress sender,
+        Coin amountInSatoshis,
+        RejectedPegoutReason reason
+    ) {
+        // Before lovell, the amount is logged in satoshis
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
+        List<DataWord> expectedTopics = getEncodedTopics(event, sender.toHexString());
+        byte[] expectedData = getEncodedData(event, amountInSatoshis.getValue(), reason.getValue());
+
+        assertFirstLog(logs, expectedTopics, expectedData);
+    }
+
+    private static void assertFirstLog(List<LogInfo> logs, List<DataWord> expectedTopics, byte[] expectedData) {
+        LogInfo firstLog = logs.get(0);
+        assertEquals(expectedTopics, firstLog.getTopics());
+        assertArrayEquals(expectedData, firstLog.getData());
+    }
 
     private Transaction buildReleaseRskTx(co.rsk.core.Coin coin) {
         return buildPegoutRequestTransaction(coin, NONCE.longValue(), SENDER);
