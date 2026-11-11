@@ -1,7 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogReleaseRequested;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogReleaseRequested;
 import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutWasAddedToPegoutsWaitingForConfirmations;
 import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasSettled;
 import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasSettledForVetiver;

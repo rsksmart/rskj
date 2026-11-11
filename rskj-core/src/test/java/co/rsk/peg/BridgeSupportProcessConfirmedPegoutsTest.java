@@ -1,13 +1,12 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogPegoutConfirmed;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
 import static co.rsk.peg.BridgeSupportTestUtil.buildPegoutRequestTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -263,7 +262,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
                 pegouts.size() - call - 1,
                 pegoutsWaitingForConfirmations().size()
             );
-            assertPegoutConfirmedEventWasLogged(expectedPegout);
+            assertLogPegoutConfirmed(logs, expectedPegout.getBtcTransaction().getHash(), expectedPegout.getPegoutCreationRskBlockNumber());
         }
 
         // Arrange
@@ -807,7 +806,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
     private void assertPegoutWasConfirmed(Entry confirmedPegout, List<Entry> pegouts) throws IOException {
         assertPegoutWasConfirmedUnder(confirmedPegout, confirmedPegout.getPegoutCreationRskTxHash(), pegouts);
 
-        assertPegoutConfirmedEventWasLogged(confirmedPegout);
+        assertLogPegoutConfirmed(logs, confirmedPegout.getBtcTransaction().getHash(), confirmedPegout.getPegoutCreationRskBlockNumber());
         assertNoPegoutConfirmedEventWasLogged(pegoutsWaitingForConfirmations());
     }
 
@@ -837,22 +836,6 @@ class BridgeSupportProcessConfirmedPegoutsTest {
         assertTrue(pegoutsWaitingForConfirmations().containsAll(pegouts));
         assertEquals(pegouts.size(), pegoutsWaitingForConfirmations().size());
         assertNoPegoutConfirmedEventWasLogged(pegouts);
-    }
-
-    private void assertPegoutConfirmedEventWasLogged(Entry pegout) {
-        Sha256Hash btcTxHash = pegout.getBtcTransaction().getHash();
-        Optional<LogInfo> pegoutConfirmedLog = getLogsTopics(logs, pegoutConfirmedTopics(pegout));
-        assertTrue(
-            pegoutConfirmedLog.isPresent(),
-            "no pegout confirmed event was logged for btc tx " + btcTxHash
-        );
-
-        byte[] expectedData = getEncodedData(PEGOUT_CONFIRMED_EVENT, pegout.getPegoutCreationRskBlockNumber());
-        assertArrayEquals(
-            expectedData,
-            pegoutConfirmedLog.get().getData(),
-            "the event must carry the pegout creation block number"
-        );
     }
 
     private void assertNoPegoutConfirmedEventWasLogged(Collection<Entry> pegouts) {

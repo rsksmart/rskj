@@ -1,12 +1,11 @@
 package co.rsk.peg.union;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.BridgeEvents.*;
-import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
-import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionBridgeTransferPermissionsUpdated;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionLockingCapIncreased;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionRbtcReleased;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionRbtcRequested;
 import static co.rsk.peg.BridgeMethods.*;
-import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedData;
-import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedTopics;
 import static co.rsk.peg.union.UnionBridgeStorageIndexKey.*;
 import static co.rsk.peg.union.UnionResponseCode.*;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
@@ -329,7 +328,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(actualUnionResponseCode);
         assertLockingCap(NEW_LOCKING_CAP_1);
-        assertLogUnionLockingCapIncreased(INITIAL_LOCKING_CAP, NEW_LOCKING_CAP_1);
+        assertLogUnionLockingCapIncreased(logs, CHANGE_LOCKING_CAP_AUTHORIZER, INITIAL_LOCKING_CAP, NEW_LOCKING_CAP_1);
     }
 
     @Test
@@ -380,7 +379,7 @@ class UnionBridgeIT {
 
         // Assert
         assertSuccessfulResponseCode(requestUnionResponseCode);
-        assertLogUnionRbtcRequested();
+        assertLogUnionRbtcRequested(logs, CURRENT_UNION_BRIDGE_ADDRESS, AMOUNT_TO_REQUEST);
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
@@ -418,7 +417,7 @@ class UnionBridgeIT {
 
         // Assert
         assertSuccessfulResponseCode(releaseUnionResponseCode);
-        assertLogUnionRbtcReleased();
+        assertLogUnionRbtcReleased(logs, CURRENT_UNION_BRIDGE_ADDRESS, AMOUNT_TO_RELEASE);
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
@@ -454,7 +453,7 @@ class UnionBridgeIT {
 
         // Assert transferred permissions are updated
         assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
-        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
     }
 
     @Test
@@ -494,7 +493,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(actualUnionResponseCode);
         assertLockingCap(newLockingCap);
-        assertLogUnionLockingCapIncreased(lockingCapBeforeIncrement, newLockingCap);
+        assertLogUnionLockingCapIncreased(logs, CHANGE_LOCKING_CAP_AUTHORIZER, lockingCapBeforeIncrement, newLockingCap);
     }
 
     @Test
@@ -528,7 +527,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
-        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
     }
 
     @Test
@@ -544,7 +543,7 @@ class UnionBridgeIT {
 
         // Assert
         assertSuccessfulResponseCode(requestUnionResponseCode);
-        assertLogUnionRbtcRequested();
+        assertLogUnionRbtcRequested(logs, CURRENT_UNION_BRIDGE_ADDRESS, AMOUNT_TO_REQUEST);
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
@@ -579,7 +578,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
-        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
     }
 
     @Test
@@ -614,7 +613,7 @@ class UnionBridgeIT {
 
         // Assert
         assertSuccessfulResponseCode(releaseUnionResponseCode);
-        assertLogUnionRbtcReleased();
+        assertLogUnionRbtcReleased(logs, CURRENT_UNION_BRIDGE_ADDRESS, AMOUNT_TO_RELEASE);
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
@@ -633,7 +632,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
-        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
     }
 
     @Test
@@ -674,7 +673,7 @@ class UnionBridgeIT {
         assertWeisTransferredToUnionBridge(weisTransferredBalanceBeforeRelease);
         assertUnionBridgeBalance(amountSurpassingWeisTransferredBalance);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
-        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED, BRIDGE_ADDR);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, BRIDGE_ADDR, REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
     }
 
     @Test
@@ -687,7 +686,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
-        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
     }
 
     @Test
@@ -704,7 +703,7 @@ class UnionBridgeIT {
 
         // Assert
         assertSuccessfulResponseCode(requestUnionResponseCode);
-        assertLogUnionRbtcRequested();
+        assertLogUnionRbtcRequested(logs, CURRENT_UNION_BRIDGE_ADDRESS, AMOUNT_TO_REQUEST);
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
@@ -725,7 +724,7 @@ class UnionBridgeIT {
 
         // Assert
         assertSuccessfulResponseCode(releaseUnionResponseCode);
-        assertLogUnionRbtcReleased();
+        assertLogUnionRbtcReleased(logs, CURRENT_UNION_BRIDGE_ADDRESS, AMOUNT_TO_RELEASE);
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
@@ -752,40 +751,6 @@ class UnionBridgeIT {
 
     private void assertNoEventWasEmitted() {
         assertTrue(logs.isEmpty(), "No events should have been emitted");
-    }
-
-    private void assertLogUnionTransferPermissionsSet(boolean requestEnabled, boolean releaseEnabled, RskAddress callerAddress) {
-        CallTransaction.Function transferPermissionsEvent = UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
-        List<DataWord> encodedTopics = getEncodedTopics(transferPermissionsEvent, callerAddress.toHexString());
-        byte[] encodedData = getEncodedData(transferPermissionsEvent, requestEnabled, releaseEnabled);
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    private void assertLogUnionLockingCapIncreased(Coin previousLockingCap, Coin newLockingCap) {
-        CallTransaction.Function unionLockingCapIncreasedEvent = UNION_LOCKING_CAP_INCREASED.getEvent();
-        List<DataWord> encodedTopics = getEncodedTopics(unionLockingCapIncreasedEvent, CHANGE_LOCKING_CAP_AUTHORIZER.toHexString());
-        byte[] encodedData = getEncodedData(unionLockingCapIncreasedEvent, previousLockingCap.asBigInteger(), newLockingCap.asBigInteger());
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    private void assertLogUnionRbtcReleased() {
-        CallTransaction.Function releaseUnionRbtcEvent = UNION_RBTC_RELEASED.getEvent();
-        List<DataWord> encodedTopics = getEncodedTopics(releaseUnionRbtcEvent, CURRENT_UNION_BRIDGE_ADDRESS.toHexString());
-        byte[] encodedData = getEncodedData(releaseUnionRbtcEvent, AMOUNT_TO_RELEASE.asBigInteger());
-
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    private void assertLogUnionRbtcRequested() {
-        CallTransaction.Function releaseUnionRbtcEvent = UNION_RBTC_REQUESTED.getEvent();
-        List<DataWord> encodedTopics = getEncodedTopics(releaseUnionRbtcEvent, CURRENT_UNION_BRIDGE_ADDRESS.toHexString());
-        byte[] encodedData = getEncodedData(releaseUnionRbtcEvent, AMOUNT_TO_REQUEST.asBigInteger());
-
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
     }
 
     private void setupUnauthorizedCaller() {
