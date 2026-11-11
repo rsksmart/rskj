@@ -1,9 +1,9 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogPegoutConfirmed;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogPegoutConfirmed;
 import static co.rsk.peg.BridgeSupportTestUtil.buildPegoutRequestTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;

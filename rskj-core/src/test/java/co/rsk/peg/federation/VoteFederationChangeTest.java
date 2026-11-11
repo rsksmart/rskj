@@ -1,6 +1,6 @@
 package co.rsk.peg.federation;
 
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogCommitFederation;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogCommitFederation;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,7 +13,6 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.utils.TransactionUtils;
-import co.rsk.peg.BridgeSupportTestUtil;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.constants.FederationConstants;

@@ -17,8 +17,7 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
-import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
+import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;

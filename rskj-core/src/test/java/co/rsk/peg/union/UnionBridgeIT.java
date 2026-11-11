@@ -1,11 +1,11 @@
 package co.rsk.peg.union;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionLockingCapIncreased;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionRbtcReleased;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionRbtcRequested;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionTransferPermissionsSet;
 import static co.rsk.peg.BridgeMethods.*;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogUnionLockingCapIncreased;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogUnionRbtcReleased;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogUnionRbtcRequested;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogUnionTransferPermissionsSet;
 import static co.rsk.peg.union.UnionBridgeStorageIndexKey.*;
 import static co.rsk.peg.union.UnionResponseCode.*;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;

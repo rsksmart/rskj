@@ -1,8 +1,8 @@
 package co.rsk.peg.union;
 
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogUnionLockingCapIncreased;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogUnionRbtcReleased;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogUnionTransferPermissionsSet;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionLockingCapIncreased;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionRbtcReleased;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionTransferPermissionsSet;
 import static co.rsk.peg.union.UnionBridgeSupportImpl.MAX_EVENT_DATA_LENGTH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;

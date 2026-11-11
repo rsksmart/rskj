@@ -3,6 +3,7 @@ package co.rsk.peg;
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeStorageIndexKey.PEGOUTS_WAITING_FOR_SIGNATURES;
+import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
