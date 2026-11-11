@@ -2242,7 +2242,7 @@ class BridgeSupportSvpTest {
         }
 
         assertLogRejectedPegin(logs, rejectedPegin, INVALID_AMOUNT);
-        assertLogNonRefundablePegin(logs, rejectedPegin, NonRefundablePeginReason.INVALID_AMOUNT);
+        assertLogUnrefundablePegin(logs, rejectedPegin, NonRefundablePeginReason.INVALID_AMOUNT);
     }
 
     private void assertNoSvpFundTxHashUnsigned() {

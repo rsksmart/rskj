@@ -1,10 +1,10 @@
 package co.rsk.peg.union;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionBridgeTransferPermissionsUpdated;
 import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionLockingCapIncreased;
 import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionRbtcReleased;
 import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionRbtcRequested;
-import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionTransferPermissionsSet;
 import static co.rsk.peg.BridgeMethods.*;
 import static co.rsk.peg.union.UnionBridgeStorageIndexKey.*;
 import static co.rsk.peg.union.UnionResponseCode.*;
@@ -453,7 +453,7 @@ class UnionBridgeIT {
 
         // Assert transferred permissions are updated
         assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
-        assertLogUnionTransferPermissionsSet(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
     }
 
     @Test
@@ -527,7 +527,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
-        assertLogUnionTransferPermissionsSet(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
     }
 
     @Test
@@ -578,7 +578,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
-        assertLogUnionTransferPermissionsSet(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
     }
 
     @Test
@@ -632,7 +632,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
-        assertLogUnionTransferPermissionsSet(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
     }
 
     @Test
@@ -673,7 +673,7 @@ class UnionBridgeIT {
         assertWeisTransferredToUnionBridge(weisTransferredBalanceBeforeRelease);
         assertUnionBridgeBalance(amountSurpassingWeisTransferredBalance);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
-        assertLogUnionTransferPermissionsSet(logs, BRIDGE_ADDR, REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, BRIDGE_ADDR, REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
     }
 
     @Test
@@ -686,7 +686,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
-        assertLogUnionTransferPermissionsSet(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER, REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
     }
 
     @Test

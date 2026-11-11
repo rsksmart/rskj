@@ -1,8 +1,8 @@
 package co.rsk.peg.union;
 
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionBridgeTransferPermissionsUpdated;
 import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionLockingCapIncreased;
 import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionRbtcReleased;
-import static co.rsk.peg.BridgeEventsTestUtils.assertLogUnionTransferPermissionsSet;
 import static co.rsk.peg.union.UnionBridgeSupportImpl.MAX_EVENT_DATA_LENGTH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
@@ -1093,7 +1093,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        assertLogUnionTransferPermissionsSet(logs, changeTransferPermissionsAuthorizer, requestEnabled, releaseEnabled);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, changeTransferPermissionsAuthorizer, requestEnabled, releaseEnabled);
 
         // call save and assert that the permissions are stored
         unionBridgeSupport.save();
@@ -1118,7 +1118,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        assertLogUnionTransferPermissionsSet(logs, changeTransferPermissionsAuthorizer, requestEnabled, releaseEnabled);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, changeTransferPermissionsAuthorizer, requestEnabled, releaseEnabled);
 
         // call save and assert that the permissions are stored
         unionBridgeSupport.save();
@@ -1184,7 +1184,7 @@ class UnionBridgeSupportImplTest {
 
     private void assertUnionBridgeEntersPauseModeWhenMalFunctioning() {
         assertTransferPermissionsWereStored(false, false);
-        assertLogUnionTransferPermissionsSet(logs, BRIDGE_ADDR, false, false);
+        assertLogUnionBridgeTransferPermissionsUpdated(logs, BRIDGE_ADDR, false, false);
     }
 
     @Test

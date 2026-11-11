@@ -200,7 +200,7 @@ public class BridgeEventsTestUtils {
         assertEventWasEmitted(logs, encodedTopics, encodedData);
     }
 
-    public static void assertLogNonRefundablePegin(List<LogInfo> logs, BtcTransaction pegin, NonRefundablePeginReason reason) {
+    public static void assertLogUnrefundablePegin(List<LogInfo> logs, BtcTransaction pegin, NonRefundablePeginReason reason) {
         CallTransaction.Function unrefundablePeginEvent = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
         byte[] btcTxHashSerialized = pegin.getHash().getBytes();
         List<DataWord> encodedTopics = getEncodedTopics(unrefundablePeginEvent, btcTxHashSerialized);
@@ -287,7 +287,7 @@ public class BridgeEventsTestUtils {
         assertEventWasEmitted(logs, encodedTopics, encodedData);
     }
 
-    public static void assertLogUnionTransferPermissionsSet(List<LogInfo> logs, RskAddress caller, boolean requestEnabled, boolean releaseEnabled) {
+    public static void assertLogUnionBridgeTransferPermissionsUpdated(List<LogInfo> logs, RskAddress caller, boolean requestEnabled, boolean releaseEnabled) {
         CallTransaction.Function transferPermissionsEvent = BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
 
         List<DataWord> encodedTopics = getEncodedTopics(transferPermissionsEvent, caller.toHexString());
