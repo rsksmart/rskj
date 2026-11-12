@@ -57,6 +57,8 @@ import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
@@ -95,6 +97,10 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
     private static final byte[] DELEGATED_WRONG_LENGTH = new byte[] {(byte) 0xef, 0x01, 0x00, 0x01};
     /** Stores 0x42 at slot 0, then stores ADDRESS at slot 1. */
     private static final byte[] DELEGATION_CONTEXT_PROBE = Hex.decode("60426000553060015500");
+    /** PUSH1 0, PUSH1 0, REVERT. */
+    private static final byte[] REVERT_RUNTIME = Hex.decode("60006000fd");
+    /** CALLER, SELFDESTRUCT. */
+    private static final byte[] SELFDESTRUCT_RUNTIME = Hex.decode("33ff");
     private static final long DELEGATION_REPLACEMENT_REFUND =
             GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST;
 
@@ -613,6 +619,114 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
         assertEquals(gasLimit - DELEGATION_REPLACEMENT_REFUND, new BigInteger(1, executor.getReceipt().getGasUsed()).longValueExact(), "A halt consumes the gas limit; only the authorization refund is given back");
         assertEquals(Coin.valueOf(gasLimit - DELEGATION_REPLACEMENT_REFUND), executor.getPaidFees());
         assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
+    }
+
+    @Test
+    void revert_firstDelegationOfFundedEoa_isRefunded() {
+        MutableRepository repository = createRepository();
+
+        repository.addBalance(authorityAddress, Coin.valueOf(1_000_000));
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        saveCode(repository, receiver, REVERT_RUNTIME);
+        mockExecutionBlockForRealVm();
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey, constants.getChainId(), ZERO_NONCE, 600_000, 1, 1, receiver, 0, EMPTY_BYTE_ARRAY,
+                createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, constants.getChainId(), authorityKey));
+
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction());
+        assertTrue(executor.getResult().isRevert());
+        assertEquals(DELEGATION_REPLACEMENT_REFUND, executor.getResult().getDeductedRefund(), "The authorization refund must survive the revert");
+        // Two PUSH1 (3 gas each) before REVERT
+        assertEquals(GasCost.TRANSACTION + GasCost.PER_EMPTY_ACCOUNT_COST + 6 - DELEGATION_REPLACEMENT_REFUND,
+                new BigInteger(1, executor.getReceipt().getGasUsed()).longValueExact());
+        assertFalse(executor.getReceipt().isSuccessful());
+        assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
+    }
+
+    // gasUsedBeforeRefunds = 21_000 + 25_000 per tuple + CALLER 2 + SELFDESTRUCT 5_000; refund 24_000 + 9_500 per tuple, capped at half
+    @ParameterizedTest(name = "authorities={0}")
+    @CsvSource({
+            "1, 51002, 25501, 25501",
+            "2, 76002, 38001, 38001",
+            "3, 101002, 50501, 50501",
+            "4, 126002, 62000, 64002"
+    })
+    void selfdestructAndFirstDelegationsOfFundedEoas_shareTheHalfGasUsedRefundCap(
+            int authorities, long gasUsedBeforeRefunds, long deductedRefund, long gasUsed) {
+        MutableRepository repository = createRepository();
+
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        saveCode(repository, receiver, SELFDESTRUCT_RUNTIME);
+        mockExecutionBlockForRealVm();
+
+        SetCodeAuthorization[] tuples = new SetCodeAuthorization[authorities];
+        for (int i = 0; i < authorities; i++) {
+            ECKey fundedKey = new ECKey();
+            repository.addBalance(new RskAddress(fundedKey.getAddress()), Coin.valueOf(1_000_000));
+            tuples[i] = createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, constants.getChainId(), fundedKey);
+        }
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey, constants.getChainId(), ZERO_NONCE, 600_000, 1, 1, receiver, 0, EMPTY_BYTE_ARRAY, tuples);
+
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction());
+        assertEquals(1, executor.getResult().getDeleteAccounts().size(), "SELFDESTRUCT must run");
+        assertEquals(gasUsedBeforeRefunds, executor.getResult().getGasUsedBeforeRefunds());
+        assertEquals(deductedRefund, executor.getResult().getDeductedRefund());
+        assertEquals(gasUsed, new BigInteger(1, executor.getReceipt().getGasUsed()).longValueExact());
+    }
+
+    @Test
+    void clearingTuple_onFundedNeverDelegatedEoa_isRefunded() {
+        MutableRepository repository = createRepository();
+
+        repository.addBalance(authorityAddress, Coin.valueOf(1_000_000));
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        prepareReceiver(repository);
+        mockExecutionBlockForRealVm();
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey, constants.getChainId(), ZERO_NONCE, 600_000, 1, 1, receiver, 0, EMPTY_BYTE_ARRAY,
+                createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS, ZERO_NONCE, constants.getChainId(), authorityKey));
+
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction());
+        assertEquals(DELEGATION_REPLACEMENT_REFUND, executor.getResult().getDeductedRefund(), "The refund must not depend on the delegate address");
+        assertEquals(GasCost.TRANSACTION + GasCost.PER_EMPTY_ACCOUNT_COST - DELEGATION_REPLACEMENT_REFUND,
+                new BigInteger(1, executor.getReceipt().getGasUsed()).longValueExact());
+        assertArrayEquals(EMPTY_CODE, normalizeCode(repository.getCode(authorityAddress)));
+        assertEquals(ONE_NONCE, repository.getNonce(authorityAddress));
+    }
+
+    @Test
+    void twoTuplesFromOneFundedNeverDelegatedEoa_bothAreRefunded() {
+        MutableRepository repository = createRepository();
+
+        repository.addBalance(authorityAddress, Coin.valueOf(1_000_000));
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        prepareReceiver(repository);
+        mockExecutionBlockForRealVm();
+
+        RskAddress secondDelegate = createRandomAddress();
+        Transaction tx = createSignedType4Transaction(
+                senderKey, constants.getChainId(), ZERO_NONCE, 600_000, 1, 1, receiver, 0, EMPTY_BYTE_ARRAY,
+                createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, constants.getChainId(), authorityKey),
+                createValidAuthorizationTuple(secondDelegate, ONE_NONCE, constants.getChainId(), authorityKey));
+
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction());
+        assertEquals(2 * DELEGATION_REPLACEMENT_REFUND, executor.getResult().getDeductedRefund());
+        assertEquals(GasCost.TRANSACTION + 2 * GasCost.PER_EMPTY_ACCOUNT_COST - 2 * DELEGATION_REPLACEMENT_REFUND,
+                new BigInteger(1, executor.getReceipt().getGasUsed()).longValueExact());
+        assertAuthorityDelegatedTo(repository, authorityAddress, secondDelegate);
+        assertEquals(BigInteger.TWO, repository.getNonce(authorityAddress));
     }
 
     @Test

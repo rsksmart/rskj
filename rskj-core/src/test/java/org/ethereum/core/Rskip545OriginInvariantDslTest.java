@@ -197,6 +197,14 @@ class Rskip545OriginInvariantDslTest {
     }
 
     @Test
+    void type4_originNestedCall_gasUsed_exceedsTopFrameAsBothSelfAuthsAreRefunded() {
+        long topFrame = gasUsedInBlock("b01", "txOriginTopFrame");
+        long nested = gasUsedInBlock("b02", "txOriginNestedCall");
+        assertTrue(nested > topFrame, () -> "First and replacing self-auth earn the same refund, so the extra CALL must cost more: nested "
+                + nested + ", top frame " + topFrame);
+    }
+
+    @Test
     void type4_originNestedCall_intrinsicGas_matchesSingleAuthSchedule() {
         assertEquals(SINGLE_AUTH_INTRINSIC, intrinsicGas("txOriginNestedCall"));
     }
