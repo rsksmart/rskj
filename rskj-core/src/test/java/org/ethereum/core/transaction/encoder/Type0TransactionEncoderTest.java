@@ -35,6 +35,7 @@ import static org.ethereum.core.transaction.encoder.EncoderTestSupport.withFixed
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -180,6 +181,33 @@ class Type0TransactionEncoderTest {
         assertEquals(1, wireV.length, "re-encoded v must be one byte");
         assertEquals(wireV[0], decoded.getEncodedV(), "RPC v must match the wire v");
         assertDoesNotThrow(() -> Transaction.fromRaw(reencoded), "the parser must accept the re-encoding");
+    }
+
+    @Test
+    void encodeSigned_chainId110YParity0_isTheLastVThatRoundTripsExactly() {
+        // 0 + 110 * 2 + 35 = 255: the largest EIP-155 v that fits in one byte, so nothing is truncated.
+        Transaction tx = withFixedSignature(unsignedLegacy((byte) 110), Transaction.LOWER_REAL_V);
+
+        byte[] encoded = ENCODER.encodeSigned(tx);
+        Transaction reparsed = Transaction.fromRaw(encoded);
+
+        assertArrayEquals(new byte[]{(byte) 0xFF}, RLP.decodeList(encoded).get(6).getRLPData());
+        assertEquals((byte) 110, reparsed.getChainId(), "the chainId must survive the round trip");
+        assertArrayEquals(encoded, reparsed.getEncoded(), "re-encoding must give the same bytes");
+    }
+
+    @Test
+    void encodeSigned_chainId110YParity1_truncatesVToZeroAndReparsesAsUnsigned() {
+        // 1 + 110 * 2 + 35 = 256 truncates to 0, which RLP writes as the empty string, the unsigned placeholder
+        Transaction tx = withFixedSignature(unsignedLegacy((byte) 110), (byte) (Transaction.LOWER_REAL_V + 1));
+
+        byte[] encoded = ENCODER.encodeSigned(tx);
+        byte[] wireV = RLP.decodeList(encoded).get(6).getRLPData();
+
+        assertTrue(wireV == null || wireV.length == 0, "v of 256 truncates to 0, encoded as the empty string");
+        assertEquals(0, tx.getEncodedV(), "RPC v must match the wire v");
+        Transaction reparsed = assertDoesNotThrow(() -> Transaction.fromRaw(encoded));
+        assertNull(reparsed.getSignature(), "an empty v reads back as an unsigned legacy tx");
     }
 
     private static void assertNullOrEmpty(byte[] value, String message) {
