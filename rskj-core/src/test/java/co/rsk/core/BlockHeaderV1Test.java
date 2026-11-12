@@ -2,7 +2,9 @@ package co.rsk.core;
 
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
+import org.ethereum.core.BlockHeaderExtension;
 import org.ethereum.core.BlockHeaderExtensionV1;
+import org.ethereum.core.BlockHeaderExtensionV2;
 import org.ethereum.core.BlockHeaderV1;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -46,6 +48,37 @@ class BlockHeaderV1Test {
         );
     }
 
+    private BlockHeaderV1 createBlockHeader(BlockHeaderExtension extension) {
+        return new BlockHeaderV1(
+                PegTestUtils.createHash3().getBytes(),
+                HashUtil.keccak256(RLP.encodeList()),
+                new RskAddress(TestUtils.generateAddress("coinbase").getBytes()),
+                HashUtil.EMPTY_TRIE_HASH,
+                "tx_trie_root".getBytes(),
+                HashUtil.EMPTY_TRIE_HASH,
+                new byte[0],
+                new BlockDifficulty(BigInteger.ONE),
+                1,
+                BigInteger.valueOf(6800000).toByteArray(),
+                3000000,
+                7731067,
+                new byte[0],
+                Coin.ZERO,
+                new byte[80],
+                new byte[32],
+                new byte[128],
+                new byte[0],
+                Coin.valueOf(10L),
+                0,
+                false,
+                false,
+                false,
+                null,
+                extension,
+                false
+        );
+    }
+
     @Test
     void createsAnExtensionWithGivenData() {
         byte[] bloom = TestUtils.generateBytes("bloom", 256);
@@ -61,6 +94,59 @@ class BlockHeaderV1Test {
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(bloom, edges);
         header.setExtension(extension);
         Assertions.assertArrayEquals(extension.getEncoded(), header.getExtension().getEncoded());
+    }
+
+    @Test
+    void setExtensionRejectsMismatchedVersion() {
+        BlockHeaderV1 header = createBlockHeader(TestUtils.generateBytes("bloom", 256));
+        BlockHeaderExtensionV2 mismatchedExtension = new BlockHeaderExtensionV2(
+                TestUtils.generateBytes("v2bloom", 256), new short[] { 1 }, new byte[] { 1 });
+
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> header.setExtension(mismatchedExtension));
+
+        Assertions.assertEquals("Mismatched extension version 2 for header version 1", ex.getMessage());
+    }
+
+    @Test
+    void constructorAcceptsMatchingExtension() {
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(
+                TestUtils.generateBytes("bloom", 256), new short[] { 1 });
+
+        BlockHeaderV1 header = createBlockHeader(extension);
+
+        Assertions.assertSame(extension, header.getExtension());
+    }
+
+    @Test
+    void constructorRejectsMismatchedVersion() {
+        // The extension-taking constructor is the other way in; it must not
+        // bypass the pairing check that setExtension enforces.
+        BlockHeaderExtensionV2 mismatchedExtension = new BlockHeaderExtensionV2(
+                TestUtils.generateBytes("v2bloom", 256), new short[] { 1 }, new byte[] { 1 });
+
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> createBlockHeader(mismatchedExtension));
+
+        Assertions.assertEquals("Mismatched extension version 2 for header version 1", ex.getMessage());
+    }
+
+    @Test
+    void constructorRejectsNullExtension() {
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> createBlockHeader((BlockHeaderExtension) null));
+
+        Assertions.assertEquals("Mismatched extension version none for header version 1", ex.getMessage());
+    }
+
+    @Test
+    void setExtensionRejectsNull() {
+        BlockHeaderV1 header = createBlockHeader(TestUtils.generateBytes("bloom", 256));
+
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> header.setExtension(null));
+
+        Assertions.assertEquals("Mismatched extension version none for header version 1", ex.getMessage());
     }
 
     @Test
@@ -89,12 +175,14 @@ class BlockHeaderV1Test {
         BlockHeaderV1 header = createBlockHeader(TestUtils.generateBytes("bloom", 256));
         BlockHeaderExtensionV1 extension = Mockito.mock(BlockHeaderExtensionV1.class);
         byte[] hash = TestUtils.generateHash("hash").getBytes();
+        Mockito.when(extension.getVersion()).thenReturn((byte) 0x1);
         Mockito.when(extension.getHash()).thenReturn(hash);
         header.setExtension(extension);
 
         BlockHeaderV1 otherHeader = createBlockHeader(TestUtils.generateBytes("otherBloom", 256));
         BlockHeaderExtensionV1 otherExtension = Mockito.mock(BlockHeaderExtensionV1.class);
         byte[] otherHash = TestUtils.generateHash("otherHash").getBytes();
+        Mockito.when(otherExtension.getVersion()).thenReturn((byte) 0x1);
         Mockito.when(otherExtension.getHash()).thenReturn(otherHash);
         otherHeader.setExtension(otherExtension);
 

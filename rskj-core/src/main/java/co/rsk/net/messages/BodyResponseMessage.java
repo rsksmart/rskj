@@ -3,6 +3,7 @@ package co.rsk.net.messages;
 import com.google.common.collect.Lists;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderExtension;
+import org.ethereum.core.BlockHeaderExtensionCodec;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 
@@ -48,7 +49,7 @@ public class BodyResponseMessage extends MessageWithId {
         List<byte[]> elements = Lists.newArrayList(RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));
 
         if (this.blockHeaderExtension != null) {
-            elements.add(BlockHeaderExtension.toEncoded(blockHeaderExtension));
+            elements.add(BlockHeaderExtensionCodec.toEncoded(blockHeaderExtension));
         }
 
         return RLP.encodeList(elements.toArray(new byte[][]{}));
