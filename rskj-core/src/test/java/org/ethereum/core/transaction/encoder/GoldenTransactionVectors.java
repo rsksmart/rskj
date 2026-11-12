@@ -38,8 +38,8 @@ final class GoldenTransactionVectors {
      * Case id → {@code {encodeForSigningHex, encodeSignedHex}}.
      *
      * <p>Coverage includes chainId 0 (empty RLP integer, legacy only — a typed chainId must be
-     * non-zero), 33 (single byte), and 200
-     * (unsigned-byte / multi-byte EIP-155 {@code v} for legacy); Type4 cases keep
+     * non-zero), 33 (single byte), and 200 (unsigned-byte chainId; for legacy the EIP-155 {@code v} of 436 is kept to the one byte
+     * {@code 0xb4}, because the legacy parser rejects a multi-byte {@code v}); Type4 cases keep
      * {@code authorization.chainId} equal to {@code transaction.chainId}; plus shape
      * variants for null {@code to} (contract creation), data ≥ 56 bytes (RLP long-form
      * item length), a non-empty access list (one address + one storage key), and a Type2 whose
@@ -54,7 +54,7 @@ final class GoldenTransactionVectors {
                     "f86b01843b9aca00825208941234567890123456789012345678901234567890880de0b6b3a76400008066a01111111111111111111111111111111111111111111111111111111111111111a02222222222222222222222222222222222222222222222222222222222222222"),
             entry("legacy-chain200",
                     "ec01843b9aca00825208941234567890123456789012345678901234567890880de0b6b3a76400008081c88080",
-                    "f86d01843b9aca00825208941234567890123456789012345678901234567890880de0b6b3a7640000808201b4a01111111111111111111111111111111111111111111111111111111111111111a02222222222222222222222222222222222222222222222222222222222222222"),
+                    "f86c01843b9aca00825208941234567890123456789012345678901234567890880de0b6b3a76400008081b4a01111111111111111111111111111111111111111111111111111111111111111a02222222222222222222222222222222222222222222222222222222222222222"),
             entry("legacy-contract-creation",
                     "d701843b9aca0082520880880de0b6b3a764000080218080",
                     "f85701843b9aca0082520880880de0b6b3a76400008066a01111111111111111111111111111111111111111111111111111111111111111a02222222222222222222222222222222222222222222222222222222222222222"),

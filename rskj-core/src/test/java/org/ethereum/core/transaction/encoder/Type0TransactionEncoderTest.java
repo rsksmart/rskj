@@ -21,11 +21,19 @@ import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.CHAIN_ID;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.PRIVATE_KEY;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.unsignedLegacy;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.withFixedSignature;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -124,6 +132,54 @@ class Type0TransactionEncoderTest {
         Transaction tx = unsignedLegacy(CHAIN_ID);
 
         assertArrayEquals(tx.getEncodedRaw(), ENCODER.encodeForSigning(tx));
+    }
+
+    private static Stream<Arguments> highChainIdCases() {
+        // chainIds whose EIP-155 v (yParity + chainId * 2 + 35) does not fit in one byte.
+        return IntStream.of(111, 127, 128, 200, 255)
+                .boxed()
+                .flatMap(chainId -> Stream.of(
+                        Arguments.of(chainId, Transaction.LOWER_REAL_V),
+                        Arguments.of(chainId, (byte) (Transaction.LOWER_REAL_V + 1))));
+    }
+
+    @ParameterizedTest(name = "chainId {0}, v {1}")
+    @MethodSource("highChainIdCases")
+    void encodeSigned_highChainId_keepsVToOneByteTheParserAccepts(int chainId, byte sigV) {
+        Transaction tx = withFixedSignature(unsignedLegacy((byte) chainId), sigV);
+
+        byte[] encoded = ENCODER.encodeSigned(tx);
+        byte[] wireV = RLP.decodeList(encoded).get(6).getRLPData();
+
+        byte expectedV = (byte) (sigV - Transaction.LOWER_REAL_V + (byte) chainId * 2 + Transaction.CHAIN_ID_INC);
+        assertArrayEquals(new byte[]{expectedV}, wireV, "v must be one byte, truncated as master does");
+        assertEquals(wireV[0], tx.getEncodedV(), "RPC v must match the wire v");
+        assertDoesNotThrow(() -> Transaction.fromRaw(encoded), "the parser must accept what the encoder emits");
+    }
+
+    private static IntStream everyOneByteV() {
+        return IntStream.rangeClosed(0, 255);
+    }
+
+    @ParameterizedTest(name = "v {0}")
+    @MethodSource("everyOneByteV")
+    void decodeThenEncode_anyOneByteV_staysParseable(int v) {
+        Transaction base = withFixedSignature(unsignedLegacy(CHAIN_ID), Transaction.LOWER_REAL_V);
+        RLPList fields = RLP.decodeList(base.getEncoded());
+        byte[][] items = new byte[9][];
+        for (int i = 0; i < 9; i++) {
+            items[i] = RLP.encodeElement(fields.get(i).getRLPData());
+        }
+        items[6] = RLP.encodeElement(new byte[]{(byte) v});
+        byte[] raw = RLP.encodeList(items);
+
+        Transaction decoded = Transaction.fromRaw(raw);
+        byte[] reencoded = decoded.getEncoded();
+        byte[] wireV = RLP.decodeList(reencoded).get(6).getRLPData();
+
+        assertEquals(1, wireV.length, "re-encoded v must be one byte");
+        assertEquals(wireV[0], decoded.getEncodedV(), "RPC v must match the wire v");
+        assertDoesNotThrow(() -> Transaction.fromRaw(reencoded), "the parser must accept the re-encoding");
     }
 
     private static void assertNullOrEmpty(byte[] value, String message) {

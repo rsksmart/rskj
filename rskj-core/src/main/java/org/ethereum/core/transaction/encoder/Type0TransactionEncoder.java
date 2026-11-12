@@ -28,6 +28,16 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class Type0TransactionEncoder implements TransactionEncoder {
 
+
+    public static byte getEncodedV(Transaction transaction) {
+        byte chainId = transaction.getChainId();
+        byte v = transaction.getSignature().getV();
+        if (chainId == 0) {
+            return v;
+        }
+        return (byte) (v - LOWER_REAL_V + chainId * 2 + CHAIN_ID_INC);
+    }
+
     @Override
     public byte[] encodeSigned(Transaction transaction) {
         byte[] v;
@@ -35,11 +45,7 @@ public class Type0TransactionEncoder implements TransactionEncoder {
         byte[] s;
 
         if (transaction.getSignature() != null) {
-            int encodedV = transaction.getChainId() == 0
-                    ? transaction.getSignature().getV() & 0xFF
-                    : (transaction.getSignature().getV() - LOWER_REAL_V)
-                            + ((transaction.getChainId() & 0xFF) * 2 + (CHAIN_ID_INC & 0xFF));
-            v = RLP.encodeInt(encodedV);
+            v = RLP.encodeByte(getEncodedV(transaction));
             r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(transaction.getSignature().getR()));
             s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(transaction.getSignature().getS()));
         } else {
