@@ -17,17 +17,24 @@
  */
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import co.rsk.trie.Trie;
 import co.rsk.util.HexUtils;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
@@ -35,6 +42,7 @@ import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.OverrideablePrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -47,6 +55,12 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by patogallaiovlabs on 28/10/2020.
@@ -137,6 +151,80 @@ class EthModuleDSLTest {
 
         // The Bridge never processed the requested BTC tx hash, so it answers -1 as an ABI-encoded int64
         assertEquals("0x" + "ff".repeat(32), eth.call(callArgumentsParam, latest));
+    }
+
+    @Test
+    void testCall_pegoutToBridge_returnsEmptyResult() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/pegout.txt");
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(pegoutCallArguments(world, "0x2386f26fc10000"));
+
+        assertEquals("0x", eth.call(callArgumentsParam, new BlockIdentifierParam("latest")));
+    }
+
+    @Test
+    void testCall_pegoutToBridgeWithStateOverride_returnsEmptyResultFromTheSnapshot() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/pegout.txt");
+        EthModule eth = spy(EthModuleTestUtils.buildBasicEthModule(world));
+        AccountOverride senderBalance = new AccountOverride(world.getAccountByName("acc1").getAddress());
+        senderBalance.setBalance(new BigInteger("20000000000000000000"));
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(pegoutCallArguments(world, "0x2386f26fc10000"));
+
+        assertEquals("0x", eth.call(callArgumentsParam, new BlockIdentifierParam("latest"), List.of(senderBalance)));
+        verify(eth).callConstant(any(CallArguments.class), any(Block.class), any(MutableRepository.class), any(OverrideablePrecompiledContracts.class));
+        verify(eth, never()).callConstant(any(CallArguments.class), any(Block.class));
+    }
+
+    @Test
+    void testCall_pegoutToBridgeOnPendingState_returnsEmptyResultAndThePegoutGas() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/pegout.txt");
+        Block bestBlock = world.getBlockChain().getBestBlock();
+        Trie bestState = world.getTrieStore().retrieve(bestBlock.getStateRoot()).orElseThrow();
+        // The pending route: a block plus its final state, as a built pending block returns
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("pending")).thenReturn(new ExecutionBlockRetriever.Result(bestBlock, bestState));
+        EthModule eth = spy(ethModuleWithRetriever(world, retriever));
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(pegoutCallArguments(world, "0x2386f26fc10000"));
+        BlockIdentifierParam pending = new BlockIdentifierParam("pending");
+
+        assertEquals("0x", eth.call(callArgumentsParam, pending));
+        assertEquals("0xabe0", eth.estimateGas(callArgumentsParam, pending));
+        verify(eth).callConstant(any(CallArguments.class), any(Block.class), any(MutableRepository.class), any(OverrideablePrecompiledContracts.class));
+        verify(eth, never()).callConstant(any(CallArguments.class), any(Block.class));
+    }
+
+    private static EthModule ethModuleWithRetriever(World world, ExecutionBlockRetriever retriever) {
+        TestSystemProperties config = new TestSystemProperties();
+        TransactionExecutorFactory executorFactory = EthModuleTestUtils.buildCustomExecutorFactory(world, config, null, null, null);
+        return new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                world.getBlockChain(),
+                null,
+                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executorFactory, null),
+                retriever,
+                world.getRepositoryLocator(),
+                null,
+                null,
+                world.getBridgeSupportFactory(),
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, world.getBridgeSupportFactory(), world.getBlockTxSignatureCache()),
+                config.getAllowCallStateOverride(),
+                new DefaultStateOverrideApplier(config.getActivationConfig()));
+    }
+
+    /** A peg-out as a wallet sends it: acc1 sends RBTC to the Bridge with no data and no gas. */
+    static CallArguments pegoutCallArguments(World world, String valueInWeiHex) {
+        CallArguments args = new CallArguments();
+        args.setFrom("0x" + world.getAccountByName("acc1").getAddress().toHexString());
+        args.setTo("0x" + PrecompiledContracts.BRIDGE_ADDR.toHexString());
+        args.setValue(valueInWeiHex);
+        return args;
     }
 
     /**

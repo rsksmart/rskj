@@ -47,6 +47,7 @@ import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.GasCost;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -56,6 +57,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -621,6 +623,75 @@ class EthModuleType4CallSimulationTest {
 
         RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethGas.estimateGas(params, latest));
         assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("must be an eoa"), "expected an invalid-sender error, got: " + ex.getMessage());
+    }
+
+    @Test
+    void estimateGas_type4PegoutWithAuthorizationFromAFreshKey_returnsThePegoutGasPlusOneAuthorization() {
+        ECKey freshKey = ECKey.fromPrivate(HashUtil.keccak256("freshPegoutAuthority".getBytes()));
+        RskAddress freshAuthority = new RskAddress(freshKey.getAddress());
+        RepositorySnapshot latest = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        assertFalse(latest.isExist(freshAuthority), "the authority must be an empty account");
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(freshKey, const42, BigInteger.ZERO, CHAIN_ID);
+
+        // 21,000 + 25,000 for the authorization + the Bridge's 23,000 for releaseBtc; an empty authority earns no refund
+        assertEquals("0x10d88", ethGas.estimateGas(pegoutArgs(plainEoaWithNoCode.getAddress(), List.of(auth)), new BlockIdentifierParam("latest")));
+        assertEquals(0L, ethGas.getEstimationResult().getDeductedRefund());
+        assertEquals(69_000L, ethGas.getEstimationResult().getGasUsed());
+    }
+
+    @Test
+    void estimateGas_type4PegoutSelfAuthorization_returnsThePreRefundPeak() {
+        RskAddress sender = plainEoaWithNoCode.getAddress();
+        RepositorySnapshot latest = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        assertEquals(BigInteger.ZERO, latest.getNonce(sender));
+        assertEquals(0, normalizeCode(latest.getCode(sender)).length, "the sender must never have been delegated");
+        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), const42, SELF_SPONSORED_NONCE, CHAIN_ID);
+
+        assertEquals("0x10d88", ethGas.estimateGas(pegoutArgs(sender, List.of(selfAuth)), new BlockIdentifierParam("latest")));
+        // The authority already has a nonce and a balance, so it earns 25,000 - 15,500, under the half-gas cap
+        long refund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST;
+        assertEquals(9_500L, refund);
+        assertAll(
+                () -> assertEquals(69_000L, ethGas.getEstimationResult().getMaxGasUsed()),
+                () -> assertEquals(refund, ethGas.getEstimationResult().getDeductedRefund()),
+                () -> assertEquals(59_500L, ethGas.getEstimationResult().getGasUsed())
+        );
+    }
+
+    @Test
+    void estimateGas_legacyPegoutFromADelegatedEoa_returnsThePegoutGas() {
+        SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEoaWithNoCode.getEcKey(), const42, SELF_SPONSORED_NONCE, CHAIN_ID);
+        Transaction delegation = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(CHAIN_ID)
+                .nonce(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(200_000))
+                .maxPriorityFeePerGas(co.rsk.core.Coin.valueOf(1_000_000_000L))
+                .maxFeePerGas(co.rsk.core.Coin.valueOf(2_000_000_000L))
+                .receiveAddress(authorityB.getAddress())
+                .data(new byte[0])
+                .value(co.rsk.core.Coin.ZERO)
+                .authorizationList(List.of(selfAuth))
+                .build();
+        delegation.sign(plainEoaWithNoCode.getEcKey().getPrivKeyBytes());
+        Block block = mine(world.getBlockChain().getBestBlock(), List.of(delegation));
+        RepositorySnapshot after = world.getRepositoryLocator().snapshotAt(block.getHeader());
+        assertTrue(DelegationCodeResolver.isDelegatedCode(after.getCode(plainEoaWithNoCode.getAddress())));
+
+        // 21,000 + the Bridge's 23,000 for releaseBtc, the same as from an undelegated EOA
+        assertEquals("0xabe0", ethGas.estimateGas(pegoutArgs(plainEoaWithNoCode.getAddress(), null), new BlockIdentifierParam("latest")));
+    }
+
+    private CallArgumentsParam pegoutArgs(RskAddress from, List<SetCodeAuthorization> authorizationList) {
+        CallArguments args = new CallArguments();
+        args.setFrom(from.toJsonString());
+        args.setTo(PrecompiledContracts.BRIDGE_ADDR.toJsonString());
+        args.setValue("0x2386f26fc10000");
+        if (authorizationList != null) {
+            args.setType("0x4");
+            args.setAuthorizationList(authorizationList.stream().map(this::toEntry).toList());
+        }
+        return TransactionFactoryHelper.toCallArgumentsParam(args);
     }
 
     private static byte[] normalizeCode(byte[] code) {
