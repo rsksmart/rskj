@@ -71,6 +71,12 @@ public final class AuthorizationListCodec {
         return authorizationListBytes;
     }
 
+    /** Raw-ingress check and decode of the authorization list envelope field: list framing, non-empty, then each tuple. */
+    public static List<SetCodeAuthorization> requireRawAuthorizationList(RLPElement authorizationListField) {
+        CommonParsingUtils.requireListFramed(authorizationListField, "Authorization list");
+        return decodeListUnchecked(requireAuthorizationListBytes(authorizationListField.getRLPRawData()));
+    }
+
     public static List<SetCodeAuthorization> parseFromCallArguments(List<CallArguments.AuthorizationListEntry> entries) {
         if (entries == null || entries.isEmpty()) {
             throw invalidParamError("Set-code transaction authorization_list must not be empty");

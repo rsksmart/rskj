@@ -23,45 +23,60 @@ import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
-import org.ethereum.core.transaction.parser.util.TypedTransactionCodec;
+import org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema;
+import org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.ListField;
+import org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.ValidatedEnvelope;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.address;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.bytes;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.chainId;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.coinScalar;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.list;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.scalar;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.signatureR;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.signatureS;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.yParity;
+
 public class Type1RawTransactionParser implements RawTransactionTypeParser<ParsedType1Transaction> {
 
-    private static final int FIELD_COUNT = 11;
-
-    private static final int CHAIN_ID_INDEX = 0;
     private static final int NONCE_INDEX = 1;
     private static final int GAS_PRICE_INDEX = 2;
     private static final int GAS_LIMIT_INDEX = 3;
     private static final int TO_INDEX = 4;
     private static final int VALUE_INDEX = 5;
     private static final int DATA_INDEX = 6;
-    private static final int ACCESS_LIST_INDEX = 7;
-    private static final int Y_PARITY_INDEX = 8;
-    private static final int R_INDEX = 9;
-    private static final int S_INDEX = 10;
 
+    private static final ListField<byte[]> ACCESS_LIST = list(AccessListCodec::requireRawAccessListBytes);
+
+    private static final TypedEnvelopeSchema SCHEMA = TypedEnvelopeSchema.of(
+            TransactionType.TYPE_1.getTypeName(),
+            chainId(),
+            scalar(0, "Nonce is not valid", "Nonce"),
+            coinScalar(1, "Gas Price is not valid", "Gas Price"),
+            scalar(2, "Gas Limit is not valid", "Gas Limit"),
+            address(),
+            coinScalar(3, "Value is not valid", "Value"),
+            bytes(), // data
+            ACCESS_LIST,
+            yParity(),
+            signatureR(),
+            signatureS()
+    );
 
     @Override
     public ParsedType1Transaction parse(TransactionTypePrefix typePrefix, RLPList txFields) {
-        CommonParsingUtils.requireFieldCount(txFields, FIELD_COUNT, TransactionType.TYPE_1.getTypeName());
+        ValidatedEnvelope envelope = SCHEMA.validate(txFields);
 
         byte[] nonce = CommonParsingUtils.nullToEmpty(txFields.get(NONCE_INDEX).getRLPData());
-        byte[] gasPriceData = txFields.get(GAS_PRICE_INDEX).getRLPData();
-        Coin gasPrice = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(gasPriceData));
+        Coin gasPrice = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(GAS_PRICE_INDEX).getRLPData()));
         byte[] gasLimit = CommonParsingUtils.nullToEmpty(txFields.get(GAS_LIMIT_INDEX).getRLPData());
         RskAddress receiveAddress = CommonParsingUtils.defaultAddress(RLP.parseRskAddress(txFields.get(TO_INDEX).getRLPData()));
-        byte[] valueData = txFields.get(VALUE_INDEX).getRLPData();
-        Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(valueData));
+        Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(txFields.get(VALUE_INDEX).getRLPData()));
         byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
-        CommonParsingUtils.requireByteStringFields(txFields, ACCESS_LIST_INDEX);
-        byte[] accessListBytes = AccessListCodec.requireRawAccessListBytes(txFields.get(ACCESS_LIST_INDEX));
-        CommonParsingUtils.requireLegacyScalarFields(nonce, gasPrice, gasLimit, value);
-        CommonParsingUtils.requireCanonicalGasPriceScalarFields(nonce, gasPriceData, gasLimit, valueData);
 
         return new ParsedType1Transaction(
                 typePrefix,
@@ -71,8 +86,8 @@ public class Type1RawTransactionParser implements RawTransactionTypeParser<Parse
                 receiveAddress,
                 value,
                 data,
-                TypedTransactionCodec.parseTypedSignatureState(txFields, CHAIN_ID_INDEX, Y_PARITY_INDEX, R_INDEX, S_INDEX),
-                accessListBytes
+                envelope.signature(),
+                envelope.get(ACCESS_LIST)
         );
     }
 
