@@ -54,6 +54,11 @@ class EthModuleCallGasCapTest {
      */
     private static final String GAS_LEFT_AT_CAP = "0x" + "0".repeat(58) + "984476";
 
+    /** The identity precompile, which echoes its input. */
+    private static final String IDENTITY_PRECOMPILE = "0x" + "0".repeat(38) + "04";
+
+    private static final String IDENTITY_INPUT = "0x010203";
+
     @TempDir
     public Path tempDir;
 
@@ -96,10 +101,36 @@ class EthModuleCallGasCapTest {
         assertEquals("Not enough gas for transaction execution: tx needs: 21000 tx sent: 1", error.getMessage());
     }
 
+    @Test
+    void call_zeroPaddedGasBelowCostOfAPrecompileCall_runsOutOfGas() {
+        // 0x5238 = 21,048, 18 gas short of the 21,066 this identity call costs.
+        CallArguments args = callArgs("0x000000000000000000005238", IDENTITY_PRECOMPILE, IDENTITY_INPUT);
+
+        RskJsonRpcRequestException error = assertThrows(RskJsonRpcRequestException.class,
+                () -> ethModule.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest")));
+
+        assertEquals(-32015, error.getCode());
+    }
+
+    @Test
+    void call_zeroPaddedGasAtCostOfAPrecompileCall_runs() {
+        // 0x524a = 21,066, exactly what this identity call costs.
+        CallArguments args = callArgs("0x00000000000000000000524a", IDENTITY_PRECOMPILE, IDENTITY_INPUT);
+
+        String result = ethModule.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
+
+        assertEquals(IDENTITY_INPUT, result);
+    }
+
     private CallArguments callArgs(String gas) {
+        return callArgs(gas, "0x" + gasLeftContract.toHexString(), null);
+    }
+
+    private CallArguments callArgs(String gas, String to, String data) {
         CallArguments args = new CallArguments();
         args.setFrom("0x" + TestUtils.generateAddress("from").toHexString());
-        args.setTo("0x" + gasLeftContract.toHexString());
+        args.setTo(to);
+        args.setData(data);
         args.setGas(gas);
         args.setGasPrice("0x0");
         args.setValue("0x0");
