@@ -22,10 +22,21 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.exception.TransactionExecutionRejectedException;
+import co.rsk.peg.BridgeEvents;
+import co.rsk.peg.BridgeMethods;
+import co.rsk.peg.utils.RejectedPegoutReason;
 import co.rsk.test.World;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
+import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.util.HexUtils;
+import com.typesafe.config.ConfigValueFactory;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.genesis.BlockTag;
@@ -37,6 +48,7 @@ import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.util.TransactionFactoryHelper;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -48,14 +60,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 class EthModuleGasEstimationDSLTest {
 
@@ -1192,6 +1209,105 @@ class EthModuleGasEstimationDSLTest {
 
         // 21,000 base cost plus the Bridge's 23,000 for releaseBtc, what the signed peg-out uses
         assertEquals("0xabe0", eth.estimateGas(callArgumentsParam, latest));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("accountAbstractionOffConfigs")
+    void estimateGas_pegoutToBridgeWithAccountAbstractionOff_returnsThePegoutGas(String scenario, String configPath, List<ConsensusRule> inactiveRules)
+            throws FileNotFoundException, DslProcessorException {
+        TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
+                .withValue(configPath, ConfigValueFactory.fromAnyRef(-1)));
+        World world = new World(config);
+        new WorldDslProcessor(world).processCommands(DslParser.fromResource("dsl/eth_module/estimateGas/pegout.txt"));
+        ActivationConfig.ForBlock activations = config.getActivationConfig().forBlock(world.getBlockChain().getBestBlock().getNumber());
+        inactiveRules.forEach(rule -> assertFalse(activations.isActive(rule), rule + " must be inactive"));
+        EthModule eth = EthModuleTestUtils.buildCustomEthModule(world,
+                EthModuleTestUtils.buildCustomExecutorFactory(world, config, null, null, null), config);
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(EthModuleDSLTest.pegoutCallArguments(world, "0x2386f26fc10000"));
+
+        assertEquals("0xabe0", eth.estimateGas(callArgumentsParam, new BlockIdentifierParam(BlockTag.LATEST.getTag())));
+    }
+
+    private static Stream<Arguments> accountAbstractionOffConfigs() {
+        return Stream.of(
+                Arguments.of("RSKIP-545 off", "blockchain.config.consensusRules.rskip545", List.of(ConsensusRule.RSKIP545)),
+                Arguments.of("all cardamom1000 rules off", "blockchain.config.hardforkActivationHeights.cardamom1000",
+                        List.of(ConsensusRule.RSKIP378, ConsensusRule.RSKIP455, ConsensusRule.RSKIP543, ConsensusRule.RSKIP545,
+                                ConsensusRule.RSKIP546, ConsensusRule.RSKIP559, ConsensusRule.RSKIP692))
+        );
+    }
+
+    @ParameterizedTest(name = "value {0}")
+    @ValueSource(strings = {"0x38d7ea4c68000", "0x0"})
+    void estimateGas_pegoutBelowTheMinimum_returnsThePegoutGasAndRejectsTheRelease(String valueInWeiHex)
+            throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/pegout.txt");
+        EthModuleTestUtils.EthModuleGasEstimation ethGas = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(EthModuleDSLTest.pegoutCallArguments(world, valueInWeiHex));
+        BlockIdentifierParam latest = new BlockIdentifierParam(BlockTag.LATEST.getTag());
+
+        assertEquals("0xabe0", ethGas.estimateGas(callArgumentsParam, latest));
+        assertEquals("0x", eth.call(callArgumentsParam, latest));
+
+        // Below the 250,000 sat regtest minimum, which exceeds the fee-based minimum, so LOW_AMOUNT
+        assertOnlyRejectedRelease(ethGas.getEstimationResult(), world.getAccountByName("acc1").getAddress(),
+                new BigInteger(valueInWeiHex.substring(2), 16), RejectedPegoutReason.LOW_AMOUNT);
+    }
+
+    @Test
+    void estimateGas_pegoutWithExplicitReleaseBtcSelector_addsTheDataCost() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/pegout.txt");
+        EthModuleTestUtils.EthModuleGasEstimation ethGas = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        CallArguments args = EthModuleDSLTest.pegoutCallArguments(world, "0x2386f26fc10000");
+        args.setData("0x80af2871");
+        assertEquals("0x80af2871", HexUtils.toUnformattedJsonHex(BridgeMethods.RELEASE_BTC.getFunction().encodeSignature()));
+
+        // 21,000 + 4 non-zero data bytes * 16 (EIP-2028), plus the Bridge's 23,000 + 4 data bytes * 2
+        assertEquals("0xac28", ethGas.estimateGas(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam(BlockTag.LATEST.getTag())));
+    }
+
+    @Test
+    void estimateGas_pegoutThroughAContract_isRejectedAsCallerContractBeforeTheKeyIsRead() throws FileNotFoundException, DslProcessorException {
+        World world = new World();
+        // Runtime code: CALL(gas, Bridge, callvalue, no data), then return the call's success flag
+        byte[] forwarderCode = Hex.decode("6000600060006000" + "34" + "73" + PrecompiledContracts.BRIDGE_ADDR.toHexString()
+                + "5af1" + "600052" + "60206000f3");
+        RskAddress forwarder = new AccountBuilder(world).name("pegoutForwarder").code(forwarderCode).build().getAddress();
+        new WorldDslProcessor(world).processCommands(DslParser.fromResource("dsl/eth_module/estimateGas/pegout.txt"));
+        // A contract calling a precompiled contract needs a block factory, which the basic harness leaves null
+        TestSystemProperties config = new TestSystemProperties();
+        EthModule eth = spy(EthModuleTestUtils.buildCustomEthModule(world, EthModuleTestUtils.buildCustomExecutorFactory(
+                world, config, null, new BlockFactory(config.getActivationConfig()), null), config));
+        CallArguments args = EthModuleDSLTest.pegoutCallArguments(world, "0x2386f26fc10000");
+        args.setTo(forwarder.toJsonString());
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam latest = new BlockIdentifierParam(BlockTag.LATEST.getTag());
+
+        assertEquals("0x" + "00".repeat(31) + "01", eth.call(callArgumentsParam, latest));
+        ProgramResult callResult = eth.callConstant(args, world.getBlockChain().getBestBlock());
+        assertNull(callResult.getException());
+        assertOnlyRejectedRelease(callResult, forwarder, new BigInteger("2386f26fc10000", 16), RejectedPegoutReason.CALLER_CONTRACT);
+
+        assertTrue(HexUtils.jsonHexToLong(eth.estimateGas(callArgumentsParam, latest)) > 44_000L);
+        ArgumentCaptor<ProgramResult> estimation = ArgumentCaptor.forClass(ProgramResult.class);
+        verify(eth).internalEstimateGas(estimation.capture());
+        assertOnlyRejectedRelease(estimation.getValue(), forwarder, new BigInteger("2386f26fc10000", 16), RejectedPegoutReason.CALLER_CONTRACT);
+    }
+
+    private static void assertOnlyRejectedRelease(ProgramResult result, RskAddress sender, BigInteger amountInWei, RejectedPegoutReason reason) {
+        List<LogInfo> bridgeLogs = result.getLogInfoList().stream()
+                .filter(log -> Arrays.equals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), log.getAddress()))
+                .toList();
+        assertEquals(1, bridgeLogs.size());
+        LogInfo log = bridgeLogs.get(0);
+        CallTransaction.Function rejected = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
+        assertEquals(DataWord.valueOf(rejected.encodeSignatureLong()), log.getTopics().get(0));
+        assertEquals(DataWord.valueOf(sender.getBytes()), log.getTopics().get(1));
+        Object[] data = rejected.decodeEventData(log.getData());
+        assertEquals(amountInWei, data[0]);
+        assertEquals(BigInteger.valueOf(reason.getValue()), data[1]);
     }
 
     /**
