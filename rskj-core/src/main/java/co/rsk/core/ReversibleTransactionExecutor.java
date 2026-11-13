@@ -35,6 +35,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 
+import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -131,6 +132,8 @@ public class ReversibleTransactionExecutor {
          */
         private static final ECKey PLACEHOLDER_KEY = ECKey.fromPublicOnly(ECKey.CURVE.getG());
 
+        private static final long MAX_LOCAL_CALL_GAS_LIMIT = Long.MAX_VALUE;
+
         private ReversibleTransaction(byte[] nonce, ReversibleTransactionParams params) {
             this(buildReversibleTransaction(nonce, params), params.fromAddress());
         }
@@ -169,7 +172,7 @@ public class ReversibleTransactionExecutor {
                     .type(type)
                     .isLocalCall(true)
                     .nonce(nonce)
-                    .gasLimit(params.gasLimit())
+                    .gasLimit(capLocalCallGasLimit(params.gasLimit()))
                     .receiveAddress(params.toAddress())
                     .value(RLP.parseCoinNullZero(ByteUtil.cloneBytes(params.value())))
                     .data(params.data())
@@ -180,6 +183,17 @@ public class ReversibleTransactionExecutor {
             applyAuthorizationList(builder, type, params.authorizationList());
 
             return builder.build();
+        }
+
+        /**
+         * Caps a local call's gas limit at Long.MAX_VALUE, reading the limit as an unsigned number. Execution reads an
+         * 8-byte gas limit as a signed long, so a value of 2^63 or more would be rejected as negative gas.
+         */
+        private static byte[] capLocalCallGasLimit(byte[] gasLimit) {
+            if (new BigInteger(1, gasLimit).compareTo(BigInteger.valueOf(MAX_LOCAL_CALL_GAS_LIMIT)) > 0) {
+                return ByteUtil.longToBytes(MAX_LOCAL_CALL_GAS_LIMIT);
+            }
+            return gasLimit;
         }
 
         private static void applyAccessList(TransactionBuilder builder, TransactionType type, byte[] accessListBytes) {
