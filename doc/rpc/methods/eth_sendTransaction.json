@@ -1,7 +1,7 @@
 {
   "name": "eth_sendTransaction",
   "summary": "Creates new message call transaction or a contract creation, if the data field contains code.",
-  "description": "Creates new message call transaction or a contract creation, if the data field contains code.\n\nIf `gas` is omitted, the transaction is sent with a gas limit of 90000.",
+  "description": "If `gas` is omitted, the transaction is sent with a gas limit of 90000.",
   "params": [
     {
       "$ref": "#/components/contentDescriptors/TransactionCreate"
