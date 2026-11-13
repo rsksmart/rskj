@@ -18,15 +18,13 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
-import org.ethereum.core.*;
-import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.TestUtils;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +36,6 @@ import java.math.BigInteger;
 class CallContractTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
-    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
     void callContractReturningOne() {
@@ -58,42 +55,16 @@ class CallContractTest {
     }
 
     private static ProgramResult callContract(World world, RskAddress receiveAddress, byte[] data) {
-        Transaction tx = CallTransaction.createRawTransaction(0, 0, 100000000000000L,
-                receiveAddress, 0, data, config.getNetworkConstants().getChainId());
-        tx.sign(new byte[]{});
-
         Block bestBlock = world.getBlockChain().getBestBlock();
 
-        Repository repository = world.getRepositoryLocator()
-                .startTrackingAt(world.getBlockChain().getBestBlock().getHeader());
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
-                config.getNetworkConstants().getBridgeConstants().getBtcParams());
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                btcBlockStoreFactory,
-                config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig(),
-                world.getBlockTxSignatureCache());
-
-        try {
-            TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
-                    config,
-                    null,
-                    null,
-                    blockFactory,
-                    new ProgramInvokeFactoryImpl(),
-                    new PrecompiledContracts(config, bridgeSupportFactory, world.getBlockTxSignatureCache()),
-                    world.getBlockTxSignatureCache()
-            );
-
-            org.ethereum.core.TransactionExecutor executor = transactionExecutorFactory
-                    .newInstance(tx, 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
-                    .setLocalCall(true);
-
-            executor.executeTransaction();
-
-            return executor.getResult();
-        } finally {
-            repository.rollback();
-        }
+        return EthModuleTestUtils.buildReversibleTransactionExecutor(world, config).executeTransaction(
+                bestBlock,
+                bestBlock.getCoinbase(),
+                BigInteger.ZERO.toByteArray(),
+                BigInteger.valueOf(100000000000000L).toByteArray(),
+                receiveAddress.getBytes(),
+                BigInteger.ZERO.toByteArray(),
+                data,
+                TestUtils.generateAddress("caller"));
     }
 }

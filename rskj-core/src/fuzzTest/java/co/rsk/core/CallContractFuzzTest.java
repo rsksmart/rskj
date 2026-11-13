@@ -18,18 +18,17 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.junit.FuzzTest;
-import org.ethereum.core.*;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.ethereum.TestUtils;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.util.EthModuleTestUtils;
 import org.spongycastle.util.encoders.Hex;
 
+import java.math.BigInteger;
 
 import org.junit.jupiter.api.Tag;
 
@@ -39,7 +38,6 @@ import org.junit.jupiter.api.Tag;
 class CallContractFuzzTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
-    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Tag("CallContractFuzzContractReturningOne")
     @FuzzTest
@@ -55,45 +53,22 @@ class CallContractFuzzTest {
     }
 
     private static long callContract(World world, RskAddress receiveAddress, byte[] data) {
-        //Lets use 2_000_000 gas just for reference
-        Transaction tx = CallTransaction.createRawTransaction(0, 0, 2_000_000,
-                receiveAddress, 0, data, config.getNetworkConstants().getChainId());
-        tx.sign(new byte[]{});
-
         Block bestBlock = world.getBlockChain().getBestBlock();
+        ReversibleTransactionExecutor executor = EthModuleTestUtils.buildReversibleTransactionExecutor(world, config);
 
-        Repository repository = world.getRepositoryLocator()
-                .startTrackingAt(world.getBlockChain().getBestBlock().getHeader());
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
-                config.getNetworkConstants().getBridgeConstants().getBtcParams());
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                btcBlockStoreFactory,
-                config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig(),
-                world.getBlockTxSignatureCache());
+        long start = System.currentTimeMillis();
+        //Lets use 2_000_000 gas just for reference
+        executor.executeTransaction(
+                bestBlock,
+                bestBlock.getCoinbase(),
+                BigInteger.ZERO.toByteArray(),
+                BigInteger.valueOf(2_000_000).toByteArray(),
+                receiveAddress.getBytes(),
+                BigInteger.ZERO.toByteArray(),
+                data,
+                TestUtils.generateAddress("caller"));
+        long end = System.currentTimeMillis();
 
-        try {
-            TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
-                    config,
-                    null,
-                    null,
-                    blockFactory,
-                    new ProgramInvokeFactoryImpl(),
-                    new PrecompiledContracts(config, bridgeSupportFactory, world.getBlockTxSignatureCache()),
-                    world.getBlockTxSignatureCache()
-            );
-
-            TransactionExecutor executor = transactionExecutorFactory
-                    .newInstance(tx, 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
-                    .setLocalCall(true);
-
-            long start = System.currentTimeMillis();
-            executor.executeTransaction();
-            long end = System.currentTimeMillis();
-
-            return end - start;
-        } finally {
-            repository.rollback();
-        }
+        return end - start;
     }
 }
