@@ -50,6 +50,8 @@ import static org.mockito.Mockito.when;
 
 class BlockTxsValidationRuleTest {
 
+    private static final long RSKIP545_ACTIVATION_HEIGHT = 1000;
+
     private BlockTxsValidationRule rule;
     private RepositorySnapshot repositorySnapshot;
     private Block parent;
@@ -70,8 +72,6 @@ class BlockTxsValidationRuleTest {
 
         rule = new BlockTxsValidationRule(repositoryLocator, signatureCache, ActivationConfigsForTest.allBut(ConsensusRule.RSKIP545));
     }
-
-    private static final long RSKIP545_ACTIVATION_HEIGHT = 1000;
 
     private BlockTxsValidationRule ruleWithRskip545ActiveFrom(long activationHeight) {
         ActivationConfig activationConfig = mock(ActivationConfig.class);
@@ -133,7 +133,6 @@ class BlockTxsValidationRuleTest {
 
         Assertions.assertTrue(ruleWithRskip545ActiveFrom(RSKIP545_ACTIVATION_HEIGHT).isValid(block, parent));
     }
-
 
     @Test
     void validAuthorityTransactionAfterSponsorTupleBumpedItsNonce() {

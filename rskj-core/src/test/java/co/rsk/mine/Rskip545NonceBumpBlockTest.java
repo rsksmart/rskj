@@ -82,7 +82,6 @@ class Rskip545NonceBumpBlockTest {
     private static final RskAddress ADDRESS_B = new RskAddress("000000000000000000000000000000000000bbbb");
     private static final RskAddress ADDRESS_C = new RskAddress("000000000000000000000000000000000000cccc");
 
-
     /**
      * Setup: Authority with nonce 0, Sponsor with nonce 0.
      * Txs:
@@ -219,7 +218,6 @@ class Rskip545NonceBumpBlockTest {
         network.assertNonce(network.authority, n + 3);
     }
 
-
     /**
      * Setup: Authority with nonce 1 delegated to create2Once, Sponsor with nonce 1.
      * Txs:
@@ -279,7 +277,6 @@ class Rskip545NonceBumpBlockTest {
 
         network.assertNonce(network.authority, n + 4);
     }
-
 
     /**
      * Setup: Authority with nonce 0, Sponsor with nonce 0.
@@ -406,6 +403,83 @@ class Rskip545NonceBumpBlockTest {
     }
 
     /**
+     * Setup: Authority delegated to create2Once, Sponsor.
+     * Pending txs:
+     *   1. Type0 from Sponsor to Authority (gas price 10, its delegate runs CREATE2 once)
+     *   2. Type0 from Authority (nonce n) to RECEIVER
+     *   3. Type0 from Authority (nonce n + 1) to RECEIVER
+     * Expected: the miner drops tx 2 (nonce n already consumed by the CREATE2) and builds [tx 1, tx 3];
+     *   both nodes import the block, Authority ends with nonce n + 2.
+     */
+    @ParameterizedTest(name = "rskip144 = {0}")
+    @ValueSource(ints = {0, -1})
+    void mineBlock_sponsorCallRunsDelegatedCreate2_dropsConsumedNonceAndBlockIsAccepted(int rskip144) {
+        Network network = new Network(rskip144);
+        network.delegate(network.authority, network.create2Once);
+        long n = network.nonceOf(network.authority);
+        Transaction call = callWithPrice(network.sponsor, network.nonceOf(network.sponsor), network.authority.getAddress(), 10);
+        Transaction next = transfer(network.authority, n + 1);
+
+        Block block = network.mine(call, transfer(network.authority, n), next);
+
+        assertEquals(Arrays.asList(call, next), userTxs(block));
+        network.importIntoBothNodes(block);
+        network.assertNonce(network.authority, n + 2);
+    }
+
+    /**
+     * Setup: Authority delegated to createTwice, Sponsor.
+     * Pending txs:
+     *   1. Type0 from Sponsor to Authority (gas price 10, its delegate runs CREATE twice)
+     *   2. Type0 from Authority (nonce n) to RECEIVER
+     *   3. Type0 from Authority (nonce n + 1) to RECEIVER
+     *   4. Type0 from Authority (nonce n + 2) to RECEIVER
+     * Expected: the miner drops tx 2 and tx 3 (nonces n and n + 1 already consumed by the CREATEs) and builds
+     *   [tx 1, tx 4]; both nodes import the block, Authority ends with nonce n + 3.
+     */
+    @ParameterizedTest(name = "rskip144 = {0}")
+    @ValueSource(ints = {0, -1})
+    void mineBlock_sponsorCallRunsTwoDelegatedCreates_dropsConsumedNoncesAndBlockIsAccepted(int rskip144) {
+        Network network = new Network(rskip144);
+        network.delegate(network.authority, network.createTwice);
+        long n = network.nonceOf(network.authority);
+        Transaction call = callWithPrice(network.sponsor, network.nonceOf(network.sponsor), network.authority.getAddress(), 10);
+        Transaction next = transfer(network.authority, n + 2);
+
+        Block block = network.mine(call, transfer(network.authority, n), transfer(network.authority, n + 1), next);
+
+        assertEquals(Arrays.asList(call, next), userTxs(block));
+        network.importIntoBothNodes(block);
+        network.assertNonce(network.authority, n + 3);
+    }
+
+    /**
+     * Setup: Authority with nonce n, Sponsor.
+     * Pending txs:
+     *   1. Type4 from Sponsor to Authority with Tuple (Authority, nonce n, delegate createOnce), so the same tx
+     *      bumps Authority's nonce by the tuple and by the CREATE
+     *   2. Type0 from Authority (nonce n) to RECEIVER
+     *   3. Type0 from Authority (nonce n + 1) to RECEIVER
+     *   4. Type0 from Authority (nonce n + 2) to RECEIVER
+     * Expected: the miner drops tx 2 and tx 3 (nonces n and n + 1 already consumed) and builds [tx 1, tx 4];
+     *   both nodes import the block, Authority ends with nonce n + 3.
+     */
+    @ParameterizedTest(name = "rskip144 = {0}")
+    @ValueSource(ints = {0, -1})
+    void mineBlock_sponsorTupleAndCreateInSameTx_dropsConsumedNoncesAndBlockIsAccepted(int rskip144) {
+        Network network = new Network(rskip144);
+        long n = network.nonceOf(network.authority);
+        Transaction t4 = type4(network.sponsor, network.nonceOf(network.sponsor), network.authority.getAddress(), tuple(network.authority, network.createOnce, n));
+        Transaction next = transfer(network.authority, n + 2);
+
+        Block block = network.mine(t4, transfer(network.authority, n), transfer(network.authority, n + 1), next);
+
+        assertEquals(Arrays.asList(t4, next), userTxs(block));
+        network.importIntoBothNodes(block);
+        network.assertNonce(network.authority, n + 3);
+    }
+
+    /**
      * Setup: Authority with nonce 0.
      * Block N, pending txs:
      *   1. Type4 from Authority (nonce 0) to RECEIVER with Tuple (Authority, nonce 1, delegate noop)
@@ -443,8 +517,6 @@ class Rskip545NonceBumpBlockTest {
         network.assertNonce(network.authority, n + 4);
     }
 
-
-
     /**
      * Setup: Authority with nonce 0.
      * Txs sent to the real pool (all three are admitted as pending):
@@ -452,7 +524,7 @@ class Rskip545NonceBumpBlockTest {
      *   2. Type0 from Authority (nonce 1) to RECEIVER
      *   3. Type0 from Authority (nonce 2) to RECEIVER
      * Expected: block N is [tx 1, tx 3] (tx 2's nonce was consumed by the tuple) and both nodes import it;
-     *   the attacker pays fees (before the fix nothing was mined, so the attack was free);
+     *   the authority pays fees for the mined txs;
      *   the pool drops tx 2 when block N arrives, so it is not served again;
      *   block N+1 is mined on top of N and both nodes import it.
      */
@@ -543,20 +615,20 @@ class Rskip545NonceBumpBlockTest {
      * Txs (crafted, not executed by a miner, which would discard the stale tx):
      *   1. Type4 from Sponsor (nonce 0) to RECEIVER with Tuple (Authority, nonce 0, delegate noop)
      *   2. Type0 from Authority (nonce 0) to RECEIVER, a nonce the tuple already consumed
-     * Expected: the static rule no longer checks nonces (and the old one would have accepted nonce 0 here, since it
-     *   matches the parent state), so execution must reject it: both nodes return INVALID_BLOCK, the best block
-     *   and Authority's nonce are unchanged.
+     * Expected: the static rule does not check nonces after RSKIP545, so execution must reject the reused nonce.
+     * Control: the same block with Authority's tx at nonce 1 (valid once the tuple consumed nonce 0) executes
+     *   without interruption.
      */
     @ParameterizedTest(name = "rskip144 = {0}")
     @ValueSource(ints = {0, -1})
-    void validateBlock_authorityTxReusesNonceConsumedByEarlierTuple_blockIsRejected(int rskip144) {
+    void validateBlock_authorityTxReusesNonceConsumedByEarlierTuple_executionRejectsIt(int rskip144) {
         Network network = new Network(rskip144);
         long n = network.nonceOf(network.authority);
         Block parent = network.miner.getBlockChain().getBestBlock();
+        Transaction sponsorType4 = type4(network.sponsor, network.nonceOf(network.sponsor), RECEIVER, tuple(network.authority, network.noop, n));
 
-        Block malformed = network.unexecutedBlock(
-                type4(network.sponsor, network.nonceOf(network.sponsor), RECEIVER, tuple(network.authority, network.noop, n)),
-                transfer(network.authority, n));
+        Block malformed = network.unexecutedBlock(sponsorType4, transfer(network.authority, n));
+        Block control = network.unexecutedBlock(sponsorType4, transfer(network.authority, n + 1));
 
         BlockTxsValidationRule staticRule = new BlockTxsValidationRule(
                 network.follower.getRepositoryLocator(),
@@ -564,9 +636,27 @@ class Rskip545NonceBumpBlockTest {
                 network.follower.getConfig().getActivationConfig());
         assertTrue(staticRule.isValid(malformed, parent), "the static rule must let the block through, so the rejection comes from execution");
         assertEquals(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, network.executeOnFollower(malformed), "execution must reject the reused nonce");
+        assertNotEquals(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, network.executeOnFollower(control), "control: n + 1 is valid after the tuple consumed n");
+    }
 
-        network.assertRejectedByBothNodes(malformed, parent);
-        network.assertNonce(network.authority, n);
+    /**
+     * Setup: Authority with nonce 0.
+     * Txs (crafted, not executed by a miner):
+     *   Type0 from Authority (nonce 1) to RECEIVER, with no nonce-0 tx before it.
+     * Expected: the static rule does not check nonces after RSKIP545, so execution must reject the gap.
+     * Control: the same block with Authority's tx at nonce 0 executes without interruption.
+     */
+    @ParameterizedTest(name = "rskip144 = {0}")
+    @ValueSource(ints = {0, -1})
+    void validateBlock_authorityTxSkipsNonce_executionRejectsIt(int rskip144) {
+        Network network = new Network(rskip144);
+        long n = network.nonceOf(network.authority);
+
+        Block gapped = network.unexecutedBlock(transfer(network.authority, n + 1));
+        Block control = network.unexecutedBlock(transfer(network.authority, n));
+
+        assertEquals(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, network.executeOnFollower(gapped), "execution must reject the gapped nonce");
+        assertNotEquals(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, network.executeOnFollower(control), "control: the expected nonce executes");
     }
 
     /**
@@ -717,13 +807,6 @@ class Rskip545NonceBumpBlockTest {
                     .parent(miner.getBlockChain().getBestBlock())
                     .transactions(Arrays.asList(txs))
                     .buildWithoutExecution();
-        }
-
-        void assertRejectedByBothNodes(Block block, Block expectedBest) {
-            assertEquals(ImportResult.INVALID_BLOCK, miner.getBlockChain().tryToConnect(block), "miner node must reject the block");
-            assertEquals(ImportResult.INVALID_BLOCK, follower.getBlockChain().tryToConnect(block), "second node must reject the block");
-            assertEquals(expectedBest.getHash(), miner.getBlockChain().getBestBlock().getHash(), "miner node best block must not change");
-            assertEquals(expectedBest.getHash(), follower.getBlockChain().getBestBlock().getHash(), "second node best block must not change");
         }
 
         /**

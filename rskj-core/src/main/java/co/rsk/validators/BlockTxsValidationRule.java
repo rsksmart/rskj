@@ -73,9 +73,19 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             return true;
         }
 
-        boolean skipNonceCheck = activationConfig.isActive(ConsensusRule.RSKIP545, block.getNumber());
+        if (activationConfig.isActive(ConsensusRule.RSKIP545, block.getNumber())) {
+            for (Transaction tx : txs) {
+                try {
+                    tx.verify(signatureCache);
+                } catch (RuntimeException e) {
+                    logger.warn("Unable to verify transaction", e);
+                    return false;
+                }
+            }
+            return true;
+        }
 
-        RepositorySnapshot parentRepo = skipNonceCheck ? null : repositoryLocator.snapshotAt(parent.getHeader());
+        RepositorySnapshot parentRepo = repositoryLocator.snapshotAt(parent.getHeader());
 
         Map<RskAddress, BigInteger> curNonce = new HashMap<>();
 
@@ -85,10 +95,6 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             } catch (RuntimeException e) {
                 logger.warn("Unable to verify transaction", e);
                 return false;
-            }
-
-            if (skipNonceCheck) {
-                continue;
             }
 
             RskAddress sender = signatureCache != null ? tx.getSender(signatureCache) : tx.getSender();

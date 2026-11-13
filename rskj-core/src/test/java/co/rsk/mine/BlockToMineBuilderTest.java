@@ -62,6 +62,7 @@ class BlockToMineBuilderTest {
     private BlockValidationRule validationRules;
     private BlockExecutor blockExecutor;
     private ActivationConfig activationConfig;
+    private MinerUtils minerUtils;
 
     @BeforeEach
     void setUp() {
@@ -71,7 +72,7 @@ class BlockToMineBuilderTest {
         MiningConfig miningConfig = mock(MiningConfig.class);
         DifficultyCalculator difficultyCalculator = mock(DifficultyCalculator.class);
         MinimumGasPriceCalculator minimumGasPriceCalculator = mock(MinimumGasPriceCalculator.class);
-        MinerUtils minerUtils = mock(MinerUtils.class);
+        minerUtils = mock(MinerUtils.class);
         SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         activationConfig = mock(ActivationConfig.class);
 
@@ -193,6 +194,26 @@ class BlockToMineBuilderTest {
 
         Block actualBlock = blockCaptor.getValue();
         assertThat(actualBlock.getHeader().getUmmRoot(), is(new byte[0]));
+    }
+
+    @Test
+    void build_rskip252ActiveRskip545Inactive_passesEachFlagInItsPosition() {
+        when(activationConfig.isActive(ConsensusRule.RSKIP252, 501L)).thenReturn(true);
+        when(activationConfig.isActive(ConsensusRule.RSKIP545, 501L)).thenReturn(false);
+
+        prepareForActivationTest();
+
+        verify(minerUtils).filterTransactions(any(), any(), any(), any(), eq(true), eq(false), any());
+    }
+
+    @Test
+    void build_rskip252InactiveRskip545Active_passesEachFlagInItsPosition() {
+        when(activationConfig.isActive(ConsensusRule.RSKIP252, 501L)).thenReturn(false);
+        when(activationConfig.isActive(ConsensusRule.RSKIP545, 501L)).thenReturn(true);
+
+        prepareForActivationTest();
+
+        verify(minerUtils).filterTransactions(any(), any(), any(), any(), eq(false), eq(true), any());
     }
 
     @Test
