@@ -41,6 +41,9 @@ import java.util.stream.Stream;
  */
 class CallArgumentsToByteArrayTest {
 
+    private static final long CALL_GAS_CAP = 10_000_000L;
+    private static final String CALL_GAS_CAP_AS_8_BYTES = "0000000000989680";
+
     private TestSystemProperties config = new TestSystemProperties();
 
     @Test
@@ -158,9 +161,6 @@ class CallArgumentsToByteArrayTest {
         Assertions.assertEquals(1, ByteUtil.byteArrayToLong(
                 callArgumentsToByteArray.gasLimitForCall(config.getCallGasCap())));
     }
-
-    private static final long CALL_GAS_CAP = 10_000_000L;
-    private static final String CALL_GAS_CAP_AS_8_BYTES = "0000000000989680";
 
     private static Stream<Arguments> gasAboveTheCallGasCap() {
         return Stream.of(
