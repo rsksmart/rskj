@@ -1,0 +1,56 @@
+comment
+
+RSKIP701 case 9. The same factory as create2_destroy_recreate.txt. The first transaction creates C and
+calls it, so C executes SELFDESTRUCT in the transaction that created it. A later transaction of the same
+block repeats the CREATE2, and so does a transaction of the next block.
+
+end
+
+block_chain g00
+account_new acc1 10000000
+account_new accB 1000
+account_new factory 0 7168602a600055600035ff60005260096017f360005260016012600e6000f536156039576020600060203760006000602060206000855af1505b00
+
+transaction_build createAndDestroyC
+    sender acc1
+    receiver factory
+    nonce 0
+    value 0
+    data 000000000000000000000000b88c95fb184c1a6e33aa447c12561777de55e376
+    gas 1000000
+    build
+
+transaction_build recreateSameBlock
+    sender acc1
+    receiver factory
+    nonce 1
+    value 0
+    gas 200000
+    build
+
+transaction_build recreateNextBlock
+    sender acc1
+    receiver factory
+    nonce 2
+    value 0
+    gas 200000
+    build
+
+block_build b01
+    parent g00
+    gasLimit 6800000
+    transactions createAndDestroyC recreateSameBlock
+    build
+
+block_connect b01
+
+block_build b02
+    parent b01
+    gasLimit 6800000
+    transactions recreateNextBlock
+    build
+
+block_connect b02
+
+assert_tx_success createAndDestroyC
+assert_tx_success recreateNextBlock

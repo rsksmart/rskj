@@ -43,7 +43,6 @@ import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.MessageCall;
@@ -418,21 +417,26 @@ public class Program {
         RskAddress owner = getOwnerRskAddress();
         Coin balance = getStorage().getBalance(owner);
         RskAddress obtainer = new RskAddress(obtainerAddress);
+        // RSKIP701: a delegated account only moves its balance; it is never marked for deletion
+        boolean accountSurvivesSelfdestruct = getActivations().isActive(ConsensusRule.RSKIP701)
+                && getStorage().isActiveDelegatedEOA(owner);
 
         if (!balance.equals(Coin.ZERO)) {
             logger.info("Transfer to: [{}] heritage: [{}]", obtainer, balance);
 
             addInternalTx(null, null, owner, obtainer, balance, null, "suicide");
 
-            if (FastByteComparisons.compareTo(owner.getBytes(), 0, 20, obtainer.getBytes(), 0, 20) == 0) {
-                // if owner == obtainer just zeroing account according to Yellow Paper
-                getStorage().addBalance(owner, balance.negate());
-            } else {
+            if (!owner.equals(obtainer)) {
                 getStorage().transfer(owner, obtainer, balance);
+            } else if (!accountSurvivesSelfdestruct) {
+                // owner == obtainer: just zero the account according to Yellow Paper
+                getStorage().addBalance(owner, balance.negate());
             }
         }
-        // In any case, remove the account
-        getResult().addDeleteAccount(this.getOwnerAddress());
+
+        if (!accountSurvivesSelfdestruct) {
+            getResult().addDeleteAccount(this.getOwnerAddress());
+        }
 
         SuicideInvoke invoke = new SuicideInvoke(DataWord.valueOf(owner.getBytes()), obtainerAddress,
                 DataWord.valueOf(balance.getBytes()));
@@ -774,6 +778,8 @@ public class Program {
         track.commit();
 
         getResult().addDeleteAccounts(programResult.getDeleteAccounts());
+        getResult().addCreatedAccounts(programResult.getCreatedAccounts());
+        getResult().addCreatedAccount(DataWord.valueOf(contractAddress.getBytes()));
         getResult().addLogInfos(programResult.getLogInfoList());
 
         stackPush(DataWord.valueOf(contractAddress.getBytes()));

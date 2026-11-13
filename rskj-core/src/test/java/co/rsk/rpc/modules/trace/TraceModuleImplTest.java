@@ -22,6 +22,8 @@ import co.rsk.config.GasLimitConfig;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.ForkDetectionDataCalculator;
 import co.rsk.mine.GasLimitCalculator;
@@ -52,6 +54,11 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.ParameterizedTest;
+import com.typesafe.config.ConfigValue;
+import com.typesafe.config.ConfigValueFactory;
+import co.rsk.config.TestSystemProperties;
 
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
@@ -498,6 +505,101 @@ class TraceModuleImplTest {
             Assertions.assertNotNull(oresult.get("error"));
             Assertions.assertEquals("\"Reverted\"", oresult.get("error").toString());
         }
+    }
+
+    /**
+     * Pins current behavior: under RSKIP701 a delegated account that executes SELFDESTRUCT only moves its
+     * balance and is not deleted, yet the trace still reports a "suicide" subtrace for it.
+     */
+    @Test
+    void traceTransaction_selfdestructInDelegatedAccount_emitsSuicideSubtraceAlthoughTheAccountSurvives_currentBehavior()
+            throws FileNotFoundException, DslProcessorException {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(DslParser.fromResource("dsl/eth_module/estimateGas/selfdestructDelegatedAccount.txt"));
+        RskAddress authority = world.getAccountByName("authority").getAddress();
+        RskAddress beneficiary = world.getAccountByName("accB").getAddress();
+        mineDestroyInB02(processor, 3, authority, 0, beneficiary);
+
+        RepositorySnapshot afterDestroy = world.getRepositoryLocator()
+                .snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        Assertions.assertTrue(afterDestroy.isActiveDelegatedEOA(authority), "the delegated account survives");
+        Assertions.assertEquals(BigInteger.ONE, afterDestroy.getNonce(authority));
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+        JsonNode result = traceModule.traceTransaction(world.getTransactionByName("destroy").getHash().toJsonString());
+
+        Assertions.assertTrue(result.isArray());
+        Assertions.assertEquals(2, result.size());
+        JsonNode suicide = result.get(1);
+        Assertions.assertEquals("\"suicide\"", suicide.get("type").toString());
+        Assertions.assertEquals("0x" + authority.toHexString(), suicide.get("action").get("address").asText());
+        Assertions.assertEquals("0x" + beneficiary.toHexString(), suicide.get("action").get("refundAddress").asText());
+        Assertions.assertEquals("0x3e8", suicide.get("action").get("balance").asText());
+    }
+
+    /**
+     * SELFDESTRUCT in a CREATE2 child with nonce 1. With RSKIP701 the child is cleared, without it it is deleted;
+     * the trace is the same in both cases: the root call and one "suicide" frame. There is no storage-clear frame,
+     * because finalization clears or deletes through the repository, not through Storage.
+     */
+    @ParameterizedTest(name = "rskip701 active: {0}")
+    @ValueSource(booleans = {true, false})
+    void traceTransaction_selfdestructInCreate2Child_hasRootAndOneSuicideFrame(boolean rskip701Active)
+            throws FileNotFoundException, DslProcessorException {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        // RSKIP545 requires RSKIP701, so it follows the RSKIP701 activation
+        ConfigValue activationHeight = ConfigValueFactory.fromAnyRef(rskip701Active ? 0 : -1);
+        TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
+                .withValue("blockchain.config.consensusRules.rskip701", activationHeight)
+                .withValue("blockchain.config.consensusRules.rskip545", activationHeight));
+        World world = new World(receiptStore, config);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(DslParser.fromResource("dsl/eth_module/estimateGas/selfdestructCreate2Contract.txt"));
+        RskAddress child = new RskAddress("564277e6a03a179c7b29165fd3fa2612dd9b6602");
+        RskAddress beneficiary = world.getAccountByName("accB").getAddress();
+        Assertions.assertEquals(BigInteger.ONE, world.getRepositoryLocator()
+                .snapshotAt(world.getBlockChain().getBestBlock().getHeader()).getNonce(child));
+        mineDestroyInB02(processor, 1, child, 1000, beneficiary);
+
+        RepositorySnapshot afterDestroy = world.getRepositoryLocator()
+                .snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        Assertions.assertEquals(rskip701Active, afterDestroy.isExist(child), "cleared with RSKIP701, deleted without it");
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+        JsonNode result = traceModule.traceTransaction(world.getTransactionByName("destroy").getHash().toJsonString());
+
+        Assertions.assertTrue(result.isArray());
+        Assertions.assertEquals(2, result.size());
+        Assertions.assertEquals("\"call\"", result.get(0).get("type").toString());
+        JsonNode suicide = result.get(1);
+        Assertions.assertEquals("\"suicide\"", suicide.get("type").toString());
+        Assertions.assertEquals("0x" + child.toHexString(), suicide.get("action").get("address").asText());
+        Assertions.assertEquals("0x" + beneficiary.toHexString(), suicide.get("action").get("refundAddress").asText());
+        Assertions.assertEquals("0x3e8", suicide.get("action").get("balance").asText());
+        Assertions.assertEquals("[0]", suicide.get("traceAddress").toString());
+    }
+
+    /** Mines block b02 with one successful transaction from acc1 that passes the beneficiary as its call data. */
+    private static void mineDestroyInB02(WorldDslProcessor processor, long nonce, RskAddress receiver, long value,
+                                         RskAddress beneficiary) throws DslProcessorException {
+        processor.processCommands(new DslParser("transaction_build destroy\n" +
+                "    sender acc1\n" +
+                "    nonce " + nonce + "\n" +
+                "    receiverAddress " + receiver.toHexString() + "\n" +
+                "    value " + value + "\n" +
+                "    data 000000000000000000000000" + beneficiary.toHexString() + "\n" +
+                "    gas 200000\n" +
+                "    build\n" +
+                "block_build b02\n" +
+                "    parent b01\n" +
+                "    gasLimit 6800000\n" +
+                "    transactions destroy\n" +
+                "    build\n" +
+                "block_connect b02\n" +
+                "assert_best b02\n" +
+                "assert_tx_success destroy\n"));
     }
 
     private static void retrieveSuicideInvocationTrace(World world, ReceiptStore receiptStore, String txname) {

@@ -21,10 +21,14 @@ package co.rsk.rpc.modules.eth;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.core.exception.TransactionExecutionRejectedException;
 import co.rsk.test.World;
+import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
+import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.util.HexUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.TransactionReceipt;
@@ -55,6 +59,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static co.rsk.db.ClearedAccountAssertions.assertClearedAccount;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EthModuleGasEstimationDSLTest {
@@ -1225,6 +1230,155 @@ class EthModuleGasEstimationDSLTest {
         }
 
         return localCallResult.getException() == null;
+    }
+
+    private static final String SELFDESTRUCT_FIXTURE = "dsl/eth_module/estimateGas/selfdestructDelegatedAccount.txt";
+    private static final String DELEGATED_ACCOUNT = "authority";
+    private static final String CONTRACT_WITH_SAME_CODE = "56aa252dd82173789984fa164ee26ce2da9336ff";
+    private static final String BENEFICIARY_WORD = "000000000000000000000000b88c95fb184c1a6e33aa447c12561777de55e376";
+    private static final long FIRST_FREE_SENDER_NONCE = 3;
+
+    /**
+     * The call goes to an account that is already delegated to a contract that stores 42 and then executes
+     * SELFDESTRUCT. The account is not marked for deletion, so the transaction earns no refund and the
+     * estimate is the gas the mined transaction reports. A transaction with that gas limit succeeds and
+     * one with a single unit less fails.
+     */
+    @Test
+    void estimateGas_selfdestructInDelegatedAccount_matchesTheMinedTransaction() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld(SELFDESTRUCT_FIXTURE);
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        Block block = world.getBlockChain().getBestBlock();
+        String delegated = world.getAccountByName(DELEGATED_ACCOUNT).getAddress().toHexString();
+        assertTrue(world.getRepositoryLocator().snapshotAt(block.getHeader())
+                .isActiveDelegatedEOA(world.getAccountByName(DELEGATED_ACCOUNT).getAddress()),
+                "the fixture must leave the account delegated before the call");
+
+        CallArguments args = selfdestructCallArguments(world, delegated);
+        long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
+
+        assertEquals(0, eth.getEstimationResult().getDeductedRefund());
+
+        // The mined transaction is the oracle: no refund applies, so the receipt reports exactly the estimate
+        TransactionReceipt receipt = mineSelfdestructCall(SELFDESTRUCT_FIXTURE, delegated, estimatedGas);
+        assertTrue(receipt.isTxStatusOK());
+        assertEquals(estimatedGas, new BigInteger(1, receipt.getGasUsed()).longValue());
+
+        TransactionReceipt belowEstimate = mineSelfdestructCall(SELFDESTRUCT_FIXTURE, delegated, estimatedGas - 1);
+        assertFalse(belowEstimate.isTxStatusOK());
+
+        // The same call simulated with the estimate succeeds, and with one unit less runs out of gas
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
+        assertTrue(runWithArgumentsAndBlock(eth, args, block));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
+        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+    }
+
+    /**
+     * The contrast: a contract with the same code is marked for deletion and earns the refund. The estimate
+     * must cover the gas the transaction consumes before the refund, so it is the receipt's gas plus the
+     * refund, and a transaction limited to the estimate succeeds while one unit less fails.
+     */
+    @Test
+    void estimateGas_selfdestructInContract_coversTheGasBeforeTheRefund() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld(SELFDESTRUCT_FIXTURE);
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+
+        CallArguments args = selfdestructCallArguments(world, CONTRACT_WITH_SAME_CODE);
+        long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
+
+        long refund = eth.getEstimationResult().getDeductedRefund();
+        assertTrue(refund > 0);
+
+        TransactionReceipt receipt = mineSelfdestructCall(SELFDESTRUCT_FIXTURE, CONTRACT_WITH_SAME_CODE, estimatedGas);
+        assertTrue(receipt.isTxStatusOK());
+        long receiptGasUsed = new BigInteger(1, receipt.getGasUsed()).longValue();
+        assertTrue(receiptGasUsed < estimatedGas);
+        assertEquals(estimatedGas, receiptGasUsed + refund);
+
+        TransactionReceipt belowEstimate = mineSelfdestructCall(SELFDESTRUCT_FIXTURE, CONTRACT_WITH_SAME_CODE, estimatedGas - 1);
+        assertFalse(belowEstimate.isTxStatusOK());
+    }
+
+    private static final String CLEARED_CONTRACT_FIXTURE = "dsl/eth_module/estimateGas/selfdestructCreate2Contract.txt";
+    private static final String CREATE2_CONTRACT = "564277e6a03a179c7b29165fd3fa2612dd9b6602";
+    private static final long CLEARED_CONTRACT_FIXTURE_SENDER_NONCE = 1;
+
+    /**
+     * The contrast above uses a contract deployed by a creation transaction: it has nonce 0, so it is deleted.
+     * A contract made by CREATE2 has nonce 1, so RSKIP701 clears it instead. It is still marked, so it earns
+     * the same refund, and the estimate covers the gas before the refund.
+     */
+    @Test
+    void estimateGas_selfdestructInCreate2Contract_isClearedAndCoversTheGasBeforeTheRefund()
+            throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld(CLEARED_CONTRACT_FIXTURE);
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        RskAddress contract = new RskAddress(CREATE2_CONTRACT);
+        RepositorySnapshot beforeCall = world.getRepositoryLocator()
+                .snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        assertEquals(BigInteger.ONE, beforeCall.getNonce(contract), "the fixture must leave a CREATE2 contract with nonce 1");
+        assertArrayEquals(Hex.decode("602a600055600035ff"), beforeCall.getCode(contract));
+
+        CallArguments args = selfdestructCallArguments(world, CREATE2_CONTRACT, CLEARED_CONTRACT_FIXTURE_SENDER_NONCE);
+        long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
+
+        long refund = eth.getEstimationResult().getDeductedRefund();
+        assertEquals(Math.min(GasCost.SUICIDE_REFUND, eth.getEstimationResult().getGasUsedBeforeRefunds() / 2), refund);
+        assertTrue(refund > 0);
+
+        World mined = World.processedWorld(CLEARED_CONTRACT_FIXTURE);
+        TransactionReceipt receipt = mineSelfdestructCall(mined, CREATE2_CONTRACT, estimatedGas, CLEARED_CONTRACT_FIXTURE_SENDER_NONCE);
+        assertTrue(receipt.isTxStatusOK());
+        assertEquals(estimatedGas, new BigInteger(1, receipt.getGasUsed()).longValue() + refund);
+        assertClearedAccount(mined.getRepositoryLocator().snapshotAt(mined.getBlockChain().getBestBlock().getHeader()),
+                contract, BigInteger.ONE);
+
+        TransactionReceipt belowEstimate = mineSelfdestructCall(World.processedWorld(CLEARED_CONTRACT_FIXTURE),
+                CREATE2_CONTRACT, estimatedGas - 1, CLEARED_CONTRACT_FIXTURE_SENDER_NONCE);
+        assertFalse(belowEstimate.isTxStatusOK());
+    }
+
+    private static CallArguments selfdestructCallArguments(World world, String to) {
+        return selfdestructCallArguments(world, to, FIRST_FREE_SENDER_NONCE);
+    }
+
+    private static CallArguments selfdestructCallArguments(World world, String to, long senderNonce) {
+        CallArguments args = new CallArguments();
+        args.setFrom("0x" + world.getAccountByName("acc1").getAddress().toHexString());
+        args.setTo("0x" + to);
+        args.setValue(HexUtils.toQuantityJsonHex(0));
+        args.setNonce(HexUtils.toQuantityJsonHex(senderNonce));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setData("0x" + BENEFICIARY_WORD);
+        return args;
+    }
+
+    /** Mines the call in a block on top of the fixture's block and returns its receipt. */
+    private static TransactionReceipt mineSelfdestructCall(String fixture, String to, long gasLimit)
+            throws FileNotFoundException, DslProcessorException {
+        return mineSelfdestructCall(World.processedWorld(fixture), to, gasLimit, FIRST_FREE_SENDER_NONCE);
+    }
+
+    private static TransactionReceipt mineSelfdestructCall(World world, String to, long gasLimit, long senderNonce)
+            throws DslProcessorException {
+        String dsl = "transaction_build minedCall\n" +
+                "    sender acc1\n" +
+                "    nonce " + senderNonce + "\n" +
+                "    receiverAddress " + to + "\n" +
+                "    value 0\n" +
+                "    data " + BENEFICIARY_WORD + "\n" +
+                "    gas " + gasLimit + "\n" +
+                "    build\n" +
+                "block_build b02\n" +
+                "    parent b01\n" +
+                "    gasLimit 6800000\n" +
+                "    transactions minedCall\n" +
+                "    build\n" +
+                "block_connect b02\n" +
+                "assert_best b02\n";
+        new WorldDslProcessor(world).processCommands(new DslParser(dsl));
+        return world.getTransactionReceiptByName("minedCall");
     }
 
     private long estimateGas(EthModuleTestUtils.EthModuleGasEstimation eth, CallArguments args, String bnOrId) {

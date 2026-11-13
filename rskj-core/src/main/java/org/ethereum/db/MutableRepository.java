@@ -135,6 +135,20 @@ public class MutableRepository implements Repository {
     }
 
     @Override
+    public synchronized void clearAccount(RskAddress addr) {
+        AccountState account = getAccountState(addr);
+        if (account == null) {
+            return;
+        }
+
+        // Dropping the whole subtree and writing the account node back keeps the nonce and the flags
+        // while every node under the account node (code, storage placeholder, storage cells) is removed.
+        delete(addr);
+
+        updateAccountState(addr, account.cleared());
+    }
+
+    @Override
     public synchronized void hibernate(RskAddress addr) {
         AccountState account = getAccountStateOrCreateNew(addr);
 

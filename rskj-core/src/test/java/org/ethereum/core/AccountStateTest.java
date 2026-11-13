@@ -27,6 +27,7 @@ import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AccountStateTest {
@@ -101,5 +102,32 @@ class AccountStateTest {
 
         assertTrue(result.hasDelegationAuthority());
         assertTrue(result.isHibernated());
+    }
+
+    @Test
+    void clearedKeepsNonceAndFlagsAndZeroesBalance() {
+        AccountState acct = new AccountState(BigInteger.valueOf(7), new Coin(BigInteger.valueOf(1000)));
+        acct.hibernate();
+        acct.setDelegationAuthority();
+
+        AccountState cleared = acct.cleared();
+
+        assertNotSame(acct, cleared);
+        assertEquals(BigInteger.valueOf(7), cleared.getNonce());
+        assertEquals(Coin.ZERO, cleared.getBalance());
+        assertTrue(cleared.isHibernated());
+        assertTrue(cleared.hasDelegationAuthority());
+        assertEquals(new Coin(BigInteger.valueOf(1000)), acct.getBalance());
+    }
+
+    @Test
+    void clearedEncodesAsFreshAccountWithSameNonceAndFlags() {
+        AccountState acct = new AccountState(BigInteger.valueOf(7), new Coin(BigInteger.valueOf(1000)));
+        acct.setStateFlags(238);
+        // the original caches its own encoding, which must not leak into the cleared copy
+        acct.getEncoded();
+
+        // list(nonce 07, balance 00, flags 81ee)
+        assertEquals("c4070081ee", ByteUtil.toHexString(acct.cleared().getEncoded()));
     }
 }

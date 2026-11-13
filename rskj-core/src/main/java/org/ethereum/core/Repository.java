@@ -82,6 +82,15 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
     void delete(RskAddress addr);
 
     /**
+     * Removes the code, the storage and the balance of the account, keeping its nonce and its flags
+     * (RSKIP701 cleared account). Every node under the account node is removed. Does nothing when the
+     * account does not exist.
+     *
+     * @param addr of the account
+     */
+    void clearAccount(RskAddress addr);
+
+    /**
      * Hibernates the account
      *
      * @param addr of the account

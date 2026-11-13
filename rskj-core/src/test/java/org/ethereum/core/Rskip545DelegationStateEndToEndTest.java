@@ -50,6 +50,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class Rskip545DelegationStateEndToEndTest {
 
     private static final byte CHAIN_ID = Constants.REGTEST_CHAIN_ID;
+    // Both deployments of the look-alike test land in the blocks before this one
+    private static final long DELEGATION_ACTIVATION_BLOCK = 3;
     // slot0 += 1
     private static final byte[] COUNTER_RUNTIME = Hex.decode("60005460010160005500");
 
@@ -97,12 +99,14 @@ class Rskip545DelegationStateEndToEndTest {
      * off whose runtime code is 0xef0100 || address, and which never signed an authorization, runs as a
      * delegation once RSKIP-545 is active. This test pins that behavior, so changing it must change this test.
      *
-     * <p>No shipped network runs RSKIP-545 with RSKIP-544 off.
+     * <p>RSKIP-545 requires RSKIP-544, so both activate after the deployments, as for a contract created before
+     * vetiver.
      */
     @Test
     void codeOnlyDesignatorWithoutAuthorityFlag_isExecutedAsDelegation_currentBehavior() {
-        // RSKIP-544 off, as before vetiver: a contract can still be created with 0xEF-prefixed code
-        World world = newWorld(-1);
+        // RSKIP-544 and RSKIP-545 activate at the block of the call, after the two deployments: before that, as
+        // before vetiver, a contract can still be created with 0xEF-prefixed code
+        World world = newWorld(DELEGATION_ACTIVATION_BLOCK);
         Account sponsor = world.getAccountByName("sponsor");
 
         RskAddress counter = deploy(world, sponsor, 0, COUNTER_RUNTIME);
@@ -112,6 +116,8 @@ class Rskip545DelegationStateEndToEndTest {
         assertArrayEquals(DelegationCodeResolver.createDelegatedCode(counter), before.getCode(lookalike));
         assertFalse(before.hasDelegationAuthority(lookalike), "the lookalike never signed an authorization");
 
+        assertEquals(DELEGATION_ACTIVATION_BLOCK - 1, world.getBlockChain().getBestBlock().getNumber(),
+                "both deployments precede the activation");
         connect(world, legacyCall(sponsor, 2, lookalike));
 
         RepositorySnapshot after = snapshotAtBest(world);
@@ -165,12 +171,12 @@ class Rskip545DelegationStateEndToEndTest {
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block));
     }
 
-    private static World newWorld(long rskip544Activation) {
+    private static World newWorld(long delegationActivation) {
         TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
                 .withValue("blockchain.config.consensusRules.rskip543", ConfigValueFactory.fromAnyRef(0))
                 .withValue("blockchain.config.consensusRules.rskip546", ConfigValueFactory.fromAnyRef(0))
-                .withValue("blockchain.config.consensusRules.rskip545", ConfigValueFactory.fromAnyRef(0))
-                .withValue("blockchain.config.consensusRules.rskip544", ConfigValueFactory.fromAnyRef(rskip544Activation)));
+                .withValue("blockchain.config.consensusRules.rskip545", ConfigValueFactory.fromAnyRef(delegationActivation))
+                .withValue("blockchain.config.consensusRules.rskip544", ConfigValueFactory.fromAnyRef(delegationActivation)));
         World world = new World(config);
         world.saveAccount("sponsor", new AccountBuilder(world).name("sponsor").balance(Coin.valueOf(1_000_000_000_000L)).build());
         return world;

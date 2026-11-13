@@ -63,9 +63,11 @@ class ParallelExecutionStateTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         TestSystemProperties config = new TestSystemProperties(rawConfig -> {
             Config withRskip144 = rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(rskip144));
+            // RSKIP-545 requires RSKIP-692, so it follows the RSKIP-692 override
             return rskip692 == null
                     ? withRskip144
-                    : withRskip144.withValue("blockchain.config.consensusRules.rskip692", ConfigValueFactory.fromAnyRef(rskip692));
+                    : withRskip144.withValue("blockchain.config.consensusRules.rskip692", ConfigValueFactory.fromAnyRef(rskip692))
+                            .withValue("blockchain.config.consensusRules.rskip545", ConfigValueFactory.fromAnyRef(rskip692));
         });
         if (concurrentContractsDisallowed != null) {
             config.setConcurrentContractsDisallowed(concurrentContractsDisallowed);
