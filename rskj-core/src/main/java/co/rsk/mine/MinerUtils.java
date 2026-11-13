@@ -153,7 +153,9 @@ public class MinerUtils {
         return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, signatureCache, txsToRemove);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, boolean isRskip545Enabled, SignatureCache signatureCache) {
+    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, RepositorySnapshot originalRepo, Coin minGasPrice, ActivationConfig.ForBlock activations, SignatureCache signatureCache) {
+        boolean isRskip252Enabled = activations.isActive(ConsensusRule.RSKIP252);
+        boolean isRskip545Enabled = activations.isActive(ConsensusRule.RSKIP545);
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
         for (org.ethereum.core.Transaction tx : txs) {
