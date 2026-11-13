@@ -426,10 +426,26 @@ The `ExecuteBlocks` command is a tool for executing blocks for a specified block
 
 - `java -cp rsk.jar co.rsk.cli.tools.ExecuteBlocks -fb <from_block_number> -tb <to_block_number> --<network_flag>`
 
+Blocks are re-executed from the node's own block store -- they are not fetched from peers -- and each one is checked against the state root its header claims. That makes it a way to check that a change did not break consensus over past history. Executing block N requires the state at block N-1, so the range is limited to the history the selected trie store actually holds.
+
+**It does not write to any database unless asked to.** Replay is a read activity: writing while checking history would alter the very thing being checked, and the databases involved are often archival artifacts or shared snapshots. Every store is opened read-only unless `--allowWrites` is given. The tool exits non-zero if any block fails, so it can be used as a pass/fail check.
+
 **Options:**
 
 - `-fb, --fromBlock`: The starting block number.
 - `-tb, --toBlock`: The ending block number.
+- `-ts, --trieStore`: Which trie store to read state from, `UNITRIE` (default) or `SEGBUILD`.
+- `-sd, --segbuildDir`: Root directory of the segbuild chunk set. Required for `--trieStore=SEGBUILD`.
+- `-sf, --segbuildFallback`: When a segbuild chunk does not hold a node, read it from the node's own unitrie and count it, instead of failing. Off by default.
+- `-aw, --allowWrites`: Permit writing to the databases. Off by default, in which case every store is opened read-only.
+- `-ss, --saveState`: Persist the state produced by each block. Off by default; requires `--allowWrites`.
+
+**Reading blocks from another database:** point `database.dir` at it, for example `-Xdatabase.dir=/path/to/snapshot`. With writes disallowed the snapshot is opened read-only and is not modified.
+
+**The segbuild backend:** segbuild is a set of independent trie stores, one per block range, which together hold every node the chain wrote. Each chunk is self-contained for its own range, so a replay opens one chunk at a time and nothing else. Two things are worth knowing before relying on it:
+
+- A chunk holds what its *producer* read while building it. Another client replaying the same blocks may touch state the producer did not -- rskj reads Bridge federation storage in places rustock did not, for instance. Strictly, such a read is an error; `--segbuildFallback` serves it from the unitrie and reports how many times that happened. Timings taken with the fallback on are not representative of segbuild alone.
+- A chunk written by a newer RocksDB than this build links against cannot be read at all. The error says so explicitly when that is the cause.
 
 **Example:**
 
