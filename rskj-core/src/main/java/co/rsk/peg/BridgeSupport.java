@@ -1416,7 +1416,7 @@ public class BridgeSupport {
 
     private void processFundsMigrationPastMigrationAge(Keccak256 rskTxHash, Wallet retiringFederationWallet, List<UTXO> availableUTXOs) {
         boolean migrationTransactionCreated = false;
-        boolean hasBalance = retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO);
+        boolean hasBalance = retiringFederationWallet.getBalance().isPositive();
         if (!hasBalance) {
             logger.info("[processFundsMigrationPastMigrationAge] Retiring federation wallet has no balance, clearing retiring federation");
             clearRetiringFederation(availableUTXOs);
@@ -1466,15 +1466,14 @@ public class BridgeSupport {
     }
 
     /**
-     * @deprecated Post RSKIP455, if the retiring federation does not have enough funds to pay
-     * for fees is handled by ReleaseTransactionBuilder instead of relying on this pre-check.
-     * In the future, we are performing tests to see whether any migration transactions ever hit
-     * that federation's balance <= feePerKb/2. If not, this guard can be removed entirely.
+     * Post RSKIP455, the Bridge does not try to migrate when the retiring federation has no funds.
+     * If only dust UTXOs are left, the migration transaction can't be built, and the retiring
+     * federation is cleared once past migration age.
+     * Pre RSKIP455, the balance must be above feePerKb/2.
      */
-    @Deprecated(since="CARDAMOM-10.0.0")
     private boolean hasMinimumFundsToMigrate(Wallet retiringFederationWallet) {
         if (activations.isActive(RSKIP455)) {
-            return true;
+            return retiringFederationWallet.getBalance().isPositive();
         }
 
         // This value is set according to the average 500 bytes transaction size
