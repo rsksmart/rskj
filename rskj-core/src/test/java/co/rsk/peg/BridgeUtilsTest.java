@@ -69,6 +69,7 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.BridgeUtils.calculateMigrationTransactionOutputsValues;
 import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.MAX_STANDARD_TX_SIZE_ALLOWED;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateSignerEncodedSignatures;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateTransactionInputsSigHashes;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
@@ -84,6 +85,8 @@ class BridgeUtilsTest {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
     private static final byte[] MISSING_SIGNATURE = new byte[0];
+    private static final int BTC_TX_HEIGHT = 100;
+    private static final int UTXO_HEIGHT_BEFORE_CARDAMOM = 0;
 
     private Constants constants;
     private ActivationConfig activationConfig;
@@ -414,20 +417,21 @@ class BridgeUtilsTest {
 
     @Test
     void validateHeightAndConfirmations_invalid_height() {
-        Assertions.assertThrows(Exception.class, () -> Assertions.assertFalse(BridgeUtils.validateHeightAndConfirmations(-1, 0, 0, null)));
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateHeightAndConfirmations(-1, 0, bridgeConstantsMainnet, null));
     }
 
     @Test
-    void validateHeightAndConfirmation_insufficient_confirmations() throws Exception {
-        Assertions.assertFalse(BridgeUtils.validateHeightAndConfirmations(2, 5, 10, Sha256Hash.of(Hex.decode("ab"))));
+    void validateHeightAndConfirmation_insufficient_confirmations() {
+        Sha256Hash btcTxHash = Sha256Hash.of(Hex.decode("ab"));
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateHeightAndConfirmations(200, 298, bridgeConstantsMainnet, btcTxHash));
     }
 
     @Test
-    void validateHeightAndConfirmation_enough_confirmations() throws Exception {
-        Assertions.assertTrue(BridgeUtils.validateHeightAndConfirmations(
-            2,
-            5,
-            3,
+    void validateHeightAndConfirmation_enough_confirmations() {
+        assertDoesNotThrow(() -> BridgeUtils.validateHeightAndConfirmations(
+            200,
+            300,
+            bridgeConstantsMainnet,
             Sha256Hash.of(Hex.decode("ab")))
         );
     }
@@ -447,7 +451,7 @@ class BridgeUtilsTest {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 1);
 
-        Assertions.assertNull(BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()));
+        Assertions.assertTrue(BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()).isEmpty());
     }
 
     @Test
@@ -459,21 +463,22 @@ class BridgeUtilsTest {
         hashes.add(Sha256Hash.ZERO_HASH);
         hashes.add(tx.getHash());
         PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 2);
-        Sha256Hash merkleRoot = BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash());
-        Assertions.assertNotNull(merkleRoot);
+        Sha256Hash merkleRoot = BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()).get();
+        assertNotNull(merkleRoot);
     }
 
     @Test
     void validateInputsCount_active_rskip() {
         byte[] decode = Hex.decode("00000000000100");
-        Assertions.assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(decode, true));
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(decode, activations));
     }
 
     @Test
     void validateInputsCount_inactive_rskip() {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         byte[] btcTxSerialized = tx.bitcoinSerialize();
-        Assertions.assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(btcTxSerialized, false));
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(btcTxSerialized, activations));
     }
 
     @Test
@@ -2030,6 +2035,7 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             addresses
         ));
     }
@@ -2069,6 +2075,7 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             /* Only the first address in the list is used to pick the utxos sent.
             This is due the legacy logic before RSKIP293 */
             Arrays.asList(btcAddress1, btcAddress2, btcAddress3)
@@ -2101,6 +2108,7 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             /* Even we are passing three address, only the first one in the list will be use to pick the utxos sent to
             it. This is due the legacy logic before RSKIP293 */
             Arrays.asList(PegTestUtils.createRandomP2PKHBtcAddress(networkParameters), btcAddress1, btcAddress3)
@@ -2140,6 +2148,7 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             Collections.singletonList(btcAddress)
         );
 
@@ -2185,6 +2194,7 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             Arrays.asList(
                 btcAddress1,
                 btcAddress2,
@@ -2224,10 +2234,150 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
+            BTC_TX_HEIGHT,
             Arrays.asList(PegTestUtils.createRandomP2PKHBtcAddress(networkParameters))
         );
 
         Assertions.assertTrue(foundUTXOs.isEmpty());
+    }
+
+    @Test
+    void getHeightForNewUtxos_forVetiver_shouldReturnZero() {
+        // arrange
+        ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0);
+
+        // act
+        int heightForNewUtxos = BridgeUtils.getHeightForNewUtxos(vetiverActivations, BTC_TX_HEIGHT);
+
+        // assert
+        assertEquals(UTXO_HEIGHT_BEFORE_CARDAMOM, heightForNewUtxos);
+    }
+
+    @Test
+    void getHeightForNewUtxos_forCardamom_shouldReturnBtcTxHeight() {
+        // arrange
+        ActivationConfig.ForBlock cardamomActivations = ActivationConfigsForTest.cardamom1000().forBlock(0);
+
+        // act
+        int heightForNewUtxos = BridgeUtils.getHeightForNewUtxos(cardamomActivations, BTC_TX_HEIGHT);
+
+        // assert
+        assertEquals(BTC_TX_HEIGHT, heightForNewUtxos);
+    }
+
+    @Test
+    void getUTXOsSentToAddresses_forVetiver_shouldReturnUtxosWithZeroHeight() {
+        // arrange
+        ActivationConfig.ForBlock vetiverActivations = ActivationConfigsForTest.vetiver900().forBlock(0);
+        Context btcContext = new Context(networkParameters);
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "btcAddress");
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        TransactionOutput outputToAddress = btcTx.addOutput(Coin.COIN, btcAddress);
+        List<UTXO> expectedUTXOs = List.of(
+            UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .withOutpointIndex(outputToAddress.getIndex())
+                .withValue(outputToAddress.getValue())
+                .withBlockHeight(UTXO_HEIGHT_BEFORE_CARDAMOM)
+                .withScriptPubKey(outputToAddress.getScriptPubKey())
+                .build()
+        );
+
+        // act
+        List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
+            vetiverActivations,
+            networkParameters,
+            btcContext,
+            btcTx,
+            BTC_TX_HEIGHT,
+            List.of(btcAddress)
+        );
+
+        // assert
+        assertUtxosAreEqual(expectedUTXOs, foundUTXOs);
+    }
+
+    @Test
+    void getUTXOsSentToAddresses_shouldReturnUtxosWithBtcTxHeight() {
+        // arrange
+        ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+        Context btcContext = new Context(networkParameters);
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "btcAddress");
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        TransactionOutput outputToAddress = btcTx.addOutput(Coin.COIN, btcAddress);
+        List<UTXO> expectedUTXOs = List.of(
+            UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .withOutpointIndex(outputToAddress.getIndex())
+                .withValue(outputToAddress.getValue())
+                .withBlockHeight(BTC_TX_HEIGHT)
+                .withScriptPubKey(outputToAddress.getScriptPubKey())
+                .build()
+        );
+
+        // act
+        List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
+            allActivations,
+            networkParameters,
+            btcContext,
+            btcTx,
+            BTC_TX_HEIGHT,
+            List.of(btcAddress)
+        );
+
+        // assert
+        assertUtxosAreEqual(expectedUTXOs, foundUTXOs);
+    }
+
+    @Test
+    void getUtxosSentToWallet_whenOutputsAreSentToTheWalletAndToOtherAddresses_shouldReturnOnlyTheWalletUtxos() {
+        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+        Wallet federationWallet = BridgeUtils.getFederationNoSpendWallet(new Context(networkParameters), federation, false, null);
+        Address federationAddress = federation.getAddress();
+        Address userAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        btcTx.addOutput(Coin.COIN, userAddress);
+        btcTx.addOutput(Coin.COIN, federationAddress);
+        btcTx.addOutput(Coin.CENT, userAddress);
+        btcTx.addOutput(Coin.FIFTY_COINS, federationAddress);
+
+        int btcTxHeight = 10;
+        List<UTXO> foundUtxos = BridgeUtils.getUtxosSentToWallet(btcTx, federationWallet, btcTxHeight);
+
+        Script federationOutputScript = federation.getP2SHScript();
+        List<UTXO> expectedUtxos = List.of(
+            UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .withOutpointIndex(1)
+                .withValue(Coin.COIN)
+                .withBlockHeight(btcTxHeight)
+                .withScriptPubKey(federationOutputScript)
+                .build(),
+            UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .withOutpointIndex(3)
+                .withValue(Coin.FIFTY_COINS)
+                .withBlockHeight(btcTxHeight)
+                .withScriptPubKey(federationOutputScript)
+                .build()
+        );
+        assertEquals(expectedUtxos, foundUtxos);
+    }
+
+    @Test
+    void getUtxosSentToWallet_whenNoOutputIsSentToTheWallet_shouldReturnAnEmptyList() {
+        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+        Wallet federationWallet = BridgeUtils.getFederationNoSpendWallet(new Context(networkParameters), federation, false, null);
+
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
+        btcTx.addOutput(Coin.CENT, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
+
+        int btcTxHeight = 10;
+        List<UTXO> foundUtxos = BridgeUtils.getUtxosSentToWallet(btcTx, federationWallet, btcTxHeight);
+
+        assertTrue(foundUtxos.isEmpty());
     }
 
     @Nested

@@ -88,6 +88,16 @@ public class UTXOBuilder {
         return new ArrayList<>(utxos);
     }
 
+    public List<UTXO> buildManyFromSameTx(int numberOfUtxos) {
+        List<UTXO> utxos = IntStream.range(0, numberOfUtxos)
+            .mapToObj(i -> this.copy()
+                .withOutpointIndex(i)
+                .build()
+            )
+            .toList();
+        return new ArrayList<>(utxos);
+    }
+
     public UTXO build() {
         return new UTXO(
             this.transactionHash,
