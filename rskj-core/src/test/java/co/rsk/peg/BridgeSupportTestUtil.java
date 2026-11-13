@@ -745,6 +745,64 @@ public final class BridgeSupportTestUtil {
         assertEventWasEmittedWithExpectedData(logs, encodedData);
     }
 
+    public static void assertLogPegoutConfirmed(List<LogInfo> logs, Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber) {
+        CallTransaction.Function pegoutConfirmedEvent = BridgeEvents.PEGOUT_CONFIRMED.getEvent();
+
+        byte[] btcTxHashSerialized = btcTxHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(pegoutConfirmedEvent, btcTxHashSerialized);
+
+        byte[] encodedData = getEncodedData(pegoutConfirmedEvent, pegoutCreationRskBlockNumber);
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    public static void assertLogCommitFederation(
+        List<LogInfo> logs,
+        Federation oldFederation,
+        Federation newFederation,
+        long expectedActivationBlockNumber
+    ) {
+        CallTransaction.Function commitFederationEvent = BridgeEvents.COMMIT_FEDERATION.getEvent();
+
+        List<DataWord> encodedTopics = getEncodedTopics(commitFederationEvent);
+
+        byte[] oldFederationFlatPubKeys = BitcoinTestUtils.flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
+        String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
+        byte[] newFederationFlatPubKeys = BitcoinTestUtils.flatKeysAsByteArray(newFederation.getBtcPublicKeys());
+        String newFederationBtcAddress = newFederation.getAddress().toBase58();
+
+        byte[] encodedData = getEncodedData(
+            commitFederationEvent,
+            oldFederationFlatPubKeys,
+            oldFederationBtcAddress,
+            newFederationFlatPubKeys,
+            newFederationBtcAddress,
+            expectedActivationBlockNumber
+        );
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    public static void assertLogPeginBtc(
+        List<LogInfo> logs,
+        BtcTransaction peginTransaction,
+        RskAddress expectedReceiver,
+        Coin expectedAmount,
+        int expectedProtocolVersion
+    ) {
+        CallTransaction.Function peginBtcEvent = BridgeEvents.PEGIN_BTC.getEvent();
+
+        byte[] btcTxHashSerialized = peginTransaction.getHash().getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(peginBtcEvent, expectedReceiver.toString(), btcTxHashSerialized);
+
+        byte[] encodedData = getEncodedData(peginBtcEvent, expectedAmount.getValue(), expectedProtocolVersion);
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
     public static void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
         Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
         assertTrue(topicOpt.isPresent());

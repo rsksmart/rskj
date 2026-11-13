@@ -6,6 +6,7 @@ import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
@@ -329,6 +330,40 @@ class VoteFederationChangeTest {
 
         // Assert
         assertEquals(FederationChangeResponseCode.INSUFFICIENT_MEMBERS.getCode(), firstVoteResult);
+    }
+
+    @Test
+    void voteCommitFederation_withUnauthorizedCaller_returnsUnauthorizedResponseCode() {
+        // Arrange
+        voteAndAssertCreateEmptyPendingFederation();
+        voteAndAssertAddFederationMembersPublicKeysToPendingFederation(pendingFederationToBe.getMembers());
+        PendingFederation pendingFederationBeforeVoting = storageProvider.getPendingFederation();
+
+        // Act
+        Transaction unauthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.UNAUTHORIZED.getRskAddress());
+        int result = voteToCommitPendingFederation(unauthorizedTx);
+
+        // Assert
+        assertEquals(FederationChangeResponseCode.UNAUTHORIZED_CALLER.getCode(), result);
+        assertEquals(pendingFederationBeforeVoting, storageProvider.getPendingFederation());
+        assertFalse(federationSupport.getProposedFederation().isPresent());
+    }
+
+    @Test
+    void voteCommitFederation_withMismatchedPendingFederationHash_returnsPendingFederationMismatchedHashResponseCode() {
+        // Arrange
+        voteAndAssertCreateEmptyPendingFederation();
+        voteAndAssertAddFederationMembersPublicKeysToPendingFederation(pendingFederationToBe.getMembers());
+        PendingFederation pendingFederationBeforeVoting = storageProvider.getPendingFederation();
+        Keccak256 mismatchedPendingFederationHash = RskTestUtils.createHash(1);
+
+        // Act
+        int result = voteToCommitPendingFederationWithHash(firstAuthorizedTx, mismatchedPendingFederationHash);
+
+        // Assert
+        assertEquals(FederationChangeResponseCode.PENDING_FEDERATION_MISMATCHED_HASH.getCode(), result);
+        assertEquals(pendingFederationBeforeVoting, storageProvider.getPendingFederation());
+        assertFalse(federationSupport.getProposedFederation().isPresent());
     }
 
     @Test
@@ -725,6 +760,10 @@ class VoteFederationChangeTest {
 
     private int voteToCommitPendingFederation(Transaction tx) {
         Keccak256 pendingFederationHash = federationSupport.getPendingFederationHash();
+        return voteToCommitPendingFederationWithHash(tx, pendingFederationHash);
+    }
+
+    private int voteToCommitPendingFederationWithHash(Transaction tx, Keccak256 pendingFederationHash) {
         ABICallSpec commitFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.COMMIT.getKey(), new byte[][]{ pendingFederationHash.getBytes() });
 
         return federationSupport.voteFederationChange(tx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
