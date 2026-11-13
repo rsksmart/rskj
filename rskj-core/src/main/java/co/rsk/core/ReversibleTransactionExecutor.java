@@ -132,7 +132,7 @@ public class ReversibleTransactionExecutor {
          */
         private static final ECKey PLACEHOLDER_KEY = ECKey.fromPublicOnly(ECKey.CURVE.getG());
 
-        private static final BigInteger MAX_LOCAL_CALL_GAS_LIMIT = BigInteger.valueOf(Long.MAX_VALUE);
+        private static final long MAX_LOCAL_CALL_GAS_LIMIT = Long.MAX_VALUE;
 
         private ReversibleTransaction(byte[] nonce, ReversibleTransactionParams params) {
             this(buildReversibleTransaction(nonce, params), params.fromAddress());
@@ -172,7 +172,7 @@ public class ReversibleTransactionExecutor {
                     .type(type)
                     .isLocalCall(true)
                     .nonce(nonce)
-                    .gasLimit(localCallGasLimit(params.gasLimit()))
+                    .gasLimit(capLocalCallGasLimit(params.gasLimit()))
                     .receiveAddress(params.toAddress())
                     .value(RLP.parseCoinNullZero(ByteUtil.cloneBytes(params.value())))
                     .data(params.data())
@@ -186,12 +186,12 @@ public class ReversibleTransactionExecutor {
         }
 
         /**
-         * A local call's gas limit, read as an unsigned number and capped at Long.MAX_VALUE, which is the most gas
-         * a program can be given. Execution reads the gas limit as a signed long, so a larger value would not run.
+         * Caps a local call's gas limit at Long.MAX_VALUE, reading the limit as an unsigned number. Execution reads an
+         * 8-byte gas limit as a signed long, so a value of 2^63 or more would be rejected as negative gas.
          */
-        private static byte[] localCallGasLimit(byte[] gasLimit) {
-            if (new BigInteger(1, gasLimit).compareTo(MAX_LOCAL_CALL_GAS_LIMIT) > 0) {
-                return ByteUtil.longToBytes(Long.MAX_VALUE);
+        private static byte[] capLocalCallGasLimit(byte[] gasLimit) {
+            if (new BigInteger(1, gasLimit).compareTo(BigInteger.valueOf(MAX_LOCAL_CALL_GAS_LIMIT)) > 0) {
+                return ByteUtil.longToBytes(MAX_LOCAL_CALL_GAS_LIMIT);
             }
             return gasLimit;
         }
