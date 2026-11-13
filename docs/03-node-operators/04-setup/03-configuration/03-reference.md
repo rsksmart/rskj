@@ -177,9 +177,9 @@ Options related to syncing the blockchain:
   Sync may use more peers than this value but always trying to get at least this number from discovery.
   However, it will continue syncing if it's not reached.
 * `sync.timeoutWaitingPeers = int (seconds)`
-  timeout to start to wait for syncing requests.
-* `sync.timeoutWaitingRequests = int (seconds)`
-  expiration time in minutes for peer status.
+  timeout to start finding the connection point when we have at least one peer.
+* `sync.timeoutWaitingRequest = int (seconds)`
+  timeout to wait for syncing requests.
 * `sync.maxSkeletonChunks = int`
   maximum amount of chunks included in a skeleton message.
 * `sync.chunkSize = int`

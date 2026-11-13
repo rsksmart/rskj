@@ -52,7 +52,7 @@ public final class SyncConfiguration {
 
     /**
      * @param expectedPeers            The expected number of peers we would want to start finding a connection point.
-     * @param timeoutWaitingPeers      Timeout in minutes to start finding the connection point when we have at least one peer
+     * @param timeoutWaitingPeers      Timeout in seconds to start finding the connection point when we have at least one peer
      * @param timeoutWaitingRequest    Timeout in seconds to wait for syncing requests
      * @param expirationTimePeerStatus Expiration time in minutes for peer status
      * @param maxSkeletonChunks        Maximum amount of chunks included in a skeleton message
