@@ -56,7 +56,7 @@ public class AccountValidator {
             return results;
         }
 
-        if (currentRepository.isContract(addr) != expectedRepository.isContract(addr)) {
+        if (currentRepository.hasInitializedStorage(addr) != expectedRepository.hasInitializedStorage(addr)) {
             String formattedString = String.format("Account: %s: unexpected account state", addr);
             results.add(formattedString);
             return results;

@@ -19,26 +19,32 @@ package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
-import org.ethereum.core.transaction.parser.util.TypedTransactionCodec;
+import org.ethereum.core.transaction.parser.util.Rskip546FeeValidation;
+import org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema;
+import org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.ListField;
+import org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.ValidatedEnvelope;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-import java.util.Objects;
 
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.address;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.bytes;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.chainId;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.coinScalar;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.list;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.scalar;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.signatureR;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.signatureS;
+import static org.ethereum.core.transaction.parser.util.TypedEnvelopeSchema.yParity;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class Type2RawTransactionParser implements RawTransactionTypeParser<ParsedType2Transaction>{
 
-    private static final int FIELD_COUNT = 12;
-    private static final int CHAIN_ID_INDEX = 0;
     private static final int NONCE_INDEX = 1;
     private static final int MAX_PRIORITY_FEE_PER_GAS_INDEX = 2;
     private static final int MAX_FEE_PER_GAS_INDEX = 3;
@@ -46,27 +52,35 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
     private static final int TO_INDEX = 5;
     private static final int VALUE_INDEX = 6;
     private static final int DATA_INDEX = 7;
-    private static final int ACCESS_LIST_INDEX = 8;
-    private static final int Y_PARITY_INDEX = 9;
-    private static final int R_INDEX = 10;
-    private static final int S_INDEX = 11;
+
+    private static final ListField<byte[]> ACCESS_LIST = list(AccessListCodec::requireRawAccessListBytes);
+
+    private static final TypedEnvelopeSchema SCHEMA = TypedEnvelopeSchema.of(
+            TransactionType.TYPE_2.getTypeName(),
+            chainId(),
+            scalar(0, "Nonce is not valid", "Nonce"),
+            coinScalar(3, "Gas Price is not valid", "Max priority fee per gas"),
+            coinScalar(4, "Gas Price is not valid", "Max fee per gas"),
+            scalar(1, "Gas Limit is not valid", "Gas Limit"),
+            address(),
+            coinScalar(2, "Value is not valid", "Value"),
+            bytes(), // data
+            ACCESS_LIST,
+            yParity(),
+            signatureR(),
+            signatureS()
+    );
 
     @Override
     public ParsedType2Transaction parse(TransactionTypePrefix typePrefix, RLPList txFields) {
-        CommonParsingUtils.requireFieldCount(txFields, FIELD_COUNT, TransactionType.TYPE_2.getTypeName());
+        ValidatedEnvelope envelope = SCHEMA.validate(txFields, fields -> Rskip546FeeValidation.requireFeeCapRelationship(
+                fee(fields, MAX_PRIORITY_FEE_PER_GAS_INDEX), fee(fields, MAX_FEE_PER_GAS_INDEX)));
 
         byte[] nonce = CommonParsingUtils.nullToEmpty(txFields.get(NONCE_INDEX).getRLPData());
         byte[] gasLimit = CommonParsingUtils.nullToEmpty(txFields.get(GAS_LIMIT_INDEX).getRLPData());
-
         RskAddress receiveAddress = CommonParsingUtils.defaultAddress(RLP.parseRskAddress(txFields.get(TO_INDEX).getRLPData()));
         Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(txFields.get(VALUE_INDEX).getRLPData()));
         byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
-        byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(txFields.get(ACCESS_LIST_INDEX).getRLPRawData());
-        Coin maxPriorityFeePerGas = Objects.requireNonNull(RLP.parseCoinNonNullZero(txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData()), "Type 2 maxPriorityFeePerGas");
-        Coin maxFeePerGas = Objects.requireNonNull(RLP.parseCoinNonNullZero(txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData()), "Type 2 maxFeePerGas");
-
-        validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
-        CommonParsingUtils.requireTypedScalarFields(nonce, gasLimit, value, maxPriorityFeePerGas, maxFeePerGas);
 
         return new ParsedType2Transaction(
                 typePrefix,
@@ -75,27 +89,16 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
                 receiveAddress,
                 value,
                 data,
-                TypedTransactionCodec.parseTypedSignatureState(txFields, CHAIN_ID_INDEX, Y_PARITY_INDEX, R_INDEX, S_INDEX),
-                accessListBytes,
-                maxPriorityFeePerGas,
-                maxFeePerGas
+                envelope.signature(),
+                envelope.get(ACCESS_LIST),
+                fee(txFields, MAX_PRIORITY_FEE_PER_GAS_INDEX),
+                fee(txFields, MAX_FEE_PER_GAS_INDEX)
         );
     }
 
     @Override
-    public void validate(long bestBlock, ActivationConfig activationConfig, Constants constants) {
-        ActivationConfig.ForBlock activations = activationConfig.forBlock(bestBlock);
-        if (!activations.isActive(ConsensusRule.RSKIP543)) {
-            throw invalidParamError("Typed transactions (type " + TransactionType.TYPE_2 + ") is not supported before RSKIP-543 activation");
-        }
-        if (!activations.isActive(ConsensusRule.RSKIP546)) {
-            throw invalidParamError("Type 1 / Type 2 transactions are not supported before RSKIP-546 activation");
-        }
-    }
-
-    @Override
     public ParsedType2Transaction parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId) {
-        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce(), true);
+        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce());
         BigInteger gasLimit = TransactionInput.resolveGasLimit(input.gasLimit());
         Coin value = CommonParsingUtils.defaultValue(input.value());
         RskAddress receiveAddress = CommonParsingUtils.defaultAddress(input.receiveAddress());
@@ -111,7 +114,7 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
                 "Type 2 transaction requires maxFeePerGas"
         );
 
-        validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
+        Rskip546FeeValidation.requireFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
         byte[] gasLimitBytes = CommonParsingUtils.unsignedBytes(gasLimit);
         CommonParsingUtils.requireTypedScalarFields(nonce, gasLimitBytes, value, maxPriorityFeePerGas, maxFeePerGas);
 
@@ -129,13 +132,9 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
         );
     }
 
-    private void validateFeeCapRelationship(Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
-        if (maxPriorityFeePerGas.compareTo(maxFeePerGas) > 0) {
-            throw new IllegalArgumentException(
-                    "Type 2 transaction maxPriorityFeePerGas (" + maxPriorityFeePerGas
-                            + ") must not exceed maxFeePerGas (" + maxFeePerGas + ")"
-            );
-        }
+    /** A fee field; zero-length is zero, as in the envelope's canonical encoding. */
+    private static Coin fee(RLPList txFields, int index) {
+        return CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(index).getRLPData()));
     }
 
     private Coin parseRequiredCoin(Coin value, String errorMessage) {

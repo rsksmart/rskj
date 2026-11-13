@@ -2,6 +2,7 @@ package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.Account;
@@ -12,6 +13,8 @@ import org.ethereum.core.BlockHeaderExtension;
 import org.ethereum.core.BlockHeaderExtensionV1;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.RLP;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -87,6 +90,20 @@ class BodyResponseMessageTest {
         Assertions.assertArrayEquals(extension.getEncoded(), message.getBlockHeaderExtension().getEncoded());
     }
 
+    @Test
+    void decodeMessage_remascWithGasLimitEncodedEmpty_isRejected() {
+        byte[] canonical = new RemascTransaction(1).getEncoded();
+        byte[] emptyGasLimit = RLP.encodeList(RLP.encodeElement(null), RLP.encodeElement(null), RLP.encodeElement(null),
+                RLP.encodeElement(PrecompiledContracts.REMASC_ADDR.getBytes()), RLP.encodeElement(null),
+                RLP.encodeElement(null), RLP.encodeElement(null), RLP.encodeElement(null), RLP.encodeElement(null));
+
+        BodyResponseMessage valid = new BodyResponseMessage(1, List.of(new RemascTransaction(canonical)), List.of(), null);
+        BodyResponseMessage invalid = new BodyResponseMessage(2, List.of(new RemascTransaction(emptyGasLimit)), List.of(), null);
+
+        Assertions.assertInstanceOf(RemascTransaction.class, encodeAndDecodeMessage(valid).getTransactions().get(0));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> encodeAndDecodeMessage(invalid));
+    }
+
     private static Transaction createTransaction(int number) {
         AccountBuilder acbuilder = new AccountBuilder();
         acbuilder.name("sender" + number);
@@ -115,20 +132,12 @@ class BodyResponseMessageTest {
                 .transactionType((byte) 1)
                 .build());
 
-        transactions.add(new TransactionBuilder()
-                .sender(acbuilder.name("rskSender").build())
-                .receiver(acbuilder.name("rskReceiver").build())
-                .value(BigInteger.valueOf(3000)).nonce(0)
-                .transactionType((byte) 2)
-                .rskSubtype((byte) 5)
-                .build());
-
         List<BlockHeader> uncles = new ArrayList<>();
         BodyResponseMessage message = new BodyResponseMessage(42, transactions, uncles, null);
         BodyResponseMessage decoded = encodeAndDecodeMessage(message);
 
         Assertions.assertNotNull(decoded);
-        Assertions.assertEquals(3, decoded.getTransactions().size());
+        Assertions.assertEquals(2, decoded.getTransactions().size());
 
         Transaction decodedLegacy = decoded.getTransactions().get(0);
         Assertions.assertTrue(decodedLegacy.getTypePrefix().isLegacy());
@@ -138,11 +147,6 @@ class BodyResponseMessageTest {
         Assertions.assertTrue(decodedType1.getTypePrefix().isTyped());
         Assertions.assertFalse(decodedType1.getTypePrefix().isRskNamespace());
         Assertions.assertArrayEquals(transactions.get(1).getHash().getBytes(), decodedType1.getHash().getBytes());
-
-        Transaction decodedRsk = decoded.getTransactions().get(2);
-        Assertions.assertTrue(decodedRsk.getTypePrefix().isRskNamespace());
-        Assertions.assertEquals((byte) 5, decodedRsk.getTypePrefix().subtype());
-        Assertions.assertArrayEquals(transactions.get(2).getHash().getBytes(), decodedRsk.getHash().getBytes());
     }
 
     @Test

@@ -35,6 +35,10 @@ import java.math.BigInteger;
 public class TxValidatorGasLimitValidator implements TxValidatorStep {
     @Override
     public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+        if (tx.isLegacyGasLimitEncodedEmpty()) {
+            return TransactionValidationResult.withError("transaction's gas limit is not valid");
+        }
+
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
 
         if (txGasLimit.compareTo(gasLimit) <= 0 && txGasLimit.compareTo(Constants.getTransactionGasCap()) <= 0) {

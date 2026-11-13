@@ -19,10 +19,12 @@ package org.ethereum.core.transaction.encoder;
 
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.transaction.encoder.util.TransactionEncodingUtils;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
+import static org.ethereum.core.transaction.encoder.util.TransactionEncodingUtils.encodeAccessList;
+import static org.ethereum.core.transaction.encoder.util.TransactionEncodingUtils.encodeFeeScalar;
+import static org.ethereum.core.transaction.encoder.util.TransactionEncodingUtils.encodeNonce;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class Type2TransactionEncoder implements TransactionEncoder {
@@ -62,14 +64,14 @@ public class Type2TransactionEncoder implements TransactionEncoder {
 
         return new byte[][]{
                 RLP.encodeByte(transaction.getChainId()),
-                TransactionEncodingUtils.encodeNonce(transaction.getNonce()),
-                RLP.encodeCoinNonNullZero(transaction.getMaxPriorityFeePerGas()),
-                RLP.encodeCoinNonNullZero(transaction.getMaxFeePerGas()),
+                encodeNonce(transaction.getNonce()),
+                encodeFeeScalar(transaction.getMaxPriorityFeePerGas()),
+                encodeFeeScalar(transaction.getMaxFeePerGas()),
                 RLP.encodeElement(transaction.getGasLimit()),
                 RLP.encodeRskAddress(transaction.getReceiveAddress()),
                 RLP.encodeCoinNullZero(transaction.getValue()),
                 RLP.encodeElement(transaction.getData()),
-                TransactionEncodingUtils.encodeAccessList(transaction.getAccessListBytes())
+                encodeAccessList(transaction.getAccessListBytes())
         };
     }
 

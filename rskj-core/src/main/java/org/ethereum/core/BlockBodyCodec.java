@@ -100,6 +100,7 @@ public final class BlockBodyCodec {
 
             if (tx.isRemascTransaction(i, transactionList.size())) {
                 validateRemascIsLegacy(tx);
+                validateRemascGasLimitIsEncoded(tx);
                 tx = new RemascTransaction(rawData);
             }
             parsedTxs.add(tx);
@@ -111,6 +112,12 @@ public final class BlockBodyCodec {
     public static void validateRemascIsLegacy(Transaction tx) {
         if (tx.getTypePrefix().isTyped()) {
             throw new IllegalArgumentException("Remasc transaction must be legacy, but got typed transaction: " + tx.getTypePrefix().toFullString());
+        }
+    }
+
+    public static void validateRemascGasLimitIsEncoded(Transaction tx) {
+        if (tx.isLegacyGasLimitEncodedEmpty()) {
+            throw new IllegalArgumentException("Remasc transaction gasLimit must not be empty");
         }
     }
 

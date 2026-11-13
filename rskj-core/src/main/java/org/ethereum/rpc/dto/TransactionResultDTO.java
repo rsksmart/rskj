@@ -21,6 +21,7 @@ import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -42,8 +43,8 @@ import java.util.List;
  *
  * Fields defined for legacy transactions (blockHash, blockNumber, transactionIndex, etc.) are always
  * serialized, including as JSON null, per the Ethereum JSON-RPC contract. Only the EIP-2718 / EIP-1559
- * typed-transaction fields below are annotated with {@link JsonInclude.Include#NON_NULL} so they are
- * omitted entirely for legacy transactions that do not have them.
+ * typed-transaction fields below are annotated with {@link JsonInclude.Include#NON_NULL} (yParity on its
+ * getter) so they are omitted entirely for legacy transactions that do not have them.
  */
 public class TransactionResultDTO {
 
@@ -71,7 +72,6 @@ public class TransactionResultDTO {
     private String chainId;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<AccessListEntryDTO> accessList;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String yParity;
 
     // Type 2 / Type 4 fields (omitted from JSON for legacy and Type 1)
@@ -144,6 +144,7 @@ public class TransactionResultDTO {
             }
         } else if (txType == TransactionType.TYPE_4) {
             chainId = HexUtils.toQuantityJsonHex(tx.getChainId() & 0xFF);
+            accessList = decodeAccessList(tx.getAccessListBytes());
             yParity = HexUtils.toQuantityJsonHex(tx.getEncodedV() & 0xFF);
             Coin maxP = tx.getMaxPriorityFeePerGas();
             Coin maxF = tx.getMaxFeePerGas();
@@ -167,8 +168,8 @@ public class TransactionResultDTO {
             result.add(new AuthorizationListEntryDTO(
                     HexUtils.toQuantityJsonHex(auth.getChainId()),
                     auth.getAddress().toJsonString(),
-                    HexUtils.toQuantityJsonHex(auth.getNonce()),
-                    HexUtils.toQuantityJsonHex((long) signature.getV() - Transaction.LOWER_REAL_V),
+                    HexUtils.toQuantityJsonHex(auth.getNonceBytes()),
+                    HexUtils.toQuantityJsonHex((signature.getV() - Transaction.LOWER_REAL_V) & 0xFF),
                     HexUtils.toQuantityJsonHex(signature.getR()),
                     HexUtils.toQuantityJsonHex(signature.getS())
             ));
@@ -182,7 +183,7 @@ public class TransactionResultDTO {
      * where {@code address} is 20 bytes and each {@code storageKey} is 32 bytes.
      *
      * <p>Since the access-list RLP is already validated at transaction ingress
-     * ({@code Transaction.validateAccessListRlp}), a decoding failure here indicates data corruption
+     * ({@link org.ethereum.core.transaction.parser.util.AccessListCodec#defaultAccessListBytes}), a decoding failure here indicates data corruption
      * or an encoder bug. We log at ERROR with full context so the incident is visible, and still
      * return an empty list to avoid breaking the RPC response for other clients.
      */
@@ -277,6 +278,7 @@ public class TransactionResultDTO {
             return nonce;
         }
 
+        @JsonProperty("yParity")
         public String getYParity() {
             return yParity;
         }
@@ -358,6 +360,9 @@ public class TransactionResultDTO {
         return accessList;
     }
 
+    // Jackson names getYParity() "yparity", so the field's annotations never attach: set name and inclusion here
+    @JsonProperty("yParity")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getYParity() {
         return yParity;
     }

@@ -30,7 +30,6 @@ import co.rsk.net.handler.quota.TxQuotaChecker;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
-import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.EventDispatchThread;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -57,6 +56,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static org.ethereum.util.BIUtil.toBI;
 
@@ -264,16 +265,18 @@ public class TransactionPoolImpl implements TransactionPool {
         }
         PendingState pendingState = getPendingState(currentRepository);
 
-        Optional<TransactionPoolAddResult> delegatedAccountResult = rejectIfDelegatedAccountCannotBeAccepted(tx, tx.getSender(signatureCache), currentRepository, pendingState);
+        Keccak256 hash = tx.getHash();
+        logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+
+        Optional<Transaction> replacedTx = pendingTransactions.getTransactionsWithSender(tx.getSender(signatureCache)).stream().filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger())).findFirst();
+
+        Optional<TransactionPoolAddResult> delegatedAccountResult = rejectIfDelegatedAccountCannotBeAccepted
+                (tx, tx.getSender(signatureCache), currentRepository, pendingState, replacedTx.isPresent());
 
         if (delegatedAccountResult.isPresent()) {
             return delegatedAccountResult.get();
         }
 
-        Keccak256 hash = tx.getHash();
-        logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
-
-        Optional<Transaction> replacedTx = pendingTransactions.getTransactionsWithSender(tx.getSender(signatureCache)).stream().filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger())).findFirst();
         if (replacedTx.isPresent() && !isBumpingGasPriceForSameNonceTx(tx, replacedTx.get())) {
             return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
         }
@@ -344,6 +347,12 @@ public class TransactionPoolImpl implements TransactionPool {
         //or else the transactions would be validated against outdated account state.
         this.setBestBlock(newBlock);
 
+        // before retracting, so a retracted transaction is not refused because of an entry
+        // the new state no longer allows. This also removes the pooled transactions mined in
+        // the new blocks, since their nonces are now consumed, so acceptBlock usually finds
+        // nothing left to remove.
+        reconcileTransactionsWithStateNonce();
+
         if (fork != null) {
             for (Block blk : fork.getOldBlocks()) {
                 retractBlock(blk);
@@ -384,6 +393,74 @@ public class TransactionPoolImpl implements TransactionPool {
         logger.trace("Retracting block {} {} with {} txs", block.getNumber(), block.getPrintableHash(), txs.size());
 
         this.addTransactions(txs);
+    }
+
+    /**
+     * Removes pending and queued transactions whose nonce is below the state nonce of their
+     * sender at the current best block, since they can no longer be mined. For a delegated
+     * sender, also removes any transaction above the state nonce, and moves a queued transaction
+     * at the state nonce to pending, so the account keeps at most the one transaction that
+     * executes next, as enforced when transactions are added, and the miner can include it.
+     */
+    private void reconcileTransactionsWithStateNonce() {
+        List<Transaction> pooled = new ArrayList<>(pendingTransactions.getTransactions());
+        pooled.addAll(queuedTransactions.getTransactions());
+
+        if (pooled.isEmpty()) {
+            return;
+        }
+
+        RepositorySnapshot repository = getCurrentRepository();
+        Map<RskAddress, BigInteger> stateNonceBySender = new HashMap<>();
+        Map<RskAddress, Boolean> isDelegatedBySender = new HashMap<>();
+        Predicate<RskAddress> isDelegated = sender -> isDelegatedBySender.computeIfAbsent(
+                sender, s -> isDelegatedAccount(repository, s));
+        List<Keccak256> toRemove = new ArrayList<>();
+        List<Transaction> toPromote = new ArrayList<>();
+
+        for (Transaction tx : pooled) {
+            RskAddress sender = tx.getSender(signatureCache);
+            BigInteger stateNonce = stateNonceBySender.computeIfAbsent(sender, repository::getNonce);
+
+            int nonceComparison = tx.getNonceAsInteger().compareTo(stateNonce);
+
+            if (nonceComparison < 0) {
+                toRemove.add(tx.getHash());
+                logger.trace("Clear transaction with consumed nonce (mined or stale), nonce: [{}] state nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), stateNonce, tx.getHash());
+            } else if (nonceComparison > 0 && isDelegated.test(sender)) {
+                toRemove.add(tx.getHash());
+                logger.trace("Clear gapped transaction of delegated account, nonce: [{}] state nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), stateNonce, tx.getHash());
+            } else if (nonceComparison == 0 && queuedTransactions.hasTransaction(tx) && isDelegated.test(sender)) {
+                toRemove.add(tx.getHash());
+                toPromote.add(tx);
+                logger.trace("Promote queued transaction of delegated account, nonce: [{}] hash: [{}]", tx.getNonceAsInteger(), tx.getHash());
+            }
+        }
+
+        removeTransactionList(toRemove);
+
+        promoteTransactions(toPromote);
+    }
+
+    /**
+     * Re-adds each transaction through the admission rules, so it lands in pending. A transaction
+     * that no longer passes them is dropped, and the reason is logged.
+     */
+    private void promoteTransactions(List<Transaction> toPromote) {
+        List<Transaction> pendingTransactionsAdded = new ArrayList<>();
+
+        for (Transaction tx : toPromote) {
+            TransactionPoolAddResult result = this.internalAddTransaction(tx);
+
+            if (!result.transactionsWereAdded()) {
+                logger.debug("Dropped queued transaction of delegated account on promotion, hash: [{}] reason: [{}]", tx.getHash(), result.getErrorMessage());
+            } else if (result.pendingTransactionsWereAdded()) {
+                pendingTransactionsAdded.add(tx);
+                pendingTransactionsAdded.addAll(this.addSuccessors(tx));
+            }
+        }
+
+        this.emitEvents(pendingTransactionsAdded);
     }
 
     private void removeObsoleteTransactions(int depth, int timeout) {
@@ -500,19 +577,23 @@ public class TransactionPoolImpl implements TransactionPool {
      * @return whether the sender balance is enough to pay for all pending transactions + newTx
      */
     private boolean senderCanPayPendingTransactionsAndNewTx(Transaction newTx, RepositorySnapshot currentRepository) {
-        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender(signatureCache));
+        RskAddress sender = newTx.getSender(signatureCache);
+        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(sender);
+        BigInteger stateNonce = currentRepository.getNonce(sender);
 
         Coin accumTxCost = Coin.ZERO;
         for (Transaction t : transactions) {
             boolean isReplacedTx = Arrays.equals(t.getNonce(), newTx.getNonce());
-            // do not consider replaced transaction for the calculations
-            if (!isReplacedTx) {
+            // a stale tx (nonce already consumed in state) can never be mined, so its cost can never be spent
+            boolean isStaleTx = t.getNonceAsInteger().compareTo(stateNonce) < 0;
+            // do not consider replaced or stale transactions for the calculations
+            if (!isReplacedTx && !isStaleTx) {
                 accumTxCost = accumTxCost.add(getTxBaseCost(t));
             }
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
-        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0;
+        return costWithNewTx.compareTo(currentRepository.getBalance(sender)) <= 0;
     }
 
     private Coin getTxBaseCost(Transaction tx) {
@@ -533,15 +614,27 @@ public class TransactionPoolImpl implements TransactionPool {
             Transaction tx,
             RskAddress sender,
             RepositorySnapshot repository,
-            PendingState pendingState
+            PendingState pendingState,
+            boolean isSameNonceReplacement
     ) {
-        byte[] code = repository.getCode(sender);
-
-        if (!DelegationCodeResolver.isDelegatedCode(code)) {
+        if (!isDelegatedAccount(repository, sender)) {
             return Optional.empty();
         }
 
-        boolean alreadyHasTransaction = !pendingTransactions.getTransactionsWithSender(sender).isEmpty() || !queuedTransactions.getTransactionsWithSender(sender).isEmpty();
+        // EIP-7702 delegated accounts are intentionally limited to one transaction
+        // in the pool. Same-nonce replacements are allowed to preserve the normal
+        // replace-by-fee flow without increasing the number of occupied txpool slots.
+        if (isSameNonceReplacement) {
+            return Optional.empty();
+        }
+
+        // Stale entries (nonce already consumed in mined state, e.g. by a sponsor's
+        // authorization tuple) can never be mined, so they must not occupy the slot.
+        BigInteger stateNonce = repository.getNonce(sender);
+        boolean alreadyHasTransaction = Stream.concat(
+                        pendingTransactions.getTransactionsWithSender(sender).stream(),
+                        queuedTransactions.getTransactionsWithSender(sender).stream())
+                .anyMatch(t -> t.getNonceAsInteger().compareTo(stateNonce) >= 0);
 
         if (alreadyHasTransaction) {
             return Optional.of(TransactionPoolAddResult.withError("delegated account already has a transaction in the pool"));
@@ -554,5 +647,14 @@ public class TransactionPoolImpl implements TransactionPool {
             return Optional.of(TransactionPoolAddResult.withError("gapped-nonce transaction from delegated account"));
         }
         return Optional.empty();
+    }
+
+    /**
+     * Whether the pool limits {@code address} to one transaction as an EIP-7702 delegated account:
+     * it carries the delegation authority flag and the delegation indicator as its code. Admission and
+     * the reconciliation on each new best block both use this, so they agree on which accounts it covers.
+     */
+    private static boolean isDelegatedAccount(RepositorySnapshot repository, RskAddress address) {
+        return repository.isActiveDelegatedEOA(address);
     }
 }

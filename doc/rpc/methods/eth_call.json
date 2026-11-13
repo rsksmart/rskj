@@ -1,6 +1,7 @@
 {
   "name": "eth_call",
   "summary": "Executes a new message call (locally) immediately without creating a transaction on the block chain.",
+  "description": "The `gas` value is read as an unsigned integer. If it is omitted, it defaults to 100000000000000. Any value above the `rpc.callGasCap` node setting (10000000 by default) is reduced to that cap. Setting the cap to 0 disables it, in which case a value above 2^63 - 1 is reduced to 2^63 - 1.",
   "params": [
     {
       "$ref": "#/components/contentDescriptors/TransactionCreate"

@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.ethereum.core.Rskip546TestSupport.signatureWord;
 
 /**
  * Tests for RSKIP543 Typed Transaction encoding and decoding.
@@ -452,6 +453,22 @@ class TypedTransactionTest {
                 "Parsing Type 2 tx with maxPriorityFeePerGas > maxFeePerGas must throw per EIP-1559");
     }
 
+    @Test
+    void type2_decodeAcceptsCanonicalRlpZeroFees() {
+        byte[][] fields = defaultType2ShapeFields();
+        fields[2] = RLP.encodeElement(null);
+        fields[3] = RLP.encodeElement(null);
+        byte[] raw = ByteUtil.merge(
+                new byte[] { TransactionType.TYPE_2.getByteCode() },
+                RLP.encodeList(fields)
+        );
+
+        Transaction tx = new ImmutableTransaction(raw);
+
+        assertEquals(Coin.ZERO, tx.getMaxPriorityFeePerGas());
+        assertEquals(Coin.ZERO, tx.getMaxFeePerGas());
+    }
+
     // ========================================================================
     // Legacy decode-time field validation
     // ========================================================================
@@ -582,8 +599,8 @@ class TypedTransactionTest {
                 RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
                 Rskip546TestSupport.EMPTY_ACCESS_LIST,
                 RLP.encodeByte((byte) 0),
-                RLP.encodeElement(new byte[32]),
-                RLP.encodeElement(new byte[32])
+                RLP.encodeElement(signatureWord()),
+                RLP.encodeElement(signatureWord())
         };
     }
 

@@ -20,6 +20,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.exception.TransactionException;
@@ -30,8 +31,10 @@ import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
-import org.apache.commons.lang3.ArrayUtils;
+import org.ethereum.vm.GasCost;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -45,6 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 /**
  * Covers RSKIP-545 / Type 4 invariants on {@link Transaction#verify} and four-field typed
@@ -54,8 +59,11 @@ class TransactionRskip545InvariantTest {
 
     private static final byte CHAIN_ID = 33;
     private static final byte[] EMPTY_ACCESS_LIST = RLP.encodeList();
+    private static final byte[] GAS_LIMIT = {0x52, 0x08};
     private static final RskAddress RECEIVER =
             new RskAddress("0x0000000000000000000000000000000000000002");
+    private static final BigInteger SECP256K1N_HALF =
+            Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
     @Test
     void builder_type4WithoutAuthorizationList_rejectedAtBuild() {
@@ -162,6 +170,20 @@ class TransactionRskip545InvariantTest {
         assertDoesNotThrow(() -> tx.verify(cache));
         assertNotNull(tx.getSender(cache));
         assertTrue(tx.acceptTransactionSignature(CHAIN_ID));
+    }
+
+    @Test
+    void acceptTransactionSignature_type4_rejectsSFromHalfCurveOrderUp() {
+        assertTrue(type4WithS(SECP256K1N_HALF.subtract(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(type4WithS(SECP256K1N_HALF).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(type4WithS(SECP256K1N_HALF.add(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
+    }
+
+    @Test
+    void acceptTransactionSignature_legacy_rejectsSFromHalfCurveOrderUp() {
+        assertTrue(legacyWithS(SECP256K1N_HALF.subtract(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(legacyWithS(SECP256K1N_HALF).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(legacyWithS(SECP256K1N_HALF.add(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
     }
 
     @Test
@@ -329,11 +351,31 @@ class TransactionRskip545InvariantTest {
         dataField.setAccessible(true);
         dataField.set(tx, null);
 
+        Constants constants = mock(Constants.class);
+        doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        assertTrue(tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()) > 0);
+    }
+
+    @Test
+    void transactionCost_type4WithNullAuthorizationList_doesNotThrow() throws Exception {
+        Transaction tx = signedType4();
+        // Warm encode/hash while authorization_list is still present (encoder rejects null).
+        tx.getHash();
+
+        java.lang.reflect.Field authorizationListField = Transaction.class.getDeclaredField("authorizationList");
+        authorizationListField.setAccessible(true);
+        authorizationListField.set(tx, null);
+
         Constants constants = Mockito.mock(Constants.class);
         Mockito.doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
         ActivationConfig.ForBlock activations = Mockito.mock(ActivationConfig.ForBlock.class);
 
-        assertTrue(tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()) > 0);
+        assertEquals(
+                GasCost.TRANSACTION,
+                tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()),
+                "Null authorization_list must not NPE; charge no PER_EMPTY_ACCOUNT_COST");
     }
 
     @Test
@@ -377,6 +419,80 @@ class TransactionRskip545InvariantTest {
     }
 
     // -------------------------------------------------------------------------
+    // Constructor (typed field invariants)
+    // -------------------------------------------------------------------------
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedNonMinimalNonce_throws(TransactionType type) {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x00, 0x01}, GAS_LIMIT, CHAIN_ID, EMPTY_ACCESS_LIST));
+        assertTrue(e.getMessage().startsWith("Nonce must not have leading zero bytes"), e.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedNonMinimalGasLimit_throws(TransactionType type) {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x01}, new byte[]{0x00, (byte) 0x80}, CHAIN_ID, EMPTY_ACCESS_LIST));
+        assertTrue(e.getMessage().startsWith("Gas Limit must not have leading zero bytes"), e.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedZeroChainId_throws(TransactionType type) {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x01}, GAS_LIMIT, (byte) 0, EMPTY_ACCESS_LIST));
+        assertEquals("Typed transaction chainId must be between 1 and 255, got: 0", e.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedNonCanonicalAccessList_throws(TransactionType type) {
+        // The address in long-string form (0xb8 0x14) instead of the short 0x94.
+        byte[] address = ArrayUtils.addAll(new byte[]{(byte) 0xb8, 0x14}, new byte[20]);
+        byte[] accessList = RLP.encodeList(RLP.encodeList(address, RLP.encodeList()));
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x01}, GAS_LIMIT, CHAIN_ID, accessList));
+        assertTrue(e.getMessage().contains("not canonically encoded"), e.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedMalformedAccessList_throws(TransactionType type) {
+        byte[] notAList = RLP.encodeElement(new byte[]{0x01});
+
+        assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x01}, GAS_LIMIT, CHAIN_ID, notAList));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedEmptyAccessListBytes_throws(TransactionType type) {
+        // Zero bytes are not an RLP list; the encoders would emit the slot empty.
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> typed(type, new byte[]{0x01}, GAS_LIMIT, CHAIN_ID, new byte[0]));
+        assertEquals("Access list must be an RLP list", e.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2", "TYPE_4"})
+    void constructor_typedCanonicalFields_encodesAndReparses(TransactionType type) {
+        Transaction tx = typed(type, new byte[0], GAS_LIMIT, CHAIN_ID, null);
+        tx.sign(new ECKey().getPrivKeyBytes());
+
+        assertEquals(tx, new ImmutableTransaction(tx.getEncoded()));
+    }
+
+    @Test
+    void constructor_legacyKeepsAcceptingNonMinimalNonceAndZeroChainId() {
+        assertDoesNotThrow(() -> new Transaction(
+                new byte[]{0x00, 0x01}, Coin.valueOf(1), new byte[]{0x00, (byte) 0x80}, RECEIVER, Coin.ZERO,
+                EMPTY_BYTE_ARRAY, (byte) 0, false, TransactionTypePrefix.legacy(), null, null, null, null));
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
@@ -384,6 +500,33 @@ class TransactionRskip545InvariantTest {
         byte[] word = new byte[33];
         word[0] = 0x01;
         return word;
+    }
+
+    private static Transaction type4WithS(BigInteger s) {
+        Transaction signed = signedType4();
+        signed.setSignature(withS(signed.getSignature(), s));
+        return signed;
+    }
+
+    private static Transaction legacyWithS(BigInteger s) {
+        Transaction tx = Transaction.builder()
+                .nonce(BigInteger.ONE.toByteArray())
+                .gasPrice(Coin.valueOf(10))
+                .gasLimit(BigInteger.valueOf(21_000))
+                .receiveAddress(RECEIVER)
+                .value(Coin.ZERO)
+                .chainId(CHAIN_ID)
+                .build();
+        tx.sign(new ECKey().getPrivKeyBytes());
+        tx.setSignature(withS(tx.getSignature(), s));
+        return tx;
+    }
+
+    private static ECDSASignature withS(ECDSASignature signature, BigInteger s) {
+        return ECDSASignature.fromComponents(
+                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(signature.getR()),
+                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(s),
+                signature.getV());
     }
 
     private static Transaction copyType4(
@@ -435,6 +578,27 @@ class TransactionRskip545InvariantTest {
                 maxPriorityFeePerGas,
                 maxFeePerGas,
                 authorizationList);
+    }
+
+    private static Transaction typed(
+            TransactionType type, byte[] nonce, byte[] gasLimit, byte chainId, byte[] accessListBytes) {
+        List<SetCodeAuthorization> authorizations = type == TransactionType.TYPE_4
+                ? signedType4().getAuthorizationList()
+                : null;
+        return new Transaction(
+                nonce,
+                Coin.valueOf(1),
+                gasLimit,
+                RECEIVER,
+                Coin.ZERO,
+                EMPTY_BYTE_ARRAY,
+                chainId,
+                false,
+                TransactionTypePrefix.typed(type),
+                accessListBytes,
+                type == TransactionType.TYPE_1 ? null : Coin.valueOf(1),
+                type == TransactionType.TYPE_1 ? null : Coin.valueOf(1),
+                authorizations);
     }
 
     private static Transaction signedType4() {

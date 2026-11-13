@@ -24,6 +24,7 @@ import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
@@ -34,6 +35,8 @@ import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -46,16 +49,24 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 class ParallelExecutionStateTest {
 
     public static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
+    private static final byte[] SUCCESS_STATUS = new byte[]{0x01};
 
     private World createWorld(int rskip144) {
         return createWorld(rskip144, null);
     }
 
     private World createWorld(int rskip144, @Nullable Set<RskAddress> concurrentContractsDisallowed) {
+        return createWorld(rskip144, concurrentContractsDisallowed, null);
+    }
+
+    private World createWorld(int rskip144, @Nullable Set<RskAddress> concurrentContractsDisallowed, @Nullable Integer rskip692) {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        TestSystemProperties config = new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(rskip144))
-        );
+        TestSystemProperties config = new TestSystemProperties(rawConfig -> {
+            Config withRskip144 = rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(rskip144));
+            return rskip692 == null
+                    ? withRskip144
+                    : withRskip144.withValue("blockchain.config.consensusRules.rskip692", ConfigValueFactory.fromAnyRef(rskip692));
+        });
         if (concurrentContractsDisallowed != null) {
             config.setConcurrentContractsDisallowed(concurrentContractsDisallowed);
         }
@@ -68,7 +79,12 @@ class ParallelExecutionStateTest {
     }
 
     private World createWorldAndProcess(String dsl, int rskip144ActivationHeight, @Nullable Set<RskAddress> concurrentContractsDisallowed) throws DslProcessorException {
-        World world = createWorld(rskip144ActivationHeight, concurrentContractsDisallowed);
+        return createWorldAndProcess(dsl, rskip144ActivationHeight, concurrentContractsDisallowed, null);
+    }
+
+    private World createWorldAndProcess(String dsl, int rskip144ActivationHeight, @Nullable Set<RskAddress> concurrentContractsDisallowed,
+                                        @Nullable Integer rskip692ActivationHeight) throws DslProcessorException {
+        World world = createWorld(rskip144ActivationHeight, concurrentContractsDisallowed, rskip692ActivationHeight);
 
         DslParser parser = new DslParser(dsl);
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -954,9 +970,11 @@ class ParallelExecutionStateTest {
         Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
-    @Test
-    void whenATxCallsAPrecompiledThatThrowsAnExceptionShouldGoToSequentialIfDisabled() throws DslProcessorException {
-        // TX01 throws an exception, though, there is no way to check from out of the execution if the precompiled contract call has failed.
+    @ParameterizedTest(name = "rskip692Active={0}")
+    @ValueSource(booleans = {true, false})
+    void whenATxCallsAPrecompiledThatThrowsAnExceptionShouldGoToSequentialIfDisabled(boolean rskip692Active) throws DslProcessorException {
+        // TX01 throws an exception. From RSKIP-692 the receipt shows it as a failed tx; before RSKIP-692 the
+        // receipt keeps the legacy success status.
         World parallel = this.createWorldAndProcess(
                 "account_new acc1 10000000\n" +
                         "transaction_build tx01\n" +
@@ -975,16 +993,18 @@ class ParallelExecutionStateTest {
                         "block_connect b01\n" +
                         "\n" +
                         "assert_best b01\n" +
-                        "assert_tx_success tx01\n" +
-                        "\n", 0, Collections.singleton(PrecompiledContracts.BRIDGE_ADDR));
+                        "\n", 0, Collections.singleton(PrecompiledContracts.BRIDGE_ADDR), rskip692Active ? 0 : -1);
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(rskip692Active ? FAILED_STATUS : SUCCESS_STATUS, parallel.getTransactionReceiptByName("tx01").getStatus());
         Assertions.assertArrayEquals(new short[]{}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
-    @Test
-    void whenATxCallsAPrecompiledThatThrowsAnExceptionShouldGoToParallelIfEnabled() throws DslProcessorException {
-        // TX01 throws an exception, though, there is no way to check from out of the execution if the precompiled contract call has failed.
+    @ParameterizedTest(name = "rskip692Active={0}")
+    @ValueSource(booleans = {true, false})
+    void whenATxCallsAPrecompiledThatThrowsAnExceptionShouldGoToParallelIfEnabled(boolean rskip692Active) throws DslProcessorException {
+        // TX01 throws an exception. From RSKIP-692 the receipt shows it as a failed tx; before RSKIP-692 the
+        // receipt keeps the legacy success status.
         World parallel = this.createWorldAndProcess(
                 "account_new acc1 10000000\n" +
                         "transaction_build tx01\n" +
@@ -1003,10 +1023,10 @@ class ParallelExecutionStateTest {
                         "block_connect b01\n" +
                         "\n" +
                         "assert_best b01\n" +
-                        "assert_tx_success tx01\n" +
-                        "\n", 0, Collections.emptySet());
+                        "\n", 0, Collections.emptySet(), rskip692Active ? 0 : -1);
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(rskip692Active ? FAILED_STATUS : SUCCESS_STATUS, parallel.getTransactionReceiptByName("tx01").getStatus());
         Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
