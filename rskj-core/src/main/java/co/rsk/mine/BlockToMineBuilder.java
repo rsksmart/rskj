@@ -22,7 +22,6 @@ import co.rsk.config.MiningConfig;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.core.bc.BlockResult;
@@ -176,13 +175,9 @@ public class BlockToMineBuilder {
         Transaction remascTx = new RemascTransaction(blockNumber);
         txs.add(remascTx);
 
-        Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
-
         RepositorySnapshot originalRepo = repositoryLocator.snapshotAt(parentHeader);
 
-        final boolean isRskip252Enabled = activationConfig.isActive(ConsensusRule.RSKIP252, blockNumber);
-
-        return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice, isRskip252Enabled, signatureCache);
+        return minerUtils.filterTransactions(txsToRemove, txs, originalRepo, minGasPrice, activationConfig.forBlock(blockNumber), signatureCache);
     }
 
     private void removePendingTransactions(List<Transaction> transactions) {

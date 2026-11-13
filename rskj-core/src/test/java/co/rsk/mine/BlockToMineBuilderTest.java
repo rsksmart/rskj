@@ -62,6 +62,7 @@ class BlockToMineBuilderTest {
     private BlockValidationRule validationRules;
     private BlockExecutor blockExecutor;
     private ActivationConfig activationConfig;
+    private MinerUtils minerUtils;
 
     @BeforeEach
     void setUp() {
@@ -71,7 +72,7 @@ class BlockToMineBuilderTest {
         MiningConfig miningConfig = mock(MiningConfig.class);
         DifficultyCalculator difficultyCalculator = mock(DifficultyCalculator.class);
         MinimumGasPriceCalculator minimumGasPriceCalculator = mock(MinimumGasPriceCalculator.class);
-        MinerUtils minerUtils = mock(MinerUtils.class);
+        minerUtils = mock(MinerUtils.class);
         SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         activationConfig = mock(ActivationConfig.class);
 
@@ -99,7 +100,7 @@ class BlockToMineBuilderTest {
         GasLimitConfig gasLimitConfig = new GasLimitConfig(0,0,false);
 
         when(minerUtils.getAllTransactions(any(), any(), any())).thenReturn(new ArrayList<>());
-        when(minerUtils.filterTransactions(any(), any(), any(), any(), any(), anyBoolean(), any())).thenReturn(new ArrayList<>());
+        when(minerUtils.filterTransactions(any(), any(), any(), any(), any(), any())).thenReturn(new ArrayList<>());
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
         when(minimumGasPriceCalculator.calculate(any())).thenReturn(mock(Coin.class));
         when(miningConfig.getGasLimit()).thenReturn(gasLimitConfig);
@@ -164,7 +165,6 @@ class BlockToMineBuilderTest {
     @Test
     void buildBlockBeforeUMMActivation() {
         when(activationConfig.isActive(ConsensusRule.RSKIPUMM, 501L)).thenReturn(false);
-        when(activationConfig.isActive(ConsensusRule.RSKIP252, 501L)).thenReturn(false);
         Block actualBlock = this.prepareForActivationTest();
         assertNull(actualBlock.getHeader().getUmmRoot());
     }
@@ -181,7 +181,6 @@ class BlockToMineBuilderTest {
 
         when(validationRules.isValid(any())).thenReturn(true);
         when(activationConfig.isActive(ConsensusRule.RSKIPUMM, 501L)).thenReturn(true);
-        when(activationConfig.isActive(ConsensusRule.RSKIP252, 501L)).thenReturn(false);
 
         BlockResult expectedResult = mock(BlockResult.class);
         ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
@@ -191,6 +190,16 @@ class BlockToMineBuilderTest {
 
         Block actualBlock = blockCaptor.getValue();
         assertThat(actualBlock.getHeader().getUmmRoot(), is(new byte[0]));
+    }
+
+    @Test
+    void build_filtersTransactionsWithTheActivationsOfTheBlockBeingBuilt() {
+        ActivationConfig.ForBlock activationsForNewBlock = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.forBlock(501L)).thenReturn(activationsForNewBlock);
+
+        prepareForActivationTest();
+
+        verify(minerUtils).filterTransactions(any(), any(), any(), any(), same(activationsForNewBlock), any());
     }
 
     @Test

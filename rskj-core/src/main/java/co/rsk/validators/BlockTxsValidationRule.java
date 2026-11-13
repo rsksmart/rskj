@@ -22,6 +22,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.panic.PanicProcessor;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -42,16 +44,19 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
 
     private final RepositoryLocator repositoryLocator;
     private final SignatureCache signatureCache;
+    private final ActivationConfig activationConfig;
 
-    public BlockTxsValidationRule(RepositoryLocator repositoryLocator, SignatureCache signatureCache) {
+    public BlockTxsValidationRule(RepositoryLocator repositoryLocator, SignatureCache signatureCache, ActivationConfig activationConfig) {
         this.repositoryLocator = repositoryLocator;
         this.signatureCache = signatureCache;
+        this.activationConfig = activationConfig;
     }
 
     /**
-     * Validate a transactions list.
-     * It validates each transaction nonce againts the expeced sender account nonce
-     * It allows many transactions with the same sender
+     * Validates the block's transaction signatures. Before RSKIP-545 it also checks each sender's nonce
+     * sequence against the parent state: several txs from the same sender are allowed as long as their
+     * nonces are consecutive. From RSKIP-545 on, nonces can move without the sender's own tx (authorization
+     * tuples, CREATE in delegated code), so the nonce check is left to block execution.
      *
      * @return true if the transactions are valid, false if any transaction is invalid
      */
@@ -65,6 +70,18 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
 
         List<Transaction> txs = block.getTransactionsList();
         if (txs.isEmpty()) {
+            return true;
+        }
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP545, block.getNumber())) {
+            for (Transaction tx : txs) {
+                try {
+                    tx.verify(signatureCache);
+                } catch (RuntimeException e) {
+                    logger.warn("Unable to verify transaction", e);
+                    return false;
+                }
+            }
             return true;
         }
 

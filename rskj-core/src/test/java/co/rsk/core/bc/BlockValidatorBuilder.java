@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
@@ -41,7 +42,7 @@ import static org.mockito.Mockito.when;
  */
 public class BlockValidatorBuilder {
 
-    private final TestSystemProperties config;
+    private final RskSystemProperties config;
 
     private BlockTxsValidationRule blockTxsValidationRule;
 
@@ -65,7 +66,7 @@ public class BlockValidatorBuilder {
 
     private BlockStore blockStore;
 
-    public BlockValidatorBuilder(TestSystemProperties customConfig) {
+    public BlockValidatorBuilder(RskSystemProperties customConfig) {
         this.config = customConfig;
     }
 
@@ -84,7 +85,7 @@ public class BlockValidatorBuilder {
         this.blockTxsValidationRule = new BlockTxsValidationRule(new RepositoryLocator(
                 trieStore,
                 new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()))
-        ), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        ), new BlockTxSignatureCache(new ReceivedTxSignatureCache()), config.getActivationConfig());
         return this;
     }
 
