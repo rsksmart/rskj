@@ -638,6 +638,10 @@ class TypedEnvelopeOutcomeOracleTest {
                 TYPE_4.envelope(List.of(
                         Edit.set("authList", raw("80")), Edit.set("nonce", item("01" + "00".repeat(32))))),
                 IllegalArgumentException.class, "Authorization list must be encoded as an RLP list"));
+        cases.add(new Case(prefix + "authListEmpty+nonce33Bytes",
+                TYPE_4.envelope(List.of(
+                        Edit.set("authList", raw("c0")), Edit.set("nonce", item("01" + "00".repeat(32))))),
+                IllegalArgumentException.class, "Set-code transaction authorization_list must not be empty"));
         cases.add(new Case(prefix + "authTupleWithOneField+priorityFeeAboveMaxFee",
                 TYPE_4.envelope(List.of(
                         Edit.set("authList", raw("c2c101")),
