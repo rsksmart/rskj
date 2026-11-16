@@ -25,6 +25,7 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.util.HexUtils;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.CallArguments;
@@ -108,6 +109,18 @@ class EthModuleDSLTest {
         assertNull(exception.getRevertData());
     }
 
+    @Test
+    void testCall_directCallToLocalOnlyBridgeMethod_returnsValue() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(localOnlyBridgeGetterCallArguments());
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        // The Bridge never processed the requested BTC tx hash, so it answers -1 as an ABI-encoded int64
+        assertEquals("0x" + "ff".repeat(32), eth.call(callArgumentsParam, latest));
+    }
+
     /**
      * A call from an arbitrary account to the Bridge with data that matches no Bridge method,
      * so the Bridge throws while executing.
@@ -119,6 +132,23 @@ class EthModuleDSLTest {
         args.setValue("0x0");
         args.setGas("0x30d40"); // 200,000
         args.setData("0xdeadbeef");
+        return args;
+    }
+
+    /**
+     * A call from an arbitrary account to the Bridge method getBtcTxHashProcessedHeight, which only
+     * allows local calls, asking for a BTC tx hash the Bridge has never processed.
+     */
+    static CallArguments localOnlyBridgeGetterCallArguments() {
+        CallArguments args = new CallArguments();
+        args.setFrom("0x" + "ab".repeat(20));
+        args.setTo("0x" + PrecompiledContracts.BRIDGE_ADDR.toHexString());
+        args.setValue("0x0");
+        args.setGas("0x30d40"); // 200,000
+        byte[] data = CallTransaction.Function.fromSignature(
+                "getBtcTxHashProcessedHeight", new String[]{"string"}, new String[]{"int64"}
+        ).encode("11".repeat(32));
+        args.setData(HexUtils.toUnformattedJsonHex(data));
         return args;
     }
 
