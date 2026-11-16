@@ -24,7 +24,6 @@ import co.rsk.core.TransactionExecutorFactory;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.config.blockchain.upgrades.NetworkUpgrade;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -45,8 +44,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumMap;
-import java.util.Map;
 
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.core.bc.BlockExecutorTest.createAccount;
@@ -90,7 +87,7 @@ class FailingPrecompileDirectCallTest {
 
     private void setUp(boolean rskip692Active) {
         TestSystemProperties baseConfig = new TestSystemProperties();
-        ActivationConfig activationConfig = withRskip692(baseConfig.getActivationConfig(), rskip692Active);
+        ActivationConfig activationConfig = GenesisActivations.withRule(baseConfig.getActivationConfig(), ConsensusRule.RSKIP692, rskip692Active);
         config = spy(baseConfig);
         doReturn(activationConfig).when(config).getActivationConfig();
 
@@ -292,14 +289,5 @@ class FailingPrecompileDirectCallTest {
 
     private TransactionExecutor newExecutor(Transaction tx) {
         return transactionExecutorFactory.newInstance(tx, 0, block.getCoinbase(), track, block, 0L);
-    }
-
-    private static ActivationConfig withRskip692(ActivationConfig defaults, boolean active) {
-        Map<ConsensusRule, Long> heights = new EnumMap<>(ConsensusRule.class);
-        for (ConsensusRule rule : ConsensusRule.values()) {
-            heights.put(rule, defaults.isActive(rule, 0L) ? 0L : -1L);
-        }
-        heights.put(ConsensusRule.RSKIP692, active ? 0L : -1L);
-        return new ActivationConfig(heights, new EnumMap<>(NetworkUpgrade.class));
     }
 }
