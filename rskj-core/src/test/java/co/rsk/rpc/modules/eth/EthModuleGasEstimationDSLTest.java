@@ -31,11 +31,13 @@ import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.Assertions;
@@ -1075,6 +1077,23 @@ class EthModuleGasEstimationDSLTest {
                 "no caller-provided gas hint should make estimateGas return a value that OOGs on replay");
         assertTrue(firstEstimate >= trueMinimum,
                 "swept estimate must be at least the true minimum (" + trueMinimum + ")");
+    }
+
+    @Test
+    void estimateGas_pegoutToBridge_returnsThePegoutGas() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/pegout.txt");
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+
+        // A plain peg-out: 0.01 RBTC to the Bridge with no data and no gas, as a wallet sends it
+        CallArguments args = new CallArguments();
+        args.setFrom("0x" + world.getAccountByName("acc1").getAddress().toHexString());
+        args.setTo("0x" + PrecompiledContracts.BRIDGE_ADDR.toHexString());
+        args.setValue("0x2386f26fc10000");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam latest = new BlockIdentifierParam(BlockTag.LATEST.getTag());
+
+        // 21,000 base cost plus the Bridge's 23,000 for releaseBtc, what the signed peg-out uses
+        assertEquals("0xabe0", eth.estimateGas(callArgumentsParam, latest));
     }
 
     /**
