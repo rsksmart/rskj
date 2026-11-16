@@ -32,6 +32,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.DelegationCodeResolver;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
@@ -41,6 +42,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -223,6 +226,84 @@ class NetworkStateExporterTest {
     }
 
     @Test
+    void contractWithoutStorageSlots_exportsSameCodeRegardlessOfStorageKeysFlag() throws Exception {
+        String address1String = "1000000000000000000000000000000000000000";
+        RskAddress addr1 = new RskAddress(address1String);
+        repository.createAccount(addr1);
+        repository.initializeStorage(addr1);
+        repository.saveCode(addr1, new byte[]{1, 2, 3, 4});
+
+        Map withKeys = (Map) ((Map) writeAndReadJson("", true, true).get(address1String)).get("contract");
+        Map withoutKeys = (Map) ((Map) writeAndReadJson("", false, true).get(address1String)).get("contract");
+
+        Assertions.assertNotNull(withKeys, "contract node must be exported when exporting storage keys");
+        Assertions.assertNotNull(withoutKeys, "contract node must be exported when not exporting storage keys");
+
+        Assertions.assertEquals("01020304", withKeys.get("code"));
+        Assertions.assertEquals("01020304", withoutKeys.get("code"));
+        Assertions.assertEquals("a6885b3731702da62e8e4a8f584ac46a7f6822f4e2ba50fba902f67b1588d23b", withKeys.get("codeHash"));
+        Assertions.assertEquals("a6885b3731702da62e8e4a8f584ac46a7f6822f4e2ba50fba902f67b1588d23b", withoutKeys.get("codeHash"));
+
+        // The storage keys flag must only control the "data" section
+        Assertions.assertEquals(Set.of("code", "codeHash", "data"), withKeys.keySet());
+        Assertions.assertEquals(Set.of("code", "codeHash"), withoutKeys.keySet());
+        Assertions.assertTrue(((Map) withKeys.get("data")).isEmpty());
+    }
+
+    @ParameterizedTest(name = "exportStorageKeys={0}, exportCode={1}")
+    @CsvSource({
+            "true, true",
+            "true, false",
+            "false, true",
+            "false, false"
+    })
+    void activeDelegatedEOAWithoutStorageSlots_exportsContractNodeForEveryFlagCombination(boolean exportStorageKeys, boolean exportCode) throws Exception {
+        String address1String = "3000000000000000000000000000000000000000";
+        RskAddress addr1 = new RskAddress(address1String);
+        RskAddress delegate = new RskAddress("4000000000000000000000000000000000000000");
+        repository.createAccount(addr1);
+        repository.initializeStorage(addr1);
+        repository.setDelegationAuthority(addr1);
+        byte[] delegatedCode = DelegationCodeResolver.createDelegatedCode(delegate);
+        repository.saveCode(addr1, delegatedCode);
+
+        Map result = writeAndReadJson("", exportStorageKeys, exportCode);
+
+        Map address1Value = (Map) result.get(address1String);
+        Assertions.assertEquals(Boolean.TRUE, address1Value.get("delegatedAuthority"));
+        Map contract = (Map) address1Value.get("contract");
+        Assertions.assertNotNull(contract, "An active delegated EOA must export its contract node regardless of the export flags");
+
+        // codeHash is always exported
+        Assertions.assertEquals(ByteUtil.toHexString(Keccak256Helper.keccak256(delegatedCode)), contract.get("codeHash"));
+
+        // "code" is controlled only by exportCode
+        Assertions.assertEquals(exportCode, contract.containsKey("code"));
+        if (exportCode) {
+            Assertions.assertEquals(ByteUtil.toHexString(delegatedCode), contract.get("code"));
+        }
+
+        // "data" is controlled only by exportStorageKeys
+        Assertions.assertEquals(exportStorageKeys, contract.containsKey("data"));
+        if (exportStorageKeys) {
+            Assertions.assertTrue(((Map) contract.get("data")).isEmpty());
+        }
+    }
+
+    @Test
+    void remascWithInitializedStorage_doesNotExportContractNode() throws Exception {
+        RskAddress remasc = PrecompiledContracts.REMASC_ADDR;
+        repository.createAccount(remasc);
+        repository.initializeStorage(remasc);
+        repository.addStorageRow(remasc, DataWord.ZERO, DataWord.ONE);
+
+        Map result = writeAndReadJson("", true, true);
+
+        Map remascValue = (Map) result.get(PrecompiledContracts.REMASC_ADDR_STR);
+        Assertions.assertFalse(remascValue.containsKey("contract"));
+    }
+
+    @Test
     void testActiveDelegatedEOA() throws Exception {
         String address1String = "3000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
@@ -265,6 +346,52 @@ class NetworkStateExporterTest {
         Assertions.assertEquals("", contract.get("code"), "Cleared delegation must export empty code");
         Map data = (Map) contract.get("data");
         Assertions.assertEquals(1, data.keySet().size(), "Storage written while delegated must survive clearing");
+    }
+
+    @Test
+    void clearedDelegatedEOAWithoutStorageSlots_exportsEmptyCodeWhenExportingStorageKeys() throws Exception {
+        String address1String = "3000000000000000000000000000000000000000";
+        RskAddress addr1 = new RskAddress(address1String);
+        RskAddress delegate = new RskAddress("4000000000000000000000000000000000000000");
+        repository.createAccount(addr1);
+        repository.initializeStorage(addr1);
+        repository.setDelegationAuthority(addr1);
+        repository.saveCode(addr1, DelegationCodeResolver.createDelegatedCode(delegate));
+        repository.saveCode(addr1, new byte[0]);
+
+        Assertions.assertTrue(repository.isClearedDelegatedEOA(addr1));
+
+        Map result = writeAndReadJson("", true, true);
+
+        Map address1Value = (Map) result.get(address1String);
+        Assertions.assertEquals(Boolean.TRUE, address1Value.get("delegatedAuthority"));
+        Map contract = (Map) address1Value.get("contract");
+        Assertions.assertNotNull(contract, "A cleared delegated EOA keeps its initialized storage, so its contract node must be exported");
+        Assertions.assertEquals("", contract.get("code"));
+        Assertions.assertEquals(ByteUtil.toHexString(Keccak256Helper.keccak256(new byte[0])), contract.get("codeHash"));
+        Assertions.assertTrue(((Map) contract.get("data")).isEmpty());
+    }
+
+    @ParameterizedTest(name = "exportStorageKeys={0}, exportCode={1}")
+    @CsvSource({
+            "true, true",
+            "true, false",
+            "false, true",
+            "false, false"
+    })
+    void plainEOA_neverExportsContractNode(boolean exportStorageKeys, boolean exportCode) throws Exception {
+        String address1String = "1000000000000000000000000000000000000000";
+        RskAddress addr1 = new RskAddress(address1String);
+        repository.createAccount(addr1);
+        repository.addBalance(addr1, Coin.valueOf(1L));
+        repository.increaseNonce(addr1);
+
+        Assertions.assertTrue(repository.isPlainEOA(addr1));
+
+        Map result = writeAndReadJson("", exportStorageKeys, exportCode);
+
+        Map address1Value = (Map) result.get(address1String);
+        Assertions.assertEquals(Set.of("balance", "nonce"), address1Value.keySet());
     }
 
     @Test
