@@ -217,7 +217,7 @@ public class BlockChainBuilder {
                     signatureCache);
         }
 
-        BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
+        BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder(config);
 
 
         validatorBuilder.addBlockRootValidationRule().addBlockTxsValidationRule(trieStore).blockStore(blockStore);
