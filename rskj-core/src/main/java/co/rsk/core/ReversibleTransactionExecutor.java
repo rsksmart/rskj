@@ -57,19 +57,16 @@ public class ReversibleTransactionExecutor {
     public TransactionExecutor estimateGas(Block executionBlock, RskAddress coinbase, byte[] gasPrice, byte[] gasLimit,
                                            byte[] toAddress, byte[] value, byte[] data, RskAddress fromAddress,
                                            RepositorySnapshot snapshot) {
-        return reversibleExecution(
-                snapshot,
-                executionBlock,
-                coinbase,
-                gasPrice,
-                gasLimit,
-                toAddress,
-                value,
-                data,
-                fromAddress,
-                precompiledContracts,
-                false
-        );
+        Repository track = snapshot.startTracking();
+        UnsignedTransaction tx = unsignedTransaction(track, gasPrice, gasLimit, toAddress, value, data, fromAddress);
+        TransactionExecutor executor = localCallExecutor(tx, track, executionBlock, coinbase, precompiledContracts);
+        // setLocalCall also marks the transaction itself, which native contracts read to tell a local call apart.
+        // An estimate simulates the transaction as it would run once mined, so the transaction is not a local call.
+        tx.setLocalCallTransaction(false);
+
+        executor.executeTransaction();
+
+        return executor;
     }
 
     public ProgramResult executeTransaction(
@@ -105,7 +102,7 @@ public class ReversibleTransactionExecutor {
             byte[] value,
             byte[] data,
             RskAddress fromAddress) {
-        return reversibleExecution(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress, precompiledContracts, true).getResult();
+        return localCall(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress, precompiledContracts);
     }
 
     public ProgramResult executeTransaction(
@@ -119,17 +116,26 @@ public class ReversibleTransactionExecutor {
             byte[] data,
             RskAddress fromAddress,
             PrecompiledContracts precompiledContracts) {
-        return reversibleExecution(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress, precompiledContracts, true).getResult();
+        return localCall(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress, precompiledContracts);
     }
 
-    private TransactionExecutor reversibleExecution(RepositorySnapshot snapshot, Block executionBlock, RskAddress coinbase,
-                                                    byte[] gasPrice, byte[] gasLimit, byte[] toAddress, byte[] value,
-                                                    byte[] data, RskAddress fromAddress, PrecompiledContracts precompiledContracts,
-                                                    boolean localCallTransaction) {
+    private ProgramResult localCall(RepositorySnapshot snapshot, Block executionBlock, RskAddress coinbase,
+                                    byte[] gasPrice, byte[] gasLimit, byte[] toAddress, byte[] value,
+                                    byte[] data, RskAddress fromAddress, PrecompiledContracts precompiledContracts) {
         Repository track = snapshot.startTracking();
+        UnsignedTransaction tx = unsignedTransaction(track, gasPrice, gasLimit, toAddress, value, data, fromAddress);
+        TransactionExecutor executor = localCallExecutor(tx, track, executionBlock, coinbase, precompiledContracts);
 
+        executor.executeTransaction();
+
+        return executor.getResult();
+    }
+
+    private static UnsignedTransaction unsignedTransaction(Repository track, byte[] gasPrice, byte[] gasLimit,
+                                                           byte[] toAddress, byte[] value, byte[] data,
+                                                           RskAddress fromAddress) {
         byte[] nonce = track.getNonce(fromAddress).toByteArray();
-        UnsignedTransaction tx = new UnsignedTransaction(
+        return new UnsignedTransaction(
                 nonce,
                 gasPrice,
                 gasLimit,
@@ -138,16 +144,13 @@ public class ReversibleTransactionExecutor {
                 data,
                 fromAddress
         );
+    }
 
-        TransactionExecutor executor = transactionExecutorFactory
+    private TransactionExecutor localCallExecutor(UnsignedTransaction tx, Repository track, Block executionBlock,
+                                                  RskAddress coinbase, PrecompiledContracts precompiledContracts) {
+        return transactionExecutorFactory
                 .newInstance(tx, 0, coinbase, track, executionBlock, 0, precompiledContracts)
                 .setLocalCall(true);
-        // setLocalCall also marks the transaction itself, which native contracts read to tell a local call apart
-        tx.setLocalCallTransaction(localCallTransaction);
-
-        executor.executeTransaction();
-
-        return executor;
     }
 
     private static class UnsignedTransaction extends Transaction {
