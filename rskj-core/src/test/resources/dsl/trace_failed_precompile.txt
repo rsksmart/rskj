@@ -1,5 +1,5 @@
 # Drives TraceGasCharacterizationTest failed-precompile cases.
-# tx01: a direct call to the Bridge with junk data. Under RSKIP-560 the
+# tx01: a direct call to the Bridge with junk data. Under RSKIP-692 the
 # precompile's exception fails the tx (status 0, full gas limit consumed).
 # tx02: a plain value transfer to an EOA, which must keep a successful frame.
 # tx03: a direct call to the identity precompile (0x04) with gas below
