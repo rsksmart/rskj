@@ -21,7 +21,6 @@ import co.rsk.cli.RskCli;
 import co.rsk.config.ConfigLoader;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.OkHttpClientTestFixture;
-import co.rsk.util.RpcTransactionAssertions;
 import co.rsk.util.rpc.ContractCaller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -69,6 +68,8 @@ class BridgeRevertReceiptIntegrationTest {
     private static final String GAS_PRICE = "0x1";
     private static final String VALUE_ZERO = "0x0";
     private static final String ZERO_LOGS_BLOOM = "0x" + "0".repeat(512);
+    // Generous on purpose: a slow CI machine can take several block intervals to mine the transaction
+    private static final long RECEIPT_TIMEOUT_MS = 60_000;
     // A negative activation height disables a consensus rule
     private static final String RSKIP692_DISABLED_ARG = "-Xblockchain.config.consensusRules.rskip692=-1";
 
@@ -189,11 +190,14 @@ class BridgeRevertReceiptIntegrationTest {
                 true
         ).orElseThrow(() -> new AssertionError("Expected the transaction to be accepted into the pool"));
 
-        RpcTransactionAssertions.assertMined(rpcPort, 50, 200, txHash);
-
-        return OkHttpClientTestFixture
-                .getJsonResponseForGetTransactionReceipt(rpcPort, txHash)
-                .get("result");
+        return await().atMost(RECEIPT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .pollInterval(200, TimeUnit.MILLISECONDS)
+                .ignoreExceptions()
+                .alias("Transaction " + txHash + " was not mined within " + RECEIPT_TIMEOUT_MS + "ms")
+                .until(
+                        () -> OkHttpClientTestFixture.getJsonResponseForGetTransactionReceipt(rpcPort, txHash).get("result"),
+                        receipt -> receipt != null && receipt.hasNonNull("blockNumber")
+                );
     }
 
     private static void assertNoLogs(JsonNode receipt) {
