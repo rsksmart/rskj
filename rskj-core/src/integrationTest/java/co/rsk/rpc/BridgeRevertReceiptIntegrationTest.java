@@ -297,7 +297,16 @@ class BridgeRevertReceiptIntegrationTest {
                 .pollInterval(1, TimeUnit.SECONDS)
                 .ignoreExceptions()
                 .alias("Node RPC did not become available within " + maxWaitMs + "ms")
-                .until(() -> sendHealthProbe(port, 2000).code() == 200);
+                .until(() -> {
+                    Response probe = sendHealthProbe(port, 2000);
+                    try {
+                        return probe.code() == 200;
+                    } finally {
+                        if (probe.body() != null) {
+                            probe.body().close();
+                        }
+                    }
+                });
 
         long remainingMs = maxWaitMs - (System.currentTimeMillis() - start);
         await().atMost(remainingMs, TimeUnit.MILLISECONDS)
