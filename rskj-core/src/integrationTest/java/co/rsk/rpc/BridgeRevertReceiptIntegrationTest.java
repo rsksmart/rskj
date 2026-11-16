@@ -57,8 +57,9 @@ import static org.awaitility.Awaitility.await;
  * must be consumed, and no logs may be emitted. The same call through {@code eth_call} must return a
  * JSON-RPC error.
  *
- * <p>With RSKIP-692 disabled, the receipt keeps the legacy success status and only the intrinsic gas plus the
- * Bridge's declared cost is charged, while {@code eth_call} still returns the same error.
+ * <p>With RSKIP-692 disabled, the receipt keeps the legacy success status and reports only the intrinsic gas plus
+ * the Bridge's declared cost as used. The sender is still charged the full gas limit on that path, so activation
+ * changes what the receipt reports, not the fee. {@code eth_call} returns the same error either way.
  */
 class BridgeRevertReceiptIntegrationTest {
 
