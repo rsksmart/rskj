@@ -435,7 +435,12 @@ public class TransactionExecutor {
     private void execError(Throwable err) {
         logger.error("execError: ", err);
         String message = err.getMessage();
-        executionError = message != null && !message.isEmpty() ? message : err.getClass().getSimpleName();
+        boolean hasMessage = message != null && !message.isEmpty();
+        // Before RSKIP692 the message is kept as is, so an exception with an empty message still leaves
+        // a successful receipt status, as it always did
+        executionError = hasMessage || !activations.isActive(ConsensusRule.RSKIP692)
+                ? message
+                : err.getClass().getSimpleName();
     }
 
     private void execError(String err) {

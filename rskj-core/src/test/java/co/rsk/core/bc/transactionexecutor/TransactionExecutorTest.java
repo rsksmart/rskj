@@ -27,6 +27,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -35,6 +36,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,6 +47,7 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 class TransactionExecutorTest {
@@ -354,6 +357,73 @@ class TransactionExecutorTest {
         verify(precompiledContract, times(1)).init(argsCaptor.capture());
 
         assertNull(argsCaptor.getValue().getProgramInvoke());
+    }
+
+    @Test
+    void vmExceptionWithEmptyMessageKeepsSuccessfulReceiptBeforeRskip692() {
+        ActivationConfig rskip692Inactive = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP692);
+        assertFalse(rskip692Inactive.isActive(ConsensusRule.RSKIP692, executionBlock.getNumber()));
+        RuntimeException failure = new RuntimeException("");
+
+        TransactionExecutor txExecutor = executeContractCallFailingInTheVm(rskip692Inactive, failure);
+
+        assertSame(failure, txExecutor.getResult().getException());
+        assertArrayEquals(new byte[]{0x01}, txExecutor.getReceipt().getStatus());
+    }
+
+    @Test
+    void vmExceptionWithEmptyMessageFailsReceiptAfterRskip692() {
+        ActivationConfig rskip692Active = ActivationConfigsForTest.all();
+        assertTrue(rskip692Active.isActive(ConsensusRule.RSKIP692, executionBlock.getNumber()));
+        RuntimeException failure = new RuntimeException("");
+
+        TransactionExecutor txExecutor = executeContractCallFailingInTheVm(rskip692Active, failure);
+
+        assertSame(failure, txExecutor.getResult().getException());
+        assertArrayEquals(new byte[0], txExecutor.getReceipt().getStatus());
+    }
+
+    @Test
+    void vmExceptionWithoutMessageFailsReceiptAfterRskip692() {
+        ActivationConfig rskip692Active = ActivationConfigsForTest.all();
+        assertTrue(rskip692Active.isActive(ConsensusRule.RSKIP692, executionBlock.getNumber()));
+        RuntimeException failure = new RuntimeException((String) null);
+
+        TransactionExecutor txExecutor = executeContractCallFailingInTheVm(rskip692Active, failure);
+
+        assertSame(failure, txExecutor.getResult().getException());
+        assertArrayEquals(new byte[0], txExecutor.getReceipt().getStatus());
+    }
+
+    /**
+     * Executes a call to a contract whose program throws {@code failure} when it first reads its gas,
+     * which reaches the exception handler of the EVM path.
+     */
+    private TransactionExecutor executeContractCallFailingInTheVm(ActivationConfig activations, RuntimeException failure) {
+        when(config.getActivationConfig()).thenReturn(activations);
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(mock(ReceivedTxSignatureCache.class));
+        MutableRepository cacheTrack = mock(MutableRepository.class);
+        when(repository.startTracking()).thenReturn(cacheTrack);
+        mockRepositoryForAnAccountWithBalance(sender, 1_000_000L);
+        // STOP: the program never runs an opcode, it fails on its first gas check
+        when(repository.getCode(receiver)).thenReturn(new byte[]{0x00});
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6_800_000L).toByteArray());
+
+        ProgramInvoke programInvoke = mock(ProgramInvoke.class);
+        when(programInvoke.getOwnerAddress()).thenReturn(DataWord.valueOf(receiver.getBytes()));
+        when(programInvoke.getRepository()).thenReturn(cacheTrack);
+        when(programInvoke.getGas()).thenThrow(failure);
+        when(programInvokeFactory.createProgramInvoke(any(), anyInt(), any(), any(), any(), any())).thenReturn(programInvoke);
+
+        Transaction transaction = getTransaction(sender, receiver, BigInteger.valueOf(100_000L).toByteArray(),
+                BigInteger.ONE.toByteArray(), Coin.valueOf(1), Coin.ZERO, 1);
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(config, blockStore,
+                receiptStore, blockFactory, programInvokeFactory, precompiledContracts, blockTxSignatureCache);
+        TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(transaction, txIndex,
+                executionBlock.getCoinbase(), repository, executionBlock, 0L);
+
+        assertTrue(txExecutor.executeTransaction());
+        return txExecutor;
     }
 
     private void mockRepositoryForAnAccountWithBalance(RskAddress sender, long val) {
