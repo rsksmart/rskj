@@ -373,6 +373,11 @@ public class TransactionExecutor {
                     track.setupContract(targetAddress);
                 }
             } catch (VMException | RuntimeException e) {
+                if (!localCall && activations.isActive(ConsensusRule.RSKIP692)) {
+                    gasLeftover = 0;
+                    gasUsed = txGasLimit;
+                    execError(e);
+                }
                 result.setException(e);
             }
             result.spendGas(gasUsed);
@@ -429,7 +434,8 @@ public class TransactionExecutor {
 
     private void execError(Throwable err) {
         logger.error("execError: ", err);
-        executionError = err.getMessage();
+        String message = err.getMessage();
+        executionError = message != null && !message.isEmpty() ? message : err.getClass().getSimpleName();
     }
 
     private void execError(String err) {
