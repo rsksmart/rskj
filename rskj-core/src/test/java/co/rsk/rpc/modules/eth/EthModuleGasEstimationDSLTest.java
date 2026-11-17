@@ -1123,7 +1123,6 @@ class EthModuleGasEstimationDSLTest {
                 "swept estimate must be at least the true minimum (" + trueMinimum + ")");
     }
 
-
     // RSKIP-692 test case 11
     @Test
     void estimateGas_directCallToBridgeWithUnknownMethod_returnsExecutionError()

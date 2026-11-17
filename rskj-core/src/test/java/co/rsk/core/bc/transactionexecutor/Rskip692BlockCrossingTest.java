@@ -122,7 +122,7 @@ class Rskip692BlockCrossingTest {
                 .nonce(BigInteger.valueOf(nonce))
                 .gasPrice(GAS_PRICE)
                 .gasLimit(GAS_LIMIT)
-                .receiveAddress(PrecompiledContracts.BRIDGE_ADDR)
+                .destination(PrecompiledContracts.BRIDGE_ADDR)
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(Coin.ZERO)
                 .data(Hex.decode("deadbeef"))

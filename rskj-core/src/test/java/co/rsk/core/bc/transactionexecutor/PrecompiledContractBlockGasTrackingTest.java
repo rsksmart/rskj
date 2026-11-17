@@ -122,7 +122,7 @@ class PrecompiledContractBlockGasTrackingTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(firstTransactionGasLimit))
-                .receiveAddress(PrecompiledContracts.BRIDGE_ADDR)
+                .destination(PrecompiledContracts.BRIDGE_ADDR)
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(Coin.ZERO)
                 .data(invalidBridgeCall)
@@ -134,7 +134,7 @@ class PrecompiledContractBlockGasTrackingTest {
                 .nonce(BigInteger.ONE)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(secondTransactionGasLimit))
-                .receiveAddress(receiver.getAddress())
+                .destination(receiver.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(Coin.valueOf(1L))
                 .build();
@@ -169,7 +169,7 @@ class PrecompiledContractBlockGasTrackingTest {
         Repository track = repository.startTracking();
         Account sender = createAccount("acctest1", track, Coin.valueOf(10_000_000L));
         track.createAccount(FailingTestPrecompile.FAILING_PRECOMPILE_ADDR);
-        track.initializeStorage(FailingTestPrecompile.FAILING_PRECOMPILE_ADDR);
+        track.setupContract(FailingTestPrecompile.FAILING_PRECOMPILE_ADDR);
         track.commit();
 
         BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
@@ -180,7 +180,7 @@ class PrecompiledContractBlockGasTrackingTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(100_000L))
-                .receiveAddress(FailingTestPrecompile.FAILING_PRECOMPILE_ADDR)
+                .destination(FailingTestPrecompile.FAILING_PRECOMPILE_ADDR)
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(Coin.ZERO)
                 .data(new byte[]{FailingTestPrecompile.EMIT_LOG})
