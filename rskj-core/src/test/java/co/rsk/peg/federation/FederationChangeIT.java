@@ -346,11 +346,10 @@ class FederationChangeIT {
     }
 
     private void createPendingFederation() {
-        // A single authorized vote does not reach quorum, so it must not create the pending federation yet
+        // Voting with enough authorizers to create the pending federation
         var resultFromFirstAuthorizer = voteToCreatePendingFederation(FIRST_AUTHORIZED_TX);
         assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromFirstAuthorizer);
 
-        // Voting with enough authorizers to create the pending federation
         var resultFromSecondAuthorizer = voteToCreatePendingFederation(SECOND_AUTHORIZED_TX);
         assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromSecondAuthorizer);
 
