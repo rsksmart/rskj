@@ -29,7 +29,15 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
@@ -41,9 +49,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
 
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.core.bc.BlockExecutorTest.createAccount;
@@ -63,7 +68,7 @@ class PrecompiledContractExceptionActivationTest {
     @ParameterizedTest(name = "rskip692Active={0}")
     @ValueSource(booleans = {true, false})
     void bridgeCallThatThrowsBehavesPerActivation(boolean rskip692Active) {
-        TestSystemProperties config = configWith(withRskip692(new TestSystemProperties().getActivationConfig(), rskip692Active));
+        TestSystemProperties config = configWith(GenesisActivations.withRule(new TestSystemProperties().getActivationConfig(), ConsensusRule.RSKIP692, rskip692Active));
         TransactionExecutorFactory transactionExecutorFactory = newTransactionExecutorFactory(config);
 
         Repository track = createRepository().startTracking();
@@ -110,7 +115,7 @@ class PrecompiledContractExceptionActivationTest {
     @ParameterizedTest(name = "rskip692Active={0}")
     @ValueSource(booleans = {true, false})
     void directCallWithInsufficientGasChargesGasLimitRegardlessOfActivation(boolean rskip692Active) {
-        TestSystemProperties config = configWith(withRskip692(new TestSystemProperties().getActivationConfig(), rskip692Active));
+        TestSystemProperties config = configWith(GenesisActivations.withRule(new TestSystemProperties().getActivationConfig(), ConsensusRule.RSKIP692, rskip692Active));
         TransactionExecutorFactory transactionExecutorFactory = newTransactionExecutorFactory(config);
 
         Repository track = createRepository().startTracking();
@@ -150,7 +155,7 @@ class PrecompiledContractExceptionActivationTest {
         final byte[] INVALID_OPCODE_CODE = Hex.decode("fe");
 
         TestSystemProperties baseConfig = new TestSystemProperties();
-        ActivationConfig activationConfig = withRskip692(baseConfig.getActivationConfig(), rskip692Active);
+        ActivationConfig activationConfig = GenesisActivations.withRule(baseConfig.getActivationConfig(), ConsensusRule.RSKIP692, rskip692Active);
 
         TestSystemProperties config = spy(baseConfig);
         doReturn(activationConfig).when(config).getActivationConfig();
@@ -218,7 +223,7 @@ class PrecompiledContractExceptionActivationTest {
         final byte[] INFINITE_LOOP_CODE = Hex.decode("5b600056");
 
         TestSystemProperties baseConfig = new TestSystemProperties();
-        ActivationConfig activationConfig = withRskip692(baseConfig.getActivationConfig(), rskip692Active);
+        ActivationConfig activationConfig = GenesisActivations.withRule(baseConfig.getActivationConfig(), ConsensusRule.RSKIP692, rskip692Active);
 
         TestSystemProperties config = spy(baseConfig);
         doReturn(activationConfig).when(config).getActivationConfig();
@@ -292,7 +297,7 @@ class PrecompiledContractExceptionActivationTest {
     @ParameterizedTest(name = "rskip692Active={0}")
     @ValueSource(booleans = {true, false})
     void revertReturnsUnusedGasRegardlessOfActivation(boolean rskip692Active) {
-        TestSystemProperties config = configWith(withRskip692(new TestSystemProperties().getActivationConfig(), rskip692Active));
+        TestSystemProperties config = configWith(GenesisActivations.withRule(new TestSystemProperties().getActivationConfig(), ConsensusRule.RSKIP692, rskip692Active));
         TransactionExecutorFactory transactionExecutorFactory = newTransactionExecutorFactory(config);
 
         Repository track = createRepository().startTracking();
@@ -351,14 +356,5 @@ class PrecompiledContractExceptionActivationTest {
         Block genesis = blockGenerator.getGenesisBlock();
         genesis.setStateRoot(track.getRoot());
         return blockGenerator.createChildBlock(genesis, Collections.singletonList(tx), new ArrayList<>(), 1, null);
-    }
-
-    private static ActivationConfig withRskip692(ActivationConfig defaults, boolean active) {
-        Map<ConsensusRule, Long> heights = new EnumMap<>(ConsensusRule.class);
-        for (ConsensusRule rule : ConsensusRule.values()) {
-            heights.put(rule, defaults.isActive(rule, 0L) ? 0L : -1L);
-        }
-        heights.put(ConsensusRule.RSKIP692, active ? 0L : -1L);
-        return new ActivationConfig(heights, new HashMap<>());
     }
 }

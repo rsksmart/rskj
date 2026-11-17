@@ -1,5 +1,6 @@
 {
   "name": "eth_call",
+  "description": "If the execution reverts, or ends with an exception such as a failing native contract call or running out of gas, the method returns error -32015 instead of a result. A revert reports `VM Exception while processing transaction: revert <reason>` or `VM Exception while processing transaction: transaction reverted`. An exception reports `VM Exception while processing transaction: execution failed`. This holds whether or not RSKIP692 is active.",
   "summary": "Executes a new message call (locally) immediately without creating a transaction on the block chain.",
   "params": [
     {
@@ -16,6 +17,12 @@
       "$ref": "#/components/schemas/Bytes"
     }
   },
+  "errors": [
+    {
+      "code": -32015,
+      "message": "VM Exception while processing transaction"
+    }
+  ],
   "examples": [
     {
       "name": "callExample",

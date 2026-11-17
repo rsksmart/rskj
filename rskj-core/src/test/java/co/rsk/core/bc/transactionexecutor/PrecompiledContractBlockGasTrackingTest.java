@@ -55,10 +55,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static co.rsk.core.bc.BlockExecutorTest.createAccount;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -95,7 +92,10 @@ class PrecompiledContractBlockGasTrackingTest {
             boolean rskip692Active, int expectedExecutedTransactions, long expectedBlockGasUsed, boolean rskip144Active) {
         TestSystemProperties baseConfig = new TestSystemProperties();
 
-        ActivationConfig activationConfig = buildActivationConfig(baseConfig.getActivationConfig(), rskip692Active, rskip144Active);
+        ActivationConfig activationConfig = GenesisActivations.withRule(
+                GenesisActivations.withRule(baseConfig.getActivationConfig(), ConsensusRule.RSKIP144, rskip144Active),
+                ConsensusRule.RSKIP692,
+                rskip692Active);
 
         TestSystemProperties config = spy(baseConfig);
         doReturn(activationConfig).when(config).getActivationConfig();
@@ -160,7 +160,10 @@ class PrecompiledContractBlockGasTrackingTest {
     @ValueSource(booleans = {true, false})
     void logOfFailedPrecompileCallIsInBlockBloomOnlyBeforeActivation(boolean rskip692Active) {
         TestSystemProperties baseConfig = new TestSystemProperties();
-        ActivationConfig activationConfig = buildActivationConfig(baseConfig.getActivationConfig(), rskip692Active, false);
+        ActivationConfig activationConfig = GenesisActivations.withRule(
+                GenesisActivations.withRule(baseConfig.getActivationConfig(), ConsensusRule.RSKIP144, false),
+                ConsensusRule.RSKIP692,
+                rskip692Active);
         TestSystemProperties config = spy(baseConfig);
         doReturn(activationConfig).when(config).getActivationConfig();
 
@@ -201,32 +204,6 @@ class PrecompiledContractBlockGasTrackingTest {
         } else {
             assertFalse(Arrays.equals(new byte[256], blockBloom));
         }
-    }
-
-    private static ActivationConfig buildActivationConfig(
-            ActivationConfig defaults,
-            boolean rskip692Active,
-            boolean rskip144Active
-    ) {
-        Map<ConsensusRule, Long> heights =
-                new EnumMap<>(ConsensusRule.class);
-
-        for (ConsensusRule rule : ConsensusRule.values()) {
-            heights.put(
-                    rule,
-                    defaults.isActive(rule, 0L) ? 0L : -1L
-            );
-        }
-
-        heights.put(ConsensusRule.RSKIP144, rskip144Active ? 0L : -1L);
-
-        // Explicitly select the behavior under test.
-        heights.put(
-                ConsensusRule.RSKIP692,
-                rskip692Active ? 0L : -1L
-        );
-
-        return new ActivationConfig(heights, new HashMap<>());
     }
 
     private static PrecompiledContracts bridgePrecompiledContracts(TestSystemProperties config) {

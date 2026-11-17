@@ -21,7 +21,6 @@ import co.rsk.cli.RskCli;
 import co.rsk.config.ConfigLoader;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.OkHttpClientTestFixture;
-import co.rsk.util.RpcTransactionAssertions;
 import co.rsk.util.rpc.ContractCaller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,8 +57,9 @@ import static org.awaitility.Awaitility.await;
  * must be consumed, and no logs may be emitted. The same call through {@code eth_call} must return a
  * JSON-RPC error.
  *
- * <p>With RSKIP-692 disabled, the receipt keeps the legacy success status and only the intrinsic gas plus the
- * Bridge's declared cost is charged, while {@code eth_call} still returns the same error.
+ * <p>With RSKIP-692 disabled, the receipt keeps the legacy success status and reports only the intrinsic gas plus
+ * the Bridge's declared cost as used. The sender is still charged the full gas limit on that path, so activation
+ * changes what the receipt reports, not the fee. {@code eth_call} returns the same error either way.
  */
 class BridgeRevertReceiptIntegrationTest {
 
@@ -69,6 +69,8 @@ class BridgeRevertReceiptIntegrationTest {
     private static final String GAS_PRICE = "0x1";
     private static final String VALUE_ZERO = "0x0";
     private static final String ZERO_LOGS_BLOOM = "0x" + "0".repeat(512);
+    // Generous on purpose: a slow CI machine can take several block intervals to mine the transaction
+    private static final long RECEIPT_TIMEOUT_MS = 60_000;
     // A negative activation height disables a consensus rule
     private static final String RSKIP692_DISABLED_ARG = "-Xblockchain.config.consensusRules.rskip692=-1";
 
@@ -189,11 +191,14 @@ class BridgeRevertReceiptIntegrationTest {
                 true
         ).orElseThrow(() -> new AssertionError("Expected the transaction to be accepted into the pool"));
 
-        RpcTransactionAssertions.assertMined(rpcPort, 50, 200, txHash);
-
-        return OkHttpClientTestFixture
-                .getJsonResponseForGetTransactionReceipt(rpcPort, txHash)
-                .get("result");
+        return await().atMost(RECEIPT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .pollInterval(200, TimeUnit.MILLISECONDS)
+                .ignoreExceptions()
+                .alias("Transaction " + txHash + " was not mined within " + RECEIPT_TIMEOUT_MS + "ms")
+                .until(
+                        () -> OkHttpClientTestFixture.getJsonResponseForGetTransactionReceipt(rpcPort, txHash).get("result"),
+                        receipt -> receipt != null && receipt.hasNonNull("blockNumber")
+                );
     }
 
     private static void assertNoLogs(JsonNode receipt) {
@@ -292,7 +297,16 @@ class BridgeRevertReceiptIntegrationTest {
                 .pollInterval(1, TimeUnit.SECONDS)
                 .ignoreExceptions()
                 .alias("Node RPC did not become available within " + maxWaitMs + "ms")
-                .until(() -> sendHealthProbe(port, 2000).code() == 200);
+                .until(() -> {
+                    Response probe = sendHealthProbe(port, 2000);
+                    try {
+                        return probe.code() == 200;
+                    } finally {
+                        if (probe.body() != null) {
+                            probe.body().close();
+                        }
+                    }
+                });
 
         long remainingMs = maxWaitMs - (System.currentTimeMillis() - start);
         await().atMost(remainingMs, TimeUnit.MILLISECONDS)
