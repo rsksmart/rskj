@@ -392,6 +392,55 @@ class CallArgumentsToByteArrayTest {
     }
 
     @Test
+    void getAuthorizationListWhenNonceIsTwoPow64_rejectsRequest() {
+        CallArguments.AuthorizationListEntry entry = Rskip545TestSupport.defaultType4AuthorizationEntry();
+        entry.setNonce("0x10000000000000000");
+        CallArguments args = new CallArguments();
+        args.setAuthorizationList(List.of(entry));
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getAuthorizationList);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("Authorization nonce must be non-negative and less than 2^64 at index 0", ex.getMessage());
+    }
+
+    @Test
+    void getAuthorizationListWhenSignatureIsNotHex_rejectsRequest() {
+        CallArguments.AuthorizationListEntry entry = Rskip545TestSupport.defaultType4AuthorizationEntry();
+        entry.setR("0xzz");
+        CallArguments args = new CallArguments();
+        args.setAuthorizationList(List.of(entry));
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getAuthorizationList);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("Authorization list entry r must be hex at index 0", ex.getMessage());
+    }
+
+    @Test
+    void getAccessListBytesWhenAddressIsNotHex_rejectsRequest() {
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress("0xzz" + "00".repeat(19));
+        entry.setStorageKeys(List.of());
+        CallArguments args = new CallArguments();
+        args.setAccessList(List.of(entry));
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getAccessListBytes);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("Access list entry address must be a 20-byte hex value at index 0", ex.getMessage());
+    }
+
+    @Test
     void getAuthorizationListParsesEntriesIntoSetCodeAuthorizations() {
         CallArguments.AuthorizationListEntry entry = Rskip545TestSupport.defaultType4AuthorizationEntry();
         CallArguments args = new CallArguments();

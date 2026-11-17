@@ -5,6 +5,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.facade.Ethereum;
@@ -137,6 +138,15 @@ class PersonalModuleWalletEnabledTest {
 
         assertSendTransactionInvalidParams("0x4", args -> args.setAuthorizationList(List.of(entry)),
                 "Authorization list entry r must be hex at index 0");
+    }
+
+    @Test
+    void sendTransaction_authorizationYParityWiderThanOneByte_throwsInvalidParams() {
+        CallArguments.AuthorizationListEntry entry = Rskip545TestSupport.defaultType4AuthorizationEntry();
+        entry.setYParity("0x100");
+
+        assertSendTransactionInvalidParams("0x4", args -> args.setAuthorizationList(List.of(entry)),
+                "Authorization y_parity must fit in a single byte at index 0");
     }
 
     private void assertSendTransactionInvalidParams(
