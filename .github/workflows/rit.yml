@@ -18,6 +18,22 @@ on:
         description: 'Branch for PowPeg Node'
         required: false
         default: 'master'
+      repo-owner:
+        description: 'Org/user that owns the repos to test (e.g. a private fork owner). Empty = this repo owner.'
+        required: false
+        default: ''
+      rskj-repo:
+        description: 'rskj repo name (e.g. a private fork). Defaults to rskj.'
+        required: false
+        default: 'rskj'
+      powpeg-repo:
+        description: 'powpeg-node repo name (e.g. a private fork). Defaults to powpeg-node.'
+        required: false
+        default: 'powpeg-node'
+      rit-repo:
+        description: 'rootstock-integration-tests repo name (e.g. a private fork). Defaults to rootstock-integration-tests.'
+        required: false
+        default: 'rootstock-integration-tests'
       test-suite:
         description: 'Test suite to run: short (fast PR subset) or full (short + extra tests)'
         required: false
@@ -208,7 +224,13 @@ jobs:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
           rit-branch: ${{ env.RIT_BRANCH }}
-          repo-owner: ${{ env.REPO_OWNER }}
+          # repo-owner/names default to the derived owner + public names (no behavior change);
+          # a workflow_dispatch run can override them to point at private forks.
+          repo-owner: ${{ github.event.inputs.repo-owner || env.REPO_OWNER }}
+          rskj-repo: ${{ github.event.inputs.rskj-repo || 'rskj' }}
+          powpeg-repo: ${{ github.event.inputs.powpeg-repo || 'powpeg-node' }}
+          rit-repo: ${{ github.event.inputs.rit-repo || 'rootstock-integration-tests' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           test-suite: ${{ env.TEST_SUITE }}
 
       - name: Check Slack Token
