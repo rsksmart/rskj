@@ -64,7 +64,8 @@ class TraceGasCharacterizationTest {
 
     private static World worldWithoutRskip692(String fixture, ReceiptStore receiptStore) throws Exception {
         TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
-                .withValue("blockchain.config.consensusRules.rskip692", ConfigValueFactory.fromAnyRef(-1)));
+                .withValue("blockchain.config.consensusRules.rskip692", ConfigValueFactory.fromAnyRef(-1))
+                .withValue("blockchain.config.consensusRules.rskip545", ConfigValueFactory.fromAnyRef(-1)));
         World world = world(fixture, new World(receiptStore, config));
         assertFalse(world.getConfig().getActivationConfig().isActive(ConsensusRule.RSKIP692, 1));
         return world;

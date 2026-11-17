@@ -1,0 +1,102 @@
+comment
+
+RSKIP701 same-block clear path. The factory (salt from the call data) creates K with CREATE2 (init code returns
+the 23-byte runtime). K's runtime: with 32 bytes of call data it stores 42 in slot 0 and runs SELFDESTRUCT naming
+the call data; with no call data it stores 1 in slot 7. The driver calls K with the beneficiary (K is marked) and
+then calls K again with no data (K stores slot 7 after its mark, in the same transaction). The probe stores
+EXTCODEHASH(K) in slot 0, EXTCODESIZE(K) + 1 in slot 1 and BALANCE(K) + 1 in slot 2.
+
+K = 86c6da12d2c60244ddcb72193659bafe0a54de2f (CREATE2 of the factory with salt 1)
+accB = b88c95fb184c1a6e33aa447c12561777de55e376
+
+end
+
+block_chain g00
+account_new acc1 10000000
+account_new accB 1000
+account_new factoryK 0 7f7636602014600d576001600755005b602a600055600035ff60005260176009f3600052600035602060006000f55000
+account_new driverX 0 60206000600037600060006020600060007386c6da12d2c60244ddcb72193659bafe0a54de2f5af150600060006000600060007386c6da12d2c60244ddcb72193659bafe0a54de2f5af15000
+account_new probeP 0 7386c6da12d2c60244ddcb72193659bafe0a54de2f3f60005560017386c6da12d2c60244ddcb72193659bafe0a54de2f3b0160015560017386c6da12d2c60244ddcb72193659bafe0a54de2f310160025500
+
+transaction_build createK
+    sender acc1
+    receiver factoryK
+    nonce 0
+    value 0
+    data 0000000000000000000000000000000000000000000000000000000000000001
+    gas 300000
+    build
+
+transaction_build destroyThenStoreK
+    sender acc1
+    receiver driverX
+    nonce 1
+    value 0
+    data 000000000000000000000000b88c95fb184c1a6e33aa447c12561777de55e376
+    gas 300000
+    build
+
+transaction_build probeK
+    sender acc1
+    receiver probeP
+    nonce 2
+    value 0
+    gas 200000
+    build
+
+transaction_build callK
+    sender acc1
+    receiverAddress 86c6da12d2c60244ddcb72193659bafe0a54de2f
+    nonce 3
+    value 0
+    gas 100000
+    build
+
+transaction_build payK
+    sender acc1
+    receiverAddress 86c6da12d2c60244ddcb72193659bafe0a54de2f
+    nonce 4
+    value 1000
+    gas 100000
+    build
+
+transaction_build recreateK
+    sender acc1
+    receiver factoryK
+    nonce 5
+    value 0
+    data 0000000000000000000000000000000000000000000000000000000000000001
+    gas 200000
+    build
+
+transaction_build recreateKLater
+    sender acc1
+    receiver factoryK
+    nonce 6
+    value 0
+    data 0000000000000000000000000000000000000000000000000000000000000001
+    gas 200000
+    build
+
+block_build b01
+    parent g00
+    gasLimit 6800000
+    transactions createK destroyThenStoreK probeK callK payK recreateK
+    build
+
+block_connect b01
+
+block_build b02
+    parent b01
+    gasLimit 6800000
+    transactions recreateKLater
+    build
+
+block_connect b02
+
+assert_best b02
+assert_tx_success createK
+assert_tx_success destroyThenStoreK
+assert_tx_success probeK
+assert_tx_success callK
+assert_tx_success payK

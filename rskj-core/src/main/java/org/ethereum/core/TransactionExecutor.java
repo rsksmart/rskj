@@ -572,6 +572,10 @@ public class TransactionExecutor {
     }
 
     private void createContract() {
+        // Recorded first so every path records it. The early returns below set an exception on the program,
+        // so the caller clears the result's fields (clearFieldsOnException) and rolls back.
+        result.addCreatedAccount(DataWord.valueOf(tx.getContractAddress().getBytes()));
+
         byte[] code = program.getResult().getHReturn();
         int codeSize = getLength(code);
         long storageCost = GasCost.multiply(GasCost.CREATE_DATA, codeSize);
@@ -691,13 +695,36 @@ public class TransactionExecutor {
 
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
         // Traverse list of suicides
-        result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));
+        result.getDeleteAccounts().forEach(address -> processMarkedAccount(new RskAddress(address)));
 
         track.clearTransientStorage();
 
         logger.trace("tx listener done");
 
         logger.trace("tx finalization done");
+    }
+
+    private void processMarkedAccount(RskAddress address) {
+        if (isDeletedBySelfdestruct(address)) {
+            track.delete(address);
+        } else {
+            track.clearAccount(address);
+        }
+    }
+
+    /**
+     * RSKIP701: an account marked by SELFDESTRUCT is deleted when the RSKIP is not active, when it was created in
+     * this transaction or when its nonce is zero. Otherwise it is cleared instead: code, storage and balance are
+     * removed and the account node keeps its nonce.
+     */
+    private boolean isDeletedBySelfdestruct(RskAddress address) {
+        return !activations.isActive(ConsensusRule.RSKIP701)
+                || isCreatedInTransaction(address)
+                || track.getNonce(address).signum() == 0;
+    }
+
+    private boolean isCreatedInTransaction(RskAddress address) {
+        return result.getCreatedAccounts().contains(DataWord.valueOf(address.getBytes()));
     }
 
     private void localCallFinalization() {
