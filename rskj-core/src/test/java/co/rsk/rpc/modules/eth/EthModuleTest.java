@@ -693,6 +693,97 @@ class EthModuleTest {
     }
 
     @Test
+    void sendRawTransaction_highS_reportsInvalidSignature() {
+        Transaction tx = signedLegacyTransaction(Constants.regtest().getChainId());
+        ECDSASignature signature = tx.getSignature();
+        byte flippedV = signature.getV() == 27 ? (byte) 28 : (byte) 27;
+        replaceSignature(tx, signature.getR(), Constants.getSECP256K1N().subtract(signature.getS()), flippedV);
+
+        assertSendRawTransactionRejected(tx, "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_rEqualToCurveOrder_reportsInvalidSignature() {
+        Transaction tx = signedLegacyTransaction(Constants.regtest().getChainId());
+        ECDSASignature signature = tx.getSignature();
+        replaceSignature(tx, Constants.getSECP256K1N(), signature.getS(), signature.getV());
+
+        assertSendRawTransactionRejected(tx, "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_sEqualToCurveOrder_reportsInvalidSignature() {
+        Transaction tx = signedLegacyTransaction(Constants.regtest().getChainId());
+        ECDSASignature signature = tx.getSignature();
+        replaceSignature(tx, signature.getR(), Constants.getSECP256K1N(), signature.getV());
+
+        assertSendRawTransactionRejected(tx, "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_validSignatureWrongChainId_reportsInvalidChainId() {
+        Transaction tx = signedLegacyTransaction((byte) 31);
+
+        assertSendRawTransactionRejected(tx, "Invalid chainId: 31");
+    }
+
+    @Test
+    void sendRawTransaction_badSignatureAndWrongChainId_reportsInvalidSignature() {
+        Transaction tx = signedLegacyTransaction((byte) 31);
+        ECDSASignature signature = tx.getSignature();
+        replaceSignature(tx, signature.getR(), Constants.getSECP256K1N(), signature.getV());
+
+        assertSendRawTransactionRejected(tx, "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_validSignatureAndChainId_isAdded() {
+        Transaction tx = signedLegacyTransaction(Constants.regtest().getChainId());
+        TransactionPoolAddResult added = mock(TransactionPoolAddResult.class);
+        when(added.transactionsWereAdded()).thenReturn(true);
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(added);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
+                Constants.regtest(), new Wallet(new HashMapDB()), mock(TransactionPool.class), transactionGateway);
+
+        String hash = ethModuleTransaction.sendRawTransaction(new HexDataParam(ByteUtil.toHexString(tx.getEncoded())));
+
+        assertEquals(tx.getHash().toJsonString(), hash);
+        verify(transactionGateway).receiveTransaction(any(Transaction.class));
+    }
+
+    private static Transaction signedLegacyTransaction(byte chainId) {
+        Transaction tx = Transaction.builder()
+                .nonce(BigInteger.ONE)
+                .gasPrice(BigInteger.valueOf(1_000_000_000L))
+                .gasLimit(BigInteger.valueOf(21_000))
+                .destination(new RskAddress("0x0000000000000000000000000000000000001234"))
+                .value(BigInteger.ONE)
+                .chainId(chainId)
+                .build();
+        tx.sign(ECKey.fromPrivate(BigInteger.valueOf(0xC0FFEE)).getPrivKeyBytes());
+        return tx;
+    }
+
+    private static void replaceSignature(Transaction tx, BigInteger r, BigInteger s, byte v) {
+        tx.setSignature(new ECDSASignature(r, s, v));
+    }
+
+    private static void assertSendRawTransactionRejected(Transaction tx, String expectedMessage) {
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
+                Constants.regtest(), new Wallet(new HashMapDB()), mock(TransactionPool.class), transactionGateway);
+        HexDataParam rawData = new HexDataParam(ByteUtil.toHexString(tx.getEncoded()));
+
+        RskJsonRpcRequestException e = assertThrows(RskJsonRpcRequestException.class,
+                () -> ethModuleTransaction.sendRawTransaction(rawData));
+
+        assertEquals(-32602, e.getCode());
+        assertEquals(expectedMessage, e.getMessage());
+        verify(transactionGateway, never()).receiveTransaction(any(Transaction.class));
+    }
+
+    @Test
     void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
         // Given
         Constants constants = Constants.regtest();

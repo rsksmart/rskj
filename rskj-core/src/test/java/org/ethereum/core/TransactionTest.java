@@ -34,6 +34,7 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
@@ -66,8 +67,43 @@ import static org.junit.jupiter.api.Assertions.*;
 @SuppressWarnings("squid:S1607") // many @Disabled annotations for diverse reasons
 class TransactionTest {
 
+    // Half the secp256k1 curve order, rounded down, as published in EIP-2
+    private static final BigInteger SECP256K1N_HALF =
+            new BigInteger("7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0", 16);
+
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+
+    @Test
+    void acceptTransactionSignature_sEqualToHalfCurveOrder_isRejected() {
+        Transaction tx = signedRegtestTransactionWithS(SECP256K1N_HALF);
+
+        assertFalse(tx.hasAcceptableSignatureComponents());
+        assertFalse(tx.acceptTransactionSignature(Constants.regtest().getChainId()));
+    }
+
+    @Test
+    void acceptTransactionSignature_sJustBelowHalfCurveOrder_isAccepted() {
+        Transaction tx = signedRegtestTransactionWithS(SECP256K1N_HALF.subtract(BigInteger.ONE));
+
+        assertTrue(tx.hasAcceptableSignatureComponents());
+        assertTrue(tx.acceptTransactionSignature(Constants.regtest().getChainId()));
+    }
+
+    private static Transaction signedRegtestTransactionWithS(BigInteger s) {
+        Transaction tx = Transaction.builder()
+                .nonce(BigInteger.ONE)
+                .gasPrice(BigInteger.valueOf(1_000_000_000L))
+                .gasLimit(BigInteger.valueOf(21_000))
+                .destination(new RskAddress("0x0000000000000000000000000000000000001234"))
+                .value(BigInteger.ONE)
+                .chainId(Constants.regtest().getChainId())
+                .build();
+        tx.sign(ECKey.fromPrivate(BigInteger.valueOf(0xC0FFEE)).getPrivKeyBytes());
+        ECDSASignature signature = tx.getSignature();
+        tx.setSignature(new ECDSASignature(signature.getR(), s, signature.getV()));
+        return tx;
+    }
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */
     void test1() {
