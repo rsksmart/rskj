@@ -833,6 +833,39 @@ class TransactionPoolImplTest {
     }
 
     @Test
+    void staleTxCostIsNotCountedInBalanceCheck() {
+        createTestAccounts(2, Coin.valueOf(1_000_000));
+        Account sender = createAccount(1);
+        Transaction stale = createSampleTransaction(1, 2, 479_000, 0); // costs 500,000
+        Assertions.assertTrue(transactionPool.addTransaction(stale).pendingTransactionsWereAdded());
+        repository.increaseNonce(sender.getAddress());
+
+        // costs 500,001, which the balance covers on its own
+        TransactionPoolAddResult result = transactionPool.addTransaction(createSampleTransaction(1, 2, 479_001, 1));
+        Assertions.assertTrue(result.pendingTransactionsWereAdded(), result.getErrorMessage());
+    }
+
+    @Test
+    void validPendingTxCostIsStillCountedNextToStaleTx() {
+        createTestAccounts(2, Coin.valueOf(1_000_000));
+        Account sender = createAccount(1);
+        Transaction stale = createSampleTransaction(1, 2, 79_000, 0); // costs 100,000
+        Assertions.assertTrue(transactionPool.addTransaction(stale).pendingTransactionsWereAdded());
+        repository.increaseNonce(sender.getAddress());
+
+        // each costs 300,000, so the valid pending cost is 600,000
+        TransactionPoolAddResult first = transactionPool.addTransaction(createSampleTransaction(1, 2, 279_000, 1));
+        Assertions.assertTrue(first.pendingTransactionsWereAdded(), first.getErrorMessage());
+        TransactionPoolAddResult second = transactionPool.addTransaction(createSampleTransaction(1, 2, 279_000, 2));
+        Assertions.assertTrue(second.pendingTransactionsWereAdded(), second.getErrorMessage());
+
+        // costs 400,001, so the valid total is 1,000,001 and exceeds the balance even without the stale cost
+        TransactionPoolAddResult result = transactionPool.addTransaction(createSampleTransaction(1, 2, 379_001, 3));
+        Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertEquals("insufficient funds to pay for pending and new transactions", result.getErrorMessage());
+    }
+
+    @Test
     void aNewTxIsAddedInTxPoolAndShouldBeAddedInCache() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
