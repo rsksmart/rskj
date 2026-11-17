@@ -19,7 +19,7 @@
       "gas": {
         "title": "transactionGas",
         "type": "string",
-        "description": "Integer of the gas provided for the transaction execution. It will return unused gas. Default: 90000."
+        "description": "Integer of the gas provided for the transaction execution. It will return unused gas. The default and any cap depend on the method."
       },
       "gasPrice": {
         "title": "transactionGasPrice",

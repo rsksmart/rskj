@@ -56,10 +56,6 @@ public final class TransactionBuilder {
 		this.typePrefix = TransactionTypePrefix.typed(type);
 		return this;
 	}
-	public TransactionBuilder type(TransactionType type, Byte rskSubtype) {
-		this.typePrefix = TransactionTypePrefix.of(type, rskSubtype);
-		return this;
-	}
 	public TransactionBuilder typePrefix(TransactionTypePrefix typePrefix) {
 		this.typePrefix = typePrefix;
 		return this;

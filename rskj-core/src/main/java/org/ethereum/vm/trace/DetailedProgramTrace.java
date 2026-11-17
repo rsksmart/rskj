@@ -76,7 +76,7 @@ public class DetailedProgramTrace implements ProgramTrace {
 
             AccountInformationProvider informationProvider = getInformationProvider(programInvoke);
             RskAddress ownerAddress = new RskAddress(programInvoke.getOwnerAddress());
-            if (!informationProvider.isContract(ownerAddress)) {
+            if (!informationProvider.hasInitializedStorage(ownerAddress)) {
                 storageSize = 0;
                 fullStorage = true;
             } else {

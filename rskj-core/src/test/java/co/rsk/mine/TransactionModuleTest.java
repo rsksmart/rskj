@@ -633,7 +633,8 @@ class TransactionModuleTest {
 
         ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(
                 repositoryLocator,
-                this.transactionExecutorFactory
+                this.transactionExecutorFactory,
+                null
         );
 
         if (mineInstant) {

@@ -28,10 +28,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link Type0SignatureUtils}.
@@ -41,76 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class Type0SignatureUtilsTest {
 
-    // -------------------------------------------------------------------------
-    // extractChainIdFromV
-    // -------------------------------------------------------------------------
-
-    @Test
-    void extractChainIdFromV_v27_returnsZero() {
-        assertEquals(0, Type0SignatureUtils.extractChainIdFromV((byte) 27));
-    }
-
-    @Test
-    void extractChainIdFromV_v28_returnsZero() {
-        assertEquals(0, Type0SignatureUtils.extractChainIdFromV((byte) 28));
-    }
-
-    @Test
-    void extractChainIdFromV_eip155ChainId1_extractsCorrectly() {
-        // V = chainId*2 + 35 + yParity → chainId=1 even parity: 1*2+35=37
-        byte v = (byte) 37;
-        assertEquals(1, Type0SignatureUtils.extractChainIdFromV(v) & 0xFF);
-    }
-
-    @Test
-    void extractChainIdFromV_eip155ChainId33_extractsCorrectly() {
-        // RSK mainnet chainId=33: even parity V = 33*2+35=101
-        byte v = (byte) 101;
-        assertEquals(33, Type0SignatureUtils.extractChainIdFromV(v) & 0xFF);
-    }
-
-    @Test
-    void extractChainIdFromV_eip155ChainId33OddParity_extractsCorrectly() {
-        // RSK mainnet chainId=33: odd parity V = 33*2+35+1=102
-        byte v = (byte) 102;
-        assertEquals(33, Type0SignatureUtils.extractChainIdFromV(v) & 0xFF);
-    }
-
-    // -------------------------------------------------------------------------
-    // getRealV
-    // -------------------------------------------------------------------------
-
-    @Test
-    void getRealV_v27_returns27() {
-        assertEquals(27, Type0SignatureUtils.getRealV((byte) 27));
-    }
-
-    @Test
-    void getRealV_v28_returns28() {
-        assertEquals(28, Type0SignatureUtils.getRealV((byte) 28));
-    }
-
-    @Test
-    void getRealV_eip155EvenV_returns28() {
-        // Even EIP-155 V (e.g. 102 for chainId=33 with yParity=1) → real V is 28
-        byte v = (byte) 102;
-        assertEquals(28, Type0SignatureUtils.getRealV(v));
-    }
-
-    @Test
-    void getRealV_eip155OddV_returns27() {
-        // Odd EIP-155 V (e.g. 101 for chainId=33 with yParity=0) → real V is 27
-        byte v = (byte) 101;
-        assertEquals(27, Type0SignatureUtils.getRealV(v));
-    }
-
-    // -------------------------------------------------------------------------
-    // parseType0SignatureState
-    // -------------------------------------------------------------------------
-
     @Test
     void parseType0SignatureState_vNull_returnsUnsignedWithNoChainId() {
-        // Build a 3-field RLP list: v=null, r=some, s=some
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(null),
                 RLP.encodeElement(new byte[]{0x01}),
@@ -121,12 +52,11 @@ class Type0SignatureUtilsTest {
         SignatureState state = Type0SignatureUtils.parseType0SignatureState(list, 0, 1, 2);
 
         assertInstanceOf(UnsignedSignature.class, state);
-        assertFalse(state.isSigned());
+        assertNull(((UnsignedSignature) state).chainId());
     }
 
     @Test
     void parseType0SignatureState_vInvalidLength_throws() {
-        // V must be exactly 1 byte; two-byte V is rejected
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(new byte[]{0x00, 0x1b}),
                 RLP.encodeElement(new byte[32]),
@@ -152,13 +82,32 @@ class Type0SignatureUtilsTest {
         SignatureState state = Type0SignatureUtils.parseType0SignatureState(list, 0, 1, 2);
 
         assertInstanceOf(SignedSignature.class, state);
-        assertTrue(state.isSigned());
         assertEquals(0, ((SignedSignature) state).chainId());
+        assertEquals(v, ((SignedSignature) state).signature().getV());
     }
 
     @Test
-    void parseType0SignatureState_eip155V_returnsSignedWithChainId() {
-        // V=101 → chainId=33 (RSK mainnet)
+    void parseType0SignatureState_eip155EvenV_returnsSignedWithChainIdAndRealV28() {
+        // V=102 → chainId=33, real V=28 (even EIP-155 V)
+        byte v = (byte) 102;
+        byte[] dummyRS = new byte[32];
+        byte[] encoded = RLP.encodeList(
+                RLP.encodeElement(new byte[]{v}),
+                RLP.encodeElement(dummyRS),
+                RLP.encodeElement(dummyRS)
+        );
+        RLPList list = (RLPList) RLP.decode2(encoded).get(0);
+
+        SignatureState state = Type0SignatureUtils.parseType0SignatureState(list, 0, 1, 2);
+
+        assertInstanceOf(SignedSignature.class, state);
+        assertEquals(33, ((SignedSignature) state).chainId() & 0xFF);
+        assertEquals(28, ((SignedSignature) state).signature().getV());
+    }
+
+    @Test
+    void parseType0SignatureState_eip155OddV_returnsSignedWithChainIdAndRealV27() {
+        // V=101 → chainId=33, real V=27 (odd EIP-155 V)
         byte v = (byte) 101;
         byte[] dummyRS = new byte[32];
         byte[] encoded = RLP.encodeList(
@@ -172,19 +121,24 @@ class Type0SignatureUtilsTest {
 
         assertInstanceOf(SignedSignature.class, state);
         assertEquals(33, ((SignedSignature) state).chainId() & 0xFF);
-    }
-
-    // -------------------------------------------------------------------------
-    // UnsignedSignature
-    // -------------------------------------------------------------------------
-
-    @Test
-    void unsignedSignature_hasChainId_falseWhenNull() {
-        assertFalse(new UnsignedSignature(null).hasChainId());
+        assertEquals(27, ((SignedSignature) state).signature().getV());
     }
 
     @Test
-    void unsignedSignature_hasChainId_trueWhenPresent() {
-        assertTrue(new UnsignedSignature((byte) 33).hasChainId());
+    void parseType0SignatureState_eip155ChainId1_extractsCorrectly() {
+        // V = chainId*2 + 35 + yParity → chainId=1 even parity: 1*2+35=37
+        byte v = (byte) 37;
+        byte[] dummyRS = new byte[32];
+        byte[] encoded = RLP.encodeList(
+                RLP.encodeElement(new byte[]{v}),
+                RLP.encodeElement(dummyRS),
+                RLP.encodeElement(dummyRS)
+        );
+        RLPList list = (RLPList) RLP.decode2(encoded).get(0);
+
+        SignatureState state = Type0SignatureUtils.parseType0SignatureState(list, 0, 1, 2);
+
+        assertInstanceOf(SignedSignature.class, state);
+        assertEquals(1, ((SignedSignature) state).chainId() & 0xFF);
     }
 }

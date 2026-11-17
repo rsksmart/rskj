@@ -34,8 +34,10 @@ import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -239,6 +241,36 @@ class TypedTransactionReceiptTest {
 
         assertFalse(receipt.isSuccessful(), "Receipt should be failed");
         assertArrayEquals(TransactionReceipt.FAILED_STATUS, receipt.getStatus());
+    }
+
+    @Test
+    void decodedTypedReceipt_afterMutation_stillRoundTrips() {
+        byte[] stored = createReceipt(createTransaction(TransactionType.TYPE_4)).getEncoded();
+
+        TransactionReceipt decoded = new TransactionReceipt(stored);
+        assertNull(decoded.getTransaction(), "a receipt read back from storage carries no transaction");
+
+        decoded.setGasUsed(21000L); // invalidates the cached encoding
+
+        byte[] reEncoded = decoded.getEncoded();
+        assertArrayEquals(stored, reEncoded,
+                "a four-field body has no per-tx gasUsed, so setGasUsed must not change the encoding");
+        assertDoesNotThrow(() -> new TransactionReceipt(reEncoded),
+                "a decoded typed receipt must stay decodable after any mutation");
+    }
+
+    @Test
+    void setStatus_invalidatesCachedEncodingOfDecodedTypedReceipt() {
+        byte[] stored = createReceipt(createTransaction(TransactionType.TYPE_4)).getEncoded();
+
+        TransactionReceipt decoded = new TransactionReceipt(stored);
+        decoded.setStatus(TransactionReceipt.FAILED_STATUS);
+
+        assertFalse(decoded.isSuccessful());
+        assertFalse(Arrays.equals(stored, decoded.getEncoded()),
+                "status is field 0 of the four-field body, so it must reach the encoding");
+        assertFalse(new TransactionReceipt(decoded.getEncoded()).isSuccessful(),
+                "the re-encoded receipt must agree with the in-memory status");
     }
 
     private Transaction createTransaction(TransactionType type) {

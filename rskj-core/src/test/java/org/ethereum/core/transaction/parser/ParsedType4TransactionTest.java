@@ -30,8 +30,8 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,7 +68,7 @@ class ParsedType4TransactionTest {
 
         assertEquals(left, right);
         assertEquals(left.hashCode(), right.hashCode());
-        assertFalse(left.equals("other"));
+        assertNotEquals("other", left);
         assertNotEquals(left, withNonce(right, new byte[]{0x02}));
         assertEquals(Coin.valueOf(10), left.maxPriorityFeePerGas());
         assertEquals(Coin.valueOf(100), left.maxFeePerGas());
@@ -87,9 +87,55 @@ class ParsedType4TransactionTest {
         parsed.nonce()[0] ^= 0x01;
         parsed.gasLimit()[0] ^= 0x01;
         parsed.data()[0] ^= 0x01;
+        parsed.accessListBytes()[0] ^= 0x01;
 
         assertNotSame(parsed.nonce(), parsed.nonce());
+        assertNotSame(parsed.accessListBytes(), parsed.accessListBytes());
         assertEquals(newParsedType4(List.of(auth)), parsed);
+    }
+
+    @Test
+    void constructor_copiesAccessListBytes() {
+        byte[] accessList = new byte[]{(byte) 0xc0};
+        ParsedType4Transaction parsed = new ParsedType4Transaction(
+                TransactionTypePrefix.typed(TransactionType.TYPE_4),
+                new byte[]{0x01},
+                BigInteger.valueOf(21_000).toByteArray(),
+                RECEIVER,
+                Coin.ZERO,
+                new byte[]{0x01},
+                new UnsignedSignature(CHAIN_ID),
+                accessList,
+                Coin.valueOf(10),
+                Coin.valueOf(100),
+                List.of(Rskip545TestSupport.minimalAuthorization(CHAIN_ID)));
+
+        accessList[0] ^= 0x01;
+
+        assertArrayEquals(new byte[]{(byte) 0xc0}, parsed.accessListBytes());
+    }
+
+    @Test
+    void accessListBytes_returnsDefensiveCopy() {
+        byte[] accessList = new byte[]{(byte) 0xc0};
+        ParsedType4Transaction parsed = new ParsedType4Transaction(
+                TransactionTypePrefix.typed(TransactionType.TYPE_4),
+                new byte[]{0x01},
+                BigInteger.valueOf(21_000).toByteArray(),
+                RECEIVER,
+                Coin.ZERO,
+                new byte[]{0x01},
+                new UnsignedSignature(CHAIN_ID),
+                accessList,
+                Coin.valueOf(10),
+                Coin.valueOf(100),
+                List.of(Rskip545TestSupport.minimalAuthorization(CHAIN_ID)));
+
+        byte[] returned = parsed.accessListBytes();
+        returned[0] ^= 0x01;
+
+        assertArrayEquals(new byte[]{(byte) 0xc0}, parsed.accessListBytes());
+        assertNotSame(parsed.accessListBytes(), parsed.accessListBytes());
     }
 
     @Test
@@ -110,11 +156,6 @@ class ParsedType4TransactionTest {
             @Override
             public String visitType2(ParsedType2Transaction transaction) {
                 return "type2";
-            }
-
-            @Override
-            public String visitType2Rsk(ParsedType2RSKTransaction transaction) {
-                return "type2rsk";
             }
 
             @Override

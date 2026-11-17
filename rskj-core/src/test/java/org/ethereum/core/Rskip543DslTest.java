@@ -35,7 +35,12 @@ import org.junit.jupiter.api.Test;
 import java.io.FileNotFoundException;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * DSL Tests for RSKIP543
@@ -44,15 +49,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * <ul>
  *   <li>Legacy transactions (Type 0x00) — no type prefix, first byte >= 0xc0</li>
  *   <li>Standard EIP-2718 typed transactions (Type 0x01) — single byte prefix</li>
- *   <li>RSK namespace transactions (0x02 || rsk-tx-type || payload)
- *       with rsk-tx-type in [0x00, 0x7f]</li>
- *   <li>Transaction encoding includes correct type prefix(es)</li>
+ *   <li>Transaction encoding includes correct type prefix</li>
  *   <li>Transaction receipts include correct type encoding</li>
- *   <li>Mixed transaction types coexist in the same block</li>
- *   <li>Contract deployment and interaction via RSK namespace</li>
+ *   <li>Mixed legacy + Type 1 transactions coexist in the same block</li>
  *   <li>Backward compatibility with legacy transactions</li>
  * </ul>
-
  */
 class Rskip543DslTest {
 
@@ -77,7 +78,7 @@ class Rskip543DslTest {
 
         assertNotNull(tx);
         assertEquals(TransactionType.LEGACY, tx.getType());
-        assertFalse(tx.isRskNamespaceTransaction());
+        assertFalse(tx.getTypePrefix().isRskNamespace());
     }
 
     @Test
@@ -111,7 +112,7 @@ class Rskip543DslTest {
 
         assertNotNull(tx);
         assertEquals(TransactionType.TYPE_1, tx.getType());
-        assertFalse(tx.isRskNamespaceTransaction());
+        assertFalse(tx.getTypePrefix().isRskNamespace());
     }
 
     @Test
@@ -141,141 +142,11 @@ class Rskip543DslTest {
     }
 
     @Test
-    void rskNamespaceTransactionShouldBeType2WithSubtype() {
-        Transaction tx = world.getTransactionByName("txRskType3");
-
-        assertNotNull(tx);
-        assertEquals(TransactionType.TYPE_2, tx.getType());
-        assertTrue(tx.isRskNamespaceTransaction());
-        assertEquals((byte) 0x03, tx.getRskSubtype());
-    }
-
-    @Test
-    void rskNamespaceTransactionEncodingShouldHaveTwoBytePrefix() {
-        Transaction tx = world.getTransactionByName("txRskType3");
-        byte[] encoded = tx.getEncoded();
-
-        assertEquals(0x02, encoded[0], "First byte should be 0x02 (namespace separator)");
-        assertEquals(0x03, encoded[1], "Second byte should be rsk-tx-type (0x03)");
-        assertTrue((encoded[2] & 0xFF) >= 0xc0,
-                "Payload (after two-byte prefix) should start with RLP list marker");
-    }
-
-    @Test
-    void rskNamespaceTransactionFullTypeStringShouldBeCombined() {
-        Transaction tx = world.getTransactionByName("txRskType3");
-
-        assertEquals("0x0203", tx.getFullTypeString());
-    }
-
-    @Test
-    void rskNamespaceReceiptShouldSucceedAndHaveTwoBytePrefix() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskType3");
-
-        assertNotNull(receipt);
-        assertArrayEquals(new byte[]{1}, receipt.getStatus());
-
-        byte[] encodedReceipt = receipt.getEncoded();
-        assertEquals(0x02, encodedReceipt[0], "Receipt should start with 0x02");
-        assertEquals(0x03, encodedReceipt[1], "Receipt should have subtype 0x03 as second byte");
-    }
-
-    @Test
-    void rskSubtype0x00ShouldWork() {
-        Transaction tx = world.getTransactionByName("txRskType0");
-
-        assertNotNull(tx);
-        assertTrue(tx.isRskNamespaceTransaction());
-        assertEquals((byte) 0x00, tx.getRskSubtype());
-        assertEquals("0x0200", tx.getFullTypeString());
-
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskType0");
-        assertArrayEquals(new byte[]{1}, receipt.getStatus());
-    }
-
-    @Test
-    void rskSubtype0x05ShouldWork() {
-        Transaction tx = world.getTransactionByName("txRskType5");
-
-        assertNotNull(tx);
-        assertTrue(tx.isRskNamespaceTransaction());
-        assertEquals((byte) 0x05, tx.getRskSubtype());
-        assertEquals("0x0205", tx.getFullTypeString());
-
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskType5");
-        assertArrayEquals(new byte[]{1}, receipt.getStatus());
-    }
-
-    @Test
-    void rskSubtype0x7fShouldWork() {
-        Transaction tx = world.getTransactionByName("txRskType127");
-
-        assertNotNull(tx);
-        assertTrue(tx.isRskNamespaceTransaction());
-        assertEquals((byte) 0x7f, tx.getRskSubtype());
-        assertEquals("0x027f", tx.getFullTypeString());
-
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskType127");
-        assertArrayEquals(new byte[]{1}, receipt.getStatus());
-    }
-
-    @Test
-    void multipleRskSubtypesInSameBlockShouldAllSucceed() {
-        Block b04 = world.getBlockByName("b04");
-
-        assertNotNull(b04);
-        assertEquals(3, b04.getTransactionsList().size(),
-                "Block b04 should contain 3 RSK namespace transactions with different subtypes");
-
-        assertArrayEquals(new byte[]{1}, world.getTransactionReceiptByName("txRskType0").getStatus());
-        assertArrayEquals(new byte[]{1}, world.getTransactionReceiptByName("txRskType5").getStatus());
-        assertArrayEquals(new byte[]{1}, world.getTransactionReceiptByName("txRskType127").getStatus());
-    }
-
-    @Test
-    void contractDeploymentWithRskNamespaceShouldSucceed() {
-        Transaction tx = world.getTransactionByName("txDeployRsk");
-
-        assertNotNull(tx);
-        assertTrue(tx.isRskNamespaceTransaction());
-        assertEquals((byte) 0x0a, tx.getRskSubtype());
-        assertTrue(tx.isContractCreation());
-
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txDeployRsk");
-        assertNotNull(receipt);
-        assertArrayEquals(new byte[]{1}, receipt.getStatus());
-    }
-
-    @Test
-    void contractDeploymentEncodingShouldHaveTwoBytePrefix() {
-        Transaction tx = world.getTransactionByName("txDeployRsk");
-        byte[] encoded = tx.getEncoded();
-
-        assertEquals(0x02, encoded[0]);
-        assertEquals(0x0a, encoded[1]);
-        assertEquals("0x020a", tx.getFullTypeString());
-    }
-
-    @Test
-    void contractInteractionWithRskNamespaceShouldSucceed() {
-        Transaction tx = world.getTransactionByName("txCallSetValue");
-
-        assertNotNull(tx);
-        assertTrue(tx.isRskNamespaceTransaction());
-        assertEquals((byte) 0x0f, tx.getRskSubtype());
-        assertEquals("0x020f", tx.getFullTypeString());
-
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txCallSetValue");
-        assertNotNull(receipt);
-        assertArrayEquals(new byte[]{1}, receipt.getStatus());
-    }
-
-    @Test
     void mixedTransactionTypesShouldCoexistInSameBlock() {
-        Block b07 = world.getBlockByName("b07");
+        Block b03 = world.getBlockByName("b03");
 
-        assertNotNull(b07);
-        assertEquals(3, b07.getTransactionsList().size());
+        assertNotNull(b03);
+        assertEquals(2, b03.getTransactionsList().size());
     }
 
     @Test
@@ -283,7 +154,7 @@ class Rskip543DslTest {
         Transaction tx = world.getTransactionByName("txMixed1");
 
         assertEquals(TransactionType.LEGACY, tx.getType());
-        assertFalse(tx.isRskNamespaceTransaction());
+        assertFalse(tx.getTypePrefix().isRskNamespace());
         assertArrayEquals(new byte[]{1}, world.getTransactionReceiptByName("txMixed1").getStatus());
     }
 
@@ -292,47 +163,8 @@ class Rskip543DslTest {
         Transaction tx = world.getTransactionByName("txMixed2");
 
         assertEquals(TransactionType.TYPE_1, tx.getType());
-        assertFalse(tx.isRskNamespaceTransaction());
+        assertFalse(tx.getTypePrefix().isRskNamespace());
         assertArrayEquals(new byte[]{1}, world.getTransactionReceiptByName("txMixed2").getStatus());
-    }
-
-    @Test
-    void mixedBlockRskNamespaceTransactionShouldWork() {
-        Transaction tx = world.getTransactionByName("txMixed3");
-
-        assertTrue(tx.isRskNamespaceTransaction());
-        assertEquals((byte) 0x11, tx.getRskSubtype());
-        assertEquals("0x0211", tx.getFullTypeString());
-        assertArrayEquals(new byte[]{1}, world.getTransactionReceiptByName("txMixed3").getStatus());
-    }
-
-    @Test
-    void rskNamespaceValueTransferToDifferentRecipientShouldWork() {
-        Transaction tx = world.getTransactionByName("txRskToAcc3");
-
-        assertNotNull(tx);
-        assertTrue(tx.isRskNamespaceTransaction());
-        assertEquals((byte) 0x01, tx.getRskSubtype());
-        assertEquals("0x0201", tx.getFullTypeString());
-
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskToAcc3");
-        assertNotNull(receipt);
-        assertArrayEquals(new byte[]{1}, receipt.getStatus());
-    }
-
-    @Test
-    void rskNamespaceTransactionShouldSurviveEncodeDecode() {
-        Transaction original = world.getTransactionByName("txRskType3");
-        byte[] encoded = original.getEncoded();
-
-        Transaction decoded = new Transaction(encoded);
-
-        assertEquals(TransactionType.TYPE_2, decoded.getType());
-        assertTrue(decoded.isRskNamespaceTransaction());
-        assertEquals((byte) 0x03, decoded.getRskSubtype());
-        assertEquals(original.getNonceAsInteger(), decoded.getNonceAsInteger());
-        assertEquals(original.getGasPrice(), decoded.getGasPrice());
-        assertEquals(original.getGasLimitAsInteger(), decoded.getGasLimitAsInteger());
     }
 
     @Test
@@ -343,7 +175,7 @@ class Rskip543DslTest {
         Transaction decoded = new Transaction(encoded);
 
         assertEquals(TransactionType.LEGACY, decoded.getType());
-        assertFalse(decoded.isRskNamespaceTransaction());
+        assertFalse(decoded.getTypePrefix().isRskNamespace());
         assertEquals(original.getNonceAsInteger(), decoded.getNonceAsInteger());
     }
 
@@ -355,19 +187,8 @@ class Rskip543DslTest {
         Transaction decoded = new Transaction(encoded);
 
         assertEquals(TransactionType.TYPE_1, decoded.getType());
-        assertFalse(decoded.isRskNamespaceTransaction());
+        assertFalse(decoded.getTypePrefix().isRskNamespace());
         assertEquals(original.getNonceAsInteger(), decoded.getNonceAsInteger());
-    }
-
-    @Test
-    void rskNamespaceTransactionSignatureShouldCoverTypePrefix() {
-        Transaction tx = world.getTransactionByName("txRskType3");
-        byte[] rawEncoded = tx.getEncodedRaw();
-
-        assertEquals(0x02, rawEncoded[0],
-                "Raw encoding should start with 0x02");
-        assertEquals(0x03, rawEncoded[1],
-                "Raw encoding should have subtype 0x03 as second byte");
     }
 
     @Test
@@ -390,19 +211,19 @@ class Rskip543DslTest {
 
     @Test
     void blockchainShouldReachExpectedHeight() {
-        assertEquals(8, world.getBlockChain().getBestBlock().getNumber(),
-                "Block chain should have 8 blocks after all tests");
+        assertEquals(3, world.getBlockChain().getBestBlock().getNumber(),
+                "Block chain should have 3 blocks after all tests");
     }
 
     @Test
-    void bestBlockShouldBeB08() {
-        Block b08 = world.getBlockByName("b08");
-        assertEquals(b08, world.getBlockChain().getBestBlock());
+    void bestBlockShouldBeB03() {
+        Block b03 = world.getBlockByName("b03");
+        assertEquals(b03, world.getBlockChain().getBestBlock());
     }
 
     @Test
     void allBlocksShouldBeConnected() {
-        for (int i = 1; i <= 8; i++) {
+        for (int i = 1; i <= 3; i++) {
             String blockName = "b0" + i;
             Block block = world.getBlockByName(blockName);
             assertNotNull(block, "Block " + blockName + " should exist");
@@ -426,88 +247,36 @@ class Rskip543DslTest {
 
         assertEquals(TransactionType.TYPE_1, decodedTx.getType(),
                 "Decoded transaction should preserve Type 1");
-        assertFalse(decodedTx.isRskNamespaceTransaction());
+        assertFalse(decodedTx.getTypePrefix().isRskNamespace());
         assertEquals(originalTx.getHash(), decodedTx.getHash(),
                 "Transaction hash should survive block encode/decode");
     }
 
     @Test
-    void blockWithRskNamespaceTransactionShouldSurviveEncodeDecode() {
+    void blockWithMixedTransactionTypesShouldSurviveEncodeDecode() {
         Block original = world.getBlockByName("b03");
         assertNotNull(original);
 
         BlockFactory blockFactory = new BlockFactory(world.getConfig().getActivationConfig());
         Block decoded = blockFactory.decodeBlock(original.getEncoded());
 
-        assertEquals(original.getTransactionsList().size(), decoded.getTransactionsList().size(),
-                "Decoded block should have same number of transactions");
+        assertEquals(2, decoded.getTransactionsList().size(),
+                "Decoded block should have 2 transactions");
 
-        Transaction decodedTx = decoded.getTransactionsList().get(0);
-
-        assertEquals(TransactionType.TYPE_2, decodedTx.getType(),
-                "Decoded transaction should preserve TYPE_2 (RSK namespace prefix)");
-        assertTrue(decodedTx.isRskNamespaceTransaction(),
-                "Decoded transaction should be recognized as RSK namespace");
-        assertEquals((byte) 0x03, decodedTx.getRskSubtype(),
-                "Decoded transaction should preserve RSK subtype 0x03");
-    }
-
-    @Test
-    void blockWithMultipleRskSubtypesShouldSurviveEncodeDecode() {
-        Block original = world.getBlockByName("b04");
-        assertNotNull(original);
-
-        BlockFactory blockFactory = new BlockFactory(world.getConfig().getActivationConfig());
-        Block decoded = blockFactory.decodeBlock(original.getEncoded());
-
-        assertEquals(3, decoded.getTransactionsList().size(),
-                "Decoded block should have 3 transactions");
-
-        for (Transaction decodedTx : decoded.getTransactionsList()) {
-            assertEquals(TransactionType.TYPE_2, decodedTx.getType());
-            assertTrue(decodedTx.isRskNamespaceTransaction());
-        }
-
-        assertEquals((byte) 0x00, decoded.getTransactionsList().get(0).getRskSubtype());
-        assertEquals((byte) 0x05, decoded.getTransactionsList().get(1).getRskSubtype());
-        assertEquals((byte) 0x7f, decoded.getTransactionsList().get(2).getRskSubtype());
-    }
-
-    @Test
-    void blockWithMixedTransactionTypesShouldSurviveEncodeDecode() {
-        Block original = world.getBlockByName("b07");
-        assertNotNull(original);
-
-        BlockFactory blockFactory = new BlockFactory(world.getConfig().getActivationConfig());
-        Block decoded = blockFactory.decodeBlock(original.getEncoded());
-
-        assertEquals(3, decoded.getTransactionsList().size(),
-                "Decoded block should have 3 transactions");
-
-        // Transaction 0: Legacy
         Transaction decodedLegacy = decoded.getTransactionsList().get(0);
         assertEquals(TransactionType.LEGACY, decodedLegacy.getType(),
                 "First tx should be LEGACY after decode");
-        assertFalse(decodedLegacy.isRskNamespaceTransaction());
+        assertFalse(decodedLegacy.getTypePrefix().isRskNamespace());
 
-        // Transaction 1: Type 1
         Transaction decodedType1 = decoded.getTransactionsList().get(1);
         assertEquals(TransactionType.TYPE_1, decodedType1.getType(),
                 "Second tx should be TYPE_1 after decode");
-        assertFalse(decodedType1.isRskNamespaceTransaction());
-
-        // Transaction 2: RSK namespace (subtype 0x11)
-        Transaction decodedRsk = decoded.getTransactionsList().get(2);
-        assertEquals(TransactionType.TYPE_2, decodedRsk.getType(),
-                "Third tx should be TYPE_2 (RSK namespace) after decode");
-        assertTrue(decodedRsk.isRskNamespaceTransaction());
-        assertEquals((byte) 0x11, decodedRsk.getRskSubtype(),
-                "Third tx should preserve RSK subtype 0x11");
+        assertFalse(decodedType1.getTypePrefix().isRskNamespace());
     }
 
     @Test
     void blockEncodedTransactionHashesShouldMatchOriginals() {
-        Block original = world.getBlockByName("b07");
+        Block original = world.getBlockByName("b03");
         BlockFactory blockFactory = new BlockFactory(world.getConfig().getActivationConfig());
         Block decoded = blockFactory.decodeBlock(original.getEncoded());
 
@@ -518,22 +287,6 @@ class Rskip543DslTest {
             assertEquals(origTxs.get(i).getHash(), decodedTxs.get(i).getHash(),
                     "Transaction " + i + " hash should match after block encode/decode");
         }
-    }
-
-    @Test
-    void blockWithContractDeploymentShouldSurviveEncodeDecode() {
-        Block original = world.getBlockByName("b05");
-        BlockFactory blockFactory = new BlockFactory(world.getConfig().getActivationConfig());
-        Block decoded = blockFactory.decodeBlock(original.getEncoded());
-
-        assertEquals(1, decoded.getTransactionsList().size());
-
-        Transaction decodedTx = decoded.getTransactionsList().get(0);
-        assertEquals(TransactionType.TYPE_2, decodedTx.getType());
-        assertTrue(decodedTx.isRskNamespaceTransaction());
-        assertEquals((byte) 0x0a, decodedTx.getRskSubtype());
-        assertTrue(decodedTx.isContractCreation(),
-                "Contract creation flag should survive block encode/decode");
     }
 
     @Test
@@ -558,84 +311,14 @@ class Rskip543DslTest {
     }
 
     @Test
-    void rskNamespaceReceiptEncodingShouldHaveTwoBytePrefixForSubtype0x00() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskType0");
-        byte[] encoded = receipt.getEncoded();
-
-        assertEquals((byte) 0x02, encoded[0],
-                "RSK namespace receipt should start with 0x02");
-        assertEquals((byte) 0x00, encoded[1],
-                "RSK namespace receipt subtype 0x00 should have second byte 0x00");
-        assertTrue((encoded[2] & 0xFF) >= 0xc0,
-                "Receipt RLP payload should start with list marker");
-    }
-
-    @Test
-    void rskNamespaceReceiptEncodingShouldHaveTwoBytePrefixForSubtype0x05() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskType5");
-        byte[] encoded = receipt.getEncoded();
-
-        assertEquals((byte) 0x02, encoded[0],
-                "RSK namespace receipt should start with 0x02");
-        assertEquals((byte) 0x05, encoded[1],
-                "RSK namespace receipt subtype 0x05 should have second byte 0x05");
-        assertTrue((encoded[2] & 0xFF) >= 0xc0,
-                "Receipt RLP payload should start with list marker");
-    }
-
-    @Test
-    void rskNamespaceReceiptEncodingShouldHaveTwoBytePrefixForSubtype0x7f() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskType127");
-        byte[] encoded = receipt.getEncoded();
-
-        assertEquals((byte) 0x02, encoded[0],
-                "RSK namespace receipt should start with 0x02");
-        assertEquals((byte) 0x7f, encoded[1],
-                "RSK namespace receipt subtype 0x7f should have second byte 0x7f");
-        assertTrue((encoded[2] & 0xFF) >= 0xc0,
-                "Receipt RLP payload should start with list marker");
-    }
-
-    @Test
-    void contractDeploymentReceiptEncodingShouldHaveTwoBytePrefix() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txDeployRsk");
-        byte[] encoded = receipt.getEncoded();
-
-        assertEquals((byte) 0x02, encoded[0],
-                "Contract deployment receipt should start with 0x02");
-        assertEquals((byte) 0x0a, encoded[1],
-                "Contract deployment receipt should have subtype 0x0a as second byte");
-    }
-
-    @Test
-    void contractInteractionReceiptEncodingShouldHaveTwoBytePrefix() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txCallSetValue");
-        byte[] encoded = receipt.getEncoded();
-
-        assertEquals((byte) 0x02, encoded[0],
-                "Contract interaction receipt should start with 0x02");
-        assertEquals((byte) 0x0f, encoded[1],
-                "Contract interaction receipt should have subtype 0x0f as second byte");
-    }
-
-    @Test
     void mixedBlockReceiptEncodingsShouldMatchTransactionTypes() {
-        // Legacy receipt — no prefix
         TransactionReceipt legacyReceipt = world.getTransactionReceiptByName("txMixed1");
         assertTrue((legacyReceipt.getEncoded()[0] & 0xFF) >= 0xc0,
                 "Mixed block legacy receipt should start with RLP list marker");
 
-        // Type 1 receipt — 0x01 prefix
         TransactionReceipt type1Receipt = world.getTransactionReceiptByName("txMixed2");
         assertEquals((byte) 0x01, type1Receipt.getEncoded()[0],
                 "Mixed block Type 1 receipt should start with 0x01");
-
-        // RSK namespace receipt — 0x02 || 0x11 prefix
-        TransactionReceipt rskReceipt = world.getTransactionReceiptByName("txMixed3");
-        assertEquals((byte) 0x02, rskReceipt.getEncoded()[0],
-                "Mixed block RSK namespace receipt should start with 0x02");
-        assertEquals((byte) 0x11, rskReceipt.getEncoded()[1],
-                "Mixed block RSK namespace receipt should have subtype 0x11");
     }
 
     @Test
@@ -664,31 +347,6 @@ class Rskip543DslTest {
     }
 
     @Test
-    void rskNamespaceReceiptShouldSurviveEncodeDecode() {
-        TransactionReceipt original = world.getTransactionReceiptByName("txRskType3");
-        byte[] encoded = original.getEncoded();
-
-        TransactionReceipt decoded = new TransactionReceipt(encoded);
-
-        assertArrayEquals(original.getStatus(), decoded.getStatus());
-        assertArrayEquals(original.getGasUsed(), decoded.getGasUsed());
-        assertArrayEquals(original.getCumulativeGas(), decoded.getCumulativeGas());
-    }
-
-    @Test
-    void rskNamespaceBoundarySubtypeReceiptsShouldSurviveEncodeDecode() {
-        // Subtype 0x00
-        TransactionReceipt r0 = world.getTransactionReceiptByName("txRskType0");
-        TransactionReceipt d0 = new TransactionReceipt(r0.getEncoded());
-        assertArrayEquals(r0.getStatus(), d0.getStatus());
-
-        // Subtype 0x7f
-        TransactionReceipt r127 = world.getTransactionReceiptByName("txRskType127");
-        TransactionReceipt d127 = new TransactionReceipt(r127.getEncoded());
-        assertArrayEquals(r127.getStatus(), d127.getStatus());
-    }
-
-    @Test
     void receiptDTOShouldReturnCorrectTypeForLegacy() {
         TransactionReceipt receipt = world.getTransactionReceiptByName("txLegacy");
         Block block = world.getBlockByName("b01");
@@ -713,67 +371,22 @@ class Rskip543DslTest {
     }
 
     @Test
-    void receiptDTOShouldReturnCombinedTypeForRskNamespace() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskType3");
-        Block block = world.getBlockByName("b03");
-        TransactionInfo txInfo = new TransactionInfo(receipt, block.getHash().getBytes(), 0);
-
-        TransactionReceiptDTO dto = new TransactionReceiptDTO(block, txInfo, world.getBlockTxSignatureCache());
-
-        assertEquals("0x0203", dto.getType(),
-                "RSK namespace receipt DTO (subtype 0x03) type should be 0x0203");
-    }
-
-    @Test
-    void receiptDTOShouldReturnCombinedTypeForRskSubtype0x00() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskType0");
-        Block block = world.getBlockByName("b04");
-        TransactionInfo txInfo = new TransactionInfo(receipt, block.getHash().getBytes(), 0);
-
-        TransactionReceiptDTO dto = new TransactionReceiptDTO(block, txInfo, world.getBlockTxSignatureCache());
-
-        assertEquals("0x0200", dto.getType(),
-                "RSK namespace receipt DTO (subtype 0x00) type should be 0x0200");
-    }
-
-    @Test
-    void receiptDTOShouldReturnCombinedTypeForRskSubtype0x7f() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskType127");
-        Block block = world.getBlockByName("b04");
-        TransactionInfo txInfo = new TransactionInfo(receipt, block.getHash().getBytes(), 2);
-
-        TransactionReceiptDTO dto = new TransactionReceiptDTO(block, txInfo, world.getBlockTxSignatureCache());
-
-        assertEquals("0x027f", dto.getType(),
-                "RSK namespace receipt DTO (subtype 0x7f) type should be 0x027f");
-    }
-
-    @Test
     void mixedBlockReceiptDTOTypesShouldMatchTransactionDTOTypes() {
-        Block block = world.getBlockByName("b07");
+        Block block = world.getBlockByName("b03");
 
-        // Legacy
         TransactionReceipt legacyReceipt = world.getTransactionReceiptByName("txMixed1");
         TransactionInfo legacyInfo = new TransactionInfo(legacyReceipt, block.getHash().getBytes(), 0);
         TransactionReceiptDTO legacyDTO = new TransactionReceiptDTO(block, legacyInfo, world.getBlockTxSignatureCache());
 
-        // Type 1
         TransactionReceipt type1Receipt = world.getTransactionReceiptByName("txMixed2");
         TransactionInfo type1Info = new TransactionInfo(type1Receipt, block.getHash().getBytes(), 1);
         TransactionReceiptDTO type1DTO = new TransactionReceiptDTO(block, type1Info, world.getBlockTxSignatureCache());
 
-        // RSK namespace
-        TransactionReceipt rskReceipt = world.getTransactionReceiptByName("txMixed3");
-        TransactionInfo rskInfo = new TransactionInfo(rskReceipt, block.getHash().getBytes(), 2);
-        TransactionReceiptDTO rskDTO = new TransactionReceiptDTO(block, rskInfo, world.getBlockTxSignatureCache());
-
         assertEquals("0x0", legacyDTO.getType(), "Mixed block legacy receipt DTO type");
         assertEquals("0x1", type1DTO.getType(), "Mixed block Type 1 receipt DTO type");
-        assertEquals("0x0211", rskDTO.getType(), "Mixed block RSK namespace receipt DTO type");
 
         Transaction legacyTx = world.getTransactionByName("txMixed1");
         Transaction type1Tx = world.getTransactionByName("txMixed2");
-        Transaction rskTx = world.getTransactionByName("txMixed3");
 
         assertEquals(legacyDTO.getType(),
                 new TransactionResultDTO(block, 0, legacyTx, false, world.getBlockTxSignatureCache()).getType(),
@@ -781,23 +394,6 @@ class Rskip543DslTest {
         assertEquals(type1DTO.getType(),
                 new TransactionResultDTO(block, 1, type1Tx, false, world.getBlockTxSignatureCache()).getType(),
                 "Type 1 receipt DTO type should match transaction result DTO type");
-        assertEquals(rskDTO.getType(),
-                new TransactionResultDTO(block, 2, rskTx, false, world.getBlockTxSignatureCache()).getType(),
-                "RSK namespace receipt DTO type should match transaction result DTO type");
-    }
-
-    @Test
-    void contractDeploymentReceiptDTOShouldHaveCorrectType() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txDeployRsk");
-        Block block = world.getBlockByName("b05");
-        TransactionInfo txInfo = new TransactionInfo(receipt, block.getHash().getBytes(), 0);
-
-        TransactionReceiptDTO dto = new TransactionReceiptDTO(block, txInfo, world.getBlockTxSignatureCache());
-
-        assertEquals("0x020a", dto.getType(),
-                "Contract deployment receipt DTO type should be 0x020a");
-        assertNotNull(dto.getContractAddress(),
-                "Contract deployment receipt should have a contract address");
     }
 
     @Test
@@ -825,77 +421,19 @@ class Rskip543DslTest {
     }
 
     @Test
-    void transactionResultDTOShouldReturnCombinedTypeForRskNamespace() {
-        Transaction tx = world.getTransactionByName("txRskType3");
-        Block block = world.getBlockByName("b03");
-
-        TransactionResultDTO dto = new TransactionResultDTO(
-                block, 0, tx, false, world.getBlockTxSignatureCache());
-
-        assertEquals("0x0203", dto.getType(),
-                "RSK namespace transaction (subtype 0x03) DTO type should be 0x0203, not 0x2");
-    }
-
-    @Test
-    void transactionResultDTOShouldReturnCombinedTypeForRskSubtype0x00() {
-        Transaction tx = world.getTransactionByName("txRskType0");
-        Block block = world.getBlockByName("b04");
-
-        TransactionResultDTO dto = new TransactionResultDTO(
-                block, 0, tx, false, world.getBlockTxSignatureCache());
-
-        assertEquals("0x0200", dto.getType(),
-                "RSK namespace transaction (subtype 0x00) DTO type should be 0x0200");
-    }
-
-    @Test
-    void transactionResultDTOShouldReturnCombinedTypeForRskSubtype0x7f() {
-        Transaction tx = world.getTransactionByName("txRskType127");
-        Block block = world.getBlockByName("b04");
-
-        TransactionResultDTO dto = new TransactionResultDTO(
-                block, 2, tx, false, world.getBlockTxSignatureCache());
-
-        assertEquals("0x027f", dto.getType(),
-                "RSK namespace transaction (subtype 0x7f) DTO type should be 0x027f");
-    }
-
-    @Test
-    void transactionResultDTOTypeShouldBeConsistentWithReceiptDTO() {
-        Transaction tx = world.getTransactionByName("txRskType3");
-        Block block = world.getBlockByName("b03");
-
-        TransactionResultDTO resultDTO = new TransactionResultDTO(
-                block, 0, tx, false, world.getBlockTxSignatureCache());
-
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txRskType3");
-        TransactionInfo txInfo = new TransactionInfo(receipt, block.getHash().getBytes(), 0);
-        TransactionReceiptDTO receiptDTO = new TransactionReceiptDTO(
-                block, txInfo, world.getBlockTxSignatureCache());
-
-        assertEquals(resultDTO.getType(), receiptDTO.getType(),
-                "TransactionResultDTO and TransactionReceiptDTO should report the same type");
-    }
-
-    @Test
     void mixedBlockTransactionResultDTOTypesShouldBeCorrect() {
-        Block block = world.getBlockByName("b07");
+        Block block = world.getBlockByName("b03");
 
         Transaction legacyTx = world.getTransactionByName("txMixed1");
         Transaction type1Tx = world.getTransactionByName("txMixed2");
-        Transaction rskTx = world.getTransactionByName("txMixed3");
 
         TransactionResultDTO legacyDTO = new TransactionResultDTO(
                 block, 0, legacyTx, false, world.getBlockTxSignatureCache());
         TransactionResultDTO type1DTO = new TransactionResultDTO(
                 block, 1, type1Tx, false, world.getBlockTxSignatureCache());
-        TransactionResultDTO rskDTO = new TransactionResultDTO(
-                block, 2, rskTx, false, world.getBlockTxSignatureCache());
 
         assertEquals("0x0", legacyDTO.getType(), "Legacy tx in mixed block should have type 0x0");
         assertEquals("0x1", type1DTO.getType(), "Type 1 tx in mixed block should have type 0x1");
-        assertEquals("0x0211", rskDTO.getType(),
-                "RSK namespace tx (subtype 0x11) in mixed block should have type 0x0211");
     }
 
     @Test

@@ -17,8 +17,6 @@
  */
 package org.ethereum.core.transaction.parser;
 
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.util.RLPList;
 
@@ -27,7 +25,5 @@ public interface RawTransactionTypeParser<T extends ParsedRawTransaction> {
     T parse(TransactionTypePrefix typePrefix, RLPList txFields);
 
     T parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId);
-
-    void validate(long bestBlock, ActivationConfig activationConfig, Constants constants);
 
 }

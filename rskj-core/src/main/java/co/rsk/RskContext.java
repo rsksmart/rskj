@@ -1324,7 +1324,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor()),
                     new PrevMinGasPriceRule(),
                     new BlockTxsFieldsValidationRule(getBlockTxSignatureCache(), chainId),
-                    new BlockTxsValidationRule(getRepositoryLocator(), getBlockTxSignatureCache())
+                    new BlockTxsValidationRule(getRepositoryLocator(), getBlockTxSignatureCache(),
+                            getRskSystemProperties().getActivationConfig())
             );
         }
 
