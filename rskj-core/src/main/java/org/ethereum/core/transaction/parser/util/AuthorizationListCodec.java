@@ -46,9 +46,6 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
 public final class AuthorizationListCodec {
 
     private static final int TUPLE_FIELD_COUNT = 6;
-    private static final BigInteger MAX_CHAIN_ID = BigInteger.ONE.shiftLeft(256);
-    private static final BigInteger MAX_NONCE = BigInteger.ONE.shiftLeft(64);
-    private static final BigInteger MAX_SIGNATURE_COMPONENT = BigInteger.ONE.shiftLeft(256);
 
     private AuthorizationListCodec() {}
 
@@ -99,13 +96,8 @@ public final class AuthorizationListCodec {
         return RLP.encodeList(encodedTuples);
     }
 
+    /** Pure encoder: {@link SetCodeAuthorization} enforces its own decode bounds on construction. */
     public static byte[] encodeTuple(SetCodeAuthorization auth) {
-        validateAuthorization(auth);
-        return encodeTupleUnchecked(auth);
-    }
-
-    /** Pure encoder. The round-trip check in decodeTuple has already validated the authorization. */
-    private static byte[] encodeTupleUnchecked(SetCodeAuthorization auth) {
         byte yParity = (byte) (auth.getSignature().getV() - Transaction.LOWER_REAL_V);
         return RLP.encodeList(
                 RLP.encodeBigInteger(auth.getChainId()),
@@ -150,7 +142,6 @@ public final class AuthorizationListCodec {
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
 
         SetCodeAuthorization auth = new SetCodeAuthorization(chainId, address, nonce, signature);
-        validateAuthorization(auth);
         requireCanonicalTupleRlp(tupleBytes, auth);
         return auth;
     }
@@ -160,7 +151,7 @@ public final class AuthorizationListCodec {
      * header, item prefixes and scalar minimality. Catches the prefixes per-field checks cannot see.
      */
     private static void requireCanonicalTupleRlp(byte[] tupleBytes, SetCodeAuthorization auth) {
-        if (!Arrays.equals(tupleBytes, encodeTupleUnchecked(auth))) {
+        if (!Arrays.equals(tupleBytes, encodeTuple(auth))) {
             throw new IllegalArgumentException("Authorization list tuple is not canonically encoded");
         }
     }
@@ -200,7 +191,6 @@ public final class AuthorizationListCodec {
             nonce = new byte[0];
         }
         CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
-        requireNonceInRange(decodeUnsignedBigInteger(nonce));
         byte yParity = parseNormalizedYParity(decodeQuantity(entry.getYParity(), "yParity", index));
         byte[] r = CommonParsingUtils.decodeHex(entry.getR(), "Authorization list entry r must be hex at index " + index);
         byte[] s = CommonParsingUtils.decodeHex(entry.getS(), "Authorization list entry s must be hex at index " + index);
@@ -215,7 +205,6 @@ public final class AuthorizationListCodec {
                 nonce,
                 signature
         );
-        validateAuthorization(auth);
         requireProcessableAuthorization(auth, index);
         return auth;
     }
@@ -246,13 +235,7 @@ public final class AuthorizationListCodec {
     }
 
     private static BigInteger decodeChainId(byte[] chainIdData) {
-        BigInteger chainId = chainIdData == null || chainIdData.length == 0
-                ? BigInteger.ZERO
-                : new BigInteger(1, chainIdData);
-        if (chainId.signum() < 0 || chainId.compareTo(MAX_CHAIN_ID) >= 0) {
-            throw new IllegalArgumentException("Authorization chain_id must be non-negative and less than 2^256");
-        }
-        return chainId;
+        return chainIdData == null || chainIdData.length == 0 ? BigInteger.ZERO : new BigInteger(1, chainIdData);
     }
 
     private static RskAddress decodeAddress(byte[] addressData) {
@@ -262,27 +245,11 @@ public final class AuthorizationListCodec {
         return new RskAddress(addressData);
     }
 
-    private static BigInteger decodeUnsignedBigInteger(byte[] value) {
-        if (value == null) {
-            return BigInteger.ZERO;
-        }
-        return new BigInteger(1, value);
-    }
-
-    /** Decode bound {@code nonce < 2^64}; the tighter {@code < 2^64 - 1} is a processing step. */
-    private static void requireNonceInRange(BigInteger nonceValue) {
-        if (nonceValue.signum() < 0 || nonceValue.compareTo(MAX_NONCE) >= 0) {
-            throw new IllegalArgumentException("Authorization nonce must be non-negative and less than 2^64");
-        }
-    }
-
-    /** Decode bounds for the nonce, measured as received. */
     private static byte[] decodeAndValidateNonce(RLPElement field) {
         byte[] rawNonce = field.getRLPData();
         byte[] nonce = rawNonce == null ? new byte[0] : ByteUtil.cloneBytes(rawNonce);
         CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
         CommonParsingUtils.requireCanonicalScalar(nonce, "Authorization nonce");
-        requireNonceInRange(decodeUnsignedBigInteger(nonce));
         return nonce;
     }
 
@@ -317,23 +284,5 @@ public final class AuthorizationListCodec {
             throw new IllegalArgumentException("Authorization y_parity must fit in a single byte");
         }
         return yParityData[0];
-    }
-
-    private static void validateAuthorization(SetCodeAuthorization auth) {
-        if (auth.getChainId().signum() < 0 || auth.getChainId().compareTo(MAX_CHAIN_ID) >= 0) {
-            throw new IllegalArgumentException("Authorization chain_id must be non-negative and less than 2^256");
-        }
-        requireNonceInRange(decodeUnsignedBigInteger(auth.getNonceBytes()));
-
-        ECDSASignature signature = auth.getSignature();
-        // The curve range moved to processing, so this is the only remaining lower bound;
-        // asUnsignedByteArray drops the sign instead of failing, so -1 would encode as 0xff.
-        if (signature.getR().signum() < 0 || signature.getS().signum() < 0) {
-            throw new IllegalArgumentException("Authorization signature r and s must be non-negative");
-        }
-        if (signature.getR().compareTo(MAX_SIGNATURE_COMPONENT) >= 0
-                || signature.getS().compareTo(MAX_SIGNATURE_COMPONENT) >= 0) {
-            throw new IllegalArgumentException("Authorization signature r and s must be less than 2^256");
-        }
     }
 }

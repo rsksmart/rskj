@@ -33,8 +33,11 @@ import java.util.Objects;
 public class SetCodeAuthorization {
 
     private static final byte MAGIC = 0x05;
-    private static final BigInteger MAX_NONCE = new BigInteger("FFFFFFFFFFFFFFFF", 16);
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
+    private static final BigInteger CHAIN_ID_LIMIT = BigInteger.ONE.shiftLeft(256);
+    private static final BigInteger NONCE_LIMIT = BigInteger.ONE.shiftLeft(64);
+    private static final BigInteger MAX_NONCE = NONCE_LIMIT.subtract(BigInteger.ONE);
+    private static final BigInteger SIGNATURE_COMPONENT_LIMIT = BigInteger.ONE.shiftLeft(256);
 
     private final BigInteger chainId;
     private final RskAddress address;
@@ -46,6 +49,25 @@ public class SetCodeAuthorization {
         this.address = Objects.requireNonNull(address, "address");
         this.nonce = minimalNonce(Objects.requireNonNull(nonce, "nonce"));
         this.signature = Objects.requireNonNull(signature, "signature");
+        validateBounds();
+    }
+
+    private void validateBounds() {
+        if (chainId.signum() < 0 || chainId.compareTo(CHAIN_ID_LIMIT) >= 0) {
+            throw new IllegalArgumentException("Authorization chain_id must be non-negative and less than 2^256");
+        }
+        if (getNonceAsInteger().compareTo(NONCE_LIMIT) >= 0) {
+            throw new IllegalArgumentException("Authorization nonce must be less than 2^64");
+        }
+
+        // asUnsignedByteArray drops the sign instead of failing, so -1 would encode as 0xff.
+        if (signature.getR().signum() < 0 || signature.getS().signum() < 0) {
+            throw new IllegalArgumentException("Authorization signature r and s must be non-negative");
+        }
+        if (signature.getR().compareTo(SIGNATURE_COMPONENT_LIMIT) >= 0
+                || signature.getS().compareTo(SIGNATURE_COMPONENT_LIMIT) >= 0) {
+            throw new IllegalArgumentException("Authorization signature r and s must be less than 2^256");
+        }
     }
 
     public BigInteger getChainId() {

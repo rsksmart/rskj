@@ -36,7 +36,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.List;
@@ -92,6 +91,21 @@ class AuthorizationListCodecTest {
                 RLP.decode2(tuple).get(0));
 
         assertEquals(auth, decoded);
+    }
+
+    @Test
+    void encodeTuple_decodeTuple_maxConstructibleValues_roundTrip() {
+        BigInteger maxWord = BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE);
+        byte[] maxNonce = BigIntegers.asUnsignedByteArray(BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE));
+        RskAddress address = Rskip545TestSupport.minimalAuthorization((byte) 33).getAddress();
+        SetCodeAuthorization auth = new SetCodeAuthorization(
+                maxWord, address, maxNonce, new ECDSASignature(maxWord, maxWord, Transaction.LOWER_REAL_V));
+
+        byte[] tuple = AuthorizationListCodec.encodeTuple(auth);
+        SetCodeAuthorization decoded = AuthorizationListCodec.decodeTuple(RLP.decode2(tuple).get(0));
+
+        assertEquals(auth, decoded);
+        assertArrayEquals(tuple, AuthorizationListCodec.encodeTuple(decoded));
     }
 
     // -------------------------------------------------------------------------
@@ -204,6 +218,36 @@ class AuthorizationListCodecTest {
                 () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
 
         assertTrue(ex.getMessage().contains("secp256k1n"), ex.getMessage());
+    }
+
+    @Test
+    void parseFromCallArguments_nonceAtTwoPow64_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setNonce("0x10000000000000000");
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertEquals("Authorization nonce must be less than 2^64", ex.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"r", "s"})
+    void parseFromCallArguments_signatureComponentOver32Bytes_throws(String field) {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        String twoPow256 = "0x1" + "0".repeat(64);
+        if (field.equals("r")) {
+            entry.setR(twoPow256);
+        } else {
+            entry.setS(twoPow256);
+        }
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertEquals("Authorization signature " + field + " is not valid", ex.getMessage());
     }
 
     @Test
@@ -698,15 +742,6 @@ class AuthorizationListCodecTest {
     }
 
     @Test
-    void privateDecodeUnsignedBigInteger_null_returnsZero() throws Exception {
-        java.lang.reflect.Method decodeUnsignedBigInteger = AuthorizationListCodec.class.getDeclaredMethod(
-                "decodeUnsignedBigInteger", byte[].class);
-        decodeUnsignedBigInteger.setAccessible(true);
-
-        assertEquals(BigInteger.ZERO, decodeUnsignedBigInteger.invoke(null, (Object) null));
-    }
-
-    @Test
     void parseFromCallArguments_nullSignatureHex_throws() {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
         CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
@@ -733,90 +768,6 @@ class AuthorizationListCodecTest {
 
             assertEquals(BigInteger.ZERO, new BigInteger(1, auth.getNonceBytes()));
         }
-    }
-
-    @Test
-    void decodeChainId_tooLarge_throws() throws Exception {
-        Method decodeChainId = AuthorizationListCodec.class.getDeclaredMethod("decodeChainId", byte[].class);
-        decodeChainId.setAccessible(true);
-        byte[] data = BigIntegers.asUnsignedByteArray(BigInteger.ONE.shiftLeft(256));
-
-        InvocationTargetException ex = assertThrows(InvocationTargetException.class,
-                () -> decodeChainId.invoke(null, (Object) data));
-        assertTrue(ex.getCause().getMessage().contains("chain_id"), ex.getCause().getMessage());
-    }
-
-    @Test
-    void validateAuthorization_chainIdTooLarge_throws() throws Exception {
-        Method validate = AuthorizationListCodec.class.getDeclaredMethod(
-                "validateAuthorization", SetCodeAuthorization.class);
-        validate.setAccessible(true);
-
-        SetCodeAuthorization auth = Mockito.mock(SetCodeAuthorization.class);
-        Mockito.when(auth.getChainId()).thenReturn(BigInteger.ONE.shiftLeft(256));
-        Mockito.when(auth.getNonceBytes()).thenReturn(new byte[]{0x01});
-
-        InvocationTargetException ex = assertThrows(InvocationTargetException.class,
-                () -> validate.invoke(null, auth));
-        assertTrue(ex.getCause().getMessage().contains("chain_id"));
-    }
-
-    @Test
-    void validateAuthorization_signatureRTooLarge_throws() throws Exception {
-        Method validate = AuthorizationListCodec.class.getDeclaredMethod(
-                "validateAuthorization", SetCodeAuthorization.class);
-        validate.setAccessible(true);
-
-        SetCodeAuthorization auth = Mockito.mock(SetCodeAuthorization.class);
-        ECDSASignature signature = Mockito.mock(ECDSASignature.class);
-        Mockito.when(auth.getChainId()).thenReturn(BigInteger.ZERO);
-        Mockito.when(auth.getNonceBytes()).thenReturn(new byte[]{0x01});
-        Mockito.when(auth.getSignature()).thenReturn(signature);
-        Mockito.when(signature.validateComponentsWithoutV()).thenReturn(true);
-        Mockito.when(signature.getR()).thenReturn(BigInteger.ONE.shiftLeft(256));
-        Mockito.when(signature.getS()).thenReturn(BigInteger.ONE);
-
-        InvocationTargetException ex = assertThrows(InvocationTargetException.class,
-                () -> validate.invoke(null, auth));
-        assertTrue(ex.getCause().getMessage().contains("2^256"), ex.getCause().getMessage());
-    }
-
-    @Test
-    void encodeTuple_oversizedR_throws() {
-        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
-        byte[] oversized = new byte[33];
-        oversized[0] = 0x01;
-        SetCodeAuthorization bad = new SetCodeAuthorization(
-                auth.getChainId(),
-                auth.getAddress(),
-                auth.getNonceBytes(),
-                ECDSASignature.fromComponents(
-                        oversized,
-                        BigIntegers.asUnsignedByteArray(auth.getSignature().getS()),
-                        auth.getSignature().getV()));
-
-        assertThrows(IllegalArgumentException.class,
-                () -> AuthorizationListCodec.encodeTuple(bad));
-    }
-
-    /** {@code asUnsignedByteArray} drops the sign rather than failing, so -1 would encode as 0xff. */
-    @ParameterizedTest
-    @ValueSource(ints = {R_FIELD_INDEX, S_FIELD_INDEX})
-    void encodeTuple_negativeSignatureComponent_throws(int fieldIndex) {
-        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
-        BigInteger negative = BigInteger.valueOf(-1);
-        SetCodeAuthorization bad = new SetCodeAuthorization(
-                auth.getChainId(),
-                auth.getAddress(),
-                auth.getNonceBytes(),
-                new ECDSASignature(
-                        fieldIndex == R_FIELD_INDEX ? negative : auth.getSignature().getR(),
-                        fieldIndex == S_FIELD_INDEX ? negative : auth.getSignature().getS(),
-                        auth.getSignature().getV()));
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> AuthorizationListCodec.encodeTuple(bad));
-        assertEquals("Authorization signature r and s must be non-negative", ex.getMessage());
     }
 
     // -------------------------------------------------------------------------

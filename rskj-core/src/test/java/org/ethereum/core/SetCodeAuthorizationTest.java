@@ -7,17 +7,22 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 
 class SetCodeAuthorizationTest {
 
+    private static final BigInteger TWO_POW_64 = BigInteger.ONE.shiftLeft(64);
+    private static final BigInteger TWO_POW_256 = BigInteger.ONE.shiftLeft(256);
     private static final BigInteger CHAIN_ID = BigInteger.valueOf(31);
     private static final RskAddress ADDRESS = new RskAddress("0000000000000000000000000000000000000001");
     private static final byte[] NONCE = new byte[] {0x01};
@@ -28,6 +33,95 @@ class SetCodeAuthorizationTest {
         assertThrows(NullPointerException.class, () -> new SetCodeAuthorization(CHAIN_ID, null, NONCE, validSignature()));
         assertThrows(NullPointerException.class, () -> new SetCodeAuthorization(CHAIN_ID, ADDRESS, null, validSignature()));
         assertThrows(NullPointerException.class, () -> new SetCodeAuthorization(CHAIN_ID, ADDRESS, NONCE, null));
+    }
+
+    @Test
+    void constructorShouldAcceptChainIdJustBelowTwoPow256() {
+        BigInteger chainId = TWO_POW_256.subtract(BigInteger.ONE);
+
+        assertDoesNotThrow(() -> new SetCodeAuthorization(chainId, ADDRESS, NONCE, validSignature()));
+    }
+
+    @Test
+    void constructorShouldRejectChainIdAtTwoPow256() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new SetCodeAuthorization(TWO_POW_256, ADDRESS, NONCE, validSignature()));
+
+        assertEquals("Authorization chain_id must be non-negative and less than 2^256", ex.getMessage());
+    }
+
+    @Test
+    void constructorShouldRejectNegativeChainId() {
+        BigInteger negative = BigInteger.valueOf(-1);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new SetCodeAuthorization(negative, ADDRESS, NONCE, validSignature()));
+
+        assertEquals("Authorization chain_id must be non-negative and less than 2^256", ex.getMessage());
+    }
+
+    @Test
+    void constructorShouldAcceptNonceJustBelowTwoPow64() {
+        byte[] nonce = BigIntegers.asUnsignedByteArray(TWO_POW_64.subtract(BigInteger.ONE));
+
+        assertDoesNotThrow(() -> new SetCodeAuthorization(CHAIN_ID, ADDRESS, nonce, validSignature()));
+    }
+
+    @Test
+    void constructorShouldAcceptNonceWithLeadingZerosBelowTwoPow64() {
+        byte[] nonce = new byte[] {
+                0x00,
+                (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
+                (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xfe
+        };
+
+        SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, nonce, validSignature());
+
+        assertEquals(TWO_POW_64.subtract(BigInteger.TWO), authorization.getNonceAsInteger());
+    }
+
+    @Test
+    void constructorShouldRejectNonceAtTwoPow64() {
+        byte[] nonce = BigIntegers.asUnsignedByteArray(TWO_POW_64);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new SetCodeAuthorization(CHAIN_ID, ADDRESS, nonce, validSignature()));
+
+        assertEquals("Authorization nonce must be less than 2^64", ex.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"r", "s"})
+    void constructorShouldAcceptSignatureComponentJustBelowTwoPow256(String component) {
+        ECDSASignature signature = signatureWithComponent(component, TWO_POW_256.subtract(BigInteger.ONE));
+
+        assertDoesNotThrow(() -> new SetCodeAuthorization(CHAIN_ID, ADDRESS, NONCE, signature));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"r", "s"})
+    void constructorShouldRejectSignatureComponentAtTwoPow256(String component) {
+        ECDSASignature signature = signatureWithComponent(component, TWO_POW_256);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new SetCodeAuthorization(CHAIN_ID, ADDRESS, NONCE, signature));
+
+        assertEquals("Authorization signature r and s must be less than 2^256", ex.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"r", "s"})
+    void constructorShouldRejectNegativeSignatureComponent(String component) {
+        ECDSASignature signature = signatureWithComponent(component, BigInteger.valueOf(-1));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new SetCodeAuthorization(CHAIN_ID, ADDRESS, NONCE, signature));
+
+        assertEquals("Authorization signature r and s must be non-negative", ex.getMessage());
+    }
+
+    private static ECDSASignature signatureWithComponent(String component, BigInteger value) {
+        return new ECDSASignature(component.equals("r") ? value : BigInteger.ONE, component.equals("s") ? value : BigInteger.ONE, Transaction.LOWER_REAL_V);
     }
 
     @Test
@@ -223,23 +317,6 @@ class SetCodeAuthorizationTest {
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, maxNonce, validSignature());
         IllegalStateException exception = assertThrows(IllegalStateException.class, authorization::verifyNonceRange);
         assertEquals("Nonce must be < 2^64 - 1", exception.getMessage());
-    }
-
-    @Test
-    void verifyNonceRangeShouldRejectNonceLargerThanMaxNonce() {
-        byte[] tooLargeNonce = new byte[] {
-                0x01,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00
-        };
-
-        SetCodeAuthorization authorization =
-                new SetCodeAuthorization(CHAIN_ID, ADDRESS, tooLargeNonce, validSignature());
-
-        IllegalStateException ex =
-                assertThrows(IllegalStateException.class, authorization::verifyNonceRange);
-
-        assertEquals("Nonce must be < 2^64 - 1", ex.getMessage());
     }
 
     @Test
