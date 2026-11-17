@@ -2,6 +2,7 @@ package co.rsk.peg.federation;
 
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
+import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -1087,12 +1088,12 @@ class FederationChangeIT {
 
     private void assertLogPegoutConfirmed(int logsStartIndex, Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber) {
         List<LogInfo> logsSinceCheckpoint = logs.subList(logsStartIndex, logs.size());
-        BridgeSupportTestUtil.assertLogPegoutConfirmed(logsSinceCheckpoint, btcTxHash, pegoutCreationRskBlockNumber);
+        BridgeEventsTestUtils.assertLogPegoutConfirmed(logsSinceCheckpoint, btcTxHash, pegoutCreationRskBlockNumber);
     }
 
     private void assertLogReleaseBtc(int logsStartIndex, Keccak256 rskTxHash, BtcTransaction btcTx) {
         List<LogInfo> logsSinceCheckpoint = logs.subList(logsStartIndex, logs.size());
-        BridgeSupportTestUtil.assertLogReleaseBtc(logsSinceCheckpoint, btcTx, rskTxHash);
+        BridgeEventsTestUtils.assertLogReleaseBtc(logsSinceCheckpoint, btcTx, rskTxHash);
     }
 
     private void assertPendingFederationIsBuiltAsExpected(PendingFederation pendingFederation) {
@@ -1224,13 +1225,13 @@ class FederationChangeIT {
         Coin requestedAmount
     ) {
         List<LogInfo> logsSinceCheckpoint = logs.subList(logsStartIndex, logs.size());
-        BridgeSupportTestUtil.assertLogReleaseRequested(logsSinceCheckpoint, releaseCreationTxHash, pegoutTransactionHash, requestedAmount);
+        BridgeEventsTestUtils.assertLogReleaseRequested(logsSinceCheckpoint, releaseCreationTxHash, pegoutTransactionHash, requestedAmount);
     }
 
     private void assertLogPegoutTransactionCreated(int logsStartIndex, BtcTransaction pegoutTransaction) {
         List<LogInfo> logsSinceCheckpoint = logs.subList(logsStartIndex, logs.size());
         List<Coin> outpointValues = extractOutpointValues(pegoutTransaction);
-        BridgeSupportTestUtil.assertLogPegoutTransactionCreated(logsSinceCheckpoint, pegoutTransaction, outpointValues);
+        BridgeEventsTestUtils.assertLogPegoutTransactionCreated(logsSinceCheckpoint, pegoutTransaction, outpointValues);
     }
 
     private void assertSvpFundTxWasRegistered(int activeFederationUtxosSizeBeforeRegisteringTx, BtcTransaction svpFundTx) throws Exception {

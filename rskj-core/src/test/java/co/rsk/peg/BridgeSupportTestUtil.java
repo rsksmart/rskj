@@ -1,11 +1,10 @@
 package co.rsk.peg;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
-import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
-import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
-import static co.rsk.peg.BridgeEventsTestUtils.getLogsBySignature;
-import static co.rsk.peg.BridgeEventsTestUtils.getLogsData;
-import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
+import static co.rsk.peg.BridgeEventsTestUtils.assertEventWasNotEmitted;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogPegoutTransactionCreated;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogReleaseRequested;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogUtxosRegistered;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASES_OUTPOINTS_VALUES;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -40,20 +39,16 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.FederationStorageProvider;
 import co.rsk.peg.federation.FederationSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
-import co.rsk.peg.pegin.RejectedPeginReason;
-import co.rsk.peg.utils.NonRefundablePeginReason;
 import co.rsk.test.builders.UTXOBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -62,7 +57,6 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -548,92 +542,6 @@ public final class BridgeSupportTestUtil {
         assertReleaseOutpointsValuesWereSaved(repository, bridgeStorageProvider, releaseTransaction, outpointsValues);
     }
 
-    public static void assertLogReleaseRequested(List<LogInfo> logs, Keccak256 releaseCreationTxHash, Sha256Hash pegoutTransactionHash, Coin requestedAmount) {
-        CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
-
-        byte[] releaseCreationTxHashSerialized = releaseCreationTxHash.getBytes();
-        byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
-        List<DataWord> encodedTopics = getEncodedTopics(releaseRequestedEvent, releaseCreationTxHashSerialized, pegoutTransactionHashSerialized);
-
-        byte[] encodedData = getEncodedData(releaseRequestedEvent, requestedAmount.getValue());
-
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    public static void assertLogPegoutTransactionCreated(List<LogInfo> logs, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
-        CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
-        Sha256Hash pegoutTransactionHash = releaseTransaction.getHash();
-        byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
-        List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, pegoutTransactionHashSerialized);
-
-        byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(expectedOutpointsValues);
-        byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
-
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    public static void assertLogUtxosRegistered(
-        List<LogInfo> logs,
-        Sha256Hash btcTxHash,
-        List<Coin> expectedOutputValuesInSatoshis,
-        List<Long> expectedOutputIndexes,
-        Address expectedFederationAddress
-    ) {
-        CallTransaction.Function utxosRegisteredEvent = BridgeEvents.UTXOS_REGISTERED.getEvent();
-        byte[] btcTxHashSerialized = btcTxHash.getBytes();
-        List<DataWord> encodedTopics = getEncodedTopics(utxosRegisteredEvent, btcTxHashSerialized);
-
-        byte[] serializedOutputValuesInSatoshis = UtxoUtils.encodeOutpointValues(expectedOutputValuesInSatoshis);
-        byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(expectedOutputIndexes);
-        byte[] encodedData = getEncodedData(
-            utxosRegisteredEvent,
-            serializedOutputValuesInSatoshis,
-            serializedOutputIndexes,
-            expectedFederationAddress.toString()
-        );
-
-        // topics and data must match on the same log; checked separately, they could
-        // come from different utxos_registered logs, since equal registrations share data
-        List<LogInfo> matchingLogs = logs.stream()
-            .filter(log -> log.getTopics().equals(encodedTopics))
-            .filter(log -> Arrays.equals(log.getData(), encodedData))
-            .toList();
-        assertEquals(1, matchingLogs.size());
-    }
-
-    public static void assertLogFlyoverUtxosRegistered(
-        List<LogInfo> logs,
-        Sha256Hash btcTxHash,
-        List<Coin> expectedOutputValuesInSatoshis,
-        List<Long> expectedOutputIndexes,
-        Address expectedFederationAddress,
-        Keccak256 expectedFlyoverDerivationHash
-    ) {
-        CallTransaction.Function flyoverUtxosRegisteredEvent = BridgeEvents.FLYOVER_UTXOS_REGISTERED.getEvent();
-        byte[] btcTxHashSerialized = btcTxHash.getBytes();
-        List<DataWord> encodedTopics = getEncodedTopics(flyoverUtxosRegisteredEvent, btcTxHashSerialized);
-
-        byte[] serializedOutputValuesInSatoshis = UtxoUtils.encodeOutpointValues(expectedOutputValuesInSatoshis);
-        byte[] serializedOutputIndexes = UtxoUtils.encodeOutputIndexes(expectedOutputIndexes);
-        byte[] encodedData = getEncodedData(
-            flyoverUtxosRegisteredEvent,
-            serializedOutputValuesInSatoshis,
-            serializedOutputIndexes,
-            expectedFederationAddress.toString(),
-            expectedFlyoverDerivationHash.getBytes()
-        );
-
-        // topics and data must match on the same log; checked separately, they could
-        // come from different flyover_utxos_registered logs, since equal registrations share data
-        List<LogInfo> matchingLogs = logs.stream()
-            .filter(log -> log.getTopics().equals(encodedTopics))
-            .filter(log -> Arrays.equals(log.getData(), encodedData))
-            .toList();
-        assertEquals(1, matchingLogs.size());
-    }
-
     private static void assertReleaseOutpointsValuesWereSaved(Repository repository, BridgeStorageProvider bridgeStorageProvider, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
         RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
@@ -695,126 +603,10 @@ public final class BridgeSupportTestUtil {
     }
 
     private static void assertLogAddSignature(List<LogInfo> logs, FederationMember federationMember, byte[] rskTxHash) {
-        CallTransaction.Function addSignatureEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
         ECKey federatorRskPublicKey = federationMember.getRskPublicKey();
         String federatorRskAddress = ByteUtil.toHexString(federatorRskPublicKey.getAddress());
 
-        List<DataWord> encodedTopics = getEncodedTopics(addSignatureEvent, rskTxHash, federatorRskAddress);
-
-        BtcECKey federatorBtcPublicKey = federationMember.getBtcPublicKey();
-        byte[] encodedData = getEncodedData(addSignatureEvent, federatorBtcPublicKey.getPubKey());
-
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
+        BridgeEventsTestUtils.assertLogAddSignature(logs, rskTxHash, federatorRskAddress, federationMember.getBtcPublicKey());
     }
 
-    public static void assertLogReleaseBtc(List<LogInfo> logs, BtcTransaction btcTx, Keccak256 rskTxHash) {
-        CallTransaction.Function releaseBtcEvent = BridgeEvents.RELEASE_BTC.getEvent();
-        byte[] rskTxHashSerialized = rskTxHash.getBytes();
-        List<DataWord> encodedTopics = getEncodedTopics(releaseBtcEvent, rskTxHashSerialized);
-
-        byte[] btcTxSerialized = btcTx.bitcoinSerialize();
-        byte[] encodedData = getEncodedData(releaseBtcEvent, btcTxSerialized);
-
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    public static void assertLogRejectedPegin(List<LogInfo> logs, BtcTransaction btcTx, RejectedPeginReason reason) {
-        CallTransaction.Function rejectedPeginEvent = BridgeEvents.REJECTED_PEGIN.getEvent();
-
-        byte[] btcTxHashSerialized = btcTx.getHash().getBytes();
-        List<DataWord> encodedTopics = getEncodedTopics(rejectedPeginEvent, btcTxHashSerialized);
-
-        int reasonValue = reason.getValue();
-        byte[] encodedData = getEncodedData(rejectedPeginEvent, reasonValue);
-
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    public static void assertLogNonRefundablePegin(List<LogInfo> logs, BtcTransaction pegin, NonRefundablePeginReason reason) {
-        CallTransaction.Function unrefundablePeginEvent = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
-        byte[] btcTxHashSerialized = pegin.getHash().getBytes();
-        List<DataWord> encodedTopics = getEncodedTopics(unrefundablePeginEvent, btcTxHashSerialized);
-
-        int reasonValue = reason.getValue();
-        byte[] encodedData = getEncodedData(unrefundablePeginEvent, reasonValue);
-
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    public static void assertLogPegoutConfirmed(List<LogInfo> logs, Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber) {
-        CallTransaction.Function pegoutConfirmedEvent = BridgeEvents.PEGOUT_CONFIRMED.getEvent();
-
-        byte[] btcTxHashSerialized = btcTxHash.getBytes();
-        List<DataWord> encodedTopics = getEncodedTopics(pegoutConfirmedEvent, btcTxHashSerialized);
-
-        byte[] encodedData = getEncodedData(pegoutConfirmedEvent, pegoutCreationRskBlockNumber);
-
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    public static void assertLogCommitFederation(
-        List<LogInfo> logs,
-        Federation oldFederation,
-        Federation newFederation,
-        long expectedActivationBlockNumber
-    ) {
-        CallTransaction.Function commitFederationEvent = BridgeEvents.COMMIT_FEDERATION.getEvent();
-
-        List<DataWord> encodedTopics = getEncodedTopics(commitFederationEvent);
-
-        byte[] oldFederationFlatPubKeys = BitcoinTestUtils.flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
-        String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
-        byte[] newFederationFlatPubKeys = BitcoinTestUtils.flatKeysAsByteArray(newFederation.getBtcPublicKeys());
-        String newFederationBtcAddress = newFederation.getAddress().toBase58();
-
-        byte[] encodedData = getEncodedData(
-            commitFederationEvent,
-            oldFederationFlatPubKeys,
-            oldFederationBtcAddress,
-            newFederationFlatPubKeys,
-            newFederationBtcAddress,
-            expectedActivationBlockNumber
-        );
-
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    public static void assertLogPeginBtc(
-        List<LogInfo> logs,
-        BtcTransaction peginTransaction,
-        RskAddress expectedReceiver,
-        Coin expectedAmount,
-        int expectedProtocolVersion
-    ) {
-        CallTransaction.Function peginBtcEvent = BridgeEvents.PEGIN_BTC.getEvent();
-
-        byte[] btcTxHashSerialized = peginTransaction.getHash().getBytes();
-        List<DataWord> encodedTopics = getEncodedTopics(peginBtcEvent, expectedReceiver.toString(), btcTxHashSerialized);
-
-        byte[] encodedData = getEncodedData(peginBtcEvent, expectedAmount.getValue(), expectedProtocolVersion);
-
-        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-        assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    public static void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
-        Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
-        assertTrue(topicOpt.isPresent());
-    }
-
-    public static void assertEventWasEmittedWithExpectedData(List<LogInfo> logs, byte[] expectedData) {
-        Optional<LogInfo> data = getLogsData(logs, expectedData);
-        assertTrue(data.isPresent());
-    }
-
-    public static void assertEventWasNotEmitted(List<LogInfo> logs, CallTransaction.Function bridgeEvent) {
-        List<LogInfo> event = getLogsBySignature(logs, bridgeEvent);
-        assertEquals(0, event.size());
-    }
 }
