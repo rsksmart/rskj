@@ -39,6 +39,7 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -434,6 +435,47 @@ class PrecompiledContractExceptionActivationTest {
             Assertions.assertEquals(Coin.valueOf(1_000_000L - expectedGasUsed), track.getBalance(sender));
             Assertions.assertTrue(receipt.getLogInfoList().isEmpty());
             Assertions.assertFalse(track.isExist(PrecompiledContracts.BRIDGE_ADDR));
+        }
+
+        // RSKIP-692 test case 9, with a funded authority that has never delegated
+        @Test
+        void firstDelegationOfFundedEoa_isRefundedOnFailingDirectCall() {
+            assertFirstDelegationOfFundedEoaRefundedOnFailingBridgeCall(100_000L, 90_500L);
+        }
+
+        // RSKIP-692 test case 10, with a funded authority that has never delegated
+        @Test
+        void firstDelegationOfFundedEoa_isRefundedOnDirectCallWithInsufficientGas() {
+            assertFirstDelegationOfFundedEoaRefundedOnFailingBridgeCall(60_000L, 50_500L);
+        }
+
+        private void assertFirstDelegationOfFundedEoaRefundedOnFailingBridgeCall(long gasLimit, long expectedGasUsed) {
+            TestSystemProperties realConfig = configWith(withRskip545(withRskip692(new TestSystemProperties().getActivationConfig(), true)));
+            TransactionExecutorFactory transactionExecutorFactory = newTransactionExecutorFactory(realConfig);
+            byte chainId = realConfig.getNetworkConstants().getChainId();
+
+            Repository track = createRepository().startTracking();
+            track.createAccount(sender);
+            track.addBalance(sender, Coin.valueOf(1_000_000L));
+            track.addBalance(authorityAddress, Coin.valueOf(1_000_000L));
+            track.commit();
+
+            SetCodeAuthorization authorization = createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, chainId, authorityKey);
+            Transaction tx = createSignedType4Transaction(
+                    senderKey, chainId, ZERO_NONCE, gasLimit, 1, 1,
+                    PrecompiledContracts.BRIDGE_ADDR, 0, Hex.decode("deadbeef"), authorization
+            );
+
+            Block block = childOfGenesis(realConfig, track, tx);
+            TransactionExecutor executor = transactionExecutorFactory.newInstance(tx, 0, block.getCoinbase(), track, block, 0L);
+
+            Assertions.assertTrue(executor.executeTransaction());
+            TransactionReceipt receipt = executor.getReceipt();
+            Assertions.assertFalse(receipt.isSuccessful());
+            Assertions.assertEquals(BigInteger.valueOf(expectedGasUsed), new BigInteger(1, receipt.getGasUsed()));
+            Assertions.assertEquals(Coin.valueOf(expectedGasUsed), executor.getPaidFees());
+            Assertions.assertEquals(Coin.valueOf(1_000_000L - expectedGasUsed), track.getBalance(sender));
+            Assertions.assertArrayEquals(DelegationCodeResolver.createDelegatedCode(delegatedAddress), track.getCode(authorityAddress));
         }
 
         private ActivationConfig withRskip545(ActivationConfig activations) {
