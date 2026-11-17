@@ -67,7 +67,8 @@ public class ReversibleTransactionExecutor {
                 value,
                 data,
                 fromAddress,
-                precompiledContracts
+                precompiledContracts,
+                false
         );
     }
 
@@ -104,7 +105,7 @@ public class ReversibleTransactionExecutor {
             byte[] value,
             byte[] data,
             RskAddress fromAddress) {
-        return reversibleExecution(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress, precompiledContracts).getResult();
+        return reversibleExecution(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress, precompiledContracts, true).getResult();
     }
 
     public ProgramResult executeTransaction(
@@ -118,12 +119,13 @@ public class ReversibleTransactionExecutor {
             byte[] data,
             RskAddress fromAddress,
             PrecompiledContracts precompiledContracts) {
-        return reversibleExecution(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress, precompiledContracts).getResult();
+        return reversibleExecution(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress, precompiledContracts, true).getResult();
     }
 
     private TransactionExecutor reversibleExecution(RepositorySnapshot snapshot, Block executionBlock, RskAddress coinbase,
                                                     byte[] gasPrice, byte[] gasLimit, byte[] toAddress, byte[] value,
-                                                    byte[] data, RskAddress fromAddress, PrecompiledContracts precompiledContracts) {
+                                                    byte[] data, RskAddress fromAddress, PrecompiledContracts precompiledContracts,
+                                                    boolean localCallTransaction) {
         Repository track = snapshot.startTracking();
 
         byte[] nonce = track.getNonce(fromAddress).toByteArray();
@@ -140,6 +142,8 @@ public class ReversibleTransactionExecutor {
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, coinbase, track, executionBlock, 0, precompiledContracts)
                 .setLocalCall(true);
+        // setLocalCall also marks the transaction itself, which native contracts read to tell a local call apart
+        tx.setLocalCallTransaction(localCallTransaction);
 
         executor.executeTransaction();
 

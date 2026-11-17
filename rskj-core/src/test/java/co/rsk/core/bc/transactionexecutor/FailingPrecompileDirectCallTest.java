@@ -20,7 +20,6 @@ package co.rsk.core.bc.transactionexecutor;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -109,7 +108,7 @@ class FailingPrecompileDirectCallTest {
         track = createRepository().startTracking();
         sender = createAccount("failingPrecompileSender", track, Coin.valueOf(SENDER_INITIAL_BALANCE));
         track.createAccount(FAILING_PRECOMPILE_ADDR);
-        track.initializeStorage(FAILING_PRECOMPILE_ADDR);
+        track.setupContract(FAILING_PRECOMPILE_ADDR);
         track.commit();
 
         BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
@@ -276,7 +275,7 @@ class FailingPrecompileDirectCallTest {
                 .nonce(track.getNonce(sender.getAddress()))
                 .gasPrice(BigInteger.valueOf(GAS_PRICE))
                 .gasLimit(BigInteger.valueOf(gasLimit))
-                .receiveAddress(FAILING_PRECOMPILE_ADDR)
+                .destination(FAILING_PRECOMPILE_ADDR)
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(Coin.valueOf(VALUE))
                 .data(data)

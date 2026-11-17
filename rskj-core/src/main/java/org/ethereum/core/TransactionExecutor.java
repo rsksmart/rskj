@@ -383,8 +383,8 @@ public class TransactionExecutor {
                 if (!localCall && activations.isActive(ConsensusRule.RSKIP692)) {
                     gasLeftover = 0;
                     gasUsed = txGasLimit;
-                    // Discard what the precompiled contract did before failing. The nonce increase, the fee
-                    // and the authorization list were applied on track, so they are not rolled back.
+                    // Discard what the precompiled contract did before failing. The nonce increase and the fee
+                    // were applied on track, so they are not rolled back.
                     // A precompiled contract cannot add internal transactions to the result, and its
                     // subtraces are only read on success, so there are none to reject.
                     result.clearFieldsOnException();
@@ -448,7 +448,12 @@ public class TransactionExecutor {
     private void execError(Throwable err) {
         logger.error("execError: ", err);
         String message = err.getMessage();
-        executionError = message != null && !message.isEmpty() ? message : err.getClass().getSimpleName();
+        boolean hasMessage = message != null && !message.isEmpty();
+        // Before RSKIP692 the message is kept as is, so an exception with an empty message still leaves
+        // a successful receipt status, as it always did
+        executionError = hasMessage || !activations.isActive(ConsensusRule.RSKIP692)
+                ? message
+                : err.getClass().getSimpleName();
     }
 
     private void execError(String err) {
@@ -603,6 +608,11 @@ public class TransactionExecutor {
 
         refundGas();
 
+        if (result.getException() != null) {
+            // A failed transaction rejects the internal transactions it created
+            result.rejectInternalTransactions();
+        }
+
         Coin refund = calculateRefund();
         Coin fee = calculateFee();
 
@@ -668,8 +678,10 @@ public class TransactionExecutor {
         logger.trace("tx finalization for gas estimation done");
     }
 
+    // A transaction that ends with an exception is charged its full gas limit and gets no refund, with or
+    // without RSKIP692
     private Coin calculateFee() {
-        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP692)) {
+        if (result.getException() != null) {
             return tx.getGasPrice().multiply(toBI(tx.getGasLimit()));
         }
         BigInteger chargedGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(gasLeftover));
@@ -677,7 +689,7 @@ public class TransactionExecutor {
     }
 
     private Coin calculateRefund() {
-        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP692)) {
+        if (result.getException() != null) {
             return Coin.ZERO;
         }
         return tx.getGasPrice().multiply(BigInteger.valueOf(gasLeftover));
