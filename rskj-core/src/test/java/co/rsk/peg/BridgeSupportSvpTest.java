@@ -12,7 +12,6 @@ import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
-import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static co.rsk.peg.federation.FederationTestUtils.signInputs;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
@@ -2270,7 +2269,7 @@ class BridgeSupportSvpTest {
     }
 
     private void assertReleaseTransactionInfoWasProcessed(BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
-        assertLogPegoutTransactionCreated(logs, releaseTransaction, extractOutpointValues(releaseTransaction));
+        assertLogPegoutTransactionCreated(logs, releaseTransaction, expectedOutpointsValues);
         assertReleasesOutpointsValuesWereSaved(releaseTransaction, expectedOutpointsValues);
     }
 
