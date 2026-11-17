@@ -35,6 +35,7 @@ public class TransactionArgumentsUtil {
 	private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
 
 	public static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
+	public static final String ERR_INVALID_SIGNATURE = "Invalid transaction signature";
 	public static final String ERR_COULD_NOT_FIND_ACCOUNT = "Could not find account for address: ";
 
 	public static TransactionArguments processArguments(CallArguments argsParam, byte defaultChainId) {
