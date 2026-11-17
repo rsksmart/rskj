@@ -21,6 +21,8 @@ package co.rsk.rpc.modules.trace;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.Locale;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TraceAction {
     private final CallType callType;
@@ -66,7 +68,7 @@ public class TraceAction {
             return null;
         }
 
-        return this.callType.name().toLowerCase();
+        return this.callType.name().toLowerCase(Locale.ROOT);
     }
 
     @JsonGetter("from")
