@@ -41,6 +41,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.RskTestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -58,6 +59,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -305,6 +308,28 @@ class TransactionPoolStaleEvictionTest {
         Block mined = connect(delegating, pool.getPendingTransactions().toArray(new Transaction[0]));
         Assertions.assertEquals(BigInteger.TWO, stateNonce(mined, accountA));
         Assertions.assertTrue(poolTransactions().isEmpty());
+    }
+
+    @Test
+    void promotedQueuedTransactionIsAnnouncedAsPending() throws InterruptedException {
+        Transaction queued = tx(accountA, 1, 1000);
+        CountDownLatch announced = new CountDownLatch(1);
+        context.getCompositeEthereumListener().addListener(new EthereumListenerAdapter() {
+            @Override
+            public void onPendingTransactionsReceived(List<Transaction> transactions) {
+                if (transactions.contains(queued)) {
+                    announced.countDown();
+                }
+            }
+        });
+        Assertions.assertTrue(pool.addTransaction(queued).queuedTransactionsWereAdded());
+
+        // accountB's set code transaction delegates accountA; its queued transaction is promoted
+        connect(genesis, setCode(accountB, accountA, 0));
+        Assertions.assertEquals(List.of(queued), pool.getPendingTransactions());
+
+        // subscribers and pending filters learn of a promoted transaction like any new pending one
+        Assertions.assertTrue(announced.await(5, TimeUnit.SECONDS));
     }
 
     @Test
