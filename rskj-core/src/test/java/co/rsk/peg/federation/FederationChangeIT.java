@@ -322,9 +322,7 @@ class FederationChangeIT {
         bridgeSupport.releaseBtc(pegoutRequestTx);
         bridgeSupport.save();
 
-        // The bridge creates the pegout once the blocks between pegouts have passed
-        currentBlock = createRskBlock(bridgeSupport.getNextPegoutCreationBlockNumber());
-        advanceBlockchainTo(currentBlock);
+        advanceBlockchainUntilNextPegoutCreation();
         var pegoutCreationTx = buildUpdateCollectionsTransaction(updateCollectionsTxNonce++);
         callUpdateCollections(pegoutCreationTx);
         var pegoutCreationRskTxHash = pegoutCreationTx.getHash();
@@ -666,6 +664,12 @@ class FederationChangeIT {
     private void callUpdateCollections(Transaction updateCollectionsTx) throws Exception {
         bridgeSupport.updateCollections(updateCollectionsTx);
         bridgeSupport.save();
+    }
+
+    private void advanceBlockchainUntilNextPegoutCreation() {
+        // The bridge creates the pegout once the blocks between pegouts have passed
+        currentBlock = createRskBlock(Math.max(currentBlock.getNumber(), bridgeSupport.getNextPegoutCreationBlockNumber()));
+        advanceBlockchainTo(currentBlock);
     }
 
     /**
@@ -1038,9 +1042,7 @@ class FederationChangeIT {
         assertTrue(bridgeStorageProvider.getReleaseRequestQueue().getEntries().stream()
             .anyMatch(entry -> entry.getRskTxHash().equals(pegoutRequestTx.getHash())));
 
-        // The bridge creates the pegout once the blocks between pegouts have passed
-        currentBlock = createRskBlock(Math.max(currentBlock.getNumber(), bridgeSupport.getNextPegoutCreationBlockNumber()));
-        advanceBlockchainTo(currentBlock);
+        advanceBlockchainUntilNextPegoutCreation();
         var pegoutCreationTx = buildUpdateCollectionsTransaction(updateCollectionsTxNonce++);
         callUpdateCollections(pegoutCreationTx);
         var pegoutCreationRskTxHash = pegoutCreationTx.getHash();
