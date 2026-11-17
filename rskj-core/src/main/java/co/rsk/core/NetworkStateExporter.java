@@ -135,14 +135,9 @@ public class NetworkStateExporter {
             accountNode.put("delegatedAuthority", true);
         }
 
-        if (accountInformation.hasInitializedStorage(addr)) {
-            Iterator<DataWord> contractKeys = null;
-            if (exportStorageKeys) {
-                contractKeys = accountInformation.getStorageKeys(addr);
-            }
-            if (((contractKeys == null) || contractKeys.hasNext()) && !PrecompiledContracts.REMASC_ADDR.equals(addr)) {
-                accountNode.set("contract", createContractNode(accountNode, accountInformation, addr, contractKeys,exportCode));
-            }
+        if (accountInformation.hasInitializedStorage(addr) && !PrecompiledContracts.REMASC_ADDR.equals(addr)) {
+            Iterator<DataWord> contractKeys = exportStorageKeys ? accountInformation.getStorageKeys(addr) : null;
+            accountNode.set("contract", createContractNode(accountNode, accountInformation, addr, contractKeys, exportCode));
         }
 
         return accountNode;
