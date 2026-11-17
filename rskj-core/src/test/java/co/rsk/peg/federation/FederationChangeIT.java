@@ -245,7 +245,7 @@ class FederationChangeIT {
         // arrange
         federationStorageProvider.setNewFederation(ORIGINAL_FEDERATION);
         // As many UTXOs as the max inputs of a migration tx, so the first migration tx is built at both RSKIP455 maximums
-        sendPeginsToFed(ORIGINAL_FEDERATION, MAX_INPUTS_PER_MIGRAION_TX, FUNDING_PEGIN_VALUE);
+        sendPeginsToFed(ORIGINAL_FEDERATION, federationSupport.getActiveFederationBtcUTXOs(), "fundingPeginSender", MAX_INPUTS_PER_MIGRAION_TX, FUNDING_PEGIN_VALUE);
 
         // Act
         // first, check normal peg flow to the active fed works
@@ -253,7 +253,7 @@ class FederationChangeIT {
         assertPegFlowThroughActiveFed(ORIGINAL_FEDERATION, ORIGINAL_FEDERATION_MEMBERS_KEYS, "sender0");
 
         // a pegout is released while the original fed is active, but the powpeg delays its registration
-        advanceProcessUntilDelayedPegoutIsReleased(ORIGINAL_FEDERATION, ORIGINAL_FEDERATION_MEMBERS_KEYS, "delayedPegoutSender");
+        advanceProcessUntilDelayedPegoutIsReleased();
 
         advanceProcessUntilPendingFederationCommit();
         assertNewFederation();
@@ -301,23 +301,31 @@ class FederationChangeIT {
         assertPegoutChangeToNotLiveFedIsDiscarded(delayedPegout);
     }
 
-    private void sendPeginsToFed(Federation federation, int numberOfPegins, Coin peginValue) throws Exception {
+    private void sendPeginsToFed(
+        Federation federation,
+        List<UTXO> federationUtxosReference,
+        String senderSeedPrefix,
+        int numberOfPegins,
+        Coin peginValue
+    ) throws Exception {
         for (int i = 0; i < numberOfPegins; i++) {
-            sendPeginToFed(federation, "peginSender" + i, peginValue);
+            sendPeginToFed(federation, federationUtxosReference, senderSeedPrefix + i, peginValue);
         }
     }
 
-    private void sendPeginToFed(Federation federation, String senderSeed, Coin peginValue) throws Exception {
+    private void sendPeginToFed(Federation federation, List<UTXO> federationUtxosReference, String senderSeed, Coin peginValue) throws Exception {
         var pegin = createLegacyP2pkhPegin(federation.getAddress(), senderSeed, peginValue);
-        registerBtcTransaction(pegin);
+        var senderRskAddress = BitcoinTestUtils.getRskAddressFromBtcPublicKey(BitcoinTestUtils.getBtcEcKeyFromSeed(senderSeed));
+
+        assertPeginRegistration(pegin, federationUtxosReference, senderRskAddress, LEGACY_PEGIN_PROTOCOL_VERSION, peginValue);
     }
 
-    private void advanceProcessUntilDelayedPegoutIsReleased(Federation federation, List<BtcECKey> federationMembersKeys, String senderSeed) throws Exception {
+    private void advanceProcessUntilDelayedPegoutIsReleased() throws Exception {
         // The user requests the pegout
         var pegoutRequestTx = buildPegoutRequestTransaction(
             co.rsk.core.Coin.fromBitcoin(PEGOUT_VALUE),
             0,
-            RskTestUtils.getEcKeyFromSeed(senderSeed)
+            RskTestUtils.getEcKeyFromSeed("delayedPegoutSender")
         );
         bridgeSupport.releaseBtc(pegoutRequestTx);
         bridgeSupport.save();
@@ -333,7 +341,7 @@ class FederationChangeIT {
 
         // The federation signs it, and the last required signature releases it.
         // The powpeg does not register it yet, so its change stays pending to the federation
-        signPegout(pegoutCreationRskTxHash, delayedPegout, federation, federationMembersKeys);
+        signPegout(pegoutCreationRskTxHash, delayedPegout, FederationChangeIT.ORIGINAL_FEDERATION, FederationChangeIT.ORIGINAL_FEDERATION_MEMBERS_KEYS);
     }
 
     private void advanceProcessUntilPendingFederationCommit() {
@@ -342,7 +350,7 @@ class FederationChangeIT {
         var pendingFederation = federationStorageProvider.getPendingFederation();
         assertPendingFederationIsBuiltAsExpected(pendingFederation);
 
-        commitPendingFederation(ORIGINAL_FEDERATION);
+        commitPendingFederation();
     }
 
     private void createPendingFederation() {
@@ -393,7 +401,7 @@ class FederationChangeIT {
         return federationSupport.voteFederationChange(tx, addFederatorAbiCallSpec, SIGNATURE_CACHE, bridgeEventLogger);
     }
 
-    private void commitPendingFederation(Federation activeFederationBeforeCommit) {
+    private void commitPendingFederation() {
         // Pending Federation should exist
         var pendingFederation = federationStorageProvider.getPendingFederation();
         assertNotNull(pendingFederation);
@@ -573,7 +581,7 @@ class FederationChangeIT {
         // Round 2: while round 1 waits for confirmations, users keep pegging in to the retiring federation.
         // Together with the UTXOs round 1 could not take, its balance is between the multiple outputs
         // thresholds, so the migration tx has multiple outputs of a fixed value
-        sendPeginsToFed(ORIGINAL_FEDERATION, 50, PEGIN_VALUE);
+        sendPeginsToFed(ORIGINAL_FEDERATION, federationSupport.getRetiringFederationBtcUTXOs(), "round2PeginSender", 50, PEGIN_VALUE);
         logsStartIndex = logs.size();
         var round2MigrationCreationTx = buildUpdateCollectionsTransaction(updateCollectionsTxNonce++);
         callUpdateCollections(round2MigrationCreationTx);
@@ -916,7 +924,7 @@ class FederationChangeIT {
         RskAddress expectedReceiver,
         int expectedProtocolVersion
     ) throws Exception {
-        assertPeginRegistration(pegin, federationUtxosReference, expectedReceiver, expectedProtocolVersion);
+        assertPeginRegistration(pegin, federationUtxosReference, expectedReceiver, expectedProtocolVersion, PEGIN_VALUE);
 
         assertLogUtxosRegistered(
             logs,
@@ -931,7 +939,8 @@ class FederationChangeIT {
         BtcTransaction pegin,
         List<UTXO> federationUtxosReference,
         RskAddress expectedReceiver,
-        int expectedProtocolVersion
+        int expectedProtocolVersion,
+        Coin peginValue
     ) throws Exception {
         int utxosSizeBeforeRegisteringPeginV1 = federationUtxosReference.size();
         int logsStartIndex = logs.size();
@@ -945,10 +954,10 @@ class FederationChangeIT {
         assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(pegin.getHash()));
         // assert utxo was registered
         assertEquals(utxosSizeBeforeRegisteringPeginV1 + 1, federationUtxosReference.size());
-        assertPeginBtcEventWasEmitted(logsStartIndex, pegin, expectedReceiver, expectedProtocolVersion);
+        assertPeginBtcEventWasEmitted(logsStartIndex, pegin, expectedReceiver, expectedProtocolVersion, peginValue);
 
         // assert funds were actually transferred from the bridge to the receiver
-        var peginAmountInWeis = co.rsk.core.Coin.fromBitcoin(PEGIN_VALUE);
+        var peginAmountInWeis = co.rsk.core.Coin.fromBitcoin(peginValue);
         assertEquals(receiverBalanceBeforePegin.add(peginAmountInWeis), repository.getBalance(expectedReceiver));
         assertEquals(bridgeBalanceBeforePegin.subtract(peginAmountInWeis), repository.getBalance(BRIDGE_ADDRESS));
 
@@ -960,10 +969,11 @@ class FederationChangeIT {
         int logsStartIndex,
         BtcTransaction peginTransaction,
         RskAddress expectedReceiver,
-        int expectedProtocolVersion
+        int expectedProtocolVersion,
+        Coin peginValue
     ) {
         List<LogInfo> logsSinceCheckpoint = logs.subList(logsStartIndex, logs.size());
-        assertLogPeginBtc(logsSinceCheckpoint, peginTransaction, expectedReceiver, PEGIN_VALUE, expectedProtocolVersion);
+        assertLogPeginBtc(logsSinceCheckpoint, peginTransaction, expectedReceiver, peginValue, expectedProtocolVersion);
     }
 
     private void assertPeginInternalTransactionWasRecorded(
