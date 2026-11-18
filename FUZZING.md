@@ -2,7 +2,7 @@
 # Overview
 The RSKj Fuzzing Initiative is an ongoing effort to improve the security and reliability of the RSKj codebase through fuzz testing. The project is built on top of the open-source version of the [Jazzer](https://github.com/CodeIntelligenceTesting/jazzer/) fuzzer, which is based on the [LibFuzzer](https://llvm.org/docs/LibFuzzer.html) engine. The main goal of the initiative is to identify fuzzing candidates in components of the RSKj platform that could mostly benefit from such tests, and implement individual fuzz targets for each.
 
-The fuzzer currently targets 17 candidate classes across the org.ethereum and co.rsk packages, with a total of 48 fuzz targets. As the project continues to evolve, enhanced code coverage and more tailored test cases will be created, seeking to uncover bugs that could lead to security issues or performance bottlenecks.
+The fuzzer currently targets 17 candidate classes across the org.ethereum and co.rsk packages, with a total of 50 fuzz targets. As the project continues to evolve, enhanced code coverage and more tailored test cases will be created, seeking to uncover bugs that could lead to security issues or performance bottlenecks.
 
 Running all fuzz targets:
 ```bash
