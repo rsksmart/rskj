@@ -31,14 +31,18 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -202,10 +206,64 @@ class AuthorizationListCodecTest {
         CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
         entry.setYParity("0x100");
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
                 () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
 
+        assertEquals(-32602, ex.getCode());
         assertTrue(ex.getMessage().contains("y_parity must fit in a single byte"), ex.getMessage());
+    }
+
+    private static Stream<Arguments> outOfRangeEntryFields() {
+        String thirtyThreeBytes = "0x01" + "00".repeat(32);
+        return Stream.of(
+                Arguments.of("yParity", "0x100", "Authorization y_parity must fit in a single byte at index 1"),
+                Arguments.of("nonce", "0x010000000000000000",
+                        "Authorization nonce must be less than 2^64 at index 1"),
+                Arguments.of("nonce", thirtyThreeBytes, "Authorization nonce is not valid at index 1"),
+                Arguments.of("r", thirtyThreeBytes, "Authorization signature r is not valid at index 1"),
+                Arguments.of("s", thirtyThreeBytes, "Authorization signature s is not valid at index 1"),
+                Arguments.of("chainId", thirtyThreeBytes, "Authorization chain_id is not valid at index 1")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("outOfRangeEntryFields")
+    void parseFromCallArguments_fieldOutOfRange_throwsInvalidParams(String field, String value, String expectedMessage) {
+        assertEntryFieldRejected(field, value, expectedMessage);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "chainId, -1",
+            "chainId, -56",
+            "nonce, -1",
+            "yParity, -1",
+    })
+    void parseFromCallArguments_negativeDecimal_throwsInvalidParams(String field, String value) {
+        assertEntryFieldRejected(field, value,
+                "Authorization list entry " + field + " must not be negative at index 1");
+    }
+
+    @Test
+    void parseFromCallArguments_decimalChainId_succeeds() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setChainId("33");
+
+        SetCodeAuthorization auth = AuthorizationListCodec.parseFromCallArguments(List.of(entry)).get(0);
+
+        assertEquals(BigInteger.valueOf(33), auth.getChainId());
+    }
+
+    @Test
+    void parseFromCallArguments_zeroPaddedNonceWiderThanEightBytes_normalizes() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setNonce("0x" + "00".repeat(11) + "01");
+
+        SetCodeAuthorization auth = AuthorizationListCodec.parseFromCallArguments(List.of(entry)).get(0);
+
+        assertArrayEquals(new byte[]{0x01}, auth.getNonceBytes());
     }
 
     @Test
@@ -226,10 +284,11 @@ class AuthorizationListCodecTest {
         CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
         entry.setNonce("0x10000000000000000");
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
                 () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
 
-        assertEquals("Authorization nonce must be less than 2^64", ex.getMessage());
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Authorization nonce must be less than 2^64 at index 0", ex.getMessage());
     }
 
     @ParameterizedTest
@@ -244,10 +303,11 @@ class AuthorizationListCodecTest {
             entry.setS(twoPow256);
         }
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
                 () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
 
-        assertEquals("Authorization signature " + field + " is not valid", ex.getMessage());
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Authorization signature " + field + " is not valid at index 0", ex.getMessage());
     }
 
     @Test
@@ -283,8 +343,10 @@ class AuthorizationListCodecTest {
         CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
         entry.setAddress(null);
 
-        assertThrows(RskJsonRpcRequestException.class,
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
                 () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertEquals("Authorization list entry missing address at index 0", ex.getMessage());
     }
 
     @Test
@@ -305,8 +367,10 @@ class AuthorizationListCodecTest {
         CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
         entry.setR(null);
 
-        assertThrows(RskJsonRpcRequestException.class,
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
                 () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertEquals("Authorization list entry missing r at index 0", ex.getMessage());
     }
 
     @Test
@@ -315,8 +379,10 @@ class AuthorizationListCodecTest {
         CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
         entry.setS(null);
 
-        assertThrows(RskJsonRpcRequestException.class,
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
                 () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertEquals("Authorization list entry missing s at index 0", ex.getMessage());
     }
 
     @Test
@@ -345,24 +411,7 @@ class AuthorizationListCodecTest {
             "s, 0xzz, Authorization list entry s must be hex at index 1",
     })
     void parseFromCallArguments_fieldNotHex_throwsInvalidParams(String field, String value, String expectedMessage) {
-        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
-        CallArguments.AuthorizationListEntry valid = validEntry(reference, reference.getSignature());
-        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
-        switch (field) {
-            case "chainId" -> entry.setChainId(value);
-            case "address" -> entry.setAddress(value);
-            case "nonce" -> entry.setNonce(value);
-            case "yParity" -> entry.setYParity(value);
-            case "r" -> entry.setR(value);
-            case "s" -> entry.setS(value);
-            default -> throw new IllegalArgumentException(field);
-        }
-
-        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-                () -> AuthorizationListCodec.parseFromCallArguments(List.of(valid, entry)));
-
-        assertEquals(-32602, ex.getCode());
-        assertEquals(expectedMessage, ex.getMessage());
+        assertEntryFieldRejected(field, value, expectedMessage);
     }
 
     // -------------------------------------------------------------------------
@@ -552,6 +601,42 @@ class AuthorizationListCodecTest {
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
         assertTrue(ex.getMessage().contains("Authorization nonce is not valid"), ex.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {9, 32})
+    void decodeTuple_canonicalNonceAtLeastTwoPow64_throws(int length) {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] nonce = new byte[length];
+        nonce[0] = 0x01;
+        byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeElement(nonce));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
+        assertEquals("Authorization nonce must be less than 2^64", ex.getMessage());
+    }
+
+    /** Pins the consensus accept set: a nonce decodes iff it is empty, or canonical and below 2^64. */
+    @Test
+    void decodeTuple_nonceAcceptSet_isCanonicalBelowTwoPow64() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        for (int length = 0; length <= 33; length++) {
+            for (int lead : new int[]{0x00, 0x01, 0xff}) {
+                byte[] nonce = new byte[length];
+                Arrays.fill(nonce, (byte) 0xff);
+                if (length > 0) {
+                    nonce[0] = (byte) lead;
+                }
+                byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeElement(nonce));
+                boolean expectedAccepted = length == 0 || (lead != 0 && length <= Long.BYTES);
+                String label = "length " + length + ", lead " + lead;
+
+                if (expectedAccepted) {
+                    assertArrayEquals(nonce, decodeSingleTuple(tuple).getNonceBytes(), label);
+                } else {
+                    assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple), label);
+                }
+            }
+        }
     }
 
     @Test
@@ -747,8 +832,10 @@ class AuthorizationListCodecTest {
         CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
         entry.setR(null);
 
-        assertThrows(RskJsonRpcRequestException.class,
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
                 () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertEquals("Authorization list entry missing r at index 0", ex.getMessage());
     }
 
     @Test
@@ -950,6 +1037,27 @@ class AuthorizationListCodecTest {
         entry.setR(HexUtils.toQuantityJsonHex(BigIntegers.asUnsignedByteArray(sig.getR())));
         entry.setS(HexUtils.toQuantityJsonHex(BigIntegers.asUnsignedByteArray(sig.getS())));
         return entry;
+    }
+
+    private static void assertEntryFieldRejected(String field, String value, String expectedMessage) {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry valid = validEntry(reference, reference.getSignature());
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        switch (field) {
+            case "chainId" -> entry.setChainId(value);
+            case "address" -> entry.setAddress(value);
+            case "nonce" -> entry.setNonce(value);
+            case "yParity" -> entry.setYParity(value);
+            case "r" -> entry.setR(value);
+            case "s" -> entry.setS(value);
+            default -> throw new IllegalArgumentException(field);
+        }
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(valid, entry)));
+
+        assertEquals(-32602, ex.getCode());
+        assertEquals(expectedMessage, ex.getMessage());
     }
 
     private static byte[] rebuildTupleField(SetCodeAuthorization base, int fieldIndex, byte[] encodedField) {
