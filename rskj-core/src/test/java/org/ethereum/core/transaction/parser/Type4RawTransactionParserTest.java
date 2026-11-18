@@ -150,11 +150,24 @@ class Type4RawTransactionParserTest {
     }
 
     @Test
+    void parse_rlp_unsignedType4PayloadBaseline_parses() {
+        RLPList fields = buildUnsignedType4Payload(RECEIVER);
+
+        ParsedType4Transaction parsed = assertDoesNotThrow(
+                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
+
+        assertEquals(RECEIVER, parsed.receiveAddress());
+    }
+
+    @Test
     void parse_rlp_nullDestination_throws() {
         RLPList fields = buildUnsignedType4Payload(RskAddress.nullAddress());
 
-        assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
+
+        assertTrue(ex.getMessage().contains("Set-code transaction must have a non-null destination"),
+                "Expected null-destination error, got: " + ex.getMessage());
     }
 
     @Test

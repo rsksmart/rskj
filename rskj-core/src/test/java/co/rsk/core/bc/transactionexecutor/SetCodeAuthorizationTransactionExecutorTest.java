@@ -120,7 +120,7 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
                         ZERO_CHAIN_ID,
                         randomAddress(),
                         invalidNonce,
-                        mock(ECDSASignature.class)
+                        placeholderSignature()
                 );
 
         IllegalStateException ex = assertThrows(
@@ -250,7 +250,7 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
          BigInteger authorizationChainId = BigInteger.valueOf(authorizationChainIdValue);
          BigInteger outerChainId = BigInteger.valueOf(outerChainIdValue);
 
-         var tuple = new SetCodeAuthorization(authorizationChainId, randomAddress(), NONCE_ONE, mock(ECDSASignature.class));
+         var tuple = new SetCodeAuthorization(authorizationChainId, randomAddress(), NONCE_ONE, placeholderSignature());
 
          IllegalStateException ex = assertThrows(
                  IllegalStateException.class,
@@ -461,7 +461,7 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
                 BigInteger.valueOf(9999),
                 randomAddress(),
                 NONCE_ONE,
-                mock(ECDSASignature.class)
+                placeholderSignature()
         );
 
         assertThrows(
@@ -712,6 +712,10 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
                  Arguments.of(ONE, ZERO),
                  Arguments.of(ONE, curveOrder)
          );
+     }
+
+     private static ECDSASignature placeholderSignature() {
+         return ECDSASignature.fromComponents(new byte[]{0x01}, new byte[]{0x01}, Transaction.LOWER_REAL_V);
      }
 
      private SetCodeAuthorization authorizationWithSignatureComponents(BigInteger r, BigInteger s) {
