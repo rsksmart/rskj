@@ -404,7 +404,7 @@ class CallArgumentsToByteArrayTest {
                 RskJsonRpcRequestException.class,
                 byteArrayArgs::getAuthorizationList);
         Assertions.assertEquals(-32602, ex.getCode());
-        Assertions.assertEquals("Authorization nonce must be non-negative and less than 2^64 at index 0", ex.getMessage());
+        Assertions.assertEquals("Authorization nonce must be less than 2^64 at index 0", ex.getMessage());
     }
 
     @Test

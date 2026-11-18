@@ -2062,11 +2062,11 @@ class EthModuleTest {
     @ParameterizedTest
     @CsvSource({
             "call, yParity, 0x100, Authorization y_parity must fit in a single byte at index 0",
-            "call, nonce, 0x010000000000000000, Authorization nonce must be non-negative and less than 2^64 at index 0",
+            "call, nonce, 0x010000000000000000, Authorization nonce must be less than 2^64 at index 0",
             "call, chainId, -1, Authorization list entry chainId must not be negative at index 0",
             "call, nonce, -1, Authorization list entry nonce must not be negative at index 0",
             "estimateGas, yParity, 0x100, Authorization y_parity must fit in a single byte at index 0",
-            "estimateGas, nonce, 0x010000000000000000, Authorization nonce must be non-negative and less than 2^64 at index 0",
+            "estimateGas, nonce, 0x010000000000000000, Authorization nonce must be less than 2^64 at index 0",
             "estimateGas, chainId, -1, Authorization list entry chainId must not be negative at index 0",
             "estimateGas, nonce, -1, Authorization list entry nonce must not be negative at index 0",
     })

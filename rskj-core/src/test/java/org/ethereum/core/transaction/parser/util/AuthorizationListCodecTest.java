@@ -218,7 +218,7 @@ class AuthorizationListCodecTest {
         return Stream.of(
                 Arguments.of("yParity", "0x100", "Authorization y_parity must fit in a single byte at index 1"),
                 Arguments.of("nonce", "0x010000000000000000",
-                        "Authorization nonce must be non-negative and less than 2^64 at index 1"),
+                        "Authorization nonce must be less than 2^64 at index 1"),
                 Arguments.of("nonce", thirtyThreeBytes, "Authorization nonce is not valid at index 1"),
                 Arguments.of("r", thirtyThreeBytes, "Authorization signature r is not valid at index 1"),
                 Arguments.of("s", thirtyThreeBytes, "Authorization signature s is not valid at index 1"),
@@ -284,10 +284,11 @@ class AuthorizationListCodecTest {
         CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
         entry.setNonce("0x10000000000000000");
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
                 () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
 
-        assertEquals("Authorization nonce must be less than 2^64", ex.getMessage());
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Authorization nonce must be less than 2^64 at index 0", ex.getMessage());
     }
 
     @ParameterizedTest
@@ -302,10 +303,11 @@ class AuthorizationListCodecTest {
             entry.setS(twoPow256);
         }
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
                 () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
 
-        assertEquals("Authorization signature " + field + " is not valid", ex.getMessage());
+        assertEquals(-32602, ex.getCode());
+        assertEquals("Authorization signature " + field + " is not valid at index 0", ex.getMessage());
     }
 
     @Test
@@ -610,7 +612,7 @@ class AuthorizationListCodecTest {
         byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeElement(nonce));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
-        assertEquals("Authorization nonce must be non-negative and less than 2^64", ex.getMessage());
+        assertEquals("Authorization nonce must be less than 2^64", ex.getMessage());
     }
 
     /** Pins the consensus accept set: a nonce decodes iff it is empty, or canonical and below 2^64. */
