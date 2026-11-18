@@ -44,5 +44,7 @@ ENV RSKJ_LOG_PROPS="-Dlogging.stdout=INFO"
 ENV RSKJ_CLASS=co.rsk.Start
 ENV RSKJ_OPTS=""
 
-ENTRYPOINT ["/bin/sh", "-c", "exec java $DEFAULT_JVM_OPTS $RSKJ_SYS_PROPS $RSKJ_LOG_PROPS -cp rsk.jar $RSKJ_CLASS $RSKJ_OPTS \"${@}\"", "--"]
+# The Base64 intrinsic stays off: it is the code path affected by CVE-2026-114938 in JDK 17 builds before 17.0.21.1.
+# The flag is part of the command, not of DEFAULT_JVM_OPTS, so overriding that variable cannot drop it.
+ENTRYPOINT ["/bin/sh", "-c", "exec java -XX:-UseBASE64Intrinsics $DEFAULT_JVM_OPTS $RSKJ_SYS_PROPS $RSKJ_LOG_PROPS -cp rsk.jar $RSKJ_CLASS $RSKJ_OPTS \"${@}\"", "--"]
 

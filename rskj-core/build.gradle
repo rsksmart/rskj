@@ -43,7 +43,9 @@ java {
 application {
     mainClass = 'co.rsk.Start'
     applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-Xmx8G",
-    "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"
+    "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow",
+    // The Base64 intrinsic stays off: it is the code path affected by CVE-2026-114938 in JDK 17 builds before 17.0.21.1.
+    "-XX:-UseBASE64Intrinsics"
     ]
 }
 
