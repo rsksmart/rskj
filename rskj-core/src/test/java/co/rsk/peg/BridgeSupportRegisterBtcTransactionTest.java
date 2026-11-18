@@ -2,6 +2,7 @@ package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
+import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertUtxosAreEqual;
@@ -2444,7 +2445,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(allActivations).size());
 
                 assertLogRejectedPegin(logs, rejectedPegin, LEGACY_PEGIN_MULTISIG_SENDER);
-                assertLogNonRefundablePegin(logs, rejectedPegin, OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS);
+                assertLogUnrefundablePegin(logs, rejectedPegin, OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS);
                 assertUtxosRegisteredWasNotEmitted();
             }
 

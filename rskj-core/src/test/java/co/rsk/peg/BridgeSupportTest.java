@@ -21,13 +21,13 @@ package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
+import static co.rsk.peg.BridgeEventsTestUtils.assertEventWasNotEmitted;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogPegoutTransactionCreated;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogReleaseBtc;
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogReleaseRequested;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASE_REQUEST_QUEUE_WITH_TXHASH;
 import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
-import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasNotEmitted;
 import static co.rsk.peg.BridgeSupportTestUtil.assertFederatorSigning;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogPegoutTransactionCreated;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogReleaseBtc;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogReleaseRequested;
 import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutTxSigHashWasSaved;
 import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutWasAddedToPegoutsWaitingForConfirmations;
 import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseRejectionWasSettled;

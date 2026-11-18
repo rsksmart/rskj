@@ -3,6 +3,7 @@ package co.rsk.peg;
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeStorageIndexKey.PEGOUTS_WAITING_FOR_SIGNATURES;
+import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
@@ -733,13 +734,7 @@ class BridgeSupportAddSignatureTest {
         commonAssertLogs(eventLogs);
         assertTopics(3, eventLogs);
 
-        assertEvent(
-            eventLogs,
-            0,
-            BridgeEvents.ADD_SIGNATURE.getEvent(),
-            new Object[]{rskTxHash.getBytes(), expectedRskAddress},
-            new Object[]{federatorBtcPubKey.getPubKey()}
-        );
+        assertLogAddSignature(eventLogs, rskTxHash.getBytes(), expectedRskAddress, federatorBtcPubKey);
     }
 
     @Nested
@@ -1197,12 +1192,6 @@ class BridgeSupportAddSignatureTest {
                 logs
             );
         }
-    }
-
-    private static void assertEvent(List<LogInfo> logs, int index, CallTransaction.Function event, Object[] topics, Object[] params) {
-        final LogInfo log = logs.get(index);
-        assertEquals(LogInfo.byteArrayToList(event.encodeEventTopics(topics)), log.getTopics());
-        assertArrayEquals(event.encodeEventData(params), log.getData());
     }
 
     private void assertTopics(int topics, List<LogInfo> logs) {

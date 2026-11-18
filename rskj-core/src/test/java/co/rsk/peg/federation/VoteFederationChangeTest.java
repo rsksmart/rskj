@@ -1,18 +1,18 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.BridgeEventsTestUtils.assertLogCommitFederation;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.utils.TransactionUtils;
-import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.constants.FederationConstants;
@@ -29,7 +29,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,7 +47,6 @@ class VoteFederationChangeTest {
     private static final SignatureCache signatureCache = mock(SignatureCache.class);
     private static final Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
     private static final Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
-    private static final CallTransaction.Function commitFederationEvent = BridgeEvents.COMMIT_FEDERATION.getEvent();
     private static final long RSK_EXECUTION_BLOCK_NUMBER = 1000L;
     private static final long RSK_EXECUTION_BLOCK_TIMESTAMP = 10L;
     private static final PendingFederation pendingFederationToBe = new PendingFederation(FederationTestUtils.getFederationMembers(9));
@@ -332,6 +330,40 @@ class VoteFederationChangeTest {
     }
 
     @Test
+    void voteCommitFederation_withUnauthorizedCaller_returnsUnauthorizedResponseCode() {
+        // Arrange
+        voteAndAssertCreateEmptyPendingFederation();
+        voteAndAssertAddFederationMembersPublicKeysToPendingFederation(pendingFederationToBe.getMembers());
+        PendingFederation pendingFederationBeforeVoting = storageProvider.getPendingFederation();
+
+        // Act
+        Transaction unauthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.UNAUTHORIZED.getRskAddress());
+        int result = voteToCommitPendingFederation(unauthorizedTx);
+
+        // Assert
+        assertEquals(FederationChangeResponseCode.UNAUTHORIZED_CALLER.getCode(), result);
+        assertEquals(pendingFederationBeforeVoting, storageProvider.getPendingFederation());
+        assertFalse(federationSupport.getProposedFederation().isPresent());
+    }
+
+    @Test
+    void voteCommitFederation_withMismatchedPendingFederationHash_returnsPendingFederationMismatchedHashResponseCode() {
+        // Arrange
+        voteAndAssertCreateEmptyPendingFederation();
+        voteAndAssertAddFederationMembersPublicKeysToPendingFederation(pendingFederationToBe.getMembers());
+        PendingFederation pendingFederationBeforeVoting = storageProvider.getPendingFederation();
+        Keccak256 mismatchedPendingFederationHash = RskTestUtils.createHash(1);
+
+        // Act
+        int result = voteToCommitPendingFederationWithHash(firstAuthorizedTx, mismatchedPendingFederationHash);
+
+        // Assert
+        assertEquals(FederationChangeResponseCode.PENDING_FEDERATION_MISMATCHED_HASH.getCode(), result);
+        assertEquals(pendingFederationBeforeVoting, storageProvider.getPendingFederation());
+        assertFalse(federationSupport.getProposedFederation().isPresent());
+    }
+
+    @Test
     void voteCommitFederation_commit10MembersFederation_returnsSuccessfulResponseCode() {
         // Arrange
         voteAndAssertCreateEmptyPendingFederation();
@@ -423,7 +455,7 @@ class VoteFederationChangeTest {
         assertPendingFederationVotingWasCleaned();
 
         Federation oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
-        assertLogCommitFederation(oldFederation, newFederation);
+        assertLogCommitFederationWasEmittedOnce(oldFederation, newFederation);
     }
 
     @Test
@@ -456,7 +488,7 @@ class VoteFederationChangeTest {
         assertPendingFederationVotingWasCleaned();
 
         Federation oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
-        assertLogCommitFederation(oldFederation, newFederation);
+        assertLogCommitFederationWasEmittedOnce(oldFederation, newFederation);
     }
 
     @Test
@@ -487,7 +519,7 @@ class VoteFederationChangeTest {
 
         assertPendingFederationVotingWasCleaned();
 
-        assertLogCommitFederation(activeFederation, proposedFederation);
+        assertLogCommitFederationWasEmittedOnce(activeFederation, proposedFederation);
 
         assertNoHandoverToNewFederation();
     }
@@ -645,38 +677,11 @@ class VoteFederationChangeTest {
         assertFalse(lastRetiredFederationP2SHScript.isPresent());
     }
 
-    private void assertLogCommitFederation(Federation federationToBeRetired, Federation votedFederation) {
-        List<DataWord> encodedTopics = getEncodedTopics();
-        byte[] encodedData = getEncodedData(federationToBeRetired, votedFederation);
-
-        // assert the event was emitted just once with the expected topic and data
+    private void assertLogCommitFederationWasEmittedOnce(Federation federationToBeRetired, Federation votedFederation) {
         assertEquals(1, logs.size());
 
-        LogInfo log = logs.get(0);
-        List<DataWord> topic = log.getTopics();
-        assertEquals(encodedTopics.get(0), topic.get(0));
-        assertArrayEquals(encodedData, log.getData());
-    }
-
-    private List<DataWord> getEncodedTopics() {
-        byte[][] encodedTopicsInBytes = commitFederationEvent.encodeEventTopics();
-        return LogInfo.byteArrayToList(encodedTopicsInBytes);
-    }
-
-    private byte[] getEncodedData(Federation federationToBeRetired, Federation votedFederation) {
-        byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(federationToBeRetired.getBtcPublicKeys());
-        String oldFederationBtcAddress = federationToBeRetired.getAddress().toBase58();
-        byte[] newFederationFlatPubKeys = flatKeysAsByteArray(votedFederation.getBtcPublicKeys());
-        String newFederationBtcAddress = votedFederation.getAddress().toBase58();
         long newFedActivationBlockNumber = rskExecutionBlock.getNumber() + federationMainnetConstants.getFederationActivationAge(activations);
-
-        return commitFederationEvent.encodeEventData(
-            oldFederationFlatPubKeys,
-            oldFederationBtcAddress,
-            newFederationFlatPubKeys,
-            newFederationBtcAddress,
-            newFedActivationBlockNumber
-        );
+        assertLogCommitFederation(logs, federationToBeRetired, votedFederation, newFedActivationBlockNumber);
     }
 
     // utility methods
@@ -725,6 +730,10 @@ class VoteFederationChangeTest {
 
     private int voteToCommitPendingFederation(Transaction tx) {
         Keccak256 pendingFederationHash = federationSupport.getPendingFederationHash();
+        return voteToCommitPendingFederationWithHash(tx, pendingFederationHash);
+    }
+
+    private int voteToCommitPendingFederationWithHash(Transaction tx, Keccak256 pendingFederationHash) {
         ABICallSpec commitFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.COMMIT.getKey(), new byte[][]{ pendingFederationHash.getBytes() });
 
         return federationSupport.voteFederationChange(tx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
