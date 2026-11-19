@@ -21,6 +21,8 @@ package co.rsk.remasc;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.ethereum.config.Constants.REGTEST_CHAIN_ID;
+
 class RemascTransactionTest {
 
     @Test
@@ -30,6 +32,15 @@ class RemascTransactionTest {
         RemascTransaction tx2 = new RemascTransaction(encoded);
         Assertions.assertEquals(tx, tx2);
         Assertions.assertEquals(tx.getHash(), tx2.getHash());
+    }
+
+    @Test
+    void unsignedRemascTransaction_passesBothSignaturePredicates() {
+        RemascTransaction tx = new RemascTransaction(10);
+
+        Assertions.assertNull(tx.getSignature());
+        Assertions.assertTrue(tx.hasAcceptableSignatureComponents());
+        Assertions.assertTrue(tx.acceptTransactionSignature(REGTEST_CHAIN_ID));
     }
 
 }

@@ -107,7 +107,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
             if (!tx.hasAcceptableSignatureComponents()) {
                 throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_SIGNATURE);
             }
-            if (!tx.acceptTransactionSignature(constants.getChainId())) {
+            if (!tx.acceptsChainId(constants.getChainId())) {
                 throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
             }
 

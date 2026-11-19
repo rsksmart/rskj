@@ -317,10 +317,14 @@ public class Transaction {
     }
 
     public boolean acceptTransactionSignature(byte currentChainId) {
-        if (!hasAcceptableSignatureComponents()) {
-            return false;
-        }
+        return hasAcceptableSignatureComponents() && acceptsChainId(currentChainId);
+    }
 
+    /**
+     * Checks the chain id alone, ignoring the signature: the transaction carries no chain id or carries
+     * {@code currentChainId}. Use {@link #acceptTransactionSignature(byte)} for the full acceptance decision.
+     */
+    public boolean acceptsChainId(byte currentChainId) {
         return this.getChainId() == 0 || this.getChainId() == currentChainId;
     }
 

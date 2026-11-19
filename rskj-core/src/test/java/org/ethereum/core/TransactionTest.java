@@ -29,12 +29,13 @@ import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
@@ -61,12 +62,17 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.ethereum.config.Constants.REGTEST_CHAIN_ID;
+import static org.ethereum.config.Constants.TESTNET_CHAIN_ID;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("squid:S1607") // many @Disabled annotations for diverse reasons
 class TransactionTest {
 
+    // secp256k1 curve order n, as published in SEC 2 (Recommended Elliptic Curve Domain Parameters)
+    private static final BigInteger SECP256K1N =
+            new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
     // Half the secp256k1 curve order, rounded down, as published in EIP-2
     private static final BigInteger SECP256K1N_HALF =
             new BigInteger("7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0", 16);
@@ -76,33 +82,103 @@ class TransactionTest {
 
     @Test
     void acceptTransactionSignature_sEqualToHalfCurveOrder_isRejected() {
-        Transaction tx = signedRegtestTransactionWithS(SECP256K1N_HALF);
+        Transaction tx = signedRegtestTransaction();
+        replaceS(tx, SECP256K1N_HALF);
 
         assertFalse(tx.hasAcceptableSignatureComponents());
-        assertFalse(tx.acceptTransactionSignature(Constants.regtest().getChainId()));
+        assertFalse(tx.acceptTransactionSignature(REGTEST_CHAIN_ID));
     }
 
     @Test
     void acceptTransactionSignature_sJustBelowHalfCurveOrder_isAccepted() {
-        Transaction tx = signedRegtestTransactionWithS(SECP256K1N_HALF.subtract(BigInteger.ONE));
+        Transaction tx = signedRegtestTransaction();
+        replaceS(tx, SECP256K1N_HALF.subtract(BigInteger.ONE));
 
         assertTrue(tx.hasAcceptableSignatureComponents());
-        assertTrue(tx.acceptTransactionSignature(Constants.regtest().getChainId()));
+        assertTrue(tx.acceptTransactionSignature(REGTEST_CHAIN_ID));
     }
 
-    private static Transaction signedRegtestTransactionWithS(BigInteger s) {
-        Transaction tx = Transaction.builder()
-                .nonce(BigInteger.ONE)
-                .gasPrice(BigInteger.valueOf(1_000_000_000L))
-                .gasLimit(BigInteger.valueOf(21_000))
-                .destination(new RskAddress("0x0000000000000000000000000000000000001234"))
-                .value(BigInteger.ONE)
-                .chainId(Constants.regtest().getChainId())
+    @Test
+    void acceptTransactionSignature_zeroR_isRejected() {
+        Transaction tx = signedRegtestTransaction();
+        replaceR(tx, BigInteger.ZERO);
+
+        assertFalse(tx.hasAcceptableSignatureComponents());
+        assertFalse(tx.acceptTransactionSignature(REGTEST_CHAIN_ID));
+    }
+
+    @Test
+    void acceptTransactionSignature_zeroS_isRejected() {
+        Transaction tx = signedRegtestTransaction();
+        replaceS(tx, BigInteger.ZERO);
+
+        assertFalse(tx.hasAcceptableSignatureComponents());
+        assertFalse(tx.acceptTransactionSignature(REGTEST_CHAIN_ID));
+    }
+
+    @Test
+    void acceptTransactionSignature_rEqualToCurveOrder_isRejected() {
+        Transaction tx = signedRegtestTransaction();
+        replaceR(tx, SECP256K1N);
+
+        assertFalse(tx.hasAcceptableSignatureComponents());
+        assertFalse(tx.acceptTransactionSignature(REGTEST_CHAIN_ID));
+    }
+
+    @Test
+    void acceptTransactionSignature_rJustBelowCurveOrder_isAccepted() {
+        Transaction tx = signedRegtestTransaction();
+        replaceR(tx, SECP256K1N.subtract(BigInteger.ONE));
+
+        assertTrue(tx.hasAcceptableSignatureComponents());
+        assertTrue(tx.acceptTransactionSignature(REGTEST_CHAIN_ID));
+    }
+
+    @Test
+    void acceptsChainId_ownChainId_isAccepted() {
+        Transaction tx = signedTransaction(REGTEST_CHAIN_ID);
+
+        assertTrue(tx.acceptsChainId(REGTEST_CHAIN_ID));
+        assertTrue(tx.acceptTransactionSignature(REGTEST_CHAIN_ID));
+    }
+
+    @Test
+    void acceptsChainId_noChainId_isAccepted() {
+        Transaction tx = signedTransaction((byte) 0);
+
+        assertTrue(tx.acceptsChainId(REGTEST_CHAIN_ID));
+        assertTrue(tx.acceptTransactionSignature(REGTEST_CHAIN_ID));
+    }
+
+    @Test
+    void acceptsChainId_otherChainId_isRejected() {
+        Transaction tx = signedTransaction(TESTNET_CHAIN_ID);
+
+        assertTrue(tx.hasAcceptableSignatureComponents());
+        assertFalse(tx.acceptsChainId(REGTEST_CHAIN_ID));
+        assertFalse(tx.acceptTransactionSignature(REGTEST_CHAIN_ID));
+    }
+
+    private static Transaction signedRegtestTransaction() {
+        return signedTransaction(REGTEST_CHAIN_ID);
+    }
+
+    private static Transaction signedTransaction(byte chainId) {
+        return new TransactionBuilder()
+                .sender(new AccountBuilder().name("sender").build())
+                .receiver(new AccountBuilder().name("receiver").build())
+                .chainId(chainId)
                 .build();
-        tx.sign(ECKey.fromPrivate(BigInteger.valueOf(0xC0FFEE)).getPrivKeyBytes());
+    }
+
+    private static void replaceR(Transaction tx, BigInteger r) {
+        ECDSASignature signature = tx.getSignature();
+        tx.setSignature(new ECDSASignature(r, signature.getS(), signature.getV()));
+    }
+
+    private static void replaceS(Transaction tx, BigInteger s) {
         ECDSASignature signature = tx.getSignature();
         tx.setSignature(new ECDSASignature(signature.getR(), s, signature.getV()));
-        return tx;
     }
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */

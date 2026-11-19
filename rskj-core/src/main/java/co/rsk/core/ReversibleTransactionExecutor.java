@@ -190,5 +190,11 @@ public class ReversibleTransactionExecutor {
         public ECKey getKey() {
             return PLACEHOLDER_KEY;
         }
+
+        @Override
+        public boolean hasAcceptableSignatureComponents() {
+            // Unsigned on purpose, so there are no signature components to check.
+            return true;
+        }
     }
 }

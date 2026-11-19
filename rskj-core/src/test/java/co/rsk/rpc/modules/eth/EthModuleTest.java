@@ -75,6 +75,10 @@ class EthModuleTest {
 
     public static final String TEST_DATA = "0x603d80600c6000396000f3007c01000000000000000000000000000000000000000000000000000000006000350463c6888fa18114602d57005b6007600435028060005260206000f3";
 
+    // secp256k1 curve order n, as published in SEC 2 (Recommended Elliptic Curve Domain Parameters)
+    private static final BigInteger SECP256K1N =
+            new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
+
     private final TestSystemProperties config = new TestSystemProperties();
     private final SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
@@ -697,7 +701,7 @@ class EthModuleTest {
         Transaction tx = signedLegacyTransaction(Constants.regtest().getChainId());
         ECDSASignature signature = tx.getSignature();
         byte flippedV = signature.getV() == 27 ? (byte) 28 : (byte) 27;
-        replaceSignature(tx, signature.getR(), Constants.getSECP256K1N().subtract(signature.getS()), flippedV);
+        replaceSignature(tx, signature.getR(), SECP256K1N.subtract(signature.getS()), flippedV);
 
         assertSendRawTransactionRejected(tx, "Invalid transaction signature");
     }
@@ -706,7 +710,7 @@ class EthModuleTest {
     void sendRawTransaction_rEqualToCurveOrder_reportsInvalidSignature() {
         Transaction tx = signedLegacyTransaction(Constants.regtest().getChainId());
         ECDSASignature signature = tx.getSignature();
-        replaceSignature(tx, Constants.getSECP256K1N(), signature.getS(), signature.getV());
+        replaceSignature(tx, SECP256K1N, signature.getS(), signature.getV());
 
         assertSendRawTransactionRejected(tx, "Invalid transaction signature");
     }
@@ -715,7 +719,7 @@ class EthModuleTest {
     void sendRawTransaction_sEqualToCurveOrder_reportsInvalidSignature() {
         Transaction tx = signedLegacyTransaction(Constants.regtest().getChainId());
         ECDSASignature signature = tx.getSignature();
-        replaceSignature(tx, signature.getR(), Constants.getSECP256K1N(), signature.getV());
+        replaceSignature(tx, signature.getR(), SECP256K1N, signature.getV());
 
         assertSendRawTransactionRejected(tx, "Invalid transaction signature");
     }
@@ -731,7 +735,14 @@ class EthModuleTest {
     void sendRawTransaction_badSignatureAndWrongChainId_reportsInvalidSignature() {
         Transaction tx = signedLegacyTransaction((byte) 31);
         ECDSASignature signature = tx.getSignature();
-        replaceSignature(tx, signature.getR(), Constants.getSECP256K1N(), signature.getV());
+        replaceSignature(tx, signature.getR(), SECP256K1N, signature.getV());
+
+        assertSendRawTransactionRejected(tx, "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_unsigned_reportsInvalidSignature() {
+        Transaction tx = unsignedLegacyTransaction((byte) 0);
 
         assertSendRawTransactionRejected(tx, "Invalid transaction signature");
     }
@@ -752,8 +763,8 @@ class EthModuleTest {
         verify(transactionGateway).receiveTransaction(any(Transaction.class));
     }
 
-    private static Transaction signedLegacyTransaction(byte chainId) {
-        Transaction tx = Transaction.builder()
+    private static Transaction unsignedLegacyTransaction(byte chainId) {
+        return Transaction.builder()
                 .nonce(BigInteger.ONE)
                 .gasPrice(BigInteger.valueOf(1_000_000_000L))
                 .gasLimit(BigInteger.valueOf(21_000))
@@ -761,6 +772,10 @@ class EthModuleTest {
                 .value(BigInteger.ONE)
                 .chainId(chainId)
                 .build();
+    }
+
+    private static Transaction signedLegacyTransaction(byte chainId) {
+        Transaction tx = unsignedLegacyTransaction(chainId);
         tx.sign(ECKey.fromPrivate(BigInteger.valueOf(0xC0FFEE)).getPrivKeyBytes());
         return tx;
     }
