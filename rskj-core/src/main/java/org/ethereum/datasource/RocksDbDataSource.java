@@ -53,7 +53,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private final String databaseDir;
     private final String name;
 
-    private final Options options = createOptions();
+    private final Options options;
     private RocksDB db;
     private boolean alive;
 
@@ -66,9 +66,33 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
     public RocksDbDataSource(String name, String databaseDir) {
+        this(name, databaseDir, CompressionType.NO_COMPRESSION);
+    }
+
+    public RocksDbDataSource(String name, String databaseDir, CompressionType compressionType) {
         this.databaseDir = databaseDir;
         this.name = name;
+        this.options = createOptions(compressionType);
         logger.info("New RocksDbDataSource: {}", name);
+    }
+
+    public static CompressionType parseCompressionType(String compressionTypeValue) {
+        Objects.requireNonNull(compressionTypeValue, "compressionTypeValue cannot be null");
+
+        String normalizedValue = compressionTypeValue.trim().toUpperCase(Locale.ROOT).replace('-', '_');
+        String enumValue = normalizedValue.endsWith("_COMPRESSION")
+                ? normalizedValue
+                : normalizedValue + "_COMPRESSION";
+
+        try {
+            return CompressionType.valueOf(enumValue);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(String.format(
+                    "Invalid RocksDB compression type '%s'. Supported values: %s",
+                    compressionTypeValue,
+                    Arrays.toString(CompressionType.values())
+            ), e);
+        }
     }
 
     @Override
@@ -271,6 +295,32 @@ public class RocksDbDataSource implements KeyValueDataSource {
         return result;
     }
 
+    public void compactRange() {
+        Metric metric = profiler.start(MetricKind.DB_WRITE);
+        resetDbLock.writeLock().lock();
+
+        try {
+            if (logger.isTraceEnabled()) {
+                logger.trace("~> RocksDbDataSource.compactRange(): {}", name);
+            }
+
+            try (CompactRangeOptions compactRangeOptions = new CompactRangeOptions()) {
+                compactRangeOptions.setBottommostLevelCompaction(CompactRangeOptions.BottommostLevelCompaction.kForce);
+                db.compactRange(db.getDefaultColumnFamily(), null, null, compactRangeOptions);
+            }
+
+            if (logger.isTraceEnabled()) {
+                logger.trace("<~ RocksDbDataSource.compactRange(): {}", name);
+            }
+        } catch (RocksDBException e) {
+            logger.error("Exception compacting DB {}", name, e);
+            throw new RuntimeException(e);
+        } finally {
+            resetDbLock.writeLock().unlock();
+            profiler.stop(metric);
+        }
+    }
+
     private void updateBatchInternal(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
         Metric metric = profiler.start(MetricKind.DB_WRITE);
         if (rows.containsKey(null) || rows.containsValue(null)) {
@@ -363,10 +413,11 @@ public class RocksDbDataSource implements KeyValueDataSource {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
 
-    private static Options createOptions() {
+    private static Options createOptions(CompressionType compressionType) {
         Options options = new Options();
         options.setCreateIfMissing(true);
-        options.setCompressionType(CompressionType.NO_COMPRESSION);
+        options.setCompressionType(compressionType);
+        options.setBottommostCompressionType(compressionType);
         options.setArenaBlockSize(GENERAL_SIZE);
         options.setWriteBufferSize(GENERAL_SIZE);
         options.setParanoidChecks(true);
