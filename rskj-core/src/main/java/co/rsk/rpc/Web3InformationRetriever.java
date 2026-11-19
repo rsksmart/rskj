@@ -150,8 +150,8 @@ public class Web3InformationRetriever {
     private long getBlockNumber(String identifier) {
         long blockNumber;
         try {
-            blockNumber = HexUtils.stringHexToBigInteger(identifier).longValue();
-        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+            blockNumber = HexUtils.stringHexToBigInteger(identifier).longValueExact();
+        } catch (NumberFormatException | StringIndexOutOfBoundsException | ArithmeticException e) {
             throw invalidParamError(String.format("invalid blocknumber %s", identifier));
         }
         return blockNumber;
