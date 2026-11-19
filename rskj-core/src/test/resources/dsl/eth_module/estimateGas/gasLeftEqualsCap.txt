@@ -1,0 +1,42 @@
+comment
+
+Runtime code, 12 bytes. It stops only when the gas left after GAS is 6_778_998, the gas a call
+gets at the 6_800_000 gas estimation cap: 6_800_000 - 21_000 intrinsic - 2 for GAS. Any other
+gas limit reaches INVALID.
+
+00 5a        GAS
+01 62677076  PUSH3 6_778_998
+05 14        EQ
+06 600a      PUSH1 0x0a
+08 57        JUMPI
+09 fe        INVALID
+0a 5b        JUMPDEST
+0b 00        STOP
+
+The init code copies the 12 runtime bytes that follow it and returns them:
+PUSH1 0x0c PUSH1 0x0c PUSH1 0x00 CODECOPY PUSH1 0x0c PUSH1 0x00 RETURN
+
+end
+
+account_new acc1 20000000
+
+# Deploy the probe
+
+transaction_build tx01
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 600c600c600039600c6000f35a6267707614600a57fe5b00
+    gas 1000000
+    build
+
+block_build b01
+    parent g00
+    gasLimit 7500000
+    transactions tx01
+    build
+
+block_connect b01
+
+# Assert best block
+assert_best b01
