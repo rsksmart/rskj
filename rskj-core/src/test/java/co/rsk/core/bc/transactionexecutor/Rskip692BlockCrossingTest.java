@@ -35,7 +35,7 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -51,17 +51,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * activation block. Intrinsic cost = 21_000 + 4 * 16 = 21_064; the Bridge declares 23_000 for unknown data.
  * Before activation: status 1 and gasUsed 44_064 in the receipt, but the sender pays the full gas limit with no
  * refund. From activation: status 0, and gasUsed and the fee are both the gas limit.
+ * The blocks are run sequentially, in the sequential sublist of a parallel block, and in a parallel sublist.
  */
 class Rskip692BlockCrossingTest {
 
     private static final long ACTIVATION = 2;
+    // Above the regtest minimum sequential sublist gas limit of 6_800_000, so the parallel sublists get gas
+    private static final BigInteger BLOCK_GAS_LIMIT = BigInteger.valueOf(10_000_000);
     private static final BigInteger GAS_LIMIT = BigInteger.valueOf(100_000);
     private static final BigInteger GAS_PRICE = BigInteger.valueOf(2);
 
-    @ParameterizedTest(name = "parallel={0}")
-    @ValueSource(booleans = {false, true})
-    void failingBridgeCall_changesReceiptAndFeeAtActivation(boolean parallel) {
-        MinedBlocks mined = mineAcrossActivation(parallel);
+    @ParameterizedTest
+    @EnumSource(ExecutionPath.class)
+    void failingBridgeCall_changesReceiptAndFeeAtActivation(ExecutionPath path) {
+        MinedBlocks mined = mineAcrossActivation(path);
 
         TransactionReceipt preReceipt = receipt(mined.miner(), mined.preTx());
         assertTrue(preReceipt.isSuccessful(), "before RSKIP-692 the failing Bridge call keeps the legacy success status");
@@ -77,20 +80,22 @@ class Rskip692BlockCrossingTest {
                 "from RSKIP-692 the sender pays gasUsed");
     }
 
-    @ParameterizedTest(name = "parallel={0}")
-    @ValueSource(booleans = {false, true})
-    void aNodeWithoutRskip692_rejectsTheActivationBlock(boolean parallel) {
-        MinedBlocks mined = mineAcrossActivation(parallel);
+    @ParameterizedTest
+    @EnumSource(ExecutionPath.class)
+    void aNodeWithoutRskip692_rejectsTheActivationBlock(ExecutionPath path) {
+        MinedBlocks mined = mineAcrossActivation(path);
         Block preBlock = mined.preBlock();
         Block atBlock = mined.atBlock();
 
         // A node without RSKIP-692 accepts the block before activation and rejects the activation block,
         // whose receipts root it cannot reproduce
-        World importer = newWorld(-1, parallel);
+        World importer = newWorld(-1, path);
         assertEquals(ImportResult.IMPORTED_BEST, importer.getBlockChain().tryToConnect(preBlock));
 
         BlockResult importerResult = importer.getBlockExecutor().execute(
                 null, 0, atBlock, preBlock.getHeader(), false, false, false);
+        // The activation changes the receipt, not the state: both sides charge the full gas limit
+        assertArrayEquals(atBlock.getStateRoot(), importerResult.getFinalState().getHash().getBytes());
         byte[] importerReceiptsRoot = BlockHashesHelper.calculateReceiptsTrieRoot(importerResult.getTransactionReceipts(), true);
         assertFalse(Arrays.equals(atBlock.getReceiptsRoot(), importerReceiptsRoot));
         assertTrue(importerResult.getTransactionReceipts().get(0).isSuccessful());
@@ -99,8 +104,8 @@ class Rskip692BlockCrossingTest {
         assertArrayEquals(preBlock.getHash().getBytes(), importer.getBlockChain().getBestBlock().getHash().getBytes());
     }
 
-    private static MinedBlocks mineAcrossActivation(boolean parallel) {
-        World miner = newWorld(ACTIVATION, parallel);
+    private static MinedBlocks mineAcrossActivation(ExecutionPath path) {
+        World miner = newWorld(ACTIVATION, path);
         Account sender = miner.getAccountByName("sender");
         Coin initialBalance = balance(miner, sender);
 
@@ -113,7 +118,8 @@ class Rskip692BlockCrossingTest {
 
         assertEquals(ACTIVATION - 1, preBlock.getNumber());
         assertEquals(ACTIVATION, atBlock.getNumber());
-        assertEquals(parallel, atBlock.getHeader().getTxExecutionSublistsEdges() != null, "the block must come from the expected execution path");
+        assertArrayEquals(path.expectedEdges, atBlock.getHeader().getTxExecutionSublistsEdges(),
+                "the call must run on the expected execution path");
         return new MinedBlocks(miner, preTx, preBlock, atTx, atBlock, initialBalance, balanceAfterPre, balanceAfterAt);
     }
 
@@ -135,6 +141,7 @@ class Rskip692BlockCrossingTest {
         Block block = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
                 .trieStore(world.getTrieStore())
                 .parent(parent)
+                .gasLimit(BLOCK_GAS_LIMIT)
                 .transactions(Collections.singletonList(tx))
                 .build(world.getConfig());
         assertEquals(1, block.getTransactionsList().size());
@@ -151,14 +158,33 @@ class Rskip692BlockCrossingTest {
         return world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader()).getBalance(account.getAddress());
     }
 
-    private static World newWorld(long rskip692Activation, boolean parallel) {
+    private static World newWorld(long rskip692Activation, ExecutionPath path) {
+        boolean parallel = path != ExecutionPath.SEQUENTIAL_BLOCK;
         TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
                 .withValue("blockchain.config.consensusRules.rskip692", ConfigValueFactory.fromAnyRef(rskip692Activation))
                 .withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(parallel ? 0 : -1))
                 .withValue("blockchain.config.consensusRules.rskip351", ConfigValueFactory.fromAnyRef(0)));
+        if (path == ExecutionPath.PARALLEL_SUBLIST) {
+            config.setConcurrentContractsDisallowed(Collections.emptySet());
+        }
         World world = new World(config);
         world.saveAccount("sender", new AccountBuilder(world).name("sender").balance(Coin.valueOf(1_000_000_000L)).build());
         return world;
+    }
+
+    enum ExecutionPath {
+        /** Before RSKIP-144: the block has no sublist edges. */
+        SEQUENTIAL_BLOCK(null),
+        /** The Bridge may not run in a parallel sublist by default, so the call lands in the sequential sublist. */
+        SEQUENTIAL_SUBLIST(new short[]{}),
+        /** With no contract kept out of the parallel sublists, the call is the only transaction of the first one. */
+        PARALLEL_SUBLIST(new short[]{1});
+
+        private final short[] expectedEdges;
+
+        ExecutionPath(short[] expectedEdges) {
+            this.expectedEdges = expectedEdges;
+        }
     }
 
     private record MinedBlocks(World miner, Transaction preTx, Block preBlock, Transaction atTx, Block atBlock,

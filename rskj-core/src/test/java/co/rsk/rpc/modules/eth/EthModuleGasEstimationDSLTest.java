@@ -344,6 +344,32 @@ class EthModuleGasEstimationDSLTest {
     }
 
     /**
+     * The estimate runs with the gas estimation cap as its gas limit, whatever gas the caller sends. The contract
+     * stops only when the gas left matches the 6_800_000 cap from reference.conf, and fails on any other limit.
+     * Estimate by hand: intrinsic 21_000 + GAS 2 + PUSH3 3 + EQ 3 + PUSH1 3 + JUMPI 10 + JUMPDEST 1 + STOP 0 = 21_022.
+     */
+    @Test
+    void estimateGas_runsWithTheGasEstimationCapWhateverTheCallerGas() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/gasLeftEqualsCap.txt");
+
+        TransactionReceipt deployTransactionReceipt = world.getTransactionReceiptByName("tx01");
+        assertArrayEquals(new byte[]{0x01}, deployTransactionReceipt.getStatus());
+        String contractAddress = "0x" + deployTransactionReceipt.getTransaction().getContractAddress().toHexString();
+
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        long gasEstimationCap = new TestSystemProperties().getGasEstimationCap();
+        assertEquals(6_800_000L, gasEstimationCap, "the contract is built for this cap");
+
+        CallArguments callArguments = new CallArguments();
+        callArguments.setTo(contractAddress);
+        callArguments.setValue(HexUtils.toQuantityJsonHex(0));
+        callArguments.setGas(HexUtils.toQuantityJsonHex(gasEstimationCap + 1_000_000_000));
+        callArguments.setData("");
+
+        assertEquals(21_022L, estimateGas(eth, callArguments, BlockTag.LATEST.getTag()));
+    }
+
+    /**
      * A contract call containing one storage refund + one call with value
      */
     @Test
