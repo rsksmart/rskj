@@ -397,6 +397,20 @@ class TransactionExecutorTest {
         assertArrayEquals(new byte[0], txExecutor.getReceipt().getStatus());
     }
 
+    @Test
+    void vmExceptionOfAnonymousClassWithoutMessageFailsReceiptAfterRskip692() {
+        ActivationConfig rskip692Active = ActivationConfigsForTest.all();
+        assertTrue(rskip692Active.isActive(ConsensusRule.RSKIP692, executionBlock.getNumber()));
+        // An anonymous class has an empty simple name, so the error text cannot come from it
+        RuntimeException failure = new RuntimeException((String) null) {
+        };
+
+        TransactionExecutor txExecutor = executeContractCallFailingInTheVm(rskip692Active, failure);
+
+        assertSame(failure, txExecutor.getResult().getException());
+        assertArrayEquals(new byte[0], txExecutor.getReceipt().getStatus());
+    }
+
     /**
      * Executes a call to a contract whose program throws {@code failure} when it first reads its gas,
      * which reaches the exception handler of the EVM path.

@@ -357,7 +357,9 @@ public class TransactionExecutor {
                     // A simulated call reports the failure through its result, as a failing precompiled contract does
                     result.setException(new Program.OutOfGasException("%s", executionError));
                 } else if (activations.isActive(ConsensusRule.RSKIP692)) {
-                    // An exceptional halt consumes the gas limit, so the refunds that survive a halt apply to it
+                    // An exceptional halt consumes the gas limit. Nothing ran, so no refund is pending and the
+                    // receipt and fee do not change. Spending the gas limit here makes any refund that survives
+                    // a halt apply to the gas limit, as RSKIP692 requires.
                     result.spendGas(txGasLimit);
                 }
                 profiler.stop(metric);
@@ -453,7 +455,7 @@ public class TransactionExecutor {
         // a successful receipt status, as it always did
         executionError = hasMessage || !activations.isActive(ConsensusRule.RSKIP692)
                 ? message
-                : err.getClass().getSimpleName();
+                : err.getClass().getName();
     }
 
     private void execError(String err) {

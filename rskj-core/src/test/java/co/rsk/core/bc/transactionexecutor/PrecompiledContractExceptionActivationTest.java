@@ -106,7 +106,7 @@ class PrecompiledContractExceptionActivationTest {
     }
 
     /**
-     * A transaction without an authorization list sends 0xdeadbeef to the Bridge with gas
+     * A transaction sends 0xdeadbeef to the Bridge with gas
      * limit 40_000. It covers the intrinsic cost of 21_000 + 4 * 16 = 21_064, but not 21_064 + 23_000 = 44_064,
      * so the Bridge does not execute. Before and after activation: status 0, gasUsed = fee = 40_000, no state
      * change and no log.
@@ -137,6 +137,9 @@ class PrecompiledContractExceptionActivationTest {
         TransactionExecutor executor = transactionExecutorFactory.newInstance(tx, 0, block.getCoinbase(), track, block, 0L);
 
         Assertions.assertTrue(executor.executeTransaction());
+        // From activation the halt spends the gas limit in the result, so a refund that survives a halt applies
+        // to it. Before activation nothing is spent in the result.
+        Assertions.assertEquals(rskip692Active ? 40_000L : 0L, executor.getResult().getGasUsed());
 
         TransactionReceipt receipt = executor.getReceipt();
         Assertions.assertFalse(receipt.isSuccessful());
