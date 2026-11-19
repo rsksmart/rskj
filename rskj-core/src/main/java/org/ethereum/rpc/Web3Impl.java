@@ -406,7 +406,7 @@ public class Web3Impl implements Web3 {
     }
 
     private String eth_call(CallArgumentsParam args, Map<String, String> inputs, List<AccountOverride> accountOverrideList) {
-        return invokeByBlockRef(inputs, blockNumber -> getEthModule().call(args, new BlockIdentifierParam(blockNumber), accountOverrideList));
+        return invokeByBlockRef(inputs, blockId -> getEthModule().call(args, new BlockIdentifierParam(blockId), accountOverrideList));
     }
 
     @Override
@@ -427,14 +427,23 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_getCode(HexAddressParam address, BlockRefParam blockRefParam) {
         if (blockRefParam.getIdentifier() != null) {
-            return this.getCode(address, blockRefParam.getIdentifier());
+            return this.eth_getCode(address, blockRefParam.getIdentifier());
         } else {
             return this.eth_getCode(address, blockRefParam.getInputs());
         }
     }
 
+    private String eth_getCode(HexAddressParam address, String blockId) {
+        AccountInformationProvider accountInformationProvider = web3InformationRetriever.getInformationProvider(blockId);
+
+        byte[] code = accountInformationProvider.getCode(address.getAddress());
+
+        // Code can be null, if there is no account.
+        return HexUtils.toUnformattedJsonHex(code == null ? new byte[0] : code);
+    }
+
     private String eth_getCode(HexAddressParam address, Map<String, String> inputs) {
-        return invokeByBlockRef(inputs, blockNumber -> this.getCode(address, blockNumber));
+        return invokeByBlockRef(inputs, blockId -> this.eth_getCode(address, blockId));
     }
 
     @Override
@@ -463,7 +472,7 @@ public class Web3Impl implements Web3 {
 
 
     private String eth_getBalance(HexAddressParam address, Map<String, String> inputs) {
-        return invokeByBlockRef(inputs, blockNumber -> this.eth_getBalance(address, blockNumber));
+        return invokeByBlockRef(inputs, blockId -> this.eth_getBalance(address, blockId));
     }
 
     private Optional<String> applyIfPresent(final Map<String, String> inputs, final String reference, final UnaryOperator<String> function) {
@@ -489,7 +498,7 @@ public class Web3Impl implements Web3 {
     }
 
     private String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, Map<String, String> blockRef) {
-        return invokeByBlockRef(blockRef, blockNumber -> this.eth_getStorageAt(address, storageIdx, blockNumber));
+        return invokeByBlockRef(blockRef, blockId -> this.eth_getStorageAt(address, storageIdx, blockId));
     }
 
     private String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, String blockId) {
@@ -536,7 +545,7 @@ public class Web3Impl implements Web3 {
     }
 
     private String rsk_getStorageBytesAt(HexAddressParam address, HexNumberParam storageIdx, Map<String, String> blockRef) {
-        return invokeByBlockRef(blockRef, blockNumber -> this.rsk_getStorageBytesAt(address, storageIdx, blockNumber));
+        return invokeByBlockRef(blockRef, blockId -> this.rsk_getStorageBytesAt(address, storageIdx, blockId));
     }
 
     @Override
@@ -549,7 +558,7 @@ public class Web3Impl implements Web3 {
     }
 
     private String eth_getTransactionCount(HexAddressParam address, Map<String, String> inputs) {
-        return invokeByBlockRef(inputs, blockNumber -> this.eth_getTransactionCount(address, blockNumber));
+        return invokeByBlockRef(inputs, blockId -> this.eth_getTransactionCount(address, blockId));
     }
 
     /**
@@ -558,19 +567,19 @@ public class Web3Impl implements Web3 {
      * { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false }
      * and invoke a function after processing.
      *
-     * @param inputs                map
-     * @param toInvokeByBlockNumber a function that returns a string based on the block number
+     * @param inputs            map
+     * @param toInvokeByBlockId a function that returns a string based on the block number or block hash
      * @return function invocation result
      */
-    protected String invokeByBlockRef(Map<String, String> inputs, UnaryOperator<String> toInvokeByBlockNumber) {
+    protected String invokeByBlockRef(Map<String, String> inputs, UnaryOperator<String> toInvokeByBlockId) {
         final boolean requireCanonical = Boolean.parseBoolean(inputs.get("requireCanonical"));
-        return applyIfPresent(inputs, "blockHash", blockHash -> this.toInvokeByBlockHash(blockHash, requireCanonical, toInvokeByBlockNumber))
-                    .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
+        return applyIfPresent(inputs, "blockHash", blockHash -> this.toInvokeByBlockHash(blockHash, requireCanonical, toInvokeByBlockId))
+                    .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockId)
                     .orElseThrow(() -> invalidParamError("Invalid block input"))
                 );
     }
 
-    private String toInvokeByBlockHash(String blockHash, boolean requireCanonical, Function<String, String> toInvokeByBlockNumber) {
+    private String toInvokeByBlockHash(String blockHash, boolean requireCanonical, Function<String, String> toInvokeByBlockId) {
         Block block = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash)))
                 .orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", blockHash)));
 
@@ -579,7 +588,8 @@ public class Web3Impl implements Web3 {
             throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", blockHash));
         }
 
-        return toInvokeByBlockNumber.apply(toQuantityJsonHex(block.getNumber()));
+        // By hash, not height: a non-canonical block must be read at its own state.
+        return toInvokeByBlockId.apply(block.getHashJsonString());
     }
 
     private String eth_getTransactionCount(HexAddressParam address, String blockId) {
@@ -1179,11 +1189,14 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_estimateGas(CallArgumentsParam args, @Nullable BlockIdentifierParam bnOrId) {
-        if (bnOrId == null) {
-            bnOrId = new BlockIdentifierParam(BlockTag.LATEST.getTag());
+    public String eth_estimateGas(CallArgumentsParam args, @Nullable BlockRefParam blockRefParam) {
+        if (blockRefParam == null) {
+            return getEthModule().estimateGas(args, new BlockIdentifierParam(BlockTag.LATEST.getTag()));
         }
-        return getEthModule().estimateGas(args, bnOrId);
+        if (blockRefParam.getIdentifier() != null) {
+            return getEthModule().estimateGas(args, new BlockIdentifierParam(blockRefParam.getIdentifier()));
+        }
+        return invokeByBlockRef(blockRefParam.getInputs(), blockId -> getEthModule().estimateGas(args, new BlockIdentifierParam(blockId)));
     }
 
     @Override

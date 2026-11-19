@@ -36,7 +36,6 @@ import java.util.Optional;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.rpc.parameters.HashParam32.HASH_BYTE_LENGTH;
 
 /**
  * Retrieves information requested by web3 based on the block identifier:
@@ -87,13 +86,8 @@ public class Web3InformationRetriever {
                 block = blockchain.getBlockByNumber(0);
                 break;
             default:
-                if (HashParam32.isHash32HexLengthValid(identifier)
-                        && HexUtils.isHex(identifier, HexUtils.hasHexPrefix(identifier) ? 2 : 0)) {
-                    byte[] hash = getBlockHash(identifier);
-                    if (hash.length != HASH_BYTE_LENGTH) {
-                        throw invalidParamError(String.format("invalid block hash %s", identifier));
-                    }
-                    block = blockchain.getBlockByHash(hash);
+                if (HashParam32.isPrefixedHash32Hex(identifier)) {
+                    block = blockchain.getBlockByHash(getBlockHash(identifier));
                 } else if (HexNumberParam.isHexNumberLengthValid(identifier)) {
                     block = blockchain.getBlockByNumber(getBlockNumber(identifier));
                 } else {

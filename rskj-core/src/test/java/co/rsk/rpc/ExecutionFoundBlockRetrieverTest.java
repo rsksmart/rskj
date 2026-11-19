@@ -226,6 +226,36 @@ class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
+    void getByNumberZeroPaddedShorterThanAHash() {
+        Block myBlock = mock(Block.class);
+        when(blockchain.getBlockByNumber(123))
+                .thenReturn(myBlock);
+
+        assertThat(retriever.retrieveExecutionBlock("0x0000000000000000000000000000000000000000000000000000000000007b").getBlock(), is(myBlock));
+        verify(blockchain, never()).getBlockByHash(any());
+    }
+
+    @Test
+    void getByHashBlockExists() {
+        Block myBlock = mock(Block.class);
+        when(blockchain.getBlockByHash(HASH1.getBytes()))
+                .thenReturn(myBlock);
+
+        assertThat(retriever.retrieveExecutionBlock("0x133e83bb305ef21ea7fc86fcced355db2300887274961a136ca5e8c8763687d9").getBlock(), is(myBlock));
+        assertThat(retriever.retrieveExecutionBlock("0x133E83BB305EF21EA7FC86FCCED355DB2300887274961A136CA5E8C8763687D9").getBlock(), is(myBlock));
+        verify(blockchain, never()).getBlockByNumber(anyLong());
+    }
+
+    @Test
+    void getByHashBlockNotFound() {
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.retrieveExecutionBlock("0x133e83bb305ef21ea7fc86fcced355db2300887274961a136ca5e8c8763687d9"));
+        Assertions.assertEquals(-32600, (int) e.getCode());
+        verify(blockchain, never()).getBlockByNumber(anyLong());
+    }
+
+    @Test
     void getByNumberInvalidBlockNumberHex() {
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(null);

@@ -1,7 +1,7 @@
 {
   "ExecutionBlockNumberOrTag": {
     "title": "executionBlockNumberOrTag",
-    "description": "A block to execute against, given as its height in hex or in decimal, or as a tag. The decimal form is accepted because the block is resolved by `ExecutionBlockRetriever`, which parses both bases; the block-reading methods resolve through `Web3InformationRetriever`, which parses hex only and answers `invalid blocknumber` for a decimal height. It is not the only place decimal is taken -- `eth_getBlocksByNumber` parses its own height and accepts both bases too -- but among the methods that take a block parameter it is what separates executing from reading.",
+    "description": "A block to execute against, given as its height in hex or in decimal, or as a tag. The decimal form is accepted because the block is resolved by `ExecutionBlockRetriever`, which parses both bases; the block-reading methods resolve through `Web3InformationRetriever`, which parses hex only and answers `invalid blocknumber` for a decimal height. It is not the only place decimal is taken -- `eth_getBlocksByNumber` parses its own height and accepts both bases too -- but among the methods that take a block parameter it is what separates executing from reading.\n\nAs for the reading methods, a string of `0x` and exactly 64 hex digits is always read as a 32-byte block hash, never as a height, so a height zero-padded to that length is not accepted. The hash is left out of the union above for the same reason it is left out of `blockNumberOrTag`.",
     "oneOf": [
       {
         "$ref": "#/components/schemas/BlockNumberHex"

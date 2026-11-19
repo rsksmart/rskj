@@ -20,6 +20,7 @@ package org.ethereum.rpc.parameters;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.HexUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.Utils;
 
 import static co.rsk.util.HexUtils.stringHexToByteArray;
 
@@ -56,5 +57,9 @@ public abstract class HashParam32 {
 
     public static boolean isHash32HexLengthValid(String hex) {
         return hex != null && hex.length() >= MIN_HASH_HEX_LEN && hex.length() <= MAX_HASH_HEX_LEN;
+    }
+
+    public static boolean isPrefixedHash32Hex(String hex) {
+        return hex != null && hex.length() == MAX_HASH_HEX_LEN && Utils.isHexadecimalString(hex);
     }
 }

@@ -116,6 +116,18 @@ class Web3ImplUnitTest {
     }
 
     @Test
+    void eth_getCode_pending() {
+        String addr = "0x0011223344556677880011223344556677889900";
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        when(retriever.getInformationProvider("pending")).thenReturn(aip);
+        when(aip.getCode(new RskAddress(addr))).thenReturn(new byte[]{1, 2, 3});
+
+        String result = target.eth_getCode(new HexAddressParam(addr), new BlockRefParam("pending"));
+
+        assertEquals("0x010203", result);
+    }
+
+    @Test
         //validates invokeByBlockRef call
     void eth_getBalanceByBlockRef() {
         String addr = "0x0011223344556677880011223344556677889900";

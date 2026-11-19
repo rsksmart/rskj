@@ -22,7 +22,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
-import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
@@ -46,7 +45,6 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
-import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
@@ -54,7 +52,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OverrideablePrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -714,42 +711,6 @@ class EthModuleTest {
         } catch (RskJsonRpcRequestException ex) {
             assertEquals("Could not find account for address: " + addressFrom.toJsonString(), ex.getMessage());
         }
-    }
-
-    @Test
-    void getCode() {
-        byte[] expectedCode = new byte[]{1, 2, 3};
-
-        TransactionPool mockTransactionPool = mock(TransactionPool.class);
-        PendingState mockPendingState = mock(PendingState.class);
-
-        doReturn(expectedCode).when(mockPendingState).getCode(any(RskAddress.class));
-        doReturn(mockPendingState).when(mockTransactionPool).getPendingState();
-
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
-
-        EthModule eth = new EthModule(
-                null,
-                (byte) 0,
-                null,
-                mockTransactionPool,
-                null,
-                null,
-                null,
-                null,
-                null,
-                bridgeSupportFactory,
-                config.getGasEstimationCap(),
-                config.getCallGasCap(),
-                config.getActivationConfig(),
-                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
-                false,
-                null
-        );
-
-        HexAddressParam addressParam = new HexAddressParam(TestUtils.generateAddress("addr").toHexString());
-        String addr = eth.getCode(addressParam, "pending");
-        MatcherAssert.assertThat(Hex.decode(addr.substring("0x".length())), is(expectedCode));
     }
 
     @Test

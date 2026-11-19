@@ -20,7 +20,6 @@ package org.ethereum.rpc.parameters;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
@@ -30,6 +29,7 @@ import org.ethereum.util.Utils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +72,7 @@ public class BlockRefParam implements Serializable {
                 case REQUIRED_CANONICAL_KEY:
                     if(!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) {
                         throw RskJsonRpcRequestException.invalidParamError(String
-                                .format("Invalid input: %s must be a String \"true\" or \"false\"", REQUIRED_CANONICAL_KEY));
+                                .format("Invalid input: %s must be a boolean", REQUIRED_CANONICAL_KEY));
                     }
                     break;
                 case BLOCK_HASH_KEY:
@@ -95,7 +95,6 @@ public class BlockRefParam implements Serializable {
 
     public static class Deserializer extends StdDeserializer<BlockRefParam> {
         private static final long serialVersionUID = 1L;
-        private final ObjectMapper mapper = new ObjectMapper();
 
         public Deserializer() { this(null); }
 
@@ -109,11 +108,20 @@ public class BlockRefParam implements Serializable {
             if(nodeType == JsonNodeType.STRING) {
                 return new BlockRefParam(node.asText());
             } else if(nodeType == JsonNodeType.OBJECT) {
-                Map<String, String> inputs = mapper.convertValue(node, Map.class);
+                Map<String, String> inputs = new LinkedHashMap<>();
+                node.fields().forEachRemaining(field -> inputs.put(field.getKey(), toInputValue(field.getKey(), field.getValue())));
                 return new BlockRefParam(inputs);
             } else {
                 throw RskJsonRpcRequestException.invalidParamError("Invalid input");
             }
+        }
+
+        // requireCanonical may be a JSON boolean; the string form stays accepted for existing clients.
+        private static String toInputValue(String key, JsonNode value) {
+            if (value.isTextual() || (value.isBoolean() && REQUIRED_CANONICAL_KEY.equals(key))) {
+                return value.asText();
+            }
+            throw RskJsonRpcRequestException.invalidParamError(String.format("Invalid input: %s has an invalid type", key));
         }
     }
 }
