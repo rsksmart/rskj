@@ -93,6 +93,22 @@ class TransactionResultDTOTest {
     }
 
     @Test
+    void signedLegacyTransactionWithChainIdAbove110_reportsTheWireV() {
+        Transaction tx = CallTransaction.createCallTransaction(
+                0, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), (byte) 200);
+        tx.sign(new byte[]{});
+
+        byte[] wireV = RLP.decodeList(tx.getEncoded()).get(6).getRLPData();
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, tx, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertEquals(1, wireV.length);
+        Assertions.assertEquals(String.format("0x%x", wireV[0] & 0xFF), dto.getV());
+        Assertions.assertTrue(dto.getV().equals("0xb3") || dto.getV().equals("0xb4"), "435/436 truncated to one byte: " + dto.getV());
+    }
+
+    @Test
     void transactionWithZeroNonce() {
         Transaction originalTransaction = CallTransaction.createCallTransaction(
                 0, 0, 100000000000000L,
