@@ -25,6 +25,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -136,27 +137,40 @@ class Type0TransactionEncoderTest {
     }
 
     private static Stream<Arguments> highChainIdCases() {
-        // chainIds whose EIP-155 v (yParity + chainId * 2 + 35) does not fit in one byte.
-        return IntStream.of(111, 127, 128, 200, 255)
-                .boxed()
-                .flatMap(chainId -> Stream.of(
-                        Arguments.of(chainId, Transaction.LOWER_REAL_V),
-                        Arguments.of(chainId, (byte) (Transaction.LOWER_REAL_V + 1))));
+        int yParity0 = Transaction.LOWER_REAL_V;
+        int yParity1 = Transaction.LOWER_REAL_V + 1;
+        return Stream.of(
+                //          chainId  signature v  expected wire v
+                Arguments.of(111,    yParity0,    0x01),
+                Arguments.of(111,    yParity1,    0x02),
+                Arguments.of(127,    yParity0,    0x21),
+                Arguments.of(127,    yParity1,    0x22),
+                Arguments.of(128,    yParity0,    0x23),
+                Arguments.of(128,    yParity1,    0x24),
+                Arguments.of(200,    yParity0,    0xb3),
+                Arguments.of(200,    yParity1,    0xb4),
+                Arguments.of(255,    yParity0,    0x21),
+                Arguments.of(255,    yParity1,    0x22));
     }
 
-    @ParameterizedTest(name = "chainId {0}, v {1}")
+    @ParameterizedTest(name = "chainId {0}, signature v {1}, wire v {2}")
     @MethodSource("highChainIdCases")
-    void encodeSigned_highChainId_keepsVToOneByteTheParserAccepts(int chainId, byte sigV) {
-        Transaction tx = withFixedSignature(unsignedLegacy((byte) chainId), sigV);
+    void encodeSigned_highChainId_keepsVToOneByteTheParserAccepts(int chainId, int sigV, int expectedV) {
+        Transaction tx = withFixedSignature(unsignedLegacy((byte) chainId), (byte) sigV);
 
         byte[] encoded = ENCODER.encodeSigned(tx);
         byte[] wireV = RLP.decodeList(encoded).get(6).getRLPData();
 
-        byte expectedV = (byte) (sigV - Transaction.LOWER_REAL_V + (byte) chainId * 2 + Transaction.CHAIN_ID_INC);
-        assertArrayEquals(new byte[]{expectedV}, wireV, "v must be one byte, truncated as master does");
-        assertEquals(wireV[0], tx.getEncodedV(), "RPC v must match the wire v");
+        assertArrayEquals(new byte[]{(byte) expectedV}, wireV, "v must be one byte");
+        assertEquals(expectedV, tx.getEncodedV() & 0xFF, "RPC v must match the wire v");
         assertDoesNotThrow(() -> Transaction.fromRaw(encoded), "the parser must accept what the encoder emits");
     }
+
+    private static final Map<Integer, Integer> V_NOT_ROUND_TRIPPED = Map.ofEntries(
+            Map.entry(0, 2), Map.entry(2, 4), Map.entry(4, 6), Map.entry(6, 8), Map.entry(8, 10),
+            Map.entry(10, 12), Map.entry(12, 14), Map.entry(14, 16), Map.entry(16, 18), Map.entry(18, 20),
+            Map.entry(20, 22), Map.entry(22, 24), Map.entry(24, 26), Map.entry(26, 28), Map.entry(30, 32),
+            Map.entry(32, 34), Map.entry(34, 28), Map.entry(35, 27), Map.entry(36, 28));
 
     private static IntStream everyOneByteV() {
         return IntStream.rangeClosed(0, 255);
@@ -164,7 +178,7 @@ class Type0TransactionEncoderTest {
 
     @ParameterizedTest(name = "v {0}")
     @MethodSource("everyOneByteV")
-    void decodeThenEncode_anyOneByteV_staysParseable(int v) {
+    void decodeThenEncode_anyOneByteV_preservesTheBytes(int v) {
         Transaction base = withFixedSignature(unsignedLegacy(CHAIN_ID), Transaction.LOWER_REAL_V);
         RLPList fields = RLP.decodeList(base.getEncoded());
         byte[][] items = new byte[9][];
@@ -181,6 +195,12 @@ class Type0TransactionEncoderTest {
         assertEquals(1, wireV.length, "re-encoded v must be one byte");
         assertEquals(wireV[0], decoded.getEncodedV(), "RPC v must match the wire v");
         assertDoesNotThrow(() -> Transaction.fromRaw(reencoded), "the parser must accept the re-encoding");
+
+        int expectedV = V_NOT_ROUND_TRIPPED.getOrDefault(v, v);
+        assertEquals(expectedV, wireV[0] & 0xFF, "v " + v + " must re-encode as " + expectedV);
+        if (expectedV == v) {
+            assertArrayEquals(raw, reencoded, "a preserved v must not move any other byte either");
+        }
     }
 
     @Test

@@ -22,21 +22,9 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.encoder.util.TransactionEncodingUtils;
 import org.ethereum.util.RLP;
 
-import static org.ethereum.core.Transaction.CHAIN_ID_INC;
-import static org.ethereum.core.Transaction.LOWER_REAL_V;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class Type0TransactionEncoder implements TransactionEncoder {
-
-
-    public static byte getEncodedV(Transaction transaction) {
-        byte chainId = transaction.getChainId();
-        byte v = transaction.getSignature().getV();
-        if (chainId == 0) {
-            return v;
-        }
-        return (byte) (v - LOWER_REAL_V + chainId * 2 + CHAIN_ID_INC);
-    }
 
     @Override
     public byte[] encodeSigned(Transaction transaction) {
@@ -45,7 +33,7 @@ public class Type0TransactionEncoder implements TransactionEncoder {
         byte[] s;
 
         if (transaction.getSignature() != null) {
-            v = RLP.encodeByte(getEncodedV(transaction));
+            v = RLP.encodeByte(transaction.getEncodedV());
             r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(transaction.getSignature().getR()));
             s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(transaction.getSignature().getS()));
         } else {

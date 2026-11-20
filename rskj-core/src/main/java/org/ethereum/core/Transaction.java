@@ -35,7 +35,6 @@ import org.ethereum.core.exception.TransactionException;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.encoder.TransactionEncoderFactory;
-import org.ethereum.core.transaction.encoder.Type0TransactionEncoder;
 import org.ethereum.core.transaction.parser.ParsedRawTransaction;
 import org.ethereum.core.transaction.parser.ParsedRawTransactionVisitor;
 import org.ethereum.core.transaction.parser.ParsedType0Transaction;
@@ -701,7 +700,9 @@ public class Transaction {
             // EIP-2718 typed transactions use yParity (0 or 1) instead of EIP-155 V
             return (byte) (this.signature.getV() - LOWER_REAL_V);
         }
-        return Type0TransactionEncoder.getEncodedV(this);
+        return this.chainId == 0
+                ? this.signature.getV()
+                : (byte) (this.signature.getV() - LOWER_REAL_V + CHAIN_ID_INC + this.chainId * 2);
     }
 
     private boolean hasAcceptableSignatureComponents() {
