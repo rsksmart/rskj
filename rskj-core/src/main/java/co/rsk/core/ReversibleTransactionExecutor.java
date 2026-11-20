@@ -165,5 +165,11 @@ public class ReversibleTransactionExecutor {
             // in the context of a reversible transaction execution.
             return true;
         }
+
+        @Override
+        public boolean hasAcceptableSignatureComponents() {
+            // Unsigned on purpose, so there are no signature components to check.
+            return true;
+        }
     }
 }
