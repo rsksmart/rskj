@@ -84,6 +84,33 @@ task coRSKVMFuzzTestNativeContractInputSize(type: Test) {
     jvmArgs '-Xss32m', '-Xmx3G'
 }
 
+task coRSKVMFuzzTestFuzzVmPrecompiledContracts(type: Test) {
+    useJUnitPlatform {
+        includeTags 'coRSKVMFuzzTestFuzzVmPrecompiledContracts'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task coRSKVMFuzzTestFuzzVmMathOperations(type: Test) {
+    useJUnitPlatform {
+        includeTags 'coRSKVMFuzzTestFuzzVmMathOperations'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task coRSKVMFuzzTestFuzzVmRandomValidBytecode(type: Test) {
+    useJUnitPlatform {
+        includeTags 'coRSKVMFuzzTestFuzzVmRandomValidBytecode'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
 task WorldFuzzWorldFuzz(type: Test) {
     useJUnitPlatform {
         includeTags 'WorldFuzzWorldFuzz'
@@ -313,15 +340,6 @@ task RLPFuzzGetNextElementIndex(type: Test) {
     jvmArgs '-Xss32m', '-Xmx3G'
 }
 
-task RLPFuzzFullTraverse(type: Test) {
-    useJUnitPlatform {
-        includeTags 'RLPFuzzFullTraverse'
-    }
-    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
-    classpath = sourceSets.fuzzTest.runtimeClasspath
-    jvmArgs '-Xss32m', '-Xmx3G'
-}
-
 task RLPFuzzDecode2(type: Test) {
     useJUnitPlatform {
         includeTags 'RLPFuzzDecode2'
@@ -505,7 +523,8 @@ task RepositoryFuzzStorageRoot(type: Test) {
 
 /** [FUZZ TARGETS]
  * Runtime:
- *          orgEthereumVMFuzzOpcodes, coRSKVMFuzzTestNativeContractInputSize, WorldFuzzWorldFuzz, PrecompiledContractFuzzIdentityRandom,
+ *          orgEthereumVMFuzzOpcodes, coRSKVMFuzzTestNativeContractInputSize, coRSKVMFuzzTestFuzzVmPrecompiledContracts,
+ *          coRSKVMFuzzTestFuzzVmMathOperations, coRSKVMFuzzTestFuzzVmRandomValidBytecode, WorldFuzzWorldFuzz, PrecompiledContractFuzzIdentityRandom,
  *          PrecompiledContractFuzzSha256Random, PrecompiledContractFuzzRimpempdRandom, PrecompiledContractFuzzEcrecoverRandom,
  *          PrecompiledContractFuzzModexpRandom, ExtractPublicKeyFromExtendedPublicKeyFuzzExecuteRandom, GetMultisigScriptHashRandomFuzzExecuteMixed,
  *          DeriveExtendedPublicKeyRandomFuzzExecuteRandom, Secp256k1ServiceNativeFuzzRecoverFromSignatureRecId, Secp256k1ServiceNativeFuzzRecoverFromSignatureDirectly,
@@ -517,7 +536,7 @@ task RepositoryFuzzStorageRoot(type: Test) {
  * Core:
  *          BlockDecodingFuzzBlockDecoding, CallContractFuzzContractReturningOne,
  * RLP:
- *          RLPFuzzDecodeInt, RLPFuzzDecodeEncode, RLPFuzzDecodeBigInteger, RLPFuzzGetNextElementIndex, RLPFuzzFullTraverse, RLPFuzzDecode2,
+ *          RLPFuzzDecodeInt, RLPFuzzDecodeEncode, RLPFuzzDecodeBigInteger, RLPFuzzGetNextElementIndex, RLPFuzzDecode2,
  *          RLPFuzzFirstElement, RLPFuzzDecodeList, RLPFuzzDecode2OneItem, RLPFuzzEncodeLength, RLPFuzzEncodeByte, RLPFuzzEncodeShort, RLPFuzzEncodeInt,
  *          RLPFuzzEncodeString, RLPFuzzEncodeElement, RLPFuzzEncodeListHeader, RLPFuzzEncodeSet, RLPFuzzEncodeList, RLPFuzzEncodeDecodeByte,
  *          RLPFuzzEncodeDecodeShort, RLPFuzzEncodeDecodeInt, RLPFuzzEncodeDecodeString, RLPFuzzEncodeDecodeElement,
@@ -526,7 +545,9 @@ task RepositoryFuzzStorageRoot(type: Test) {
  **/
 task runAllFuzzTests {
 
-    dependsOn orgEthereumVMFuzzOpcodes, coRSKVMFuzzTestNativeContractInputSize, WorldFuzzWorldFuzz,
+    dependsOn orgEthereumVMFuzzOpcodes, coRSKVMFuzzTestNativeContractInputSize,
+            coRSKVMFuzzTestFuzzVmPrecompiledContracts, coRSKVMFuzzTestFuzzVmMathOperations,
+            coRSKVMFuzzTestFuzzVmRandomValidBytecode, WorldFuzzWorldFuzz,
             PrecompiledContractFuzzIdentityRandom, PrecompiledContractFuzzSha256Random,
             PrecompiledContractFuzzRimpempdRandom, PrecompiledContractFuzzEcrecoverRandom,
             PrecompiledContractFuzzModexpRandom, ExtractPublicKeyFromExtendedPublicKeyFuzzExecuteRandom,
@@ -536,7 +557,7 @@ task runAllFuzzTests {
             DiscoveryPacketDecoderFuzzDecode, DiscoveryPacketDecoderFuzzDecode2, DiscoveryPacketDecoderFuzzInput,
             MessageCodecFuzzMessageCodec, ByteUtilFuzzBUFuzz, BlockDecodingFuzzBlockDecoding,
             CallContractFuzzContractReturningOne, RLPFuzzDecodeInt, RLPFuzzDecodeEncode,
-            RLPFuzzDecodeBigInteger, RLPFuzzGetNextElementIndex, RLPFuzzFullTraverse, RLPFuzzDecode2,
+            RLPFuzzDecodeBigInteger, RLPFuzzGetNextElementIndex, RLPFuzzDecode2,
             RLPFuzzFirstElement, RLPFuzzDecodeList, RLPFuzzDecode2OneItem, RLPFuzzEncodeLength,
             RLPFuzzEncodeByte, RLPFuzzEncodeShort, RLPFuzzEncodeInt, RLPFuzzEncodeString,
             RLPFuzzEncodeElement, RLPFuzzEncodeListHeader, RLPFuzzEncodeSet, RLPFuzzEncodeList,
