@@ -45,6 +45,6 @@ ENV RSKJ_CLASS=co.rsk.Start
 ENV RSKJ_OPTS=""
 
 # The Base64 intrinsic stays off: it is the code path affected by CVE-2026-114938 in JDK 17 builds before 17.0.21.1.
-# The flag comes after all configurable JVM options: the last occurrence of a JVM flag wins, so none of them can turn the intrinsic back on.
+# Placing the flag after DEFAULT_JVM_OPTS, RSKJ_SYS_PROPS and RSKJ_LOG_PROPS prevents those variables from re-enabling it; _JAVA_OPTIONS can still override it.
 ENTRYPOINT ["/bin/sh", "-c", "exec java $DEFAULT_JVM_OPTS $RSKJ_SYS_PROPS $RSKJ_LOG_PROPS -XX:-UseBASE64Intrinsics -cp rsk.jar $RSKJ_CLASS $RSKJ_OPTS \"${@}\"", "--"]
 
