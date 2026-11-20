@@ -320,6 +320,26 @@ public class FederationSupportImpl implements FederationSupport {
         return Collections.emptyList();
     }
 
+    @Override
+    public void storeFederationsPendingBtcUTXOs(Sha256Hash btcTxId, List<UTXO> utxos) {
+        provider.setFederationsPendingBtcUTXOs(btcTxId, utxos);
+    }
+
+    @Override
+    public boolean hasFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        return !getFederationsPendingBtcUTXOs(btcTxId).isEmpty();
+    }
+
+    @Override
+    public List<UTXO> getFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        return provider.getFederationsPendingBtcUTXOs(btcTxId).orElse(List.of());
+    }
+
+    @Override
+    public void removeFederationsPendingBtcUTXOs(Sha256Hash btcTxId) {
+        provider.removeFederationsPendingBtcUTXOs(btcTxId);
+    }
+
     @Nullable
     private PendingFederation getPendingFederation() {
         return provider.getPendingFederation();

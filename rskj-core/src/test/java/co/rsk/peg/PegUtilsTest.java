@@ -7,6 +7,7 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
+import co.rsk.RskTestUtils;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -21,8 +22,13 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
+import static co.rsk.RskTestUtils.generateAddress;
 import static co.rsk.peg.PegTestUtils.createFederation;
+import static co.rsk.peg.PegTxType.PEGIN;
+import static co.rsk.peg.PegTxType.PEGOUT_OR_MIGRATION;
+import static co.rsk.peg.PegTxType.UNKNOWN;
 import static co.rsk.peg.PegUtils.*;
 import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,7 +40,7 @@ class PegUtilsTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final FederationConstants federationMainNetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final Context context = new Context(bridgeMainnetConstants.getBtcParams());
-    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
+    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
 
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;
@@ -64,7 +70,7 @@ class PegUtilsTest {
         // arrange
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(5);
+        Keccak256 derivationArgumentsHash = RskTestUtils.createHash(5);
         RskAddress lbcAddress = new RskAddress("461750b4824b14c3d9b7702bc6fbb82469082b23");
 
         // act
@@ -73,7 +79,7 @@ class PegUtilsTest {
             userRefundBtcAddress,
             lpBtcAddress,
             lbcAddress,
-            activations
+            allActivations
         );
 
         // assert
@@ -173,7 +179,12 @@ class PegUtilsTest {
 
         // Act
         IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
-            PegUtils.getTransactionTypeUsingPegoutIndex(fingerrootActivations, provider, liveFederationWallet, btcTransaction)
+            PegUtils.getTransactionTypeUsingPegoutIndex(
+                fingerrootActivations,
+                provider,
+                liveFederationWallet,
+                btcTransaction
+            )
         );
 
         // Assert
@@ -192,14 +203,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.UNKNOWN, pegTxType);
+        assertEquals(UNKNOWN, pegTxType);
     }
 
     @Test
@@ -207,21 +218,21 @@ class PegUtilsTest {
         // Arrange
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(allActivations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(minimumPeginTxValue.minus(Coin.SATOSHI), activeFederation.getAddress());
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PEGIN, pegTxType);
     }
 
     @Test
@@ -235,14 +246,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PEGIN, pegTxType);
     }
 
     @Test
@@ -259,14 +270,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PEGIN, pegTxType);
     }
 
     @Test
@@ -283,14 +294,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PEGIN, pegTxType);
     }
 
     @Test
@@ -316,14 +327,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PEGIN, pegTxType);
     }
 
     @Test
@@ -337,14 +348,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PEGIN, pegTxType);
     }
 
     @Test
@@ -361,14 +372,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PEGIN, pegTxType);
     }
 
     @Test
@@ -384,14 +395,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PEGIN, pegTxType);
     }
 
     @Test
@@ -409,14 +420,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PEGIN, pegTxType);
     }
 
     @Test
@@ -444,14 +455,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -470,14 +481,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.UNKNOWN, pegTxType);
+        assertEquals(UNKNOWN, pegTxType);
     }
 
     @Test
@@ -506,14 +517,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -533,14 +544,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PEGIN, pegTxType);
     }
 
     @Test
@@ -569,14 +580,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -597,14 +608,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PEGIN, pegTxType);
     }
 
     @Test
@@ -633,14 +644,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -650,15 +661,15 @@ class PegUtilsTest {
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+        Keccak256 derivationArgumentsHash = RskTestUtils.createHash(0);
+        RskAddress lbcAddress = generateAddress("lbcAddress");
 
         Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
             lbcAddress,
-            activations
+            allActivations
         );
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -677,14 +688,14 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.UNKNOWN, pegTxType);
+        assertEquals(UNKNOWN, pegTxType);
     }
 
     @Test
@@ -711,14 +722,53 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            activations,
+            allActivations,
             provider,
             liveFederationWallet,
             btcTransaction
         );
 
         // Assert
-        assertEquals(PegTxType.UNKNOWN, pegTxType);
+        assertEquals(UNKNOWN, pegTxType);
     }
 
+    @Test
+    void isTheSvpFundTxHashUnsigned_whenNoSvpFundTxHashUnsignedIsSaved_shouldReturnFalse() {
+        // Arrange
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+        when(provider.getSvpFundTxHashUnsigned()).thenReturn(Optional.empty());
+
+        // Act
+        boolean isTheSvpFundTransaction = isTheSvpFundTxHashUnsigned(provider, btcTxHash);
+
+        // Assert
+        assertFalse(isTheSvpFundTransaction);
+    }
+
+    @Test
+    void isTheSvpFundTxHashUnsigned_whenHashMatchesSvpFundTxHashUnsigned_shouldReturnTrue() {
+        // Arrange
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+        when(provider.getSvpFundTxHashUnsigned()).thenReturn(Optional.of(btcTxHash));
+
+        // Act
+        boolean isTheSvpFundTransaction = isTheSvpFundTxHashUnsigned(provider, btcTxHash);
+
+        // Assert
+        assertTrue(isTheSvpFundTransaction);
+    }
+
+    @Test
+    void isTheSvpFundTxHashUnsigned_whenHashDoesNotMatchSvpFundTxHashUnsigned_shouldReturnFalse() {
+        // Arrange
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+        Sha256Hash svpFundTxHashUnsigned = BitcoinTestUtils.createHash(2);
+        when(provider.getSvpFundTxHashUnsigned()).thenReturn(Optional.of(svpFundTxHashUnsigned));
+
+        // Act
+        boolean isTheSvpFundTransaction = isTheSvpFundTxHashUnsigned(provider, btcTxHash);
+
+        // Assert
+        assertFalse(isTheSvpFundTransaction);
+    }
 }
