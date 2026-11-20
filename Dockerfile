@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk@sha256:0613a19436dc8f745914b25235d43f3b0eddb8d432d19edce30ffaf2d2f95403 AS build
+FROM eclipse-temurin:17-jdk@sha256:b077006a4e93bbc3c07575d09b2fd528d7f720b3ee31ee879d2433e437dbcbb1 AS build
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends curl git gnupg && \
@@ -28,7 +28,7 @@ RUN gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys 1DC9157991
     cp rskj-core/build/libs/rskj-core-*.jar artifacts/ && \
     cp rskj-core/build/rskj-core-*.pom artifacts/
 
-FROM eclipse-temurin:17-jre@sha256:38e0afc86a10bf4cadbf1586fb617b3a9a4d09c9a0be882e29ada4ed0895fc84
+FROM eclipse-temurin:17-jre@sha256:ce7dece87d45d67f2534fa4941e0db105c0daf5094600d1cbf1eee30cc8173d6
 LABEL org.opencontainers.image.authors="ops@rootstocklabs.com"
 
 RUN useradd -ms /sbin/nologin -d /var/lib/rsk rsk
@@ -44,5 +44,7 @@ ENV RSKJ_LOG_PROPS="-Dlogging.stdout=INFO"
 ENV RSKJ_CLASS=co.rsk.Start
 ENV RSKJ_OPTS=""
 
-ENTRYPOINT ["/bin/sh", "-c", "exec java $DEFAULT_JVM_OPTS $RSKJ_SYS_PROPS $RSKJ_LOG_PROPS -cp rsk.jar $RSKJ_CLASS $RSKJ_OPTS \"${@}\"", "--"]
+# The Base64 intrinsic stays off: it is the code path affected by CVE-2026-114938 in JDK 17 builds before 17.0.21.1.
+# Placing the flag after DEFAULT_JVM_OPTS, RSKJ_SYS_PROPS and RSKJ_LOG_PROPS prevents those variables from re-enabling it; _JAVA_OPTIONS can still override it.
+ENTRYPOINT ["/bin/sh", "-c", "exec java $DEFAULT_JVM_OPTS $RSKJ_SYS_PROPS $RSKJ_LOG_PROPS -XX:-UseBASE64Intrinsics -cp rsk.jar $RSKJ_CLASS $RSKJ_OPTS \"${@}\"", "--"]
 
