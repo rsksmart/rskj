@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
@@ -83,7 +84,8 @@ public final class AuthorizationListCodec {
             try {
                 result.add(parseCallArgumentsEntry(entries.get(i), i));
             } catch (IllegalArgumentException e) {
-                throw invalidParamError(e.getMessage() + " at index " + i, e);
+                String reason = Objects.toString(e.getMessage(), "Authorization list entry is not valid");
+                throw invalidParamError(reason + " at index " + i, e);
             }
         }
         return Collections.unmodifiableList(result);
