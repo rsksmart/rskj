@@ -17,3 +17,16 @@ subprojects {
     group = 'co.rsk'
     version = config.modifier?.trim() ? config.versionNumber + "-" + config.modifier : config.versionNumber
 }
+
+allprojects {
+    apply from: rootProject.file('gradle/dependency-resolution.gradle')
+}
+
+tasks.register('resolveAllDependencies') {
+    group = 'Build Setup'
+    description = 'Downloads every resolvable dependency of every project into the Gradle cache'
+
+    // Deferred with a closure: subprojects are not configured yet while this block runs, so the
+    // list of tasks to depend on cannot be built here.
+    dependsOn { allprojects.collect { target -> target.tasks.named('resolveDependencies') } }
+}
