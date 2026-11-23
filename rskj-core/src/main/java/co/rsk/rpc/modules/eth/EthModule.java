@@ -77,7 +77,6 @@ public class EthModule
     private static final byte[] ERROR_ABI_FUNCTION_SIGNATURE = ERROR_ABI_FUNCTION.encodeSignature(); //08c379a0
 
     private final Blockchain blockchain;
-    private final TransactionPool transactionPool;
     private final ReversibleTransactionExecutor reversibleTransactionExecutor;
     private final ExecutionBlockRetriever executionBlockRetriever;
     private final RepositoryLocator repositoryLocator;
@@ -112,7 +111,6 @@ public class EthModule
             StateOverrideApplier stateOverrideApplier) {
         this.chainId = chainId;
         this.blockchain = blockchain;
-        this.transactionPool = transactionPool;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
         this.repositoryLocator = repositoryLocator;

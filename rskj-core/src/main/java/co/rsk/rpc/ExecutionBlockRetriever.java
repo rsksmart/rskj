@@ -95,7 +95,7 @@ public class ExecutionBlockRetriever implements InternalService {
                 executionBlockNumber = Optional.of(Utils.decimalStringToLong(bnOrId));
             }
         } catch (IllegalArgumentException e) {
-            throw invalidParamError(String.format("Invalid block number '%s'", bnOrId));
+            throw invalidParamError(String.format("Invalid block number '%s'", bnOrId), e);
         }
 
         if (executionBlockNumber.isPresent()) {
