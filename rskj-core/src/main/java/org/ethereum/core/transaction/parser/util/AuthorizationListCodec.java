@@ -222,7 +222,7 @@ public final class AuthorizationListCodec {
             throw invalidParamError(
                     "Authorization list entry " + fieldName + " must be a hex or decimal quantity at index " + index);
         }
-        if (!HexUtils.hasHexPrefix(value) && new BigInteger(value).signum() < 0) {
+        if (value.startsWith("-")) {
             throw invalidParamError("Authorization list entry " + fieldName + " must not be negative at index " + index);
         }
         return quantity;
