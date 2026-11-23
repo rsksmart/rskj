@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * eth_call and eth_estimateGas answer a transaction error (-32010) for a call the node rejects before running it,
@@ -49,6 +50,9 @@ class EthModuleLocalCallRejectionTest {
 
     /** GAS PUSH1 0 MSTORE PUSH1 0x20 PUSH1 0 RETURN: returns the gas left after GAS as a 32-byte word. */
     private static final String GAS_LEFT_CONTRACT = "0x5a60005260206000f3";
+
+    private static final String INIT_CODE_TOO_LARGE =
+            "Initcode size for contract is invalid, it exceed the max limit size: initcode size = 49153 | maxAllowed = 49152 ";
 
     private static final String REMASC = "0x0000000000000000000000000000000001000008";
 
@@ -134,6 +138,61 @@ class EthModuleLocalCallRejectionTest {
         String estimate = ethModule.estimateGas(toParam(args), latest());
 
         assertEquals("0x61fa08", estimate);
+    }
+
+    /**
+     * RSKIP438 caps create init code at 2 * 24,576 = 49,152 bytes. One byte more is rejected, as a broadcast
+     * create would be.
+     */
+    @Test
+    void call_initCodeAboveTheLimit_answersTransactionError() {
+        CallArguments args = callArgs(null, "0x" + "00".repeat(49_153));
+
+        RskJsonRpcRequestException error = assertThrows(RskJsonRpcRequestException.class,
+                () -> ethModule.call(toParam(args), latest()));
+
+        assertEquals(TRANSACTION_ERROR, error.getCode());
+        assertTrue(error.getMessage().startsWith(INIT_CODE_TOO_LARGE), error.getMessage());
+    }
+
+    /**
+     * A create that breaks both rules reports the init-code limit, as a broadcast create would: the pool checks
+     * init code size before intrinsic gas. 49,153 zero bytes cost 21,000 + 32,000 + 49,153 * 4 + 1,537 * 2 =
+     * 252,686 intrinsic gas, far above the 20,000 sent.
+     */
+    @Test
+    void call_initCodeAboveTheLimitAndGasBelowIntrinsicCost_reportsTheInitCodeLimit() {
+        CallArguments args = callArgs(null, "0x" + "00".repeat(49_153));
+        args.setGas("0x4e20"); // 20,000
+
+        RskJsonRpcRequestException error = assertThrows(RskJsonRpcRequestException.class,
+                () -> ethModule.call(toParam(args), latest()));
+
+        assertEquals(TRANSACTION_ERROR, error.getCode());
+        assertTrue(error.getMessage().startsWith(INIT_CODE_TOO_LARGE), error.getMessage());
+    }
+
+    @Test
+    void estimateGas_initCodeAboveTheLimit_answersTransactionError() {
+        CallArguments args = callArgs(null, "0x" + "00".repeat(49_153));
+
+        RskJsonRpcRequestException error = assertThrows(RskJsonRpcRequestException.class,
+                () -> ethModule.estimateGas(toParam(args), latest()));
+
+        assertEquals(TRANSACTION_ERROR, error.getCode());
+        assertTrue(error.getMessage().startsWith(INIT_CODE_TOO_LARGE), error.getMessage());
+    }
+
+    /**
+     * Init code of exactly 49,152 zero bytes runs: 0x00 is STOP, so the create returns no output.
+     */
+    @Test
+    void call_initCodeAtTheLimit_runs() {
+        CallArguments args = callArgs(null, "0x" + "00".repeat(49_152));
+
+        String result = ethModule.call(toParam(args), latest());
+
+        assertEquals("0x", result);
     }
 
     private static Stream<String> targets() {

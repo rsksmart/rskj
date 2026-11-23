@@ -162,18 +162,15 @@ public class TransactionExecutor {
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
-        if (localCall) {
-            // A local call skips the init-code, gas-limit, nonce, balance, address and signature checks below, but it
-            // must still cover its intrinsic cost: otherwise execution subtracts that cost from less gas and fails with
-            // an unexpected exception.
-            return coversIntrinsicCost(GasCost.toGas(tx.getGasLimit()));
-        }
-
         if (tx.isInitCodeSizeInvalidForTx(activations)) {
 
             String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
 
-            logger.warn(errorMessage);
+            if (localCall) {
+                logger.debug(errorMessage);
+            } else {
+                logger.warn(errorMessage);
+            }
 
             execError(errorMessage);
 
@@ -181,6 +178,14 @@ public class TransactionExecutor {
         }
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
+
+        if (localCall) {
+            // A local call skips the gas-limit, nonce, balance, address and signature checks below, but it must still
+            // cover its intrinsic cost: otherwise execution subtracts that cost from less gas and fails with an
+            // unexpected exception.
+            return coversIntrinsicCost(txGasLimit);
+        }
+
         long gasLimit = (activations.isActive(RSKIP351) && activations.isActive(RSKIP144)) ? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
 
         if (!gasIsValid(txGasLimit, gasLimit)) {
