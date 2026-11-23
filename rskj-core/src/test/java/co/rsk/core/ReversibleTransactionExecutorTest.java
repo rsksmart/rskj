@@ -31,15 +31,20 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.util.ContractRunner;
 import org.ethereum.util.RskTestFactory;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static org.ethereum.config.Constants.REGTEST_CHAIN_ID;
 import static org.mockito.ArgumentMatchers.any;
@@ -94,6 +99,98 @@ class ReversibleTransactionExecutorTest {
         Assertions.assertArrayEquals(
                 new String[]{"chinchilla"},
                 helloFn.decodeResult(result.getHReturn()));
+    }
+
+    @Test
+    void executeTransaction_contractCallWithGasLimitAboveLongMax_runsTheCall() {
+        TestContract hello = TestContract.hello();
+        CallTransaction.Function helloFn = hello.functions.get("hello");
+        RskAddress contractAddress = contractRunner.addContract(hello.runtimeBytecode);
+        RskAddress from = TestUtils.generateAddress("from");
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+                bestBlock, bestBlock.getCoinbase(), Hex.decode("00"), Hex.decode("ffffffffffffffff"),
+                contractAddress.getBytes(), Hex.decode("00"), helloFn.encode(), from);
+
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(new String[]{"chinchilla"}, helloFn.decodeResult(result.getHReturn()));
+    }
+
+    @Test
+    void executeTransaction_directPrecompileCallWithGasLimitAboveLongMax_runsTheCall() {
+        RskAddress from = TestUtils.generateAddress("from");
+        byte[] identity = Hex.decode(PrecompiledContracts.IDENTITY_ADDR_STR);
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+                bestBlock, bestBlock.getCoinbase(), Hex.decode("00"), Hex.decode("ffffffffffffffff"),
+                identity, Hex.decode("00"), Hex.decode("010203"), from);
+
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(Hex.decode("010203"), result.getHReturn());
+    }
+
+    @Test
+    void executeTransaction_valueTransferWithGasLimitAboveLongMax_runsTheCall() {
+        RskAddress from = TestUtils.generateAddress("from");
+        RskAddress to = TestUtils.generateAddress("to");
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+                bestBlock, bestBlock.getCoinbase(), Hex.decode("00"), Hex.decode("ffffffffffffffff"),
+                to.getBytes(), Hex.decode("01"), null, from);
+
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(new byte[0], result.getHReturn());
+    }
+
+    /**
+     * The contract 5a60005260206000f3 is GAS, PUSH1 0, MSTORE, PUSH1 0x20, PUSH1 0, RETURN: it returns the gas left
+     * when GAS runs. Any gas limit of 2^63 or more must run with exactly Long.MAX_VALUE.
+     * Expected word, by hand from the gas schedule:
+     * 0x7fffffffffffffff (Long.MAX_VALUE)
+     * - 21000 (intrinsic cost of a call with no data, GasCost.TRANSACTION)
+     * - 2 (GAS opcode, base tier, spent before it reads the remaining gas)
+     * = 0x7fffffffffffffff - 0x520a = 0x7fffffffffffadf5.
+     */
+    @ParameterizedTest
+    @MethodSource("gasLimitsAtOrAboveTwoToThe63")
+    void executeTransaction_gasLimitAtOrAboveTwoToThe63_runsWithLongMaxGas(String gasLimitHex) {
+        RskAddress contractAddress = contractRunner.addContract("0x5a60005260206000f3");
+        RskAddress from = TestUtils.generateAddress("from");
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+                bestBlock, bestBlock.getCoinbase(), Hex.decode("00"), Hex.decode(gasLimitHex),
+                contractAddress.getBytes(), Hex.decode("00"), null, from);
+
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(
+                Hex.decode("0000000000000000000000000000000000000000000000007fffffffffffadf5"),
+                result.getHReturn());
+    }
+
+    /**
+     * A gas limit wider than 8 bytes is read by value. The identity precompile with 3 bytes of input costs
+     * 21,000 + 3 * 16 (intrinsic, non-zero data bytes) + 15 + 3 (one word) = 21,066 gas.
+     * 0x5238 is 21,048, so the call runs out of gas.
+     */
+    @Test
+    void executeTransaction_zeroPaddedGasLimitBelowPrecompileCost_runsOutOfGas() {
+        RskAddress from = TestUtils.generateAddress("from");
+        byte[] identity = Hex.decode(PrecompiledContracts.IDENTITY_ADDR_STR);
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+                bestBlock, bestBlock.getCoinbase(), Hex.decode("00"), Hex.decode("000000000000000000005238"),
+                identity, Hex.decode("00"), Hex.decode("010203"), from);
+
+        Assertions.assertInstanceOf(Program.OutOfGasException.class, result.getException());
+    }
+
+    private static Stream<String> gasLimitsAtOrAboveTwoToThe63() {
+        return Stream.of("8000000000000000", "ffffffffffffffff", "010000000000000000");
     }
 
     @Test

@@ -25,8 +25,12 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
+
+import java.math.BigInteger;
 
 /**
  * Encapsulates the logic to execute a transaction in an
@@ -138,12 +142,23 @@ public class ReversibleTransactionExecutor {
         return new UnsignedTransaction(
                 nonce,
                 gasPrice,
-                gasLimit,
+                localCallGasLimit(gasLimit),
                 toAddress,
                 value,
                 data,
                 fromAddress
         );
+    }
+
+    /**
+     * Reads a local call's gas limit as an unsigned number of any width and returns it in at most 8 bytes, capped at
+     * Long.MAX_VALUE. Execution reads an 8-byte gas limit as a signed long and any wider one as Long.MAX_VALUE, so
+     * without this an 8-byte value of 2^63 or more would be rejected as negative gas, and a zero-padded value would run
+     * with far more gas than it states.
+     */
+    private static byte[] localCallGasLimit(byte[] gasLimit) {
+        BigInteger cappedGasLimit = new BigInteger(1, gasLimit).min(BigInteger.valueOf(GasCost.MAX_GAS));
+        return ByteUtil.longToBytesNoLeadZeroes(cappedGasLimit.longValue());
     }
 
     private TransactionExecutor localCallExecutor(UnsignedTransaction tx, Repository track, Block executionBlock,
