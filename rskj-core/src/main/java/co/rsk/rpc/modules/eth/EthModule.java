@@ -21,6 +21,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
+import co.rsk.core.exception.TransactionExecutionRejectedException;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
@@ -177,6 +178,8 @@ public class EthModule
             handleTransactionExceptionIfHappens("eth_call", programResult);
             hReturn = HexUtils.toUnformattedJsonHex(programResult.getHReturn());
             return hReturn;
+        } catch (TransactionExecutionRejectedException e) {
+            throw RskJsonRpcRequestException.transactionError(e.getMessage());
         } finally {
             LOGGER.debug("eth_call(): {}", hReturn);
         }
@@ -259,6 +262,8 @@ public class EthModule
             estimation = internalEstimateGas(executor.getResult());
 
             return estimation;
+        } catch (TransactionExecutionRejectedException e) {
+            throw RskJsonRpcRequestException.transactionError(e.getMessage());
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", estimation);
         }

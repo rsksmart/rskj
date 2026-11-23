@@ -163,7 +163,10 @@ public class TransactionExecutor {
         basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
         if (localCall) {
-            return true;
+            // A local call skips the init-code, gas-limit, nonce, balance, address and signature checks below, but it
+            // must still cover its intrinsic cost: otherwise execution subtracts that cost from less gas and fails with
+            // an unexpected exception.
+            return coversIntrinsicCost(GasCost.toGas(tx.getGasLimit()));
         }
 
         if (tx.isInitCodeSizeInvalidForTx(activations)) {
@@ -216,6 +219,14 @@ public class TransactionExecutor {
         return true;
     }
 
+
+    private boolean coversIntrinsicCost(long txGasLimit) {
+        if (txGasLimit < basicTxCost) {
+            execError(String.format("Not enough gas for transaction execution: tx needs: %s tx sent: %s", basicTxCost, txGasLimit));
+            return false;
+        }
+        return true;
+    }
 
     private boolean transactionAddressesAreValid() {
         // Prevent transactions with excessive address size
@@ -278,12 +289,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        if (txGasLimit < basicTxCost) {
-            execError(String.format("Not enough gas for transaction execution: tx needs: %s tx sent: %s", basicTxCost, txGasLimit));
-            return false;
-        }
-
-        return true;
+        return coversIntrinsicCost(txGasLimit);
     }
 
     private void execute() {
@@ -742,6 +748,10 @@ public class TransactionExecutor {
 
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
+    }
+
+    public String getExecutionError() {
+        return executionError;
     }
 
     public TransactionExecutor setLocalCall(boolean localCall) {

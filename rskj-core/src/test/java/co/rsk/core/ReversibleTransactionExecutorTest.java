@@ -19,6 +19,7 @@
 
 package co.rsk.core;
 
+import co.rsk.core.exception.TransactionExecutionRejectedException;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.util.TestContract;
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 
@@ -193,6 +195,54 @@ class ReversibleTransactionExecutorTest {
         return Stream.of("8000000000000000", "ffffffffffffffff", "010000000000000000");
     }
 
+    /**
+     * Intrinsic gas: 21,000 for a call, 53,000 for a create, plus 4 for a zero data byte and 2 for one RSKIP438
+     * init-code word.
+     */
+    @ParameterizedTest
+    @MethodSource("localCallsBelowIntrinsicGas")
+    void executeTransaction_gasBelowIntrinsicCost_isRejectedWithMessage(byte[] to, byte[] data, long intrinsic) {
+        RskAddress from = TestUtils.generateAddress("from");
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+        RskAddress coinbase = bestBlock.getCoinbase();
+        byte[] gasLimit = Hex.decode("4e20"); // 20,000
+
+        TransactionExecutionRejectedException ex = Assertions.assertThrows(TransactionExecutionRejectedException.class,
+                () -> reversibleTransactionExecutor.executeTransaction(
+                        bestBlock, coinbase, Hex.decode("00"), gasLimit, to, Hex.decode("00"), data, from));
+
+        Assertions.assertEquals("Not enough gas for transaction execution: tx needs: " + intrinsic + " tx sent: 20000",
+                ex.getMessage());
+    }
+
+    private static Stream<Arguments> localCallsBelowIntrinsicGas() {
+        byte[] eoa = TestUtils.generateAddress("eoa").getBytes();
+        byte[] remasc = Hex.decode(PrecompiledContracts.REMASC_ADDR_STR);
+        return Stream.of(
+                Arguments.of(eoa, new byte[0], 21000L),
+                Arguments.of(remasc, new byte[0], 21000L),
+                Arguments.of(null, new byte[0], 53000L),
+                Arguments.of(null, new byte[]{0}, 53006L)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("localCallsBelowIntrinsicGas")
+    void estimateGas_gasBelowIntrinsicCost_isRejectedWithMessage(byte[] to, byte[] data, long intrinsic) {
+        RskAddress from = TestUtils.generateAddress("from");
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+        RskAddress coinbase = bestBlock.getCoinbase();
+        RepositorySnapshot snapshot = factory.getRepositoryLocator().snapshotAt(bestBlock.getHeader());
+        byte[] gasLimit = Hex.decode("4e20"); // 20,000
+
+        TransactionExecutionRejectedException ex = Assertions.assertThrows(TransactionExecutionRejectedException.class,
+                () -> reversibleTransactionExecutor.estimateGas(
+                        bestBlock, coinbase, Hex.decode("00"), gasLimit, to, Hex.decode("00"), data, from, snapshot));
+
+        Assertions.assertEquals("Not enough gas for transaction execution: tx needs: " + intrinsic + " tx sent: 20000",
+                ex.getMessage());
+    }
+
     @Test
     void executeTransactionGreeter() {
         TestContract greeter = TestContract.greeter();
@@ -293,6 +343,7 @@ class ReversibleTransactionExecutorTest {
         when(snapshot.startTracking()).thenReturn(track);
         TransactionExecutor executor = mock(TransactionExecutor.class);
         when(executor.setLocalCall(true)).thenReturn(executor);
+        when(executor.executeTransaction()).thenReturn(true);
         TransactionExecutorFactory executorFactory = mock(TransactionExecutorFactory.class);
         when(executorFactory.newInstance(any(), anyInt(), any(), any(), any(), anyLong(), any())).thenReturn(executor);
         Block block = mock(Block.class);

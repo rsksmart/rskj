@@ -18,6 +18,7 @@
  */
 package co.rsk.core;
 
+import co.rsk.core.exception.TransactionExecutionRejectedException;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import org.ethereum.core.Block;
@@ -68,9 +69,7 @@ public class ReversibleTransactionExecutor {
         // An estimate simulates the transaction as it would run once mined, so the transaction is not a local call.
         tx.setLocalCallTransaction(false);
 
-        executor.executeTransaction();
-
-        return executor;
+        return executeOrReject(executor);
     }
 
     public ProgramResult executeTransaction(
@@ -130,9 +129,7 @@ public class ReversibleTransactionExecutor {
         UnsignedTransaction tx = unsignedTransaction(track, gasPrice, gasLimit, toAddress, value, data, fromAddress);
         TransactionExecutor executor = localCallExecutor(tx, track, executionBlock, coinbase, precompiledContracts);
 
-        executor.executeTransaction();
-
-        return executor.getResult();
+        return executeOrReject(executor).getResult();
     }
 
     private static UnsignedTransaction unsignedTransaction(Repository track, byte[] gasPrice, byte[] gasLimit,
@@ -166,6 +163,18 @@ public class ReversibleTransactionExecutor {
         return transactionExecutorFactory
                 .newInstance(tx, 0, coinbase, track, executionBlock, 0, precompiledContracts)
                 .setLocalCall(true);
+    }
+
+    /**
+     * Runs the simulated transaction. A transaction that fails the validation before execution throws with the
+     * executor's reason, so the caller can report it instead of reading an empty result.
+     */
+    private static TransactionExecutor executeOrReject(TransactionExecutor executor) {
+        if (!executor.executeTransaction()) {
+            throw new TransactionExecutionRejectedException(executor.getExecutionError());
+        }
+
+        return executor;
     }
 
     private static class UnsignedTransaction extends Transaction {
