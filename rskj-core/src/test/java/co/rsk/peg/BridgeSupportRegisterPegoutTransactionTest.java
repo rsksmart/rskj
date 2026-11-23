@@ -78,7 +78,7 @@ class BridgeSupportRegisterPegoutTransactionTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
 
     private static final int BTC_BLOCK_WITH_RELEASE_HEIGHT = 1_000;
-    private static final int MINIMUM_ACCEPTABLE_CONFIRMATIONS = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations();
+    private static final int MINIMUM_ACCEPTABLE_CONFIRMATIONS = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations);
     // one block below the release, so it has one confirmation more than the release block
     private static final int BTC_BLOCK_WITH_ANOTHER_PEGOUT_HEIGHT = BTC_BLOCK_WITH_RELEASE_HEIGHT - 1;
     private static final long ACTIVE_FEDERATION_CREATION_BLOCK_NUMBER = 1L;

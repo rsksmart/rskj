@@ -1595,7 +1595,7 @@ class BridgeSupportTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             btcBlock,
-            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -1701,7 +1701,7 @@ class BridgeSupportTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             btcBlock,
-            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -1799,7 +1799,7 @@ class BridgeSupportTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             btcBlock,
-            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -1891,7 +1891,7 @@ class BridgeSupportTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             btcBlock,
-            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -1995,7 +1995,7 @@ class BridgeSupportTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             btcBlock,
-            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -2083,7 +2083,7 @@ class BridgeSupportTest {
         int height = 1;
 
         mockChainOfStoredBlocks(btcBlockStore, btcBlock,
-            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(), height);
+            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations), height);
 
         feePerKbSupport = new FeePerKbSupportImpl(bridgeMainNetConstants.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
         when(mockBridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(mock(PegoutsWaitingForConfirmations.class));
@@ -6352,7 +6352,7 @@ class BridgeSupportTest {
         int btcTxHeight = 2;
 
         doReturn(btcRegTestParams).when(bridgeConstants).getBtcParams();
-        doReturn(0).when(bridgeConstants).getBtc2RskMinimumAcceptableConfirmations();
+        doReturn(0).when(bridgeConstants).getBtc2RskMinimumAcceptableConfirmations(any());
         StoredBlock storedBlock = mock(StoredBlock.class);
         doReturn(btcTxHeight - 1).when(storedBlock).getHeight();
         BtcBlock btcBlock = mock(BtcBlock.class);
@@ -6391,7 +6391,7 @@ class BridgeSupportTest {
         int btcTxHeight = 2;
 
         doReturn(btcRegTestParams).when(bridgeConstants).getBtcParams();
-        doReturn(0).when(bridgeConstants).getBtc2RskMinimumAcceptableConfirmations();
+        doReturn(0).when(bridgeConstants).getBtc2RskMinimumAcceptableConfirmations(any());
         StoredBlock storedBlock = mock(StoredBlock.class);
         doReturn(btcTxHeight - 1).when(storedBlock).getHeight();
         BtcBlock btcBlock = mock(BtcBlock.class);
@@ -6422,7 +6422,7 @@ class BridgeSupportTest {
         int btcTxHeight = 2;
 
         doReturn(btcRegTestParams).when(bridgeConstants).getBtcParams();
-        doReturn(0).when(bridgeConstants).getBtc2RskMinimumAcceptableConfirmations();
+        doReturn(0).when(bridgeConstants).getBtc2RskMinimumAcceptableConfirmations(any());
         StoredBlock storedBlock = mock(StoredBlock.class);
         doReturn(btcTxHeight - 1).when(storedBlock).getHeight();
         BtcBlock btcBlock = mock(BtcBlock.class);
@@ -6461,7 +6461,7 @@ class BridgeSupportTest {
         int btcTxHeight = 2;
 
         doReturn(btcRegTestParams).when(bridgeConstants).getBtcParams();
-        doReturn(0).when(bridgeConstants).getBtc2RskMinimumAcceptableConfirmations();
+        doReturn(0).when(bridgeConstants).getBtc2RskMinimumAcceptableConfirmations(any());
         StoredBlock storedBlock = mock(StoredBlock.class);
         doReturn(btcTxHeight - 1).when(storedBlock).getHeight();
         BtcBlock btcBlock = mock(BtcBlock.class);
@@ -6507,7 +6507,7 @@ class BridgeSupportTest {
         int btcTxHeight = 2;
 
         doReturn(btcRegTestParams).when(bridgeConstants).getBtcParams();
-        doReturn(0).when(bridgeConstants).getBtc2RskMinimumAcceptableConfirmations();
+        doReturn(0).when(bridgeConstants).getBtc2RskMinimumAcceptableConfirmations(any());
         StoredBlock storedBlock = mock(StoredBlock.class);
         doReturn(btcTxHeight - 1).when(storedBlock).getHeight();
         BtcBlock btcBlock = mock(BtcBlock.class);
@@ -6563,7 +6563,7 @@ class BridgeSupportTest {
 
         int height = 1;
 
-        mockChainOfStoredBlocks(btcBlockStore, btcBlock, height + bridgeConstantsRegtest.getBtc2RskMinimumAcceptableConfirmations(), height);
+        mockChainOfStoredBlocks(btcBlockStore, btcBlock, height + bridgeConstantsRegtest.getBtc2RskMinimumAcceptableConfirmations(allActivations), height);
 
         bridgeSupport = new BridgeSupport(
             bridgeConstantsRegtest,
@@ -6633,7 +6633,7 @@ class BridgeSupportTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             btcBlock,
-            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
         bridgeSupport = bridgeSupportBuilder
@@ -7890,7 +7890,7 @@ class BridgeSupportTest {
 
         private void confirmPegout(ActivationConfig.ForBlock activations) throws IOException {
             // advance blockchain so pegouts have enough confirmations
-            var blockNumber = currentBlock.getNumber() + bridgeMainNetConstants.getRsk2BtcMinimumAcceptableConfirmations();
+            var blockNumber = currentBlock.getNumber() + bridgeMainNetConstants.getRsk2BtcMinimumAcceptableConfirmations(allActivations);
             currentBlock = createRskBlock(blockNumber);
             updateBridgeSupportWithActivations(activations);
 
@@ -8024,7 +8024,7 @@ class BridgeSupportTest {
 
     private void setUpForTransactionRegistration(BtcTransaction btcTx, int btcTxToRegisterBlockNumber, ActivationConfig.ForBlock activations) throws Exception {
         pmtWithTransactions = createValidPmtForTransactions(List.of(btcTx), btcMainnetParams);
-        var chainHeight = btcTxToRegisterBlockNumber + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
+        var chainHeight = btcTxToRegisterBlockNumber + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations);
 
         BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, activations);
         recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcTxToRegisterBlockNumber, btcMainnetParams);
@@ -8337,7 +8337,7 @@ class BridgeSupportTest {
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
         when(bridgeConstants.getMinimumPeginTxValue(activations)).thenReturn(Coin.SATOSHI);
         when(bridgeConstants.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_MAINNET));
-        when(bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()).thenReturn(1);
+        when(bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(any())).thenReturn(1);
         when(bridgeConstants.getMaxRbtc()).thenReturn(BridgeMainNetConstants.getInstance().getMaxRbtc());
 
         FederationConstants federationConstants = mock(FederationConstants.class);
@@ -8497,7 +8497,7 @@ class BridgeSupportTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(activations),
             height
         );
 

@@ -689,7 +689,7 @@ class FederationChangeIT {
     }
 
     private void advanceBlockchainUntilPegoutsHaveEnoughConfirmations() {
-        currentBlock = createRskBlock(currentBlock.getNumber() + BRIDGE_CONSTANTS.getRsk2BtcMinimumAcceptableConfirmations() + 1L);
+        currentBlock = createRskBlock(currentBlock.getNumber() + BRIDGE_CONSTANTS.getRsk2BtcMinimumAcceptableConfirmations(ALL_ACTIVATIONS) + 1L);
         advanceBlockchainTo(currentBlock);
     }
 

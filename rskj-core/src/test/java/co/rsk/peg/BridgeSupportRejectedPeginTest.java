@@ -218,7 +218,7 @@ class BridgeSupportRejectedPeginTest {
 
         StoredBlock chainHead = new StoredBlock(headBlock, new BigInteger("0"),
             heightAtWhichToStartUsingPegoutIndex
-                + bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations());
+                + bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations(ActivationConfigsForTest.all().forBlock(0)));
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
 
         when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
@@ -239,7 +239,7 @@ class BridgeSupportRejectedPeginTest {
             btcBlockStore,
             btcBlock,
             heightAtWhichToStartUsingPegoutIndex
-                + bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations(),
+                + bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations(ActivationConfigsForTest.all().forBlock(0)),
             heightAtWhichToStartUsingPegoutIndex
         );
         return pmt;

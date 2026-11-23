@@ -3639,7 +3639,8 @@ public class BridgeSupport {
         byte[] btcTxSerialized
     ) throws RegisterBtcTransactionException, BridgeIllegalArgumentException, BlockStoreException {
         try {
-            validateHeightAndConfirmations(height, getBtcBlockchainBestChainHeight(), bridgeConstants, btcTxHash);
+            int minimumConfirmations = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(activations);
+            validateHeightAndConfirmations(height, getBtcBlockchainBestChainHeight(), minimumConfirmations);
         } catch (Exception e) {
             throw new RegisterBtcTransactionException(e.getMessage());
         }
@@ -3667,7 +3668,8 @@ public class BridgeSupport {
         byte[] pmtSerialized
     ) throws RegisterBtcTransactionException, BridgeIllegalArgumentException, BlockStoreException {
         try {
-            validateHeightAndConfirmations(height, getBtcBlockchainBestChainHeight(), bridgeConstants, btcTxHash);
+            int minimumConfirmations = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(activations);
+            validateHeightAndConfirmations(height, getBtcBlockchainBestChainHeight(), minimumConfirmations);
         } catch (Exception e) {
             throw new RegisterBtcTransactionException(e.getMessage());
         }

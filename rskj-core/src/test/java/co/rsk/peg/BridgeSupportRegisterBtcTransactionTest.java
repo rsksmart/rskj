@@ -336,7 +336,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        StoredBlock chainHead = new StoredBlock(headBlock, new BigInteger("0"), height + BridgeSupportRegisterBtcTransactionTest.bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations());
+        StoredBlock chainHead = new StoredBlock(headBlock, new BigInteger("0"), height + BridgeSupportRegisterBtcTransactionTest.bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations));
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
 
         when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
@@ -356,7 +356,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             btcBlock,
-            height + BridgeSupportRegisterBtcTransactionTest.bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + BridgeSupportRegisterBtcTransactionTest.bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
         return pmt;
@@ -5053,7 +5053,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 btcBlockStore.put(targetBlock);
 
                 StoredBlock previousBlock = targetBlock;
-                int confirmations = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+                int confirmations = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(papyrus200Activations);
                 for (int i = 1; i <= confirmations; i++) {
                     co.rsk.bitcoinj.core.BtcBlock header = new co.rsk.bitcoinj.core.BtcBlock(
                         networkParameters, 1, previousBlock.getHeader().getHash(), Sha256Hash.of(new byte[]{(byte) i}), 1, 1, 1, new ArrayList<>()

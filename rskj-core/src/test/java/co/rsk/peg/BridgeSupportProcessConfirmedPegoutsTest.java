@@ -133,7 +133,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
         Sha256Hash.wrap("7ad3515f8a04eb725989e98da619be9e078d368c0e3998fa0671d7529eb14360")
     );
 
-    private static final int MINIMUM_CONFIRMATIONS = BRIDGE_CONSTANTS.getRsk2BtcMinimumAcceptableConfirmations();
+    private static final int MINIMUM_CONFIRMATIONS = BRIDGE_CONSTANTS.getRsk2BtcMinimumAcceptableConfirmations(ALL_ACTIVATIONS);
     private static final int BLOCKS_BETWEEN_PEGOUTS = BRIDGE_CONSTANTS.getNumberOfBlocksBetweenPegouts();
     private static final long FIRST_PEGOUT_CREATION_BLOCK = 1_000L;
     private static final int SEVERAL_PEGOUTS = PEGOUT_REQUEST_VALUES.size();

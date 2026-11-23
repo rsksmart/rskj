@@ -100,11 +100,11 @@ public abstract class BridgeConstants {
 
     public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
 
-    public int getBtc2RskMinimumAcceptableConfirmations() {
+    public int getBtc2RskMinimumAcceptableConfirmations(ActivationConfig.ForBlock activations) {
         return btc2RskMinimumAcceptableConfirmations;
     }
 
-    public int getRsk2BtcMinimumAcceptableConfirmations() {
+    public int getRsk2BtcMinimumAcceptableConfirmations(ActivationConfig.ForBlock activations) {
         return rsk2BtcMinimumAcceptableConfirmations;
     }
 

@@ -74,6 +74,68 @@ class BridgeConstantsTest {
         assertEquals(expectedMinimumPeginTxValue, minimumPeginTxValue);
     }
 
+    private static Stream<Arguments> btc2RskMinimumAcceptableConfirmationsArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), false, 100),
+            Arguments.of(BridgeMainNetConstants.getInstance(), true, 100),
+            Arguments.of(BridgeTestNetConstants.getInstance(), false, 10),
+            Arguments.of(BridgeTestNetConstants.getInstance(), true, 100),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), false, 100),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), true, 100),
+            Arguments.of(new BridgeRegTestConstants(), false, 3),
+            Arguments.of(new BridgeRegTestConstants(), true, 3)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("btc2RskMinimumAcceptableConfirmationsArgProvider")
+    void getBtc2RskMinimumAcceptableConfirmations_shouldReturnNetworkValueForRskip643State(
+        BridgeConstants bridgeConstants,
+        boolean isRSKIP643Active,
+        int expectedConfirmations
+    ) {
+        // Arrange
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP643)).thenReturn(isRSKIP643Active);
+
+        // Act
+        int confirmations = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(activations);
+
+        // Assert
+        assertEquals(expectedConfirmations, confirmations);
+    }
+
+    private static Stream<Arguments> rsk2BtcMinimumAcceptableConfirmationsArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), false, 4000),
+            Arguments.of(BridgeMainNetConstants.getInstance(), true, 4000),
+            Arguments.of(BridgeTestNetConstants.getInstance(), false, 10),
+            Arguments.of(BridgeTestNetConstants.getInstance(), true, 100),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), false, 100),
+            Arguments.of(BridgeTestNet2Constants.getInstance(), true, 100),
+            Arguments.of(new BridgeRegTestConstants(), false, 3),
+            Arguments.of(new BridgeRegTestConstants(), true, 3)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("rsk2BtcMinimumAcceptableConfirmationsArgProvider")
+    void getRsk2BtcMinimumAcceptableConfirmations_shouldReturnNetworkValueForRskip643State(
+        BridgeConstants bridgeConstants,
+        boolean isRSKIP643Active,
+        int expectedConfirmations
+    ) {
+        // Arrange
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP643)).thenReturn(isRSKIP643Active);
+
+        // Act
+        int confirmations = bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(activations);
+
+        // Assert
+        assertEquals(expectedConfirmations, confirmations);
+    }
+
     private static Stream<Arguments> legacyMinimumPegoutTxValueArgProvider() {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), Coin.valueOf(800_000)),

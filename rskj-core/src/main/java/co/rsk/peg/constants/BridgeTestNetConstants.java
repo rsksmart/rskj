@@ -26,9 +26,13 @@ import co.rsk.peg.lockingcap.constants.LockingCapTestNetConstants;
 import co.rsk.peg.pegout.HistoricalPegoutSelectionsTestNetConstants;
 import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
 import co.rsk.peg.whitelist.constants.WhitelistTestNetConstants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public class BridgeTestNetConstants extends BridgeConstants {
     private static final BridgeTestNetConstants instance = new BridgeTestNetConstants();
+    private final int preCardamomBtc2RskMinimumAcceptableConfirmations;
+    private final int preCardamomRsk2BtcMinimumAcceptableConfirmations;
 
     BridgeTestNetConstants() {
         btcParamsString = NetworkParameters.ID_TESTNET;
@@ -42,8 +46,10 @@ public class BridgeTestNetConstants extends BridgeConstants {
         updateBridgeExecutionPeriod = THREE_MINUTES_IN_MILLIS;
         minSecondsBetweenCallsReceiveHeader = FIVE_MINUTES_IN_SECONDS;
 
-        btc2RskMinimumAcceptableConfirmations = 10;
-        rsk2BtcMinimumAcceptableConfirmations = 10;
+        preCardamomBtc2RskMinimumAcceptableConfirmations = 10;
+        btc2RskMinimumAcceptableConfirmations = 100;
+        preCardamomRsk2BtcMinimumAcceptableConfirmations = 10;
+        rsk2BtcMinimumAcceptableConfirmations = 100;
 
         legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         minimumPeginTxValue = Coin.valueOf(500_000);
@@ -72,5 +78,23 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
     public static BridgeTestNetConstants getInstance() {
         return instance;
+    }
+
+    @Override
+    public int getBtc2RskMinimumAcceptableConfirmations(ActivationConfig.ForBlock activations) {
+        if (!activations.isActive(ConsensusRule.RSKIP643)) {
+            return preCardamomBtc2RskMinimumAcceptableConfirmations;
+        }
+
+        return btc2RskMinimumAcceptableConfirmations;
+    }
+
+    @Override
+    public int getRsk2BtcMinimumAcceptableConfirmations(ActivationConfig.ForBlock activations) {
+        if (!activations.isActive(ConsensusRule.RSKIP643)) {
+            return preCardamomRsk2BtcMinimumAcceptableConfirmations;
+        }
+
+        return rsk2BtcMinimumAcceptableConfirmations;
     }
 }

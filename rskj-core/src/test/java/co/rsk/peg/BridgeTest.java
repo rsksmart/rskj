@@ -512,7 +512,7 @@ class BridgeTest {
             // => btcBestChainHeight + 1 - minimumConfirmations >= height
             // => height := (btcBestChainHeight + 1 - minimumConfirmations) works
             int btcBestChainHeight = bridgeSupport.getBtcBlockchainBestChainHeight();
-            int minimumConfirmations = bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
+            int minimumConfirmations = bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations);
             enoughConfirmationsHeight = btcBestChainHeight + 1 - minimumConfirmations;
 
             // to not have enough confirmations, we need that btcBestChainHeight - height + 1 < minimumConfirmations
@@ -1200,7 +1200,7 @@ class BridgeTest {
             PartialMerkleTree pmt = createValidPmtForTransactionsHashes(List.of(pegout.getHash()), networkParameters);
             // confirmations are counted as bestChainHeight - height + 1
             int bestChainHeightWithOneConfirmationLessThanAcceptable = BTC_BLOCK_WITH_PEGOUT_HEIGHT
-                + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations() - 2;
+                + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations) - 2;
             recreateChainFromPmt(
                 btcBlockStore,
                 bestChainHeightWithOneConfirmationLessThanAcceptable,
@@ -1493,7 +1493,7 @@ class BridgeTest {
 
         private void recreateChainWithEnoughConfirmationsFromPmt(PartialMerkleTree pmt) throws BlockStoreException {
             int bestChainHeightWithMinimumAcceptableConfirmations = BTC_BLOCK_WITH_PEGOUT_HEIGHT
-                + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
+                + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations);
             recreateChainFromPmt(
                 btcBlockStore,
                 bestChainHeightWithMinimumAcceptableConfirmations,

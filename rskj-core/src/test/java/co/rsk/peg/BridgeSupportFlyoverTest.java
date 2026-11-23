@@ -229,7 +229,7 @@ class BridgeSupportFlyoverTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -362,7 +362,7 @@ class BridgeSupportFlyoverTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -503,7 +503,7 @@ class BridgeSupportFlyoverTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -658,7 +658,7 @@ class BridgeSupportFlyoverTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -781,7 +781,7 @@ class BridgeSupportFlyoverTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstantsRegtest.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstantsRegtest.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -1116,7 +1116,7 @@ class BridgeSupportFlyoverTest {
 
         private void setUpForTransactionRegistration(BtcTransaction btcTx, int btcBlockWithPmtHeight) throws Exception {
             pmtWithTransactions = createValidPmtForTransactions(List.of(btcTx), btcMainnetParams);
-            var chainHeight = btcBlockWithPmtHeight + bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations();
+            var chainHeight = btcBlockWithPmtHeight + bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations(allActivations);
 
             recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
             bridgeStorageProvider.save();
@@ -1252,7 +1252,7 @@ class BridgeSupportFlyoverTest {
 
             pmtWithTransactions = createValidPmtForTransactions(List.of(flyoverBtcTx), btcMainnetParams);
             BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeConstantsMainnet, bridgeStorageProvider, activations);
-            int chainHeight = btcBlockToRegisterHeight + bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations();
+            int chainHeight = btcBlockToRegisterHeight + bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations(allActivations);
             recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockToRegisterHeight, btcMainnetParams);
             bridgeStorageProvider.save();
         }
@@ -2092,7 +2092,7 @@ class BridgeSupportFlyoverTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -2283,7 +2283,7 @@ class BridgeSupportFlyoverTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -2469,7 +2469,7 @@ class BridgeSupportFlyoverTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -2658,7 +2658,7 @@ class BridgeSupportFlyoverTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -2823,7 +2823,7 @@ class BridgeSupportFlyoverTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -2985,7 +2985,7 @@ class BridgeSupportFlyoverTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             registerHeader,
-            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations),
             height
         );
 
@@ -4136,7 +4136,7 @@ class BridgeSupportFlyoverTest {
         private static final long OUTPUT_INDEX_TO_ACTIVE_FLYOVER_FED_AFTER_UNRELATED_OUTPUT = 1;
         private static final long OUTPUT_INDEX_TO_RETIRING_FLYOVER_FED_AFTER_UNRELATED_OUTPUTS = 3;
 
-        private final int requiredConfirmations = bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations();
+        private final int requiredConfirmations = bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations(allActivations);
         private final Coin valueBelowMinimumPegin = bridgeConstantsMainnet.getMinimumPeginTxValue(allActivations).subtract(Coin.SATOSHI);
         // the bridge starts with no btc locked in the federation, so exceeding the initial locking cap is enough to surpass it
         private final Coin valueSurpassingLockingCap = lockingCapMainnetConstants.getInitialValue().add(Coin.SATOSHI);

@@ -417,13 +417,17 @@ class BridgeUtilsTest {
 
     @Test
     void validateHeightAndConfirmations_invalid_height() {
-        assertThrows(VerificationException.class, () -> BridgeUtils.validateHeightAndConfirmations(-1, 0, bridgeConstantsMainnet, null));
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateHeightAndConfirmations(-1, 0, 100));
     }
 
     @Test
     void validateHeightAndConfirmation_insufficient_confirmations() {
-        Sha256Hash btcTxHash = Sha256Hash.of(Hex.decode("ab"));
-        assertThrows(VerificationException.class, () -> BridgeUtils.validateHeightAndConfirmations(200, 298, bridgeConstantsMainnet, btcTxHash));
+        VerificationException exception = assertThrows(
+            VerificationException.class,
+            () -> BridgeUtils.validateHeightAndConfirmations(200, 298, 100)
+        );
+
+        assertEquals("Not enough confirmations. Required: 100, found: 99", exception.getMessage());
     }
 
     @Test
@@ -431,8 +435,7 @@ class BridgeUtilsTest {
         assertDoesNotThrow(() -> BridgeUtils.validateHeightAndConfirmations(
             200,
             300,
-            bridgeConstantsMainnet,
-            Sha256Hash.of(Hex.decode("ab")))
+            100)
         );
     }
 

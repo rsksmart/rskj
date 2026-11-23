@@ -44,8 +44,8 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         unionBridgeConstants = UnionBridgeTestNetConstants.getInstance();
         historicalPegoutSelectionsConstants = new co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants();
 
-        btc2RskMinimumAcceptableConfirmations = 10;
-        rsk2BtcMinimumAcceptableConfirmations = 10;
+        btc2RskMinimumAcceptableConfirmations = 100;
+        rsk2BtcMinimumAcceptableConfirmations = 100;
 
         updateBridgeExecutionPeriod = THREE_MINUTES_IN_MILLIS;
         minSecondsBetweenCallsReceiveHeader = FIVE_MINUTES_IN_SECONDS;

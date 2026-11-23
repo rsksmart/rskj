@@ -97,7 +97,7 @@ public class PegoutsWaitingForConfirmations {
         Objects.requireNonNull(bridgeConstants, "bridgeConstants must not be null");
         Objects.requireNonNull(activations, "activations must not be null");
 
-        int minimumConfirmations = bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations();
+        int minimumConfirmations = bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(activations);
         if (!activations.isActive(ConsensusRule.RSKIP559)) {
             return getNextPegoutFromHistoricalSelection(
                 currentRskTxHash,

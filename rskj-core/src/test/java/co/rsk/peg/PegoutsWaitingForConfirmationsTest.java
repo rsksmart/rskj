@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Named.named;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -68,7 +69,7 @@ class PegoutsWaitingForConfirmationsTest {
     // neither, so the lookup misses against a fully populated table and the legacy pick applies.
     private static final Keccak256 UPDATE_COLLECTIONS_TX_HASH = RskTestUtils.createHash(100);
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
-    private static final int MINIMUM_CONFIRMATIONS = BRIDGE_CONSTANTS.getRsk2BtcMinimumAcceptableConfirmations();
+    private static final int MINIMUM_CONFIRMATIONS = BRIDGE_CONSTANTS.getRsk2BtcMinimumAcceptableConfirmations(ACTIVATIONS_ALL);
     // The earliest rsk block at which the createSet() fixture creates a pegout. Every network's eligible set
     // is therefore the same four entries when the current block is its minimum confirmations past this one.
     private static final long EARLIEST_PEGOUT_CREATION_BLOCK = 5L;
@@ -315,7 +316,7 @@ class PegoutsWaitingForConfirmationsTest {
     @ParameterizedTest(name = "{displayName} - {0}")
     @MethodSource("networksWithPopulatedHistoricalSelections")
     void getNextPegout_beforeRskip559_datasetMiss_fallsBackToFindFirst(BridgeConstants bridgeConstants) {
-        long blockNumber = bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations() + EARLIEST_PEGOUT_CREATION_BLOCK;
+        long blockNumber = bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(VETIVER_ACTIVATIONS) + EARLIEST_PEGOUT_CREATION_BLOCK;
         Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
             UPDATE_COLLECTIONS_TX_HASH,
             blockNumber,
@@ -389,7 +390,7 @@ class PegoutsWaitingForConfirmationsTest {
         };
 
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
-        when(bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations()).thenReturn(MINIMUM_CONFIRMATIONS);
+        when(bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(any())).thenReturn(MINIMUM_CONFIRMATIONS);
         when(bridgeConstants.getHistoricalPegoutSelectionsConstants()).thenReturn(historicalSelections);
 
         return bridgeConstants;
@@ -512,7 +513,7 @@ class PegoutsWaitingForConfirmationsTest {
         // Regtest has no pre-RSKIP559 chain, so its table is empty and every lookup misses. Its minimum
         // confirmations make the eligible set the same four entries the populated-table tests use.
         BridgeConstants regTestConstants = new BridgeRegTestConstants();
-        long blockNumber = regTestConstants.getRsk2BtcMinimumAcceptableConfirmations() + EARLIEST_PEGOUT_CREATION_BLOCK;
+        long blockNumber = regTestConstants.getRsk2BtcMinimumAcceptableConfirmations(VETIVER_ACTIVATIONS) + EARLIEST_PEGOUT_CREATION_BLOCK;
 
         Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
             UPDATE_COLLECTIONS_TX_HASH,
@@ -586,6 +587,40 @@ class PegoutsWaitingForConfirmationsTest {
         );
 
         assertEquals(Optional.empty(), result);
+    }
+
+    private static Stream<Arguments> testnetPegoutConfirmationsArgProvider() {
+        // The entry is created at block 5, so the current block minus 5 is the confirmations count
+        return Stream.of(
+            // Before RSKIP643 testnet requires 10 confirmations
+            Arguments.of(named("before RSKIP643", VETIVER_ACTIVATIONS), 15L, true),
+            Arguments.of(named("before RSKIP643", VETIVER_ACTIVATIONS), 14L, false),
+            // From RSKIP643 on testnet requires 100 confirmations
+            Arguments.of(named("from RSKIP643 on", ACTIVATIONS_ALL), 105L, true),
+            Arguments.of(named("from RSKIP643 on", ACTIVATIONS_ALL), 104L, false),
+            Arguments.of(named("from RSKIP643 on", ACTIVATIONS_ALL), 15L, false)
+        );
+    }
+
+    @ParameterizedTest(name = "{displayName} - {0}, current block {1}, eligible: {2}")
+    @MethodSource("testnetPegoutConfirmationsArgProvider")
+    void getNextPegout_testnet_requiresConfirmationsForRskip643State(
+        ActivationConfig.ForBlock activations,
+        long currentBlockNumber,
+        boolean isEligible
+    ) {
+        PegoutsWaitingForConfirmations.Entry pegout = entryCreatedAt(5L);
+        PegoutsWaitingForConfirmations pegouts = pegoutsWith(pegout);
+
+        Optional<PegoutsWaitingForConfirmations.Entry> result = pegouts.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            currentBlockNumber,
+            BridgeTestNetConstants.getInstance(),
+            activations
+        );
+
+        Optional<PegoutsWaitingForConfirmations.Entry> expectedResult = isEligible ? Optional.of(pegout) : Optional.empty();
+        assertEquals(expectedResult, result);
     }
 
     private static Stream<Arguments> activationsBeforeAndAfterRskip559() {

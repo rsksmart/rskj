@@ -2181,7 +2181,7 @@ class BridgeSupportSvpTest {
         pmtWithTransactions = createValidPmtForTransactions(List.of(transaction), btcMainnetParams);
         btcBlockWithPmtHeight = btcBlockWithTransactionHeight;
 
-        int chainHeight = btcBlockWithPmtHeight + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
+        int chainHeight = btcBlockWithPmtHeight + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(allActivations);
         recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
 
         bridgeStorageProvider.save();

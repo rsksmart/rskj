@@ -573,21 +573,19 @@ public final class BridgeUtils {
         return authorizer.isAuthorized(rskTx, signatureCache);
     }
 
-    public static void validateHeightAndConfirmations(int height, int btcBestChainHeight, BridgeConstants bridgeConstants, Sha256Hash btcTxHash) {
+    public static void validateHeightAndConfirmations(int height, int btcBestChainHeight, int minimumConfirmations) {
         // Check there are at least N blocks on top of the supplied height
         if (height < 0) {
             throw new VerificationException("Height can't be lower than 0");
         }
-        int acceptableConfirmationsAmount = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
         int confirmations = btcBestChainHeight - height + 1;
-        if (confirmations < acceptableConfirmationsAmount) {
-            logger.warn(
-                "[validateHeightAndConfirmations] Btc Tx {} at least {} confirmations are required, but there are only {} confirmations",
-                btcTxHash,
-                acceptableConfirmationsAmount,
+        if (confirmations < minimumConfirmations) {
+            String message = String.format(
+                "Not enough confirmations. Required: %d, found: %d",
+                minimumConfirmations,
                 confirmations
             );
-            throw new VerificationException("Not enough confirmations");
+            throw new VerificationException(message);
         }
     }
 

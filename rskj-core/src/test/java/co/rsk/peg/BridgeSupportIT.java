@@ -1290,7 +1290,7 @@ public class BridgeSupportIT {
 
         BridgeConstants bridgeConstantsMock = mock(BridgeConstants.class);
         doReturn(btcParams).when(bridgeConstantsMock).getBtcParams();
-        doReturn(0).when(bridgeConstantsMock).getBtc2RskMinimumAcceptableConfirmations();
+        doReturn(0).when(bridgeConstantsMock).getBtc2RskMinimumAcceptableConfirmations(any());
         StoredBlock storedBlock = mock(StoredBlock.class);
         doReturn(btcTxHeight - 1).when(storedBlock).getHeight();
         BtcBlock btcBlock = mock(BtcBlock.class);

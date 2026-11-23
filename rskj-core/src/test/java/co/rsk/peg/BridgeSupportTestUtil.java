@@ -218,7 +218,9 @@ public final class BridgeSupportTestUtil {
         NetworkParameters networkParameters = bridgeConstants.getBtcParams();
 
         PartialMerkleTree pmt = createValidPmtForTransactionsHashes(List.of(hashToRegister), networkParameters);
-        int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        // RSKIP643 never lowers the requirement, so a chain built for it has enough confirmations before it too
+        int chainHeight = btcBlockToRegisterHeight
+            + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(ActivationConfigsForTest.all().forBlock(0));
         recreateChainFromPmt(btcBlockStore, chainHeight, pmt, btcBlockToRegisterHeight, networkParameters);
         bridgeStorageProvider.save();
 
