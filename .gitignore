@@ -91,7 +91,7 @@ infer-out/
 doc/rpc/openrpc.json
 
 # Fuzzing
-**/.ci-fuzz-corpus/
+**/.cifuzz-corpus/
 **/src/test/resources/org/ethereum/util/ByteUtilFuzzTestInputs/
 
 # VS Code
