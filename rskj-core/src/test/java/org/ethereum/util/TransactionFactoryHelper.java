@@ -141,4 +141,21 @@ public class TransactionFactoryHelper {
         );
     }
 
+    /**
+     * Rewrites a signed legacy transaction with nonce 0 so the nonce is spelled as the single
+     * byte 0x00 instead of the canonical 0x80. RLP decodes both spellings to zero, and the
+     * signature covers the canonical form, so the result is still validly signed.
+     */
+    public static byte[] withZeroNonceSpelledAsZeroByte(byte[] signedLegacyTx) {
+        int listPrefix = signedLegacyTx[0] & 0xFF;
+        int nonceOffset = listPrefix <= 0xF7 ? 1 : 1 + (listPrefix - 0xF7);
+        if (signedLegacyTx[nonceOffset] != (byte) 0x80) {
+            throw new IllegalArgumentException("expected a legacy transaction with nonce 0 encoded as 0x80");
+        }
+
+        byte[] rewritten = signedLegacyTx.clone();
+        rewritten[nonceOffset] = 0x00;
+        return rewritten;
+    }
+
 }

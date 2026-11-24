@@ -45,7 +45,7 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
     public ParsedType0Transaction parse(TransactionTypePrefix typePrefix, RLPList txFields) {
         CommonParsingUtils.requireFieldCount(txFields, LEGACY_FIELD_COUNT, "Legacy-format");
 
-        byte[] nonce = CommonParsingUtils.nullToEmpty(txFields.get(NONCE_INDEX).getRLPData());
+        byte[] nonce = canonicalZeroNonce(CommonParsingUtils.nullToEmpty(txFields.get(NONCE_INDEX).getRLPData()));
         // Not defaulted: an empty (0x80) gasPrice stays null so that it re-encodes as 0x80, not as 0x00.
         Coin gasPrice = RLP.parseCoinNonNullZero(txFields.get(GAS_PRICE_INDEX).getRLPData());
         byte[] gasLimit = CommonParsingUtils.nullToEmpty(txFields.get(GAS_LIMIT_INDEX).getRLPData());
@@ -65,6 +65,20 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
                 data,
                 Type0SignatureUtils.parseType0SignatureState(txFields, V_INDEX, R_INDEX, S_INDEX)
         );
+    }
+
+    /**
+     * Legacy RLP spells nonce 0 either as 0x80 (empty) or as the single byte 0x00. The encoder
+     * writes both as 0x80, so the hash and signature do not depend on the spelling. Returning
+     * one byte form for zero, the empty array that every other parsing path produces, keeps
+     * byte-level nonce comparisons consistent. Only the single 0x00 byte is rewritten: longer
+     * zero-padded nonces re-encode as received, so rewriting them would change the hash.
+     */
+    private static byte[] canonicalZeroNonce(byte[] nonce) {
+        if (nonce.length == 1 && nonce[0] == 0) {
+            return new byte[0];
+        }
+        return nonce;
     }
 
     @Override
