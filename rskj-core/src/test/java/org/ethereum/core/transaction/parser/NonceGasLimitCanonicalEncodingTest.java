@@ -17,6 +17,7 @@
  */
 package org.ethereum.core.transaction.parser;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.ReceivedTxSignatureCache;
@@ -25,7 +26,9 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.util.TransactionFactoryHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -115,6 +118,24 @@ class NonceGasLimitCanonicalEncodingTest {
     void legacyNonceOmittedAlsoResolvesToCanonicalZero() {
         Transaction rpcTx = Transaction.fromCallArguments(callArguments(TransactionType.LEGACY, null, DEFAULT_GAS_LIMIT), null, REGTEST_CHAIN_ID);
         assertArrayEquals(pinnedMinimalBytes(BigInteger.ZERO), rpcTx.getNonce());
+    }
+
+    // RLP spells nonce 0 as 0x80 or as the single byte 0x00. The encoder writes both as 0x80, so
+    // they are one transaction with one hash; the parsed nonce bytes must be one form too, the
+    // canonical empty array, or byte-level nonce comparisons treat the same nonce as two.
+    @Test
+    void legacyZeroNonceSpelledAsZeroByte_parsesToCanonicalZero() {
+        Transaction signed = build(TransactionType.LEGACY, BigInteger.ZERO, DEFAULT_GAS_LIMIT);
+        signed.sign(PRIVATE_KEY);
+        byte[] canonicalRaw = signed.getEncoded();
+        byte[] zeroByteRaw = TransactionFactoryHelper.withZeroNonceSpelledAsZeroByte(canonicalRaw);
+
+        Transaction zeroByteTx = Transaction.fromRaw(zeroByteRaw);
+
+        assertArrayEquals(new byte[0], zeroByteTx.getNonce());
+        assertArrayEquals(canonicalRaw, zeroByteTx.getEncoded());
+        assertEquals(new Keccak256(HashUtil.keccak256(canonicalRaw)), zeroByteTx.getHash());
+        assertEquals(signed.getSender(), zeroByteTx.getSender());
     }
 
     @Test
