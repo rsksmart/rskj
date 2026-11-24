@@ -26,13 +26,18 @@ import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.remasc.RemascTransaction;
+import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
+import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.util.RskTestContext;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,6 +60,8 @@ import static org.mockito.Mockito.*;
  */
 class TransactionPoolImplTest {
     private static final int MAX_CACHE_SIZE = 6000;
+    // a regtest federation change authorizer key
+    private static final String FREE_BRIDGE_TX_SENDER = "auth-a";
 
     @TempDir
     public Path tempDir;
@@ -866,6 +873,55 @@ class TransactionPoolImplTest {
     }
 
     @Test
+    void severalStaleTxCostsAreNotCountedInBalanceCheck() {
+        createTestAccounts(2, Coin.valueOf(1_000_000));
+        Account sender = createAccount(1);
+        Transaction stale0 = createSampleTransaction(1, 2, 579_000, 0); // costs 600,000
+        Transaction stale1 = createSampleTransaction(1, 2, 79_000, 1); // costs 100,000
+        Assertions.assertTrue(transactionPool.addTransaction(stale0).pendingTransactionsWereAdded());
+        Assertions.assertTrue(transactionPool.addTransaction(stale1).pendingTransactionsWereAdded());
+        repository.increaseNonce(sender.getAddress());
+        repository.increaseNonce(sender.getAddress());
+
+        // costs 500,000: the balance covers it alone, but not next to the nonce 0 stale tx (1,100,000)
+        TransactionPoolAddResult result = transactionPool.addTransaction(createSampleTransaction(1, 2, 479_000, 2));
+        Assertions.assertTrue(result.pendingTransactionsWereAdded(), result.getErrorMessage());
+    }
+
+    @Test
+    void missingSenderAccountHasZeroBalanceInBalanceCheck() {
+        TransactionPoolImpl pool = createPoolWithFreeBridgeTxs();
+        Account sender = new AccountBuilder().name(FREE_BRIDGE_TX_SENDER).build();
+        Assertions.assertNull(repository.getAccountState(sender.getAddress()));
+
+        TransactionPoolAddResult free = pool.addTransaction(createBridgeTransaction(sender, 0, 0));
+        Assertions.assertTrue(free.pendingTransactionsWereAdded(), free.getErrorMessage());
+
+        // costs 1, which a zero balance cannot pay
+        TransactionPoolAddResult result = pool.addTransaction(createBridgeTransaction(sender, 1, 1));
+        Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertEquals("insufficient funds to pay for pending and new transactions", result.getErrorMessage());
+    }
+
+    @Test
+    void missingSenderAccountHasNonceZeroInBalanceCheck() {
+        TransactionPoolImpl pool = createPoolWithFreeBridgeTxs();
+        Account sender = new AccountBuilder().name(FREE_BRIDGE_TX_SENDER).build();
+        repository.addBalance(sender.getAddress(), Coin.valueOf(1_000_000));
+        TransactionPoolAddResult pooled = pool.addTransaction(createBridgeTransaction(sender, 500_000, 0));
+        Assertions.assertTrue(pooled.pendingTransactionsWereAdded(), pooled.getErrorMessage());
+
+        // the account disappears, as after a reorg onto a chain without it, while its tx stays pooled
+        repository.delete(sender.getAddress());
+        Assertions.assertNull(repository.getAccountState(sender.getAddress()));
+
+        // the nonce 0 tx is not stale for a missing account, so its 500,000 still counts against a zero balance
+        TransactionPoolAddResult result = pool.addTransaction(createBridgeTransaction(sender, 0, 1));
+        Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertEquals("insufficient funds to pay for pending and new transactions", result.getErrorMessage());
+    }
+
+    @Test
     void aNewTxIsAddedInTxPoolAndShouldBeAddedInCache() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
@@ -932,6 +988,38 @@ class TransactionPoolImplTest {
         }
 
         Assertions.assertNotNull(signatureCache.getSender(tx));
+    }
+
+    /**
+     * Builds a pool where bridge txs from a regtest federation change authorizer are free, because bridge txs are
+     * unpaid. The pool admits such txs from a sender with no account.
+     */
+    private TransactionPoolImpl createPoolWithFreeBridgeTxs() {
+        RskSystemProperties config = spy(rskTestContext.getRskSystemProperties());
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.ARE_BRIDGE_TXS_PAID));
+        TransactionPoolImpl pool = new TransactionPoolImpl(
+                config,
+                rskTestContext.getRepositoryLocator(),
+                rskTestContext.getBlockStore(),
+                rskTestContext.getBlockFactory(),
+                rskTestContext.getCompositeEthereumListener(),
+                rskTestContext.getTransactionExecutorFactory(),
+                signatureCache,
+                10,
+                100,
+                quotaChecker,
+                Mockito.mock(GasPriceTracker.class));
+        pool.processBest(blockChain.getBestBlock());
+        return pool;
+    }
+
+    private static Transaction createBridgeTransaction(Account sender, long value, int nonce) {
+        return new TransactionBuilder()
+                .sender(sender)
+                .receiverAddress(PrecompiledContracts.BRIDGE_ADDR.getBytes())
+                .nonce(nonce)
+                .value(BigInteger.valueOf(value))
+                .build();
     }
 
     private void createTestAccounts(int naccounts, Coin balance) {

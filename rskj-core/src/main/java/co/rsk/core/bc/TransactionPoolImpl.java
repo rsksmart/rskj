@@ -481,20 +481,25 @@ public class TransactionPoolImpl implements TransactionPool {
     private boolean senderCanPayPendingTransactionsAndNewTx(Transaction newTx, RepositorySnapshot currentRepository) {
         RskAddress sender = newTx.getSender(signatureCache);
         List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(sender);
-        BigInteger stateNonce = currentRepository.getNonce(sender);
+        // a missing account has nonce zero and balance zero
+        AccountState senderState = currentRepository.getAccountState(sender);
+        BigInteger stateNonce = senderState == null ? BigInteger.ZERO : senderState.getNonce();
+        Coin balance = senderState == null ? Coin.ZERO : senderState.getBalance();
+        BigInteger newTxNonce = newTx.getNonceAsInteger();
 
         Coin accumTxCost = Coin.ZERO;
         for (Transaction t : transactions) {
-            boolean isReplacedTx = Arrays.equals(t.getNonce(), newTx.getNonce());
+            BigInteger nonce = t.getNonceAsInteger();
+            boolean isReplacedTx = nonce.equals(newTxNonce);
             // a stale tx (nonce already consumed in state) can never be mined, so its cost can never be spent
-            boolean isStaleTx = t.getNonceAsInteger().compareTo(stateNonce) < 0;
+            boolean isStaleTx = nonce.compareTo(stateNonce) < 0;
             if (!isReplacedTx && !isStaleTx) {
                 accumTxCost = accumTxCost.add(getTxBaseCost(t));
             }
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
-        return costWithNewTx.compareTo(currentRepository.getBalance(sender)) <= 0;
+        return costWithNewTx.compareTo(balance) <= 0;
     }
 
     private Coin getTxBaseCost(Transaction tx) {
