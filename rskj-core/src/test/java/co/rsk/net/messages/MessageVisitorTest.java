@@ -22,16 +22,24 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
 import co.rsk.net.sync.SnapProcessor;
+import co.rsk.net.utils.TransactionUtils;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ZeroSignatureComponentTransactions;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -39,6 +47,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -470,5 +479,39 @@ class MessageVisitorTest {
         verify(peerScoringManager, times(1))
                 .recordEvent(peer, peerAddress, EventType.INVALID_TRANSACTION, "Invalid transaction {} at {}",
                         invalidTx.getHash().toString(), MessageVisitor.class);
+    }
+
+    @Test
+    void transactionsMessage_withZeroSignatureComponents_keepsTheOtherTransactions() {
+        Transaction firstGoodTx = TransactionUtils.createTransaction(
+                TransactionUtils.getPrivateKeyBytes(1), TransactionUtils.getAddress(), BigInteger.ONE, BigInteger.ZERO);
+        Transaction secondGoodTx = TransactionUtils.createTransaction(
+                TransactionUtils.getPrivateKeyBytes(2), TransactionUtils.getAddress(), BigInteger.ONE, BigInteger.ZERO);
+        byte[] zeroRTx = ZeroSignatureComponentTransactions.zeroR();
+        byte[] zeroSTx = ZeroSignatureComponentTransactions.zeroS();
+        byte[] wireMessage = RLP.encodeList(
+                RLP.encodeByte(MessageType.TRANSACTIONS.getTypeAsByte()),
+                RLP.encodeElement(RLP.encodeList(firstGoodTx.getEncoded(), zeroRTx, zeroSTx, secondGoodTx.getEncoded())));
+        NodeID peer = mock(NodeID.class);
+        InetAddress peerAddress = mock(InetAddress.class);
+        when(config.getNetworkConstants()).thenReturn(Constants.regtest());
+        when(sender.getPeerNodeID()).thenReturn(peer);
+        when(sender.getAddress()).thenReturn(peerAddress);
+        when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
+
+        TransactionsMessage message = (TransactionsMessage) Message.create(
+                new BlockFactory(ActivationConfigsForTest.all()), wireMessage);
+        target.apply(message);
+
+        assertEquals(4, message.getTransactions().size());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Transaction>> forwarded = ArgumentCaptor.forClass(List.class);
+        verify(transactionGateway).receiveTransactionsFrom(forwarded.capture(), any());
+        assertEquals(List.of(firstGoodTx.getHash(), secondGoodTx.getHash()),
+                forwarded.getValue().stream().map(Transaction::getHash).toList());
+        verify(peerScoringManager).recordEvent(peer, peerAddress, EventType.INVALID_TRANSACTION,
+                "Invalid transaction {} at {}", new Keccak256(HashUtil.keccak256(zeroRTx)).toString(), MessageVisitor.class);
+        verify(peerScoringManager).recordEvent(peer, peerAddress, EventType.INVALID_TRANSACTION,
+                "Invalid transaction {} at {}", new Keccak256(HashUtil.keccak256(zeroSTx)).toString(), MessageVisitor.class);
     }
 }
