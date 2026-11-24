@@ -51,7 +51,9 @@ public class MutableTrieImpl implements MutableTrie {
 
     @Override
     public byte[] get(byte[] key) {
-        return trie.get(key);
+        // Records the key so that a store which cannot serve a node can say what was being looked
+        // for, not just which hash was missing. Diagnostic only.
+        return co.rsk.trie.TrieReadContext.walking(key, () -> trie.get(key));
     }
 
     @Override
