@@ -84,8 +84,7 @@ public final class AuthorizationListCodec {
             try {
                 result.add(parseCallArgumentsEntry(entries.get(i), i));
             } catch (IllegalArgumentException e) {
-                String reason = Objects.toString(e.getMessage(), "Authorization list entry is not valid");
-                throw invalidParamError(reason + " at index " + i, e);
+                throw invalidParamError(Objects.toString(e.getMessage(), "Authorization list entry is not valid") + " at index " + i, e);
             }
         }
         return Collections.unmodifiableList(result);
@@ -217,17 +216,20 @@ public final class AuthorizationListCodec {
 
     /** Decodes an RPC hex or decimal quantity, reporting either malformed form as an invalid parameter. */
     private static byte[] decodeQuantity(String value, String fieldName, int index) {
-        byte[] quantity;
+        BigInteger number;
         try {
-            quantity = HexUtils.strHexOrStrNumberToByteArray(value);
+            if (HexUtils.hasHexPrefix(value)) {
+                return HexUtils.stringHexToByteArray(value);
+            }
+            number = HexUtils.strNumberToBigInteger(value);
         } catch (DecoderException | RskJsonRpcRequestException e) {
             throw invalidParamError(
                     "Authorization list entry " + fieldName + " must be a hex or decimal quantity at index " + index);
         }
-        if (value.startsWith("-")) {
+        if (number.signum() < 0) {
             throw invalidParamError("Authorization list entry " + fieldName + " must not be negative at index " + index);
         }
-        return quantity;
+        return ByteUtil.bigIntegerToBytes(number);
     }
 
     /**
