@@ -281,19 +281,33 @@ public final class FederationTestUtils {
 //        System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
     }
 
-    public static void addSignatures(Federation federation, List<BtcECKey> signers, BtcTransaction tx) {
-        boolean isSegwitFederation = federation.getFormatVersion() == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
+    public static void spendFromFed(Federation federation, List<BtcECKey> signers, BtcTransaction tx) {
+        int federationFormatVersion = federation.getFormatVersion();
 
         for (int inputIndex = 0; inputIndex < tx.getInputs().size(); inputIndex++) {
-            BitcoinUtils.addSpendingFederationBaseScript(tx, inputIndex, federation.getRedeemScript(), federation.getFormatVersion());
-
-            if (isSegwitFederation) {
-                Coin inputValue = tx.getInput(inputIndex).getValue();
-                BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(tx, inputIndex, inputValue, signers);
-            } else {
-                BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(tx, inputIndex, signers);
-            }
+            BitcoinUtils.addSpendingFederationBaseScript(tx, inputIndex, federation.getRedeemScript(), federationFormatVersion);
+            signInput(federationFormatVersion, signers, tx, inputIndex);
         }
+    }
+
+    // used to sign inputs that already have the spending script set
+    public static void signInputs(Federation federation, List<BtcECKey> signers, BtcTransaction tx) {
+        int federationFormatVersion = federation.getFormatVersion();
+
+        for (int inputIndex = 0; inputIndex < tx.getInputs().size(); inputIndex++) {
+            signInput(federationFormatVersion, signers, tx, inputIndex);
+        }
+    }
+
+    private static void signInput(int federationFormatVersion, List<BtcECKey> signers, BtcTransaction tx, int inputIndex) {
+        boolean isSegwitFederation = federationFormatVersion == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
+        if (!isSegwitFederation) {
+            BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(tx, inputIndex, signers);
+            return;
+        }
+
+        Coin inputValue = tx.getInput(inputIndex).getValue();
+        BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(tx, inputIndex, inputValue, signers);
     }
 
     private static Script createInputScriptSig(

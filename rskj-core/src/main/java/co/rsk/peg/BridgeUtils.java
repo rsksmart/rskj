@@ -51,7 +51,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author Oscar Guindzberg
@@ -313,11 +312,18 @@ public final class BridgeUtils {
         NetworkParameters networkParameters,
         Context context,
         BtcTransaction btcTx,
+        int btcTxHeight,
         List<Address> addresses
 
     ) {
         if (activations.isActive(RSKIP293)){
-            return getUTXOsSentToAddresses(context, btcTx, addresses);
+            int utxosHeight = getHeightForNewUtxos(activations, btcTxHeight);
+            return getUTXOsSentToAddresses(
+                context,
+                btcTx,
+                utxosHeight,
+                addresses
+            );
         } else {
             return BridgeUtilsLegacy.getUTXOsSentToAddress(
                 activations,
@@ -328,24 +334,47 @@ public final class BridgeUtils {
         }
     }
 
+
+    /**
+     * Before RSKIP643, new UTXOs are stored with height 0. From RSKIP643 on, they keep the
+     * height of the BTC block that includes the transaction creating them.
+     */
+    static int getHeightForNewUtxos(ActivationConfig.ForBlock activations, int btcTxHeight) {
+        if (!activations.isActive(RSKIP643)) {
+            return 0;
+        }
+        return btcTxHeight;
+    }
+
     /**
      * @param context
      * @param btcTx
+     * @param btcTxHeight
      * @param addresses
      * @return the list of UTXOs in the given btcTx sent to the given list of address
      */
-    private static List<UTXO> getUTXOsSentToAddresses(Context context, BtcTransaction btcTx, List<Address> addresses) {
+    private static List<UTXO> getUTXOsSentToAddresses(Context context, BtcTransaction btcTx, int btcTxHeight, List<Address> addresses) {
         Wallet wallet = BridgeUtils.createWatchedBtcWalletFromAddresses(context, addresses);
-        return btcTx.getWalletOutputs(wallet).stream().map(
-            txOutput -> new UTXO(
+        return getUtxosSentToWallet(btcTx, wallet, btcTxHeight);
+    }
+
+    /**
+     * @param btcTx
+     * @param wallet
+     * @param btcTxHeight
+     * @return the list of UTXOs in the given btcTx sent to the given wallet
+     */
+    public static List<UTXO> getUtxosSentToWallet(BtcTransaction btcTx, Wallet wallet, int btcTxHeight) {
+        return btcTx.getWalletOutputs(wallet).stream()
+            .map(output -> new UTXO(
                 btcTx.getHash(),
-                txOutput.getIndex(),
-                txOutput.getValue(),
-                0,
+                output.getIndex(),
+                output.getValue(),
+                btcTxHeight,
                 btcTx.isCoinBase(),
-                txOutput.getScriptPubKey()
-            )
-        ).collect(Collectors.toList());
+                output.getScriptPubKey()
+            ))
+            .toList();
     }
 
     /**
@@ -544,48 +573,51 @@ public final class BridgeUtils {
         return authorizer.isAuthorized(rskTx, signatureCache);
     }
 
-    public static boolean validateHeightAndConfirmations(int height, int btcBestChainHeight, int acceptableConfirmationsAmount, Sha256Hash btcTxHash) throws Exception {
+    public static void validateHeightAndConfirmations(int height, int btcBestChainHeight, BridgeConstants bridgeConstants, Sha256Hash btcTxHash) {
         // Check there are at least N blocks on top of the supplied height
         if (height < 0) {
-            throw new Exception("Height can't be lower than 0");
+            throw new VerificationException("Height can't be lower than 0");
         }
+        int acceptableConfirmationsAmount = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
         int confirmations = btcBestChainHeight - height + 1;
         if (confirmations < acceptableConfirmationsAmount) {
             logger.warn(
-                    "Btc Tx {} at least {} confirmations are required, but there are only {} confirmations",
-                    btcTxHash,
-                    acceptableConfirmationsAmount,
-                    confirmations
+                "[validateHeightAndConfirmations] Btc Tx {} at least {} confirmations are required, but there are only {} confirmations",
+                btcTxHash,
+                acceptableConfirmationsAmount,
+                confirmations
             );
-            return false;
+            throw new VerificationException("Not enough confirmations");
         }
-        return true;
     }
 
-    public static Sha256Hash calculateMerkleRoot(NetworkParameters networkParameters, byte[] pmtSerialized, Sha256Hash btcTxHash) throws VerificationException{
+    public static Optional<Sha256Hash> calculateMerkleRoot(NetworkParameters networkParameters, byte[] pmtSerialized, Sha256Hash btcTxHash) throws VerificationException{
         PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, pmtSerialized, 0);
         List<Sha256Hash> hashesInPmt = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
         if (!hashesInPmt.contains(btcTxHash)) {
-            logger.warn("Supplied Btc Tx {} is not in the supplied partial merkle tree", btcTxHash);
-            return null;
+            logger.warn("[calculateMerkleRoot] Supplied Btc Tx {} is not in the supplied partial merkle tree", btcTxHash);
+            return Optional.empty();
         }
-        return merkleRoot;
+        return Optional.of(merkleRoot);
     }
 
-    public static void validateInputsCount(byte[] btcTxSerialized, boolean isActiveRskip) throws VerificationException.EmptyInputsOrOutputs {
-        if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
-            if (isActiveRskip) {
-                if (BtcTransactionFormatUtils.getInputsCountForSegwit(btcTxSerialized) == 0) {
-                    logger.warn("Provided btc segwit tx has no inputs");
-                    // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
-                    throw new VerificationException.EmptyInputsOrOutputs();
-                }
-            } else {
-                logger.warn("Provided btc tx has no inputs ");
-                // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
-                throw new VerificationException.EmptyInputsOrOutputs();
-            }
+    public static void validateInputsCount(byte[] btcTxSerialized, ActivationConfig.ForBlock activations) throws VerificationException.EmptyInputsOrOutputs {
+        if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) != 0) {
+            logger.debug("[validateInputsCount] Btc tx has at least one input");
+            return;
+        }
+
+        if (!activations.isActive(ConsensusRule.RSKIP143)) {
+            logger.warn("[validateInputsCount] Provided btc tx has no inputs ");
+            // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+            throw new VerificationException.EmptyInputsOrOutputs();
+        }
+
+        if (BtcTransactionFormatUtils.getInputsCountForSegwit(btcTxSerialized) == 0) {
+            logger.warn("[validateInputsCount] Provided btc segwit tx has no inputs");
+            // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+            throw new VerificationException.EmptyInputsOrOutputs();
         }
     }
 

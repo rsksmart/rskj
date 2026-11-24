@@ -57,6 +57,8 @@ public class BlockValidatorBuilder {
 
     private RemascValidationRule remascValidationRule;
 
+    private BlockHeaderVersionRule blockHeaderVersionRule;
+
     private BlockTimeStampValidationRule blockTimeStampValidationRule;
 
     private BlockCompositeRule blockCompositeRule;
@@ -126,6 +128,11 @@ public class BlockValidatorBuilder {
         return this;
     }
 
+    public BlockValidatorBuilder addBlockHeaderVersionRule() {
+        this.blockHeaderVersionRule = new BlockHeaderVersionRule(config.getActivationConfig());
+        return this;
+    }
+
     public BlockValidatorBuilder addBlockTimeStampValidationRule(int validPeriod) {
         this.blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod, config.getActivationConfig(), config.getNetworkConstants(), config.getBitcoinjNetworkConstants());
         return this;
@@ -138,7 +145,7 @@ public class BlockValidatorBuilder {
 
     public BlockValidatorImpl build() {
         if (this.blockCompositeRule == null) {
-            this.blockCompositeRule = new BlockCompositeRule(this.txsMinGasPriceRule, this.blockUnclesValidationRule, this.blockRootValidationRule, this.remascValidationRule, this.blockTimeStampValidationRule);
+            this.blockCompositeRule = new BlockCompositeRule(this.txsMinGasPriceRule, this.blockUnclesValidationRule, this.blockRootValidationRule, this.remascValidationRule, this.blockTimeStampValidationRule, this.blockHeaderVersionRule);
         }
 
         if (this.blockParentCompositeRule == null) {

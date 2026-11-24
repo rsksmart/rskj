@@ -19,6 +19,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
@@ -26,8 +27,10 @@ import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -240,7 +243,7 @@ class DownloadingBackwardsBodiesSyncStateTest {
         for (long i = 1; i <= 10; i++) {
             BlockHeader headerToRequest = mock(BlockHeader.class);
             Keccak256 headerHash = new Keccak256(ByteUtil.leftPadBytes(ByteUtil.longToBytes(i), 32));
-            BlockHeaderExtension blockHeaderExtension = mock(BlockHeaderExtension.class);
+            BlockHeaderExtension blockHeaderExtension = mock(BlockHeaderExtensionV1.class);
 
             when(headerToRequest.getExtension()).thenReturn(blockHeaderExtension);
             when(headerToRequest.getHash()).thenReturn(headerHash);
@@ -451,5 +454,70 @@ class DownloadingBackwardsBodiesSyncStateTest {
         verify(syncEventsHandler, times(1))
                 .onErrorSyncing(peer, EventType.TIMEOUT_MESSAGE,
                         "Timeout waiting requests on {}", DownloadingBackwardsBodiesSyncState.class);
+    }
+
+    @Test
+    void newBodyWithMismatchedExtensionScoresInvalidMessage() {
+        BlockHeaderV1 header = createHeaderV1();
+        LinkedList<BlockHeader> toRequest = new LinkedList<>();
+        toRequest.add(header);
+
+        long bodyId = 1L;
+        when(syncEventsHandler.sendBodyRequest(peer, header)).thenReturn(bodyId);
+
+        DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(
+                syncConfiguration,
+                syncEventsHandler,
+                peersInformation,
+                genesis,
+                blockFactory,
+                blockStore,
+                child,
+                toRequest,
+                peer);
+
+        target.onEnter();
+
+        BlockHeaderExtension mismatchedExtension = new BlockHeaderExtensionV2(
+                new byte[256], new short[] { 1 }, new byte[] { 1 });
+        BodyResponseMessage body = new BodyResponseMessage(
+                bodyId, new LinkedList<>(), new LinkedList<>(), mismatchedExtension);
+
+        Peer sender = mock(Peer.class);
+        target.newBody(body, sender);
+
+        verify(peersInformation, times(1)).reportEventToPeerScoring(sender, EventType.INVALID_MESSAGE,
+                "Invalid body response (mismatched extension) received on {}", DownloadingBackwardsBodiesSyncState.class);
+    }
+
+    private BlockHeaderV1 createHeaderV1() {
+        return new BlockHeaderV1(
+                TestUtils.generateHash("parentHash").getBytes(),
+                HashUtil.keccak256(RLP.encodeList()),
+                TestUtils.generateAddress("coinbase"),
+                HashUtil.EMPTY_TRIE_HASH,
+                new byte[32],
+                HashUtil.EMPTY_TRIE_HASH,
+                TestUtils.generateBytes("logsBloom", 256),
+                BlockDifficulty.ONE,
+                1L,
+                BigInteger.valueOf(6800000).toByteArray(),
+                3000000L,
+                7731067L,
+                new byte[0],
+                Coin.ZERO,
+                new byte[80],
+                new byte[0],
+                new byte[0],
+                new byte[0],
+                Coin.valueOf(10L),
+                0,
+                false,
+                false,
+                false,
+                null,
+                new short[0],
+                false
+        );
     }
 }

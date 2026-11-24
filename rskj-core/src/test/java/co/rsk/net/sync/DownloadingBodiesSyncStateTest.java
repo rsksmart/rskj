@@ -18,6 +18,8 @@
 
 package co.rsk.net.sync;
 
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
@@ -27,10 +29,16 @@ import co.rsk.validators.SyncBlockValidatorRule;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockHeaderExtension;
+import org.ethereum.core.BlockHeaderExtensionV2;
+import org.ethereum.core.BlockHeaderV1;
 import org.ethereum.core.Blockchain;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
@@ -116,6 +124,69 @@ class DownloadingBodiesSyncStateTest {
         verify(peersInformation, times(1))
                 .reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
                         "Unexpected body received on {}", DownloadingBodiesSyncState.class);
+    }
+
+    @Test
+    void newBodyWithMismatchedExtensionScoresInvalidMessage() {
+        DownloadingBodiesSyncState state = new DownloadingBodiesSyncState(syncConfiguration,
+                syncEventsHandler,
+                peersInformation,
+                blockchain,
+                blockFactory,
+                blockSyncService,
+                syncBlockValidatorRule,
+                Collections.emptyList(),
+                Collections.emptyMap());
+
+        BlockHeaderV1 header = createHeaderV1();
+        DownloadingBodiesSyncState.PendingBodyResponse pendingBodyResponse = new DownloadingBodiesSyncState.PendingBodyResponse(peer.getPeerNodeID(), header);
+        Map<Long, DownloadingBodiesSyncState.PendingBodyResponse> pendingBodyResponses = new HashMap<>();
+        long messageId = 2L;
+        pendingBodyResponses.put(messageId, pendingBodyResponse);
+        TestUtils.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
+
+        BlockHeaderExtension mismatchedExtension = new BlockHeaderExtensionV2(
+                new byte[256], new short[] { 1 }, new byte[] { 1 });
+        BodyResponseMessage message = new BodyResponseMessage(messageId,
+                Collections.emptyList(), Collections.emptyList(), mismatchedExtension);
+
+        state.newBody(message, peer);
+
+        verify(peersInformation, times(1))
+                .reportEventToPeerScoring(peer, EventType.INVALID_MESSAGE,
+                        "Invalid body received on {}, no {}, hash {}",
+                        DownloadingBodiesSyncState.class, header.getNumber(), header.getPrintableHash());
+    }
+
+    private BlockHeaderV1 createHeaderV1() {
+        return new BlockHeaderV1(
+                TestUtils.generateHash("parentHash").getBytes(),
+                HashUtil.keccak256(RLP.encodeList()),
+                TestUtils.generateAddress("coinbase"),
+                HashUtil.EMPTY_TRIE_HASH,
+                new byte[32],
+                HashUtil.EMPTY_TRIE_HASH,
+                TestUtils.generateBytes("logsBloom", 256),
+                BlockDifficulty.ONE,
+                1L,
+                BigInteger.valueOf(6800000).toByteArray(),
+                3000000L,
+                7731067L,
+                new byte[0],
+                Coin.ZERO,
+                new byte[80],
+                new byte[0],
+                new byte[0],
+                new byte[0],
+                Coin.valueOf(10L),
+                0,
+                false,
+                false,
+                false,
+                null,
+                new short[0],
+                false
+        );
     }
 
     @Test

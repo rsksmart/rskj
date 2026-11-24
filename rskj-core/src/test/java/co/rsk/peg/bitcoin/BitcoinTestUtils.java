@@ -50,10 +50,13 @@ public class BitcoinTestUtils {
     }
 
     public static List<BtcECKey> getBtcEcKeys(int amount) {
+        return getBtcEcKeys(amount, "seed");
+    }
+
+    public static List<BtcECKey> getBtcEcKeys(int amount, String seedPrefix) {
         List<BtcECKey> keys = new ArrayList<>();
         for (int i = 0; i < amount; i++) {
-            String seed = "seed" + i;
-            BtcECKey key = getBtcEcKeyFromSeed(seed);
+            BtcECKey key = getBtcEcKeyFromSeed(seedPrefix + i);
             keys.add(key);
         }
 

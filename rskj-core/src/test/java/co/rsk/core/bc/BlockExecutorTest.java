@@ -1187,8 +1187,10 @@ public class BlockExecutorTest {
         Block block = objects.getBlock();
         BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
+        // getLogBloom() returns a copy, so write the corrupted bloom back through the header
         byte[] logBloom = block.getLogBloom();
         logBloom[0] = (byte) ((logBloom[0] + 1) % 256);
+        block.getHeader().setLogsBloom(logBloom);
         short[] expectedEdges = activeRskip144 ? expectedEdgesForIndependentTransactions(block) : null;
 
         Assertions.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
