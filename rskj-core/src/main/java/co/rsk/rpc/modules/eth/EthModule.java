@@ -168,6 +168,7 @@ public class EthModule
                     callConstant(callArgs, block);
 
             handleTransactionRevertIfHappens(programResult);
+            handleTransactionExceptionIfHappens("eth_call", programResult);
             hReturn = HexUtils.toUnformattedJsonHex(programResult.getHReturn());
             return hReturn;
         } finally {
@@ -247,6 +248,7 @@ public class EthModule
 
             ProgramResult res = executor.getResult();
             handleTransactionRevertIfHappens(res);
+            handleTransactionExceptionIfHappens("eth_estimateGas", res);
 
             estimation = internalEstimateGas(executor.getResult());
 
@@ -377,6 +379,16 @@ public class EthModule
             }
 
             throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason, revertData);
+        }
+    }
+
+    private void handleTransactionExceptionIfHappens(String method, ProgramResult res) {
+        Exception exception = res.getException();
+        if (exception != null) {
+            if (LOGGER.isWarnEnabled()) {
+                LOGGER.warn("{}(): execution failed: {}", method, exception.toString());
+            }
+            throw RskJsonRpcRequestException.transactionExecutionFailedError();
         }
     }
 
