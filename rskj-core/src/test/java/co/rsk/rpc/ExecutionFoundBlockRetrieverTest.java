@@ -32,6 +32,8 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Collections;
@@ -253,6 +255,28 @@ class ExecutionFoundBlockRetrieverTest {
                         () -> retriever.retrieveExecutionBlock("0x133e83bb305ef21ea7fc86fcced355db2300887274961a136ca5e8c8763687d9"));
         Assertions.assertEquals(-32600, (int) e.getCode());
         verify(blockchain, never()).getBlockByNumber(anyLong());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {63, 65})
+    void getByNumberZeroPaddedToOneDigitAroundAHash(int digits) {
+        Block myBlock = mock(Block.class);
+        when(blockchain.getBlockByNumber(123))
+                .thenReturn(myBlock);
+
+        assertThat(retriever.retrieveExecutionBlock(String.format("0x%0" + digits + "x", 123)).getBlock(), is(myBlock));
+        verify(blockchain, never()).getBlockByHash(any());
+    }
+
+    @Test
+    void getByHashLengthWithoutPrefixIsNotReadAsAHash() {
+        String hashLengthDigits = "0".repeat(64) + "ab";
+
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.retrieveExecutionBlock(hashLengthDigits));
+        Assertions.assertEquals(-32602, (int) e.getCode());
+        verify(blockchain, never()).getBlockByHash(any());
     }
 
     @Test

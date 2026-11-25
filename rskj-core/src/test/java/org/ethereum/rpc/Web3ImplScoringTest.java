@@ -400,7 +400,7 @@ class Web3ImplScoringTest {
                 new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         EthModule em = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), world.getBlockChain(), null,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), world.getBlockChain(),
                 null, new ExecutionBlockRetriever(world.getBlockChain(), null, null),
                 null, new EthModuleWalletEnabled(wallet, world.getTransactionPool(), world.getBlockTxSignatureCache()), null,
                 bridgeSupportFactory,

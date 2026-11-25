@@ -39,7 +39,6 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
@@ -96,7 +95,6 @@ public class EthModule
             BridgeConstants bridgeConstants,
             byte chainId,
             Blockchain blockchain,
-            TransactionPool transactionPool,
             ReversibleTransactionExecutor reversibleTransactionExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
             RepositoryLocator repositoryLocator,

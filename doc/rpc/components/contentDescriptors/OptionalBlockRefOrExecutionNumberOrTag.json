@@ -1,13 +1,17 @@
 {
   "OptionalBlockRefOrExecutionNumberOrTag": {
     "name": "blockRefOrNumberOrTag",
-    "description": "The block to execute against, given as its height in hex or in decimal, as a tag, or as a block reference object. Optional: the call is executed against the best block when it is omitted.",
+    "description": "The block to execute against, given as its height in hex or in decimal, as a tag, as a 32-byte block hash, or as a block reference object. Optional: the call is executed against the best block when it is omitted.",
     "required": false,
     "schema": {
       "title": "optionalBlockRefOrExecutionNumberOrTag",
-      "oneOf": [
+      "description": "A string of `0x` and exactly 64 hex digits is always read as a block hash, never as a height.",
+      "anyOf": [
         {
           "$ref": "#/components/schemas/ExecutionBlockRef"
+        },
+        {
+          "$ref": "#/components/schemas/BlockHash"
         },
         {
           "$ref": "#/components/schemas/ExecutionBlockNumberOrTag"

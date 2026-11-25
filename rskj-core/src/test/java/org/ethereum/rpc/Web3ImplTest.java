@@ -659,20 +659,16 @@ class Web3ImplTest {
         assertNonCanonicalBlockHash("0x010203", chain.block, blockRef -> chain.web3.eth_getCode(new HexAddressParam(chain.accountAddress), new BlockRefParam(blockRef)));
     }
 
-    @Test
-    void getCodeOverJsonRpc_byBlockHashObject_returnsCodeAtThatBlock() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "\"%s\"",
+            "{\"blockHash\": \"%s\"}",
+            "{\"blockHash\": \"%s\", \"requireCanonical\": \"false\"}"
+    })
+    void getCodeOverJsonRpc_byBlockHash_returnsCodeAtThatBlock(String blockParamFormat) throws IOException {
         final ChainParams chain = createChainWithAContractCode(false);
-        String params = String.format("[\"0x%s\", {\"blockHash\": \"%s\"}]", chain.accountAddress, chain.block.getHashJsonString());
-
-        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
-
-        assertEquals("0x010203", response.path("result").asText(), response.toString());
-    }
-
-    @Test
-    void getCodeOverJsonRpc_byBareBlockHash_returnsCodeAtThatBlock() throws IOException {
-        final ChainParams chain = createChainWithAContractCode(false);
-        String params = String.format("[\"0x%s\", \"%s\"]", chain.accountAddress, chain.block.getHashJsonString());
+        String blockParam = String.format(blockParamFormat, chain.block.getHashJsonString());
+        String params = String.format("[\"0x%s\", %s]", chain.accountAddress, blockParam);
 
         JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
 
@@ -709,17 +705,6 @@ class Web3ImplTest {
         JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
 
         assertEquals(-32600, response.path("error").path("code").asInt(), response.toString());
-    }
-
-    @Test
-    void getCodeOverJsonRpc_byBlockHashWithStringRequireCanonical_returnsCode() throws IOException {
-        final ChainParams chain = createChainWithAContractCode(false);
-        String params = String.format("[\"0x%s\", {\"blockHash\": \"%s\", \"requireCanonical\": \"false\"}]",
-                chain.accountAddress, chain.block.getHashJsonString());
-
-        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
-
-        assertEquals("0x010203", response.path("result").asText(), response.toString());
     }
 
     @ParameterizedTest
@@ -905,6 +890,50 @@ class Web3ImplTest {
 
         assertEquals("0x0", canonicalAtSameHeight);
         assertEquals(HexUtils.toQuantityJsonHex(NON_CANONICAL_TRANSFER_VALUE), response.path("result").asText(), response.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"true", "\"true\""})
+    void getBalanceOverJsonRpc_byNonCanonicalBlockHashRequiringCanonical_returnsError(String requireCanonical) throws IOException {
+        final NonCanonicalTransfer chain = createNonCanonicalTransfer();
+        String params = String.format("[\"%s\", {\"blockHash\": \"%s\", \"requireCanonical\": %s}]",
+                HexUtils.toJsonHex(chain.recipient.getBytes()), chain.nonCanonicalBlock.getHashJsonString(), requireCanonical);
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getBalance", params);
+
+        assertEquals(-32600, response.path("error").path("code").asInt(), response.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{\"blockNumber\": \"%s\"}", "{\"blockNumber\": \"%s\", \"requireCanonical\": true}"})
+    void getBalanceOverJsonRpc_byBlockNumberHoldingABlockHash_returnsInvalidParams(String blockRefTemplate) throws IOException {
+        final NonCanonicalTransfer chain = createNonCanonicalTransfer();
+        String blockRef = String.format(blockRefTemplate, chain.nonCanonicalBlock.getHashJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getBalance",
+                String.format("[\"%s\", %s]", HexUtils.toJsonHex(chain.recipient.getBytes()), blockRef));
+
+        assertEquals(-32602, response.path("error").path("code").asInt(), response.toString());
+    }
+
+    // Init code that returns the recipient's balance: PUSH20 recipient, BALANCE, MSTORE at 0, RETURN 32 bytes.
+    private static String returnBalanceOfCallJson(RskAddress account) {
+        return String.format("{\"data\": \"0x73%s3160005260206000f3\"}", account.toHexString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"\"%s\"", "{\"blockHash\": \"%s\"}"})
+    void callOverJsonRpc_byNonCanonicalBlockHash_executesAtThatBlock(String blockRefTemplate) throws IOException {
+        final NonCanonicalTransfer chain = createNonCanonicalTransfer();
+        String call = returnBalanceOfCallJson(chain.recipient);
+        String canonicalAtSameHeight = overJsonRpc(chain.web3, "eth_call",
+                String.format("[%s, \"0x1\"]", call)).path("result").asText();
+        String blockRef = String.format(blockRefTemplate, chain.nonCanonicalBlock.getHashJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_call", String.format("[%s, %s]", call, blockRef));
+
+        assertEquals(String.format("0x%064x", 0), canonicalAtSameHeight);
+        assertEquals(String.format("0x%064x", NON_CANONICAL_TRANSFER_VALUE), response.path("result").asText(), response.toString());
     }
 
     @Test
@@ -3086,7 +3115,7 @@ class Web3ImplTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null,
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain,
                 null, new ExecutionBlockRetriever(blockchain, null, null),
                 null, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache), null,
                 bridgeSupportFactory,
@@ -3213,7 +3242,7 @@ class Web3ImplTest {
                 null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
 
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain,executor,
                 new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway),
                 bridgeSupportFactory,
@@ -3283,7 +3312,7 @@ class Web3ImplTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain,executor,
                 new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator,
                 new EthModuleWalletEnabled(wallet, transactionPool, signatureCache),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, null),

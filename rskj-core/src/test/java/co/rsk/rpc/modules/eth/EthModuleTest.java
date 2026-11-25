@@ -103,7 +103,6 @@ class EthModuleTest {
                 null,
                 (byte) 1,
                 null,
-                null,
                 executor,
                 retriever,
                 null,
@@ -158,7 +157,6 @@ class EthModuleTest {
                 null,
                 (byte) 1,
                 null,
-                null,
                 executor,
                 retriever,
                 repositoryLocator,
@@ -193,7 +191,6 @@ class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
-                null,
                 null,
                 null,
                 null,
@@ -262,7 +259,6 @@ class EthModuleTest {
         EthModule eth = spy(new EthModule(
                 null,
                 (byte) 1,
-                null,
                 null,
                 null,
                 executionBlockRetrieverMock,
@@ -348,7 +344,6 @@ class EthModuleTest {
                 (byte) 1,
                 null,
                 null,
-                null,
                 executionBlockRetrieverMock,
                 null,
                 null,
@@ -411,7 +406,6 @@ class EthModuleTest {
                 null,
                 (byte) 1,
                 null,
-                null,
                 executor,
                 retriever,
                 repositoryLocator,
@@ -459,7 +453,6 @@ class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
-                null,
                 null,
                 executor,
                 retriever,
@@ -514,7 +507,6 @@ class EthModuleTest {
                 null,
                 (byte) 1,
                 null,
-                null,
                 executor,
                 retriever,
                 null,
@@ -568,7 +560,6 @@ class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 (byte) 0,
-                null,
                 null,
                 executor,
                 retriever,
@@ -720,7 +711,6 @@ class EthModuleTest {
                 mock(BridgeConstants.class),
                 (byte) 33,
                 mock(Blockchain.class),
-                mock(TransactionPool.class),
                 mock(ReversibleTransactionExecutor.class),
                 mock(ExecutionBlockRetriever.class),
                 mock(RepositoryLocator.class),
@@ -762,7 +752,6 @@ class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
-                null,
                 null,
                 executor,
                 retriever,
@@ -813,7 +802,6 @@ class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
-                null,
                 null,
                 executor,
                 retriever,
@@ -866,7 +854,6 @@ class EthModuleTest {
                 null,
                 (byte) 1,
                 null,
-                null,
                 executor,
                 retriever,
                 null,
@@ -918,7 +905,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                null,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -968,7 +954,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                null,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1016,7 +1001,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                null,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1067,7 +1051,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                null,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1214,7 +1197,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                transactionPoolMock,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1248,7 +1230,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                transactionPoolMock,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1290,7 +1271,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                transactionPoolMock,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1318,7 +1298,6 @@ class EthModuleTest {
 
     @Test
     void pendingTransactionsWithWalletDisabled() {
-        TransactionPool transactionPoolMock = mock(TransactionPool.class);
         EthModuleWalletDisabled ethModuleWallet = new EthModuleWalletDisabled();
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         Blockchain blockchain = mock(Blockchain.class);
@@ -1330,7 +1309,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                transactionPoolMock,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),

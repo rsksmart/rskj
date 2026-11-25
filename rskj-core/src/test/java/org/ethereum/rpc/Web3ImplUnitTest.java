@@ -253,6 +253,27 @@ class Web3ImplUnitTest {
     }
 
     @Test
+    void rsk_getStorageBytesAtByBlockHash() {
+        String hash = "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8";
+        String addr = "0x0011223344556677880011223344556677889900";
+        String storageIdx = "0x01";
+        Block block = mock(Block.class);
+        when(block.getHashJsonString()).thenReturn(hash);
+        when(blockchain.getBlockByHash(HexUtils.stringHexToByteArray(hash))).thenReturn(block);
+        byte[] resultBytes = TestUtils.generateBytes("result", 64);
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        when(retriever.getInformationProvider(hash)).thenReturn(aip);
+        when(aip.getStorageBytes(new RskAddress(addr), DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx))))
+                .thenReturn(resultBytes);
+        Map<String, String> blockRef = new HashMap<>();
+        blockRef.put("blockHash", hash);
+
+        String result = target.rsk_getStorageBytesAt(new HexAddressParam(addr), new HexNumberParam(storageIdx), new BlockRefParam(blockRef));
+
+        assertEquals(HexUtils.toUnformattedJsonHex(resultBytes), result);
+    }
+
+    @Test
     void rsk_getStorageBytesAtEmptyCell() {
         String id = "0x00";
         String addr = "0x0011223344556677880011223344556677889900";

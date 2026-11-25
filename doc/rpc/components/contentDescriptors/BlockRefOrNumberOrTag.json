@@ -1,13 +1,17 @@
 {
   "BlockRefOrNumberOrTag": {
     "name": "blockRefOrNumberOrTag",
-    "description": "The block to read, given as its height in hex, as a tag, or as a block reference object",
+    "description": "The block to read, given as its height in hex, as a tag, as a 32-byte block hash, or as a block reference object",
     "required": true,
     "schema": {
       "title": "blockRefOrNumberOrTag",
-      "oneOf": [
+      "description": "A string of `0x` and exactly 64 hex digits is always read as a block hash, never as a height.",
+      "anyOf": [
         {
           "$ref": "#/components/schemas/BlockRef"
+        },
+        {
+          "$ref": "#/components/schemas/BlockHash"
         },
         {
           "$ref": "#/components/schemas/BlockNumberOrTag"

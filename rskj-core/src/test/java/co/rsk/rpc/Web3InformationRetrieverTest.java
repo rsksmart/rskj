@@ -11,6 +11,8 @@ import org.ethereum.core.*;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -137,6 +139,30 @@ class Web3InformationRetrieverTest {
 
         assertTrue(result.isPresent());
         assertEquals(secondBlock, result.get());
+        verify(blockchain, never()).getBlockByHash(any());
+    }
+
+    @Test
+    void getBlock_heightZeroPaddedToSixtyThreeDigits_resolvesByNumber() {
+        Block secondBlock = mock(Block.class);
+        when(blockchain.getBlockByNumber(2)).thenReturn(secondBlock);
+        Optional<Block> result = target.getBlock(String.format("0x%063x", 2));
+
+        assertTrue(result.isPresent());
+        assertEquals(secondBlock, result.get());
+        verify(blockchain, never()).getBlockByHash(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "0x00000000000000000000000000000000000000000000000000000000000000002", // 0x and 65 digits
+            "0000000000000000000000000000000000000000000000000000000000000000ab" // 66 characters, no 0x
+    })
+    void getBlock_oneCharacterOffAPrefixedHash_isRejectedWithoutAHashLookup(String identifier) {
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class, () -> target.getBlock(identifier));
+
+        assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
         verify(blockchain, never()).getBlockByHash(any());
     }
 

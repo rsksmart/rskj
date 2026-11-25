@@ -212,7 +212,6 @@ class NestedContractsTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 world.getBlockChain(),
-                world.getTransactionPool(),
                 new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
                 new ExecutionBlockRetriever(world.getBlockChain(), null, null),
                 world.getRepositoryLocator(),

@@ -79,6 +79,11 @@ public class BlockRefParam implements Serializable {
                     new BlockHashParam(value);
                     break;
                 case BLOCK_NUMBER_KEY:
+                    // A hash here would be looked up by hash and skip requireCanonical.
+                    if (HashParam32.isPrefixedHash32Hex(value)) {
+                        throw RskJsonRpcRequestException.invalidParamError(String
+                                .format("Invalid input: %s must be a block number, not a block hash", BLOCK_NUMBER_KEY));
+                    }
                     new HexNumberParam(value);
                     break;
             }

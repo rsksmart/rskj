@@ -102,6 +102,15 @@ public class BlockRefParamTest {
     }
 
     @Test
+    void blockNumberShapedLikeABlockHash_isRejected() {
+        Map<String, String> inputs = Map.of("blockNumber", "0x" + "0".repeat(62) + "01");
+
+        RskJsonRpcRequestException e = assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(inputs));
+
+        assertEquals(-32602, (int) e.getCode());
+    }
+
+    @Test
     public void testInvalidInputsInvalidRequireCanonical() {
         Map<String, String> inputs = new HashMap<String, String>() {
             {

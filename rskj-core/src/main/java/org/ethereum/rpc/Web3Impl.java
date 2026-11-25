@@ -76,7 +76,6 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static co.rsk.util.HexUtils.*;
@@ -434,12 +433,19 @@ public class Web3Impl implements Web3 {
     }
 
     private String eth_getCode(HexAddressParam address, String blockId) {
-        AccountInformationProvider accountInformationProvider = web3InformationRetriever.getInformationProvider(blockId);
+        String response = null;
 
-        byte[] code = accountInformationProvider.getCode(address.getAddress());
+        try {
+            AccountInformationProvider accountInformationProvider = web3InformationRetriever.getInformationProvider(blockId);
 
-        // Code can be null, if there is no account.
-        return HexUtils.toUnformattedJsonHex(code == null ? new byte[0] : code);
+            byte[] code = accountInformationProvider.getCode(address.getAddress());
+
+            // Code can be null, if there is no account.
+            response = HexUtils.toUnformattedJsonHex(code == null ? new byte[0] : code);
+            return response;
+        } finally {
+            logger.debug("eth_getCode({}, {}): {}", address, blockId, response);
+        }
     }
 
     private String eth_getCode(HexAddressParam address, Map<String, String> inputs) {
@@ -579,7 +585,7 @@ public class Web3Impl implements Web3 {
                 );
     }
 
-    private String toInvokeByBlockHash(String blockHash, boolean requireCanonical, Function<String, String> toInvokeByBlockId) {
+    private String toInvokeByBlockHash(String blockHash, boolean requireCanonical, UnaryOperator<String> toInvokeByBlockId) {
         Block block = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash)))
                 .orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", blockHash)));
 
@@ -1191,12 +1197,16 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_estimateGas(CallArgumentsParam args, @Nullable BlockRefParam blockRefParam) {
         if (blockRefParam == null) {
-            return getEthModule().estimateGas(args, new BlockIdentifierParam(BlockTag.LATEST.getTag()));
+            return estimateGasAt(args, BlockTag.LATEST.getTag());
         }
         if (blockRefParam.getIdentifier() != null) {
-            return getEthModule().estimateGas(args, new BlockIdentifierParam(blockRefParam.getIdentifier()));
+            return estimateGasAt(args, blockRefParam.getIdentifier());
         }
-        return invokeByBlockRef(blockRefParam.getInputs(), blockId -> getEthModule().estimateGas(args, new BlockIdentifierParam(blockId)));
+        return invokeByBlockRef(blockRefParam.getInputs(), blockId -> estimateGasAt(args, blockId));
+    }
+
+    private String estimateGasAt(CallArgumentsParam args, String blockId) {
+        return getEthModule().estimateGas(args, new BlockIdentifierParam(blockId));
     }
 
     @Override

@@ -650,7 +650,7 @@ class TransactionModuleTest {
                 config.getActivationConfig(), signatureCache);
 
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain,
                 reversibleTransactionExecutor1, new ExecutionBlockRetriever(blockchain, null, null),
                 repositoryLocator, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache), transactionModule,
                 new BridgeSupportFactory(
