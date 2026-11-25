@@ -189,7 +189,8 @@
       "rskip551" : 8804200,
       "rskip552" : 8804200,
       "rskip559" : -1,
-      "rskip643" : -1
+      "rskip643" : -1,
+      "rskip692" : -1
     },
     "testnet" : {
       "areBridgeTxsPaid" : 114000,
@@ -292,7 +293,8 @@
       "rskip551" : 7604200,
       "rskip552" : 7604200,
       "rskip559" : -1,
-      "rskip643" : -1
+      "rskip643" : -1,
+      "rskip692" : -1
     }
   }
 }
