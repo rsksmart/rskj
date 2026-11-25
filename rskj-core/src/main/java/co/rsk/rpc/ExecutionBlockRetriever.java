@@ -81,7 +81,7 @@ public class ExecutionBlockRetriever implements InternalService {
         if (HashParam32.isPrefixedHash32Hex(bnOrId)) {
             Block executionBlock = blockchain.getBlockByHash(HexUtils.stringHexToByteArray(bnOrId));
             if (executionBlock == null) {
-                throw blockNotFound(String.format("Block with hash %s not found", bnOrId));
+                throw blockNotFound(String.format("Block with hash %s not found", StringUtils.trim(bnOrId)));
             }
             return Result.ofBlock(executionBlock);
         }
