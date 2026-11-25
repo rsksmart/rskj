@@ -73,6 +73,7 @@ jobs:
       actions: read
     outputs:
       has_token: ${{ steps.token.outputs.has_token }}
+      skip_reason: ${{ steps.token.outputs.skip_reason }}
       rskj_ref: ${{ steps.refs.outputs.rskj_ref }}
       jsonrpc_ref: ${{ steps.refs.outputs.jsonrpc_ref }}
       hardhat_ref: ${{ steps.refs.outputs.hardhat_ref }}
@@ -83,6 +84,14 @@ jobs:
       # GitHub gives no secrets to a run from a fork PR. This step sets has_token,
       # so that a fork PR skips the suites and stays green, and the token step and
       # the gh calls do not fail.
+      #
+      # A run whose actor is Dependabot also skips. GitHub gives such a run only the
+      # Dependabot secret store, which does not hold the App secrets. And on a
+      # pull_request run, this workflow and its action pins come from the PR head,
+      # so a Dependabot bump of an action in this file would run, unreviewed, with
+      # the App private key. The check comes before the secret check, so the key
+      # stays out of reach even if someone adds Dependabot secrets later.
+      # A maintainer can start the suites by hand (workflow_dispatch) after review.
       - name: Check cross-repo App credentials
         id: token
         env:
@@ -91,14 +100,22 @@ jobs:
           # Empty on a manual run, so a manual run counts as non-fork. Same-repo PRs
           # and manual runs always get the secrets.
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+          # The actor picks the secret store. A re-run keeps the first actor.
+          ACTOR: ${{ github.actor }}
         run: |
+          if [ "$ACTOR" = "dependabot[bot]" ]; then
+            # Dependabot run: skip and stay green.
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=dependabot" >> "$GITHUB_OUTPUT"
+            echo "::notice::Run started by Dependabot; downstream suites are skipped. Dispatch this workflow by hand on the branch after review to run them."
           # Both secrets are necessary. A key without a correct ID fails later, at
           # the token step, with a less clear error.
-          if [ -n "$APP_ID" ] && [ -n "$APP_KEY" ]; then
+          elif [ -n "$APP_ID" ] && [ -n "$APP_KEY" ]; then
             echo "has_token=true" >> "$GITHUB_OUTPUT"
           elif [ "$IS_FORK" = "true" ]; then
             # Fork PR: the PR cannot supply the secrets. Skip and stay green.
             echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=fork" >> "$GITHUB_OUTPUT"
             echo "::warning::GH_APP_ID / GH_APP_PRIVATE_KEY unavailable (fork PR — secrets are withheld); downstream suites will be skipped."
           else
             # Non-fork run: the secrets were removed or are wrong in this repo.
@@ -367,6 +384,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HAS_TOKEN: ${{ needs.resolve.outputs.has_token }}
+          SKIP_REASON: ${{ needs.resolve.outputs.skip_reason }}
           EVENT: ${{ github.event_name }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -400,17 +418,23 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Fork PR (has_token is "false"): no suite ran. Report the skip and stay
-          # green, because the PR cannot supply the secrets. Missing secrets on a
-          # non-fork run are different: resolve fails, has_token is empty, and the
-          # report below fails the required check.
+          # Fork PR or Dependabot run (has_token is "false"): no suite ran. Report
+          # the skip and stay green. Missing secrets on any other run are different:
+          # resolve fails, has_token is empty, and the report below fails the
+          # required check.
           if [ "$HAS_TOKEN" = "false" ]; then
             {
               echo "### RSKj Core Automated Tests — ⏭️ skipped"
               echo ""
-              echo "GitHub App credentials (\`GH_APP_ID\` / \`GH_APP_PRIVATE_KEY\`) were"
-              echo "unavailable (expected on fork PRs, where secrets are withheld). The"
-              echo "JSON-RPC / Hardhat / K6 / Sync suites were not dispatched."
+              if [ "$SKIP_REASON" = "dependabot" ]; then
+                echo "Dependabot started this run, so it gets no App credentials and"
+                echo "the JSON-RPC / Hardhat / K6 / Sync suites were not dispatched."
+                echo "To run them, dispatch this workflow on the branch after review."
+              else
+                echo "GitHub App credentials (\`GH_APP_ID\` / \`GH_APP_PRIVATE_KEY\`) were"
+                echo "unavailable (expected on fork PRs, where secrets are withheld). The"
+                echo "JSON-RPC / Hardhat / K6 / Sync suites were not dispatched."
+              fi
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi

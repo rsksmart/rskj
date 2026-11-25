@@ -1,0 +1,53 @@
+name: Gradle Dependency Graph
+
+# Puts the Gradle runtime dependencies of rskj into the repository's dependency
+# graph, for Dependabot alerts.
+#
+# GitHub's automatic dependency submission cannot build this repo:
+# gradle-wrapper.jar is not checked in, and only ./configure.sh fetches and
+# hash-checks it. So this workflow runs ./configure.sh first.
+#
+# It runs only on push to master / *-rc (and by hand), so only reviewed, merged
+# code writes the graph. There is no pull_request run: a PR controls its own
+# build, so it could forge the graph that it submits.
+
+on:
+  push:
+    branches: ["master", "*-rc"]
+  workflow_dispatch:
+
+# Declare default permissions as read only.
+permissions: read-all
+
+concurrency:
+  # Keyed on the commit, so quick successive merges each get a snapshot.
+  group: gradle-dependency-graph-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    name: Generate and submit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed by the dependency submission API
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # The Gradle wrapper jar is not checked in; configure.sh fetches and hash-verifies it.
+      - name: Fetch the Gradle wrapper
+        run: ./configure.sh
+
+      - name: Generate and submit dependency graph
+        uses: gradle/actions/dependency-submission@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          dependency-graph: generate-and-submit
+          dependency-graph-include-configurations: '^runtimeClasspath$'
+          validate-wrappers: true
+          cache-provider: basic
