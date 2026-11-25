@@ -110,7 +110,7 @@ public class CallArgumentsToByteArray {
 
         BigInteger gasLimit = new BigInteger(1, gasLimitBytes);
         if (gasLimit.compareTo(BigInteger.valueOf(gasCap)) > 0) {
-            LOGGER.warn("provided gasLimit ({}) exceeds the gas cap," +
+            LOGGER.debug("provided gasLimit ({}) exceeds the gas cap," +
                     " using the gas cap ({})", gasLimit, gasCap);
             return ByteUtil.longToBytes(gasCap);
         }

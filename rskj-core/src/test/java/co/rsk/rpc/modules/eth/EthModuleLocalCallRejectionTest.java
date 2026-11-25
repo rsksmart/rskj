@@ -17,6 +17,8 @@
  */
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.config.TestSystemProperties;
+import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.TestUtils;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -193,6 +195,40 @@ class EthModuleLocalCallRejectionTest {
         String result = ethModule.call(toParam(args), latest());
 
         assertEquals("0x", result);
+    }
+
+    /**
+     * Before RSKIP438 there is no init code size limit, so 49,153 zero bytes run: 0x00 is STOP, so the create
+     * returns no output.
+     */
+    @Test
+    void call_initCodeAboveTheLimitWithRskip438Inactive_runs() {
+        EthModule preRskip438 = ethModuleWithRskip438Inactive();
+        CallArguments args = callArgs(null, "0x" + "00".repeat(49_153));
+
+        String result = preRskip438.call(toParam(args), latest());
+
+        assertEquals("0x", result);
+    }
+
+    /**
+     * Before RSKIP438 init code has no per-word cost, so the create costs 21,000 + 32,000 + 49,153 * 4 = 249,612 =
+     * 0x3cf0c gas, and the STOP runs for free.
+     */
+    @Test
+    void estimateGas_initCodeAboveTheLimitWithRskip438Inactive_returnsTheEstimate() {
+        EthModule preRskip438 = ethModuleWithRskip438Inactive();
+        CallArguments args = callArgs(null, "0x" + "00".repeat(49_153));
+
+        String estimate = preRskip438.estimateGas(toParam(args), latest());
+
+        assertEquals("0x3cf0c", estimate);
+    }
+
+    private EthModule ethModuleWithRskip438Inactive() {
+        TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
+                .withValue("blockchain.config.consensusRules.rskip438", ConfigValueFactory.fromAnyRef(-1)));
+        return new RskTestFactory(tempDir.resolve("rskip438-inactive"), config).getEthModule();
     }
 
     private static Stream<String> targets() {

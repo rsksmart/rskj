@@ -160,6 +160,8 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     private boolean init() {
+        // Anything added between here and the local-call early return below also runs during block execution and
+        // is consensus-critical.
         basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
         if (tx.isInitCodeSizeInvalidForTx(activations)) {
