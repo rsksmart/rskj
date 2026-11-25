@@ -103,7 +103,9 @@ final class ReferenceRlpEncoder {
         byte[] forSigning = chainId == 0
                 ? list(body)
                 : list(append(body, integer(chainId), integer(0), integer(0)));
-        int signedV = chainId == 0 ? SIG_V_RAW : Y_PARITY + chainId * 2 + 35;
+        // RSK stores legacy v in a single byte, so the EIP-155 value is truncated to its low byte
+        // (chainId 200: 1 + 200*2 + 35 = 436 -> 0xb4).
+        int signedV = chainId == 0 ? SIG_V_RAW : (Y_PARITY + chainId * 2 + 35) & 0xFF;
         byte[] signed = list(append(body, integer(signedV), bytes(SIG_R), bytes(SIG_S)));
         return new String[]{hex(forSigning), hex(signed)};
     }

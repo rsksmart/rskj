@@ -51,6 +51,7 @@ import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OverrideablePrecompiledContracts;
@@ -729,6 +730,33 @@ class EthModuleTest {
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
         Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+    }
+
+    @Test
+    void sendTransaction_legacyOnChainIdAbove110_isAcceptedWithAOneByteV() {
+        Constants constants = spy(Constants.regtest());
+        doReturn((byte) 200).when(constants).getChainId();
+
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(TransactionFactoryHelper.createArguments(sender, receiver));
+
+        TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
+
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, mock(TransactionPool.class), transactionGateway);
+
+        String txHash = assertDoesNotThrow(() -> ethModuleTransaction.sendTransaction(callArgumentsParam));
+
+        assertNotNull(txHash);
+        ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionGateway).receiveTransaction(captor.capture());
+        byte[] wireV = RLP.decodeList(captor.getValue().getEncoded()).get(6).getRLPData();
+        assertEquals(1, wireV.length, "the legacy v on the wire must be one byte");
     }
 
     @Test
