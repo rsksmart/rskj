@@ -190,7 +190,8 @@ class AccountClassificationTest {
         assertAll("full account deletion must remove every marker, not just the code",
                 () -> assertFalse(repository.isExist(addr)),
                 () -> assertFalse(repository.hasInitializedStorage(addr)),
-                () -> assertFalse(repository.hasDelegationAuthority(addr))
+                () -> assertFalse(repository.hasDelegationAuthority(addr)),
+                () -> assertFalse(repository.isActiveDelegatedEOA(addr), "a deleted account must stop classifying as an active delegation")
         );
     }
 

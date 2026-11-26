@@ -620,6 +620,7 @@ class ProgramTest {
         when(repository.isExist(authority)).thenReturn(true);
         // authority.code = 0xef0100 || delegate
         when(repository.getCode(authority)).thenReturn(authorityCode);
+        when(repository.hasDelegationAuthority(authority)).thenReturn(true);
 
         when(repository.isExist(delegate)).thenReturn(true);
         // delegate.code  = STOP
@@ -694,6 +695,7 @@ class ProgramTest {
 
         when(repository.isExist(authority)).thenReturn(true);
         when(repository.getCode(authority)).thenReturn(authorityCode);
+        when(repository.hasDelegationAuthority(authority)).thenReturn(true);
 
         when(repository.isExist(delegate)).thenReturn(false);
 
@@ -721,6 +723,7 @@ class ProgramTest {
 
         when(repository.isExist(authority)).thenReturn(true);
         when(repository.getCode(authority)).thenReturn(authorityCode);
+        when(repository.hasDelegationAuthority(authority)).thenReturn(true);
 
         when(repository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(20L));
         when(repository.addBalance(any(RskAddress.class), any(Coin.class))).thenReturn(Coin.valueOf(20L));
@@ -748,9 +751,11 @@ class ProgramTest {
 
         when(repository.isExist(authority)).thenReturn(true);
         when(repository.getCode(authority)).thenReturn(authorityCode);
+        when(repository.hasDelegationAuthority(authority)).thenReturn(true);
 
         when(repository.isExist(delegate)).thenReturn(true);
         when(repository.getCode(delegate)).thenReturn(delegateCode);
+        when(repository.hasDelegationAuthority(delegate)).thenReturn(true);
 
         when(repository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(20L));
         when(repository.addBalance(any(RskAddress.class), any(Coin.class))).thenReturn(Coin.valueOf(20L));
@@ -811,6 +816,7 @@ class ProgramTest {
 
         when(repository.isExist(alice)).thenReturn(true);
         when(repository.getCode(alice)).thenReturn(aliceDelegationCode);
+        when(repository.hasDelegationAuthority(alice)).thenReturn(true);
 
         when(repository.isExist(delegate)).thenReturn(true);
         when(repository.getCode(delegate)).thenReturn(delegateCode);

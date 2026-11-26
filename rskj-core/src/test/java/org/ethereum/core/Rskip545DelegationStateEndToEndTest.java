@@ -42,6 +42,7 @@ import static org.ethereum.core.Rskip545TestSupport.snapshotAtBest;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -92,16 +93,8 @@ class Rskip545DelegationStateEndToEndTest {
         assertEquals(BigInteger.ONE, state.getNonce(authority.getAddress()));
     }
 
-    /**
-     * The EVM treats an account as delegated from its code bytes alone. A contract deployed while RSKIP-544 is
-     * off whose runtime code is 0xef0100 || address, and which never signed an authorization, runs as a
-     * delegation once RSKIP-545 is active. This test pins that behavior, so changing it must change this test.
-     *
-     * <p>No shipped network runs RSKIP-545 with RSKIP-544 off.
-     */
     @Test
-    void codeOnlyDesignatorWithoutAuthorityFlag_isExecutedAsDelegation_currentBehavior() {
-        // RSKIP-544 off, as before vetiver: a contract can still be created with 0xEF-prefixed code
+    void codeOnlyDesignatorWithoutAuthorityFlag_isNotExecutedAsDelegation() {
         World world = newWorld(-1);
         Account sponsor = world.getAccountByName("sponsor");
 
@@ -115,8 +108,10 @@ class Rskip545DelegationStateEndToEndTest {
         connect(world, legacyCall(sponsor, 2, lookalike));
 
         RepositorySnapshot after = snapshotAtBest(world);
-        assertEquals(DataWord.ONE, after.getStorageValue(lookalike, DataWord.ZERO),
-                "the counter code ran in the lookalike's storage, as for a delegation");
+        assertNotEquals(DataWord.ONE, after.getStorageValue(lookalike, DataWord.ZERO),
+                "the pointer must not be followed: the counter code must not run in the lookalike's storage");
+        assertNotEquals(DataWord.ONE, after.getStorageValue(counter, DataWord.ZERO),
+                "and it must not run in the counter's own storage either");
         assertFalse(after.hasDelegationAuthority(lookalike));
     }
 

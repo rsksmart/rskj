@@ -76,6 +76,7 @@ class InternalDelegationExecutionTest {
         // Historical state containing: target.code = EF0100 || delegated
         track.initializeStorage(target.getAddress());
         track.saveCode(target.getAddress(), DelegationCodeResolver.createDelegatedCode(delegated.getAddress()));
+        track.setDelegationAuthority(target.getAddress());
 
         track.initializeStorage(delegated.getAddress());
         track.saveCode(delegated.getAddress(), new byte[] { 0x00 });
@@ -126,6 +127,7 @@ class InternalDelegationExecutionTest {
 
         track.initializeStorage(target.getAddress());
         track.saveCode(target.getAddress(), DelegationCodeResolver.createDelegatedCode(delegated.getAddress()));
+        track.setDelegationAuthority(target.getAddress());
 
 
         // Delegated runtime: STOP

@@ -75,7 +75,7 @@ public class DelegationCodeResolver {
             return ByteUtil.EMPTY_BYTE_ARRAY;
         }
 
-        if (!activationConfig.isActive(ConsensusRule.RSKIP545) || !isDelegatedCode(code)) {
+        if (!activationConfig.isActive(ConsensusRule.RSKIP545) || !repository.isActiveDelegatedEOA(address)) {
             return code;
         }
 

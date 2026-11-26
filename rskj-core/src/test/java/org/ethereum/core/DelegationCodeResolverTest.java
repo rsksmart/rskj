@@ -24,6 +24,7 @@ import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static org.ethereum.core.DelegationCodeResolver.createDelegatedCode;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -117,6 +118,7 @@ class DelegationCodeResolverTest {
 
         when(repository.isExist(target)).thenReturn(true);
         when(repository.getCode(target)).thenReturn(createDelegatedCode(delegated));
+        when(repository.isActiveDelegatedEOA(target)).thenReturn(true);
         when(activationConfig.isActive(ConsensusRule.RSKIP545)).thenReturn(true);
 
         byte[] code = DelegationCodeResolver.getExecutionCode(
@@ -138,6 +140,7 @@ class DelegationCodeResolverTest {
 
         when(repository.isExist(target)).thenReturn(true);
         when(repository.getCode(target)).thenReturn(createDelegatedCode(delegated));
+        when(repository.isActiveDelegatedEOA(target)).thenReturn(true);
 
         when(repository.isExist(delegated)).thenReturn(true);
         when(repository.getCode(delegated)).thenReturn(delegatedRuntimeCode);
@@ -163,6 +166,7 @@ class DelegationCodeResolverTest {
 
         when(repository.isExist(target)).thenReturn(true);
         when(repository.getCode(target)).thenReturn(createDelegatedCode(delegated));
+        when(repository.isActiveDelegatedEOA(target)).thenReturn(true);
 
         when(repository.isExist(delegated)).thenReturn(true);
         when(repository.getCode(delegated)).thenReturn(delegatedCode);
@@ -223,6 +227,7 @@ class DelegationCodeResolverTest {
 
         when(repository.isExist(target)).thenReturn(true);
         when(repository.getCode(target)).thenReturn(targetDelegatedCode);
+        when(repository.isActiveDelegatedEOA(target)).thenReturn(true);
 
         when(repository.isExist(delegated)).thenReturn(true);
         when(repository.getCode(delegated)).thenReturn(delegatedRuntimeCode);
@@ -248,6 +253,7 @@ class DelegationCodeResolverTest {
 
         when(repository.isExist(target)).thenReturn(true);
         when(repository.getCode(target)).thenReturn(targetDelegatedCode);
+        when(repository.isActiveDelegatedEOA(target)).thenReturn(true);
 
         when(repository.isExist(delegated)).thenReturn(false);
         when(repository.getCode(delegated)).thenReturn(delegatedRuntimeCode);
@@ -318,6 +324,7 @@ class DelegationCodeResolverTest {
 
         when(repository.isExist(target)).thenReturn(true);
         when(repository.getCode(target)).thenReturn(delegationCode);
+        when(repository.isActiveDelegatedEOA(target)).thenReturn(true);
 
         when(repository.isExist(delegated)).thenReturn(true);
         when(repository.getCode(delegated)).thenReturn(delegatedRuntimeCode);
@@ -357,6 +364,35 @@ class DelegationCodeResolverTest {
 
         verify(repository, never()).isExist(delegated);
         verify(repository, never()).getCode(delegated);
+    }
+
+
+    @Test
+    void getExecutionCode_indicatorCodeWithoutDelegationAuthority_returnsOwnCode() {
+        Repository realRepository = createRepository();
+        RskAddress lookalike = new RskAddress("0000000000000000000000000000000000000001");
+        RskAddress pointedTo = new RskAddress("0000000000000000000000000000000000000002");
+
+        byte[] lookalikeCode = createDelegatedCode(pointedTo);
+
+        realRepository.createAccount(lookalike);
+        realRepository.initializeStorage(lookalike);
+        realRepository.saveCode(lookalike, lookalikeCode);
+
+        realRepository.createAccount(pointedTo);
+        realRepository.initializeStorage(pointedTo);
+        realRepository.saveCode(pointedTo, new byte[] { 0x01, 0x02, 0x03 });
+
+        when(activationConfig.isActive(ConsensusRule.RSKIP545)).thenReturn(true);
+
+        byte[] code = DelegationCodeResolver.getExecutionCode(
+                realRepository,
+                lookalike,
+                address -> false,
+                activationConfig
+        );
+
+        assertArrayEquals(lookalikeCode, code);
     }
 
 }

@@ -55,7 +55,6 @@ import static co.rsk.util.ListArrayUtil.isEmpty;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP174;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP351;
-import static org.ethereum.core.DelegationCodeResolver.isDelegatedCode;
 
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -224,7 +223,7 @@ public class TransactionExecutor {
                 execError("transaction type " + tx.getTypePrefix() + " can not execute a contract");
                 return false;
             }
-            if (!isSenderCodeValid()) {
+            if (!isSenderEoaOrDelegated()) {
                 logger.warn("Transaction type {} sender has non-delegated code, tx {}", tx.getTypePrefix(), tx.getHash());
                 execError("transaction type " + tx.getTypePrefix() + " sender must be an EOA or an already-delegated account");
                 return false;
@@ -253,10 +252,12 @@ public class TransactionExecutor {
         return true;
     }
 
-    private boolean isSenderCodeValid() {
+    private boolean isSenderEoaOrDelegated() {
         RskAddress sender = tx.getSender(signatureCache);
         byte[] code = track.getCode(sender);
-        return isEmpty(code) || isDelegatedCode(code);
+        // RSKIP-545: accept a sender with no code (plain EOA or cleared delegation) or an active delegation.
+        // Not isEOA: it requires isExist, and eth_call runs from addresses that have no state at all.
+        return isEmpty(code) || track.isActiveDelegatedEOA(sender);
     }
 
     private boolean transactionAddressesAreValid() {

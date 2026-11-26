@@ -404,6 +404,58 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
         assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
     }
 
+    /**
+     * The delegation authority flag is never cleared, so an account that delegated and then cleared its
+     * delegation keeps the flag with empty code. It is an ordinary EOA again and must still be able to send
+     * type 4 transactions: a sender check based on isPlainEOA would lock it out permanently.
+     */
+    @Test
+    void acceptsSenderWhoseDelegationWasCleared() {
+        MutableRepository repository = createRepository();
+        prepareAuthority(repository, authorityAddress, ZERO_NONCE, EMPTY_CODE);
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+
+        // delegate, then clear: writeDelegation writes indicator plus flag, and clearing only resets the code
+        repository.saveCode(sender, DelegationCodeResolver.createDelegatedCode(delegatedAddress));
+        repository.initializeStorage(sender);
+        repository.setDelegationAuthority(sender);
+        repository.saveCode(sender, EMPTY_CODE);
+
+        saveCode(repository, delegatedAddress, new byte[] {0x00});
+        prepareReceiver(repository);
+        mockAddressAsNotAPrecompiled(delegatedAddress);
+
+        assertTrue(repository.hasDelegationAuthority(sender), "clearing must leave the flag behind");
+        assertFalse(repository.isPlainEOA(sender), "the cleared sender is not a plain EOA for the taxonomy");
+
+        SetCodeAuthorization authorization = createValidAuthorizationTuple(
+                delegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ZERO_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                2,
+                EMPTY_DATA,
+                authorization
+        );
+        mockSuccessfulProgramInvokeForAnyRepository(tx);
+
+        TransactionExecutor executor = newExecutorWithRealSignatureCache(tx, repository);
+        assertTrue(executor.executeTransaction(), "a sender whose delegation was cleared must still execute");
+        assertEquals(ONE_NONCE, repository.getNonce(sender));
+        assertArrayEquals(EMPTY_CODE, normalizeCode(repository.getCode(sender)));
+        assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
+    }
+
     @Test
     void rejectsSenderWithDelegatedCodePrefixOnly() {
         MutableRepository repository = createRepository();
@@ -434,6 +486,47 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
         assertFalse(newExecutorWithRealSignatureCache(tx, repository).executeTransaction());
         assertEquals(ZERO_NONCE, repository.getNonce(sender));
         assertArrayEquals(DELEGATED_PREFIX_ONLY, normalizeCode(repository.getCode(sender)));
+    }
+
+
+    @Test
+    void rejectsSenderWithIndicatorCodeButNoDelegationAuthority() {
+        MutableRepository repository = createRepository();
+        prepareAuthority(repository, authorityAddress, ZERO_NONCE, EMPTY_CODE);
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+
+        // planted directly instead of through fundSenderWithCode, which sets the flag for indicator code
+        byte[] indicatorCode = DelegationCodeResolver.createDelegatedCode(delegatedAddress);
+        repository.saveCode(sender, indicatorCode);
+        prepareReceiver(repository);
+
+        assertTrue(DelegationCodeResolver.isDelegatedCode(repository.getCode(sender)), "the sender code must be a well-formed indicator, so only the flag can reject it");
+        assertFalse(repository.hasDelegationAuthority(sender), "no authorization was ever signed for this sender");
+
+        SetCodeAuthorization authorization = createValidAuthorizationTuple(
+                delegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ZERO_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                0,
+                EMPTY_DATA,
+                authorization
+        );
+
+        assertFalse(newExecutorWithRealSignatureCache(tx, repository).executeTransaction());
+        assertEquals(ZERO_NONCE, repository.getNonce(sender));
+        assertArrayEquals(indicatorCode, normalizeCode(repository.getCode(sender)));
+        assertAuthorityStateUnchanged(repository, authorityAddress, EMPTY_CODE, ZERO_NONCE);
     }
 
     @Test
@@ -1438,11 +1531,20 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
     private void fundSenderWithCode(MutableRepository repository, BigInteger nonce, long balance, byte[] code) {
         fundSender(repository, nonce, balance);
         repository.saveCode(sender, code);
+        markDelegationAuthorityIfDelegated(repository, sender, code);
     }
 
     private void saveCode(MutableRepository repository, RskAddress address, byte[] code) {
         repository.createAccount(address);
         repository.saveCode(address, code);
+        markDelegationAuthorityIfDelegated(repository, address, code);
+    }
+
+    private void markDelegationAuthorityIfDelegated(MutableRepository repository, RskAddress address, byte[] code) {
+        if (DelegationCodeResolver.isDelegatedCode(code)) {
+            repository.initializeStorage(address);
+            repository.setDelegationAuthority(address);
+        }
     }
 
     private void prepareReceiver(MutableRepository repository) {
@@ -1453,6 +1555,7 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
         repository.createAccount(authority);
         repository.setNonce(authority, nonce);
         repository.saveCode(authority, code);
+        markDelegationAuthorityIfDelegated(repository, authority, code);
     }
 
     private void assertAuthorityStateUnchanged(

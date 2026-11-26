@@ -16,6 +16,7 @@ import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
@@ -268,6 +269,9 @@ public abstract class Type4TransactionExecutorHelperTest {
     protected void mockAccountWithCode(Repository repository, RskAddress address, byte[] code)  {
         when(repository.getCode(address)).thenReturn(code);
         when(repository.isExist(address)).thenReturn(true);
+        boolean isDelegated = DelegationCodeResolver.isDelegatedCode(code);
+        when(repository.hasDelegationAuthority(address)).thenReturn(isDelegated);
+        when(repository.isActiveDelegatedEOA(address)).thenReturn(isDelegated);
     }
 
     protected void verifyTransactionCostBiggerOrEqualThan(Transaction tx, long expectedAuthorizationCost) {
