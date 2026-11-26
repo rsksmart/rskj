@@ -317,12 +317,25 @@ public class Transaction {
     }
 
     public boolean acceptTransactionSignature(byte currentChainId) {
-        ECDSASignature signature = getSignature();
-        if (signature == null || !signature.validateComponents() || signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
-            return false;
-        }
+        return hasAcceptableSignatureComponents() && acceptsChainId(currentChainId);
+    }
 
+    /**
+     * Checks the chain id alone, ignoring the signature: the transaction carries no chain id or carries
+     * {@code currentChainId}. Use {@link #acceptTransactionSignature(byte)} for the full acceptance decision.
+     */
+    public boolean acceptsChainId(byte currentChainId) {
         return this.getChainId() == 0 || this.getChainId() == currentChainId;
+    }
+
+    /**
+     * Checks the signature alone, ignoring the chain id: the signature is present, its components are in
+     * range and its s value is in the lower half of the curve order. Use
+     * {@link #acceptTransactionSignature(byte)} for the full acceptance decision.
+     */
+    public boolean hasAcceptableSignatureComponents() {
+        ECDSASignature signature = getSignature();
+        return signature != null && signature.validateComponents() && signature.getS().compareTo(SECP256K1N_HALF) < 0;
     }
 
     public void sign(byte[] privKeyBytes) throws MissingPrivateKeyException {

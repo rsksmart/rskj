@@ -104,7 +104,10 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 throw invalidParamError("Missing parameter, gasPrice, gas or value");
             }
 
-            if (!tx.acceptTransactionSignature(constants.getChainId())) {
+            if (!tx.hasAcceptableSignatureComponents()) {
+                throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_SIGNATURE);
+            }
+            if (!tx.acceptsChainId(constants.getChainId())) {
                 throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
             }
 
