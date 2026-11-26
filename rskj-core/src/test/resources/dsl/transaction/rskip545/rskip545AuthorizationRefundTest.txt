@@ -1,0 +1,43 @@
+comment
+
+// RSKIP-545 authorization refund across transactions of one block.
+//
+// Account "fresh" is registered in Rskip545AuthorizationRefundBlockTest without any state, so it
+// is absent until txFundFresh sends it 1 wei; txDelegateFresh then runs its first delegation.
+
+end
+
+account_new acc1 10000000000000000000
+account_new acc2 1000000
+
+# b01: fund "fresh", then delegate it in the same block (acc1 nonces 0 and 1; fresh auth nonce 0)
+
+transaction_build txFundFresh
+    sender acc1
+    receiver fresh
+    value 1
+    gas 21000
+    build
+
+transaction_build txDelegateFresh
+    sender acc1
+    nonce 1
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization fresh 0000000000000000000000000000000000000003 0
+    build
+
+block_build b01
+    parent g00
+    transactions txFundFresh txDelegateFresh
+    build
+
+block_connect b01
+
+assert_best b01
+assert_tx_success txFundFresh
+assert_tx_success txDelegateFresh
