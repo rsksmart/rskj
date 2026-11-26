@@ -1,0 +1,32 @@
+comment
+
+SELFDESTRUCT in a contract that is cleared under RSKIP701, not deleted. The factory (same code and account
+name as dsl/rskip701/create2_destroy_recreate.txt) creates C with CREATE2 in block b01, so C has nonce 1.
+C's runtime stores 42 in slot 0 and then executes SELFDESTRUCT with the beneficiary taken from the call data.
+
+C = 564277e6a03a179c7b29165fd3fa2612dd9b6602 (CREATE2 of the factory with salt 1)
+
+end
+
+account_new acc1 100000000000
+account_new accB 1000
+account_new factory 0 7168602a600055600035ff60005260096017f360005260016012600e6000f536156039576020600060203760006000602060206000855af1505b00
+
+transaction_build createC
+    sender acc1
+    receiver factory
+    nonce 0
+    value 0
+    gas 1000000
+    build
+
+block_build b01
+    parent g00
+    gasLimit 6800000
+    transactions createC
+    build
+
+block_connect b01
+
+assert_best b01
+assert_tx_success createC

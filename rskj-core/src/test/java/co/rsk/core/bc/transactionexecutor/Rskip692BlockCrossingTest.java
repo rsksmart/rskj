@@ -152,8 +152,10 @@ class Rskip692BlockCrossingTest {
     }
 
     private static World newWorld(long rskip692Activation, boolean parallel) {
+        // RSKIP-545 requires RSKIP-692 at or before its own height, and these blocks carry only legacy calls
         TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
                 .withValue("blockchain.config.consensusRules.rskip692", ConfigValueFactory.fromAnyRef(rskip692Activation))
+                .withValue("blockchain.config.consensusRules.rskip545", ConfigValueFactory.fromAnyRef(-1))
                 .withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(parallel ? 0 : -1))
                 .withValue("blockchain.config.consensusRules.rskip351", ConfigValueFactory.fromAnyRef(0)));
         World world = new World(config);

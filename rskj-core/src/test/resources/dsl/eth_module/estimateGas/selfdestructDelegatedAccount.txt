@@ -1,0 +1,53 @@
+comment
+
+SELFDESTRUCT executed in an account that is delegated under RSKIP545, next to a contract with the same code.
+Both runtimes store 42 in slot 0 and then execute SELFDESTRUCT with the beneficiary taken from the call data.
+Block b01 deploys the contract D, deploys the contract C with a balance, and delegates the account named
+authority to D with a set-code transaction. The addresses of D and C follow from the nonces of acc1.
+
+end
+
+account_new acc1 100000000000
+account_new authority 1000
+account_new accB 1000
+
+transaction_build deployD
+    sender acc1
+    nonce 0
+    value 0
+    data 68602a600055600035ff60005260096017f3
+    gas 200000
+    build
+
+transaction_build deployC
+    sender acc1
+    nonce 1
+    value 1000
+    data 68602a600055600035ff60005260096017f3
+    gas 200000
+    build
+
+transaction_build delegate
+    sender acc1
+    nonce 2
+    receiver accB
+    value 0
+    gas 200000
+    maxPriorityFeePerGas 1
+    maxFeePerGas 1
+    transactionType 04
+    authorization authority 6252703f5ba322ec64d3ac45e56241b7d9e481ad 0
+    build
+
+block_build b01
+    parent g00
+    gasLimit 6800000
+    transactions deployD deployC delegate
+    build
+
+block_connect b01
+
+assert_best b01
+assert_tx_success deployD
+assert_tx_success deployC
+assert_tx_success delegate

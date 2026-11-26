@@ -71,6 +71,8 @@ class BridgeRevertReceiptIntegrationTest {
     private static final String ZERO_LOGS_BLOOM = "0x" + "0".repeat(512);
     // A negative activation height disables a consensus rule
     private static final String RSKIP692_DISABLED_ARG = "-Xblockchain.config.consensusRules.rskip692=-1";
+    // RSKIP-545 requires RSKIP-692, so it is disabled with it; the fixture sends no set-code transaction
+    private static final String RSKIP545_DISABLED_ARG = "-Xblockchain.config.consensusRules.rskip545=-1";
 
     private static final String ETH_CALL_TO_BRIDGE = """
             {
@@ -153,9 +155,9 @@ class BridgeRevertReceiptIntegrationTest {
 
     @Test
     void failingDirectCallToBridge_beforeRskip692_reportsLegacySuccessReceipt() throws Exception {
-        assertRskip692InactiveOnRegtestWith(RSKIP692_DISABLED_ARG);
+        assertRskip692InactiveOnRegtestWith(RSKIP692_DISABLED_ARG, RSKIP545_DISABLED_ARG);
 
-        Process proc = startNode(buildNodeCommand(RSKIP692_DISABLED_ARG));
+        Process proc = startNode(buildNodeCommand(RSKIP692_DISABLED_ARG, RSKIP545_DISABLED_ARG));
         try {
             waitForNodeReady(rpcPort, 60_000);
 
@@ -231,11 +233,11 @@ class BridgeRevertReceiptIntegrationTest {
     }
 
     /**
-     * Reads the regtest configuration in-process with the same override passed to the node, and checks that
+     * Reads the regtest configuration in-process with the same overrides passed to the node, and checks that
      * RSKIP-692 is inactive at every height, so the assertions above exercise the pre-activation behavior.
      */
-    private static void assertRskip692InactiveOnRegtestWith(String overrideArg) {
-        ActivationConfig activationConfig = loadRegtestActivationConfig(overrideArg);
+    private static void assertRskip692InactiveOnRegtestWith(String... overrideArgs) {
+        ActivationConfig activationConfig = loadRegtestActivationConfig(overrideArgs);
 
         Assertions.assertFalse(activationConfig.isActive(ConsensusRule.RSKIP692, 0),
                 "This test requires RSKIP692 to be inactive at genesis");
