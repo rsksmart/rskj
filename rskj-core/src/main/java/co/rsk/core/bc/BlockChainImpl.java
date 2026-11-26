@@ -161,10 +161,10 @@ public class BlockChainImpl implements Blockchain {
                     String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(totalTime);
 
                     if (BlockUtils.tooMuchProcessTime(totalTime)) {
-                        logger.warn("block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, result);
+                        logger.warn("block: num: [{}] hash: [{}], processed after: [{}]seconds, gas used: {}, no txs: {}, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, block.getGasUsed(), block.getTransactionsList().size(), result);
                     }
                     else {
-                        logger.info("block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, result);
+                        logger.info("block: num: [{}] hash: [{}], processed after: [{}]seconds, gas used: {}, no txs: {}, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, block.getGasUsed(), block.getTransactionsList().size(), result);
                     }
 
                     return result;
