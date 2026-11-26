@@ -661,6 +661,43 @@ class TransactionPoolImplTest {
         Assertions.assertFalse(transactionPool.getPendingTransactions().stream().anyMatch(tx -> tx.getHash().equals(tx1.getHash())));
     }
 
+    // Nonce 0 has two RLP spellings, 0x80 and 0x00. A same-nonce replacement in the other spelling
+    // replaces the pending transaction, so the balance check must count only the replacement.
+    @Test
+    void zeroByteNonceReplacementOfCanonicalZeroNonce_isAccepted() {
+        createTestAccounts(2, costOfOneTransferAtGasPrice(2));
+        Transaction pending = createZeroNonceTransfer(1);
+        Transaction replacement = Transaction.fromRaw(withZeroNonceSpelledAsZeroByte(createZeroNonceTransfer(2).getEncoded()));
+
+        assertReplacesPendingTransaction(pending, replacement);
+    }
+
+    @Test
+    void canonicalZeroNonceReplacementOfZeroByteNonce_isAccepted() {
+        createTestAccounts(2, costOfOneTransferAtGasPrice(2));
+        Transaction pending = Transaction.fromRaw(withZeroNonceSpelledAsZeroByte(createZeroNonceTransfer(1).getEncoded()));
+        Transaction replacement = createZeroNonceTransfer(2);
+
+        assertReplacesPendingTransaction(pending, replacement);
+    }
+
+    @Test
+    void typedReplacementOfZeroByteNonce_isAccepted() {
+        createTestAccounts(2, costOfOneTransferAtGasPrice(2));
+        Transaction pending = Transaction.fromRaw(withZeroNonceSpelledAsZeroByte(createZeroNonceTransfer(1).getEncoded()));
+        Transaction replacement = new co.rsk.test.builders.TransactionBuilder()
+                .sender(createAccount(1))
+                .receiver(createAccount(2))
+                .nonce(0)
+                .value(BigInteger.valueOf(ZERO_NONCE_TRANSFER_VALUE))
+                .transactionType((byte) 0x02)
+                .maxFeePerGas(BigInteger.TWO)
+                .maxPriorityFeePerGas(BigInteger.TWO)
+                .build();
+
+        assertReplacesPendingTransaction(pending, replacement);
+    }
+
     @Test
     void checkTxWithHighGasLimitIsRejected() {
         Coin balance = Coin.valueOf(1000000);
@@ -899,6 +936,29 @@ class TransactionPoolImplTest {
         }
 
         Assertions.assertNotNull(signatureCache.getSender(tx));
+    }
+
+    private static final long ZERO_NONCE_TRANSFER_VALUE = 1000;
+    private static final long TRANSFER_GAS_LIMIT = 21000;
+
+    private static Transaction createZeroNonceTransfer(long gasPrice) {
+        return createSampleTransactionWithGasPrice(1, 2, ZERO_NONCE_TRANSFER_VALUE, 0, gasPrice);
+    }
+
+    // enough for one transfer at gasPrice, not for that transfer plus the one it replaces
+    private static Coin costOfOneTransferAtGasPrice(long gasPrice) {
+        return Coin.valueOf(ZERO_NONCE_TRANSFER_VALUE + gasPrice * TRANSFER_GAS_LIMIT);
+    }
+
+    private void assertReplacesPendingTransaction(Transaction pending, Transaction replacement) {
+        Assertions.assertTrue(transactionPool.addTransaction(pending).pendingTransactionsWereAdded());
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(replacement);
+
+        Assertions.assertTrue(result.pendingTransactionsWereAdded(), result.getErrorMessage());
+        List<Transaction> pendingTransactions = transactionPool.getPendingTransactions();
+        Assertions.assertEquals(1, pendingTransactions.size());
+        Assertions.assertEquals(replacement.getHash(), pendingTransactions.get(0).getHash());
     }
 
     private void createTestAccounts(int naccounts, Coin balance) {
