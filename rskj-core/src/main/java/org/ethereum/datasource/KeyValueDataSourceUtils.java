@@ -1,6 +1,7 @@
 package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
+import org.rocksdb.CompressionType;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
@@ -20,6 +21,14 @@ public class KeyValueDataSourceUtils {
 
     @Nonnull
     public static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+        return makeDataSource(datasourcePath, kind, CompressionType.NO_COMPRESSION);
+    }
+
+    @Nonnull
+    public static KeyValueDataSource makeDataSource(
+            @Nonnull Path datasourcePath,
+            @Nonnull DbKind kind,
+            @Nonnull CompressionType rocksDbCompressionType) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
 
@@ -29,7 +38,7 @@ public class KeyValueDataSourceUtils {
                 ds = new LevelDbDataSource(name, databaseDir);
                 break;
             case ROCKS_DB:
-                ds = new RocksDbDataSource(name, databaseDir);
+                ds = new RocksDbDataSource(name, databaseDir, rocksDbCompressionType);
                 break;
             default:
                 throw new IllegalArgumentException("kind");
@@ -41,15 +50,23 @@ public class KeyValueDataSourceUtils {
     }
 
     public static void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind kind) {
+        mergeDataSources(destinationPath, originPaths, kind, CompressionType.NO_COMPRESSION);
+    }
+
+    public static void mergeDataSources(
+            @Nonnull Path destinationPath,
+            @Nonnull List<Path> originPaths,
+            @Nonnull DbKind kind,
+            @Nonnull CompressionType rocksDbCompressionType) {
         Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
         for (Path originPath : originPaths) {
-            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, kind);
+            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, kind, rocksDbCompressionType);
             for (ByteArrayWrapper byteArrayWrapper : singleOriginDataSource.keys()) {
                 mergedStores.put(byteArrayWrapper, singleOriginDataSource.get(byteArrayWrapper.getData()));
             }
             singleOriginDataSource.close();
         }
-        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, kind);
+        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, kind, rocksDbCompressionType);
         destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
         destinationDataSource.close();
     }

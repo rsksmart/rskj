@@ -134,6 +134,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.rocksdb.CompressionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1247,7 +1248,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         Path blocksDbPath = Paths.get(databaseDir, "blocks");
         DbKind currentDbKind = getDbKind(databaseDir);
-        KeyValueDataSource blocksDB = KeyValueDataSourceUtils.makeDataSource(blocksDbPath, currentDbKind);
+        KeyValueDataSource blocksDB = KeyValueDataSourceUtils.makeDataSource(
+                blocksDbPath,
+                currentDbKind,
+                getRocksDbCompressionType()
+        );
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
     }
@@ -1366,7 +1371,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         int bloomsCacheSize = getRskSystemProperties().getBloomsCacheSize();
         Path bloomsStorePath = Paths.get(getRskSystemProperties().databaseDir(), "blooms");
         DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(bloomsStorePath, currentDbKind);
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(
+                bloomsStorePath,
+                currentDbKind,
+                getRocksDbCompressionType()
+        );
 
         if (bloomsCacheSize != 0) {
             CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistBloomsCacheSnapshot()
@@ -1449,7 +1458,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         int receiptsCacheSize = rskSystemProperties.getReceiptsCacheSize();
         Path receiptsDbPath = Paths.get(rskSystemProperties.databaseDir(), "receipts");
         DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(receiptsDbPath, currentDbKind);
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(
+                receiptsDbPath,
+                currentDbKind,
+                getRocksDbCompressionType()
+        );
 
         if (receiptsCacheSize != 0) {
             ds = new DataSourceWithCache(ds, receiptsCacheSize);
@@ -1491,7 +1504,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
         DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(trieStorePath, currentDbKind);
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(
+                trieStorePath,
+                currentDbKind,
+                getRocksDbCompressionType()
+        );
 
         if (statesCacheSize != 0) {
             CacheSnapshotHandler cacheSnapshotHandler = rskSystemProperties.shouldPersistStatesCacheSnapshot()
@@ -1522,7 +1539,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         int stateRootsCacheSize = rskSystemProperties.getStateRootsCacheSize();
         Path stateRootsDbPath = Paths.get(rskSystemProperties.databaseDir(), "stateRoots");
         DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
-        KeyValueDataSource stateRootsDB = KeyValueDataSourceUtils.makeDataSource(stateRootsDbPath, currentDbKind);
+        KeyValueDataSource stateRootsDB = KeyValueDataSourceUtils.makeDataSource(
+                stateRootsDbPath,
+                currentDbKind,
+                getRocksDbCompressionType()
+        );
 
         if (stateRootsCacheSize > 0) {
             stateRootsDB = new DataSourceWithCache(stateRootsDB, stateRootsCacheSize);
@@ -1580,7 +1601,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         Path walletDbPath = Paths.get(rskSystemProperties.databaseDir(), "wallet");
         DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(walletDbPath, currentDbKind);
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(
+                walletDbPath,
+                currentDbKind,
+                getRocksDbCompressionType()
+        );
 
         return new Wallet(ds);
     }
@@ -1598,6 +1623,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return this.blocksBloomDataSource;
+    }
+
+    private CompressionType getRocksDbCompressionType() {
+        return RocksDbDataSource.parseCompressionType(getRskSystemProperties().databaseRocksDbCompressionType());
     }
 
     private TrieStore buildAbstractTrieStore(Path databasePath) {
@@ -1621,7 +1650,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 boolean gcWasEnabled = !multiTrieStorePaths.isEmpty();
                 if (gcWasEnabled) {
                     DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
-                    KeyValueDataSourceUtils.mergeDataSources(trieStorePath, multiTrieStorePaths, currentDbKind);
+                    KeyValueDataSourceUtils.mergeDataSources(
+                            trieStorePath,
+                            multiTrieStorePaths,
+                            currentDbKind,
+                            getRocksDbCompressionType()
+                    );
                     // cleanup MultiTrieStore data sources
                     multiTrieStorePaths.stream()
                             .map(Path::toString)
