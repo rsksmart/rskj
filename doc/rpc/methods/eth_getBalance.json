@@ -44,7 +44,7 @@
     },
     {
       "name": "getBalanceAtBlockHashExample",
-      "description": "Referencing the block by hash instead of by tag, using the block reference object form. `requireCanonical` travels as the JSON string `\"true\"`, not as a boolean.",
+      "description": "Referencing the block by hash instead of by tag, using the block reference object form. This example sends `requireCanonical` as the JSON string `\"true\"`; a JSON boolean is accepted too.",
       "params": [
         {
           "name": "address",
