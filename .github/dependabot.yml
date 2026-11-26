@@ -37,3 +37,41 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+
+  - package-ecosystem: gradle
+    directory: "/"
+    target-branch: master
+    schedule:
+      interval: "weekly"
+    # Wait at least 10 days after a new version is released before opening a PR
+    cooldown:
+      default-days: 10
+    labels:
+      - "dependencies"
+      - "java"
+    # one PR per week that groups BOTH minor + patch updates
+    groups:
+      gradle-updates:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Wait at least 1 day after a security update is released before opening a PR
+    cooldown:
+      default-days: 1
+    labels:
+      - "dependencies"
+      - "java"
+      - "security"
+    # one PR that groups security updates
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
