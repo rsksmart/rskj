@@ -24,11 +24,10 @@ import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.core.UTXOProvider;
 import co.rsk.bitcoinj.core.UTXOProviderException;
 import java.util.List;
-import java.util.Objects;
 
 public class RskUTXOProvider implements UTXOProvider {
 
-    static final int BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM = Integer.MAX_VALUE;
+    protected static final int BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM = Integer.MAX_VALUE;
 
     private final NetworkParameters params;
     private final List<UTXO> utxos;
@@ -57,5 +56,4 @@ public class RskUTXOProvider implements UTXOProvider {
     public NetworkParameters getParams() {
         return params;
     }
-
 }

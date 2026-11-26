@@ -8100,7 +8100,6 @@ class BridgeSupportTest {
                 .withBridgeConstants(bridgeMainNetConstants)
                 .withRepository(repository)
                 .withProvider(bridgeStorageProvider)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withFederationSupport(federationSupport)
                 .withFeePerKbSupport(feePerKbSupport)
                 .withEventLogger(bridgeEventLogger)

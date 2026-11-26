@@ -802,7 +802,7 @@ public class BridgeSupportIT {
             bridgeUtilsMocked.when(() -> BridgeUtils.getFederationSpendWallet(
                 any(Context.class),
                 any(Federation.class),
-                any(List.class),
+                any(RskUTXOProvider.class),
                 anyBoolean(),
                 any()
             )).thenReturn(mock(Wallet.class));
@@ -3308,7 +3308,7 @@ public class BridgeSupportIT {
             bridgeUtilsMocked.when(() -> BridgeUtils.getFederationSpendWallet(any(), any(), any(), anyBoolean(), any())).then((InvocationOnMock m) -> {
                 assertEquals(m.<Context>getArgument(0), expectedContext);
                 assertEquals(m.<Federation>getArgument(1), expectedFederation);
-                assertEquals(m.getArgument(2), expectedUtxos);
+                assertEquals(expectedUtxos, m.<RskUTXOProvider>getArgument(2).getOpenTransactionOutputs(List.of()));
                 return expectedWallet;
             });
 
@@ -3366,7 +3366,7 @@ public class BridgeSupportIT {
             bridgeUtilsMocked.when(() -> BridgeUtils.getFederationSpendWallet(any(), any(), any(), anyBoolean(), any())).then((InvocationOnMock m) -> {
                 assertEquals(m.<Context>getArgument(0), expectedContext);
                 assertEquals(m.<Federation>getArgument(1), expectedFederation);
-                assertEquals(m.getArgument(2), expectedUtxos);
+                assertEquals(expectedUtxos, m.<RskUTXOProvider>getArgument(2).getOpenTransactionOutputs(List.of()));
                 return expectedWallet;
             });
 

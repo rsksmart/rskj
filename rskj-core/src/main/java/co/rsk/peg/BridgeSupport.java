@@ -268,6 +268,27 @@ public class BridgeSupport {
             && !activations.isActive(ConsensusRule.RSKIP434);
     }
 
+    private RskUTXOProvider createUtxoProviderForSpendWallets(List<UTXO> utxos) {
+        return new RskUTXOProvider(btcContext.getParams(), utxos, getBtcChainHeadHeightForSpendWallets());
+    }
+
+    /**
+     * The BTC chain head height that spend wallets use to compute the depth of UTXOs.
+     * From RSKIP643 on, UTXOs keep the height of the BTC block that created them, so the
+     * real chain head is used. Before the activation the BTC block store must not be read here.
+     */
+    private int getBtcChainHeadHeightForSpendWallets() {
+        if (!activations.isActive(RSKIP643)) {
+            return RskUTXOProvider.BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM;
+        }
+
+        try {
+            return getBtcBlockchainBestChainHeight();
+        } catch (IOException | BlockStoreException e) {
+            throw new IllegalStateException("Could not get the BTC chain head height", e);
+        }
+    }
+
     /**
      * Get the wallet for the currently active federation
      * @return A BTC wallet for the currently active federation
@@ -281,7 +302,7 @@ public class BridgeSupport {
         return getFederationSpendWallet(
             btcContext,
             federation,
-            utxos,
+            createUtxoProviderForSpendWallets(utxos),
             shouldConsiderFlyoverUTXOs,
             provider
         );
@@ -316,7 +337,7 @@ public class BridgeSupport {
         Wallet federationWallet = getFederationSpendWallet(
             btcContext,
             federation.get(),
-            utxos,
+            createUtxoProviderForSpendWallets(utxos),
             shouldConsiderFlyoverUTXOs,
             provider
         );
@@ -334,7 +355,7 @@ public class BridgeSupport {
         return getFederationsSpendWallet(
             btcContext,
             federationSupport.getLiveFederations(),
-            utxos,
+            createUtxoProviderForSpendWallets(utxos),
             isFlyoverCompatible,
             provider
         );
@@ -3259,8 +3280,7 @@ public class BridgeSupport {
             federationSupport.getLiveFederations(),
             fbFederations
         );
-        RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
-        wallet.setUTXOProvider(utxoProvider);
+        wallet.setUTXOProvider(createUtxoProviderForSpendWallets(utxos));
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
 
         return wallet;

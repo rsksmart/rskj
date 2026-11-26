@@ -532,7 +532,7 @@ class ReleaseTransactionBuilderTest {
             Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
                 BTC_MAINNET_CONTEXT,
                 activeFederation,
-                utxos,
+                new RskUTXOProvider(BTC_MAINNET_CONTEXT.getParams(), utxos, RskUTXOProvider.BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM),
                 true,
                 bridgeStorageProvider
             );
@@ -956,7 +956,7 @@ class ReleaseTransactionBuilderTest {
             Wallet spendWallet = BridgeUtils.getFederationSpendWallet(
                 BTC_MAINNET_CONTEXT,
                 nonStandardErpFederation,
-                utxos,
+                new RskUTXOProvider(BTC_MAINNET_CONTEXT.getParams(), utxos, RskUTXOProvider.BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM),
                 false,
                 mock(BridgeStorageProvider.class)
             );
@@ -985,7 +985,7 @@ class ReleaseTransactionBuilderTest {
             wallet = BridgeUtils.getFederationSpendWallet(
                 BTC_MAINNET_CONTEXT,
                 federation,
-                federationUTXOs,
+                new RskUTXOProvider(BTC_MAINNET_CONTEXT.getParams(), federationUTXOs, RskUTXOProvider.BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM),
                 true,
                 bridgeStorageProvider
             );
@@ -1692,7 +1692,7 @@ class ReleaseTransactionBuilderTest {
             wallet = BridgeUtils.getFederationSpendWallet(
                 BTC_MAINNET_CONTEXT,
                 federation,
-                utxos,
+                new RskUTXOProvider(BTC_MAINNET_CONTEXT.getParams(), utxos, RskUTXOProvider.BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM),
                 true,
                 bridgeStorageProvider
             );
@@ -2965,7 +2965,7 @@ class ReleaseTransactionBuilderTest {
             wallet = BridgeUtils.getFederationSpendWallet(
                 BTC_MAINNET_CONTEXT,
                 retiringFederation,
-                utxos,
+                new RskUTXOProvider(BTC_MAINNET_CONTEXT.getParams(), utxos, RskUTXOProvider.BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM),
                 true,
                 bridgeStorageProvider
             );
@@ -3833,7 +3833,7 @@ class ReleaseTransactionBuilderTest {
             wallet = BridgeUtils.getFederationSpendWallet(
                 BTC_MAINNET_CONTEXT,
                 federation,
-                utxos,
+                new RskUTXOProvider(BTC_MAINNET_CONTEXT.getParams(), utxos, RskUTXOProvider.BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM),
                 true,
                 bridgeStorageProvider
             );
