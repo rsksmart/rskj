@@ -106,4 +106,10 @@ public class RemascTransaction extends Transaction {
         return true;
     }
 
+    @Override
+    public boolean hasAcceptableSignatureComponents() {
+        // RemascTransaction is not signed, so it has no signature components to check
+        return true;
+    }
+
 }
