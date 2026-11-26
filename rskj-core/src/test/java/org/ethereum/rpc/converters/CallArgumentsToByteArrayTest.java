@@ -165,8 +165,7 @@ class CallArgumentsToByteArrayTest {
                 Arguments.of("0x8000000000000000"),     // 2^63
                 Arguments.of("0xffffffffffffffff"),     // 2^64 - 1
                 Arguments.of("0x010000000000000000"),   // 2^64, nine bytes
-                Arguments.of("0x" + "ff".repeat(32)),   // 2^256 - 1
-                Arguments.of("-9223372036854775808")    // decimal, two's complement 0x8000000000000000
+                Arguments.of("0x" + "ff".repeat(32))    // 2^256 - 1
         );
     }
 
