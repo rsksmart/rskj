@@ -23,7 +23,8 @@ import org.bouncycastle.util.encoders.Hex;
  * Hand-assembled RLP encodings of regtest legacy transactions whose r or s is zero. RLP writes zero as the
  * empty item {@code 0x80}.
  *
- * <p>Every encoding is a 35-byte list ({@code 0xe3}) of: nonce 1 ({@code 01}), gas price 1 gwei
+ * <p>The {@code ZERO_R}, {@code ZERO_S} and {@code ZERO_R_AND_S} encodings are each a list with a 35-byte payload
+ * ({@code 0xe3}) of: nonce 1 ({@code 01}), gas price 1 gwei
  * ({@code 843b9aca00}), gas limit 21000 ({@code 825208}), destination 0x...1234, value 1 ({@code 01}), empty data
  * ({@code 80}), v = 101 ({@code 65}, chain id 33 per EIP-155), then r and s.
  */
@@ -41,6 +42,15 @@ public final class ZeroSignatureComponentTransactions {
     /** r and s are both the empty item (zero). */
     public static final String ZERO_R_AND_S_HEX = FIELDS_UP_TO_V + "80" + "80";
 
+    /**
+     * Last-position shape of a REMASC transaction: a list with a 29-byte payload ({@code 0xdd}) of empty nonce,
+     * gas price and gas limit, destination REMASC ({@code 0x...01000008}), empty value and data, but signed with
+     * v = 101 ({@code 65}), an empty r (zero) and s = 1. Because it carries a signature, it is not a REMASC
+     * transaction.
+     */
+    public static final String ZERO_R_TO_REMASC_HEX =
+            "dd" + "80" + "80" + "80" + "940000000000000000000000000000000001000008" + "80" + "80" + "65" + "80" + "01";
+
     private ZeroSignatureComponentTransactions() {
     }
 
@@ -50,5 +60,9 @@ public final class ZeroSignatureComponentTransactions {
 
     public static byte[] zeroS() {
         return Hex.decode(ZERO_S_HEX);
+    }
+
+    public static byte[] zeroRToRemasc() {
+        return Hex.decode(ZERO_R_TO_REMASC_HEX);
     }
 }

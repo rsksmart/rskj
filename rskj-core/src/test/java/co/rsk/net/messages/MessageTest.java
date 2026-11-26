@@ -601,9 +601,8 @@ class MessageTest {
         Transaction goodTx = createTransaction(1);
         byte[] zeroRTx = ZeroSignatureComponentTransactions.zeroR();
         byte[] zeroSTx = ZeroSignatureComponentTransactions.zeroS();
-        // Last in the body and addressed to REMASC (0x...01000008) with empty nonce, gas price, gas limit,
-        // value and data, but signed with v = 0x65, an empty r and s = 1, so it is not a REMASC transaction
-        byte[] zeroRToRemascTx = Hex.decode("dd8080809400000000000000000000000000000000010000088080658001");
+        // Last in the body, in the position of a REMASC transaction, but signed, so it is not one
+        byte[] zeroRToRemascTx = ZeroSignatureComponentTransactions.zeroRToRemasc();
         byte[] wireMessage = RLP.encodeList(
                 RLP.encodeByte(MessageType.BODY_RESPONSE_MESSAGE.getTypeAsByte()),
                 RLP.encodeElement(RLP.encodeList(
