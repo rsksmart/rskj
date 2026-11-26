@@ -56,7 +56,7 @@ Every build job uses JDK 17 and the in-repo Gradle wrapper 8.6. Workflows live i
 - `docker-verification.yml` — triggers when `Dockerfile` or this workflow changes; builds and starts the container. The `docker` job is guarded by `github.event.pull_request.head.repo.fork == false`, so PRs originating from forks skip this gate entirely.
 - `dependency-review.yml` — blocks on high-severity advisories in newly added dependencies.
 
-**Informational** (do not gate merges): `fuzz-test.yml` (Jazzer-based fuzzing on `master`/release branches), `docker-release-master-to-edge.yml`, `docker-release-tags-to-latest.yml`, `devportal-update.yml`, `scorecard.yml`.
+**Informational** (do not gate merges): `fuzz-test.yml` (Jazzer-based fuzzing on `master`/release branches), `docker-release-master-to-edge.yml`, `docker-release-tags-to-latest.yml`, `devportal-update.yml`, `scorecard.yml`, `gradle-dependency-graph.yml` (on push to `master`/`*-rc`, submits the Gradle runtime dependency graph after `./configure.sh`; GitHub's automatic dependency submission cannot fetch the wrapper jar, so it stays off).
 
 ## Build and test commands
 
