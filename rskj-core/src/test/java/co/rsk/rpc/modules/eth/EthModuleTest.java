@@ -61,6 +61,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
@@ -2083,6 +2085,89 @@ class EthModuleTest {
 
         verify(executor, never()).executeTransactionAtBlock(any(), any(), any());
         verify(executor, never()).executeTransactionOnSnapshot(any(), any(), any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "call, yParity, 0x100, Authorization y_parity must fit in a single byte at index 0",
+            "call, nonce, 0x010000000000000000, Authorization nonce must be less than 2^64 at index 0",
+            "call, chainId, -1, Authorization list entry chainId must not be negative at index 0",
+            "call, nonce, -1, Authorization list entry nonce must not be negative at index 0",
+            "estimateGas, yParity, 0x100, Authorization y_parity must fit in a single byte at index 0",
+            "estimateGas, nonce, 0x010000000000000000, Authorization nonce must be less than 2^64 at index 0",
+            "estimateGas, chainId, -1, Authorization list entry chainId must not be negative at index 0",
+            "estimateGas, nonce, -1, Authorization list entry nonce must not be negative at index 0",
+    })
+    void callAndEstimateGas_invalidAuthorizationEntry_throwsInvalidParams(
+            String method, String field, String value, String expectedMessage) {
+        CallArguments args = Rskip545TestSupport.defaultType4CallArguments(new byte[0]);
+        args.setFrom(TestUtils.generateAddress("from").toJsonString());
+        args.setAuthorizationList(List.of(authorizationEntryWith(field, value)));
+
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        when(blockResult.getBlock()).thenReturn(block);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        when(repositoryLocator.snapshotAt(any())).thenReturn(mock(RepositorySnapshot.class));
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
+        EthModule eth = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                mock(Blockchain.class),
+                null,
+                executor,
+                retriever,
+                repositoryLocator,
+                null,
+                null,
+                bridgeSupportFactory,
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
+                false,
+                null);
+        CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            if ("call".equals(method)) {
+                eth.call(argsParam, latest);
+            } else {
+                eth.estimateGas(argsParam, latest);
+            }
+        });
+
+        assertEquals(-32602, exception.getCode());
+        assertEquals(expectedMessage, exception.getMessage());
+        verifyNoInteractions(executor);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "yParity, 0x100, Authorization y_parity must fit in a single byte at index 0",
+            "chainId, -1, Authorization list entry chainId must not be negative at index 0",
+            "nonce, -1, Authorization list entry nonce must not be negative at index 0",
+    })
+    void sendTransaction_invalidAuthorizationEntry_throwsInvalidParams(String field, String value, String expectedMessage) {
+        CallArguments.AuthorizationListEntry entry = authorizationEntryWith(field, value);
+
+        assertSendTransactionInvalidParams("0x4", args -> args.setAuthorizationList(List.of(entry)), expectedMessage);
+    }
+
+    private static CallArguments.AuthorizationListEntry authorizationEntryWith(String field, String value) {
+        CallArguments.AuthorizationListEntry entry = Rskip545TestSupport.defaultType4AuthorizationEntry();
+        switch (field) {
+            case "chainId" -> entry.setChainId(value);
+            case "nonce" -> entry.setNonce(value);
+            case "yParity" -> entry.setYParity(value);
+            default -> throw new IllegalArgumentException(field);
+        }
+        return entry;
     }
 
     @Test

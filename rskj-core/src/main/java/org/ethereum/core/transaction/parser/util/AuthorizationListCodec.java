@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
@@ -80,7 +81,11 @@ public final class AuthorizationListCodec {
         }
         List<SetCodeAuthorization> result = new ArrayList<>(entries.size());
         for (int i = 0; i < entries.size(); i++) {
-            result.add(parseCallArgumentsEntry(entries.get(i), i));
+            try {
+                result.add(parseCallArgumentsEntry(entries.get(i), i));
+            } catch (IllegalArgumentException e) {
+                throw invalidParamError(Objects.toString(e.getMessage(), "Authorization list entry is not valid") + " at index " + i, e);
+            }
         }
         return Collections.unmodifiableList(result);
     }
@@ -211,12 +216,20 @@ public final class AuthorizationListCodec {
 
     /** Decodes an RPC hex or decimal quantity, reporting either malformed form as an invalid parameter. */
     private static byte[] decodeQuantity(String value, String fieldName, int index) {
+        BigInteger number;
         try {
-            return HexUtils.strHexOrStrNumberToByteArray(value);
+            if (HexUtils.hasHexPrefix(value)) {
+                return HexUtils.stringHexToByteArray(value);
+            }
+            number = HexUtils.strNumberToBigInteger(value);
         } catch (DecoderException | RskJsonRpcRequestException e) {
             throw invalidParamError(
                     "Authorization list entry " + fieldName + " must be a hex or decimal quantity at index " + index);
         }
+        if (number.signum() < 0) {
+            throw invalidParamError("Authorization list entry " + fieldName + " must not be negative at index " + index);
+        }
+        return ByteUtil.bigIntegerToBytes(number);
     }
 
     /**

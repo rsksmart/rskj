@@ -170,6 +170,18 @@ class HexUtilsTest {
     }
 
     @Test
+    void test_strNumberToBigInteger_keepsTheSign() {
+        Assertions.assertEquals(BigInteger.valueOf(1000), HexUtils.strNumberToBigInteger("1000"));
+        Assertions.assertEquals(BigInteger.valueOf(-1), HexUtils.strNumberToBigInteger("-1"));
+    }
+
+    @Test
+    void test_strNumberToBigInteger_rejectsHexAndLetters() {
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> HexUtils.strNumberToBigInteger("0x20"));
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> HexUtils.strNumberToBigInteger("2b0"));
+    }
+
+    @Test
     void test_hasHexPrefix() {
 
         String hexNumberWithPrefix = "0x64";

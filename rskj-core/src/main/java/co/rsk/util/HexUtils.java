@@ -103,9 +103,15 @@ public class HexUtils {
             return stringHexToByteArray(strHexOrStrNumber);
         }
 
+        return ByteUtil.bigIntegerToBytes(strNumberToBigInteger(strHexOrStrNumber));
+    }
+
+    /**
+     * Convert integer in string format to BigInteger
+     */
+    public static BigInteger strNumberToBigInteger(String strNumber) {
         try {
-            BigInteger number = new BigInteger(strHexOrStrNumber);
-            return ByteUtil.bigIntegerToBytes(number);
+            return new BigInteger(strNumber);
         } catch (Exception e) {
             throw invalidParamError(NUMBER_VALUE_ERROR);
         }
@@ -124,11 +130,7 @@ public class HexUtils {
             return stringHexToBigInteger(strHexOrStrNumber);
         }
 
-        try {
-            return new BigInteger(strHexOrStrNumber);
-        } catch (Exception e) {
-            throw invalidParamError(NUMBER_VALUE_ERROR);
-        }
+        return strNumberToBigInteger(strHexOrStrNumber);
     }
     
     /**
