@@ -42,6 +42,20 @@ public class BlockResult {
             null
     );
 
+    /**
+     * The block created native currency out of nothing and must be rejected. Distinct from
+     * {@link #INTERRUPTED_EXECUTION_BLOCK_RESULT} only so that the rejection reason is reported
+     * accurately; both invalidate the block.
+     */
+    public static final BlockResult SUPPLY_VIOLATION_BLOCK_RESULT = new BlockResult(
+            null,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            new short[0], 0,
+            Coin.ZERO,
+            null
+    );
+
     private final Block block;
     private final List<Transaction> executedTransactions;
     private final List<TransactionReceipt> transactionReceipts;

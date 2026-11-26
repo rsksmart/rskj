@@ -26,6 +26,8 @@ import co.rsk.trie.Trie;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.Set;
 
 public interface Repository extends RepositorySnapshot, TransientRepository {
     Trie getTrie();
@@ -138,6 +140,19 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
     void save();
 
     void updateAccountState(RskAddress addr, AccountState accountState);
+
+    /**
+     * The accounts whose state this repository has written since it was started.
+     *
+     * Used to compute the supply delta of a scope: only modified accounts are considered, because
+     * an account that was merely read has not changed and including it would report a change that
+     * did not occur.
+     *
+     * Implementations that do not track writes return an empty set.
+     */
+    default Set<RskAddress> getModifiedAccounts() {
+        return Collections.emptySet();
+    }
 
     default void transfer(RskAddress fromAddr, RskAddress toAddr, Coin value) {
         addBalance(fromAddr, value.negate());

@@ -44,10 +44,12 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
@@ -59,6 +61,25 @@ public class MutableRepository implements Repository {
     private final MutableTrie mutableTrie;
     private MutableTrie transientTrie;
     private final IReadWrittenKeysTracker tracker;
+
+    /**
+     * Accounts whose state this repository has written, identified by address rather than by trie
+     * key. Supply conservation needs the set of accounts a scope modified, and a trie key cannot be
+     * inverted back to an address reliably: the REMASC sender encodes as a single zero byte, so its
+     * account key is shorter than an ordinary one and gets zero-padded by the cache.
+     *
+     * Only writes populate this set; reads do not. Accounts that were merely read must be excluded,
+     * or every ordinary block would report changes that did not occur.
+     */
+    private final Set<RskAddress> modifiedAccounts = ConcurrentHashMap.newKeySet();
+
+    /**
+     * The repository this one was started from, or null if this is a root repository. On commit the
+     * modified accounts are propagated upwards, so a block-level repository ends up holding the
+     * union of what every transaction below it touched.
+     */
+    @Nullable
+    private final MutableRepository parentRepository;
 
     public MutableRepository(TrieStore trieStore, Trie trie) {
         this(new MutableTrieImpl(trieStore, trie), aInMemoryMutableTrie());
@@ -77,17 +98,23 @@ public class MutableRepository implements Repository {
     }
 
     public MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie) {
-        this.trieKeyMapper = new TrieKeyMapper();
-        this.mutableTrie = mutableTrie;
-        this.transientTrie = transientTrie;
-        this.tracker = new DummyReadWrittenKeysTracker();
+        this(mutableTrie, transientTrie, new DummyReadWrittenKeysTracker(), null);
     }
 
     public MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie, IReadWrittenKeysTracker tracker) {
+        this(mutableTrie, transientTrie, tracker, null);
+    }
+
+    private MutableRepository(
+            MutableTrie mutableTrie,
+            MutableTrie transientTrie,
+            IReadWrittenKeysTracker tracker,
+            @Nullable MutableRepository parentRepository) {
         this.trieKeyMapper = new TrieKeyMapper();
         this.mutableTrie = mutableTrie;
         this.transientTrie = transientTrie;
         this.tracker = tracker;
+        this.parentRepository = parentRepository;
     }
 
     @Override
@@ -131,6 +158,7 @@ public class MutableRepository implements Repository {
     public synchronized void delete(RskAddress addr) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
         tracker.addNewWrittenKey(new ByteArrayWrapper(accountKey));
+        modifiedAccounts.add(addr);
         mutableTrie.deleteRecursive(accountKey);
     }
 
@@ -332,6 +360,11 @@ public class MutableRepository implements Repository {
     }
 
     @Override
+    public Set<RskAddress> getModifiedAccounts() {
+        return Collections.unmodifiableSet(modifiedAccounts);
+    }
+
+    @Override
     public synchronized Set<RskAddress> getAccountsKeys() {
         Set<RskAddress> result = new HashSet<>();
         //TODO(diegoll): this is needed when trie is a MutableTrieCache, check if makes sense to commit here
@@ -352,7 +385,7 @@ public class MutableRepository implements Repository {
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
     @Override
     public synchronized Repository startTracking() {
-        return new MutableRepository(new MutableTrieCache(mutableTrie), new MutableTrieCache(transientTrie), tracker);
+        return new MutableRepository(new MutableTrieCache(mutableTrie), new MutableTrieCache(transientTrie), tracker, this);
     }
 
     @Override
@@ -364,12 +397,16 @@ public class MutableRepository implements Repository {
     public synchronized void commit() {
         mutableTrie.commit();
         transientTrie.commit();
+        if (parentRepository != null) {
+            parentRepository.modifiedAccounts.addAll(modifiedAccounts);
+        }
     }
 
     @Override
     public synchronized void rollback() {
         mutableTrie.rollback();
         transientTrie.rollback();
+        modifiedAccounts.clear();
     }
 
     @Override
@@ -384,6 +421,9 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
+        // Every balance change funnels through here: addBalance, createAccount, hibernate,
+        // setNonce and increaseNonce all end up calling this method.
+        modifiedAccounts.add(addr);
         internalPut(accountKey, accountState.getEncoded());
     }
 
