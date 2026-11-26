@@ -20,10 +20,14 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -52,6 +56,18 @@ class BlockBodyCodecTest {
 
         assertEquals(1, decoded.size());
         assertInstanceOf(RemascTransaction.class, decoded.get(0));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"80,80,80", "80,80,00", "80,00,80", "80,00,00", "00,80,80", "00,80,00", "00,00,80", "00,00,00"})
+    void decodeTransactions_remascWithGasLimitEncodedEmpty_isRejected(String gasPrice, String value, String rs) {
+        byte[] control = remascShaped(gasPrice, "00", value, rs);
+        byte[] emptyGasLimit = remascShaped(gasPrice, "80", value, rs);
+
+        assertInstanceOf(RemascTransaction.class,
+                BlockBodyCodec.decodeTransactions(RLP.decodeList(RLP.encodeList(control))).get(0));
+        assertThrows(IllegalArgumentException.class,
+                () -> BlockBodyCodec.decodeTransactions(RLP.decodeList(RLP.encodeList(emptyGasLimit))));
     }
 
     @Test
@@ -85,6 +101,12 @@ class BlockBodyCodecTest {
                 () -> BlockBodyCodec.validateRemascIsLegacy(typedTx)
         );
         assertTrue(ex.getMessage().contains("Remasc transaction must be legacy"));
+    }
+
+    static byte[] remascShaped(String gasPrice, String gasLimit, String value, String rs) {
+        return RLP.encodeList(Hex.decode("80"), Hex.decode(gasPrice), Hex.decode(gasLimit),
+                RLP.encodeElement(PrecompiledContracts.REMASC_ADDR.getBytes()), Hex.decode(value),
+                Hex.decode("80"), Hex.decode("80"), Hex.decode(rs), Hex.decode(rs));
     }
 
     private static Transaction buildSignedType1() {

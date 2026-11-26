@@ -17,8 +17,8 @@
  */
 package org.ethereum.core;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.Constants;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.Secp256k1;
@@ -26,13 +26,15 @@ import org.ethereum.vm.GasCost;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.util.Arrays;
 
 
 public class SetCodeAuthorizationTransactionExecutor {
 
     public static final byte[] CODE_FOR_CLEANING_DELEGATED_ADDRESS = new byte[0];
+    private static final BigInteger UNIVERSAL_CHAIN_ID = BigInteger.ZERO;
 
+    // Precondition: this method must only be called when RSKIP545 is active. Today that's enforced
+    // by TransactionExecutor.init() rejecting Type-4 txs before this method's only caller can run.
     public long processAuthorizationTuple(Repository repository, BigInteger outerTransactionChainId, SetCodeAuthorization authorization) {
         verifyChainId(authorization.getChainId(), outerTransactionChainId);
         authorization.verifyNonceRange();
@@ -40,12 +42,12 @@ public class SetCodeAuthorizationTransactionExecutor {
         RskAddress authority = checkRecoveredAuthority(authorization);
 
         byte[] code = repository.getCode(authority);
-        byte[] currentNonce  = repository.getNonce(authority).toByteArray();
+        BigInteger currentNonce  = repository.getNonce(authority);
 
         verifyAuthorityCode(code);
-        verifyAuthorityNonce(authorization.getNonce(), currentNonce);
+        verifyAuthorityNonce(authorization.getNonceAsInteger(), currentNonce);
 
-        long refund = calculateRefund(code);
+        long refund = calculateRefund(code, currentNonce, repository.getBalance(authority));
 
         writeDelegation(authority, authorization.getAddress(), repository);
 
@@ -55,18 +57,14 @@ public class SetCodeAuthorizationTransactionExecutor {
     }
 
     private void verifyChainId(BigInteger chainId, BigInteger outerTransactionChainId) {
-        final BigInteger UNIVERSAL_CHAIN_ID = BigInteger.ZERO;
-        boolean valid = chainId.equals(UNIVERSAL_CHAIN_ID) || chainId.equals(BigInteger.valueOf(Constants.MAINNET_CHAIN_ID)) || chainId.equals(BigInteger.valueOf(Constants.TESTNET_CHAIN_ID)) || chainId.equals(BigInteger.valueOf(Constants.REGTEST_CHAIN_ID));
-        if (!valid) {
-            throw new IllegalStateException("Invalid chain ID");
-        }
-
         if (!chainId.equals(UNIVERSAL_CHAIN_ID) && !chainId.equals(outerTransactionChainId)) {
             throw new IllegalStateException("Chain ID mismatch");
         }
     }
 
     private RskAddress checkRecoveredAuthority(SetCodeAuthorization setCodeAuthorization) {
+        setCodeAuthorization.verifyYParity();
+        setCodeAuthorization.verifySignatureComponents();
         setCodeAuthorization.verifyLowS();
 
         byte[] messageHash =  setCodeAuthorization.getSigningHash();
@@ -75,7 +73,8 @@ public class SetCodeAuthorizationTransactionExecutor {
         try {
             key = Secp256k1.getInstance().signatureToKey(messageHash, setCodeAuthorization.getSignature());
 
-        } catch (SignatureException e) {
+        } catch (SignatureException | IllegalArgumentException e) {
+            // Bouncy Castle reports an r that is not a curve x coordinate as IllegalArgumentException.
             throw new IllegalStateException("Signature recovery failed", e);
         }
 
@@ -85,7 +84,7 @@ public class SetCodeAuthorizationTransactionExecutor {
 
         RskAddress authority = new RskAddress(key.getAddress());
 
-        if (authority.equals(RskAddress.nullAddress())) {
+        if (RskAddress.nullAddress().equals(authority) || RskAddress.ZERO_ADDRESS.equals(authority)) {
             throw new IllegalStateException("Recovered authority is zero address");
         }
 
@@ -103,14 +102,15 @@ public class SetCodeAuthorizationTransactionExecutor {
     }
 
 
-    private void verifyAuthorityNonce(byte[] expectedNonce, byte[] currentNonce) {
-        if (!Arrays.equals(currentNonce, expectedNonce)) {
+    private void verifyAuthorityNonce(BigInteger expectedNonce, BigInteger currentNonce) {
+        if (!currentNonce.equals(expectedNonce)) {
             throw new IllegalStateException("Authority nonce mismatch");
         }
     }
 
-    private long calculateRefund(byte[] code) {
-        boolean isEmpty = code == null || code.length == 0;
+    private long calculateRefund(byte[] code, BigInteger nonce, Coin balance) {
+        boolean hasCode = code != null && code.length > 0;
+        boolean isEmpty = !hasCode && nonce.signum() == 0 && balance.equals(Coin.ZERO);
         return isEmpty ? 0L : GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST;
     }
 
@@ -121,6 +121,8 @@ public class SetCodeAuthorizationTransactionExecutor {
         }
         byte[] codeToSet = DelegationCodeResolver.createDelegatedCode(delegatedAddress);
         repository.saveCode(authority, codeToSet);
+        repository.initializeStorage(authority);
+        repository.setDelegationAuthority(authority);
     }
 
 }

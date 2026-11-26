@@ -17,13 +17,20 @@
  */
 package co.rsk.rpc.netty;
 
+import co.rsk.core.RskAddress;
+import co.rsk.core.Wallet;
+import co.rsk.net.TransactionGateway;
 import co.rsk.rpc.Web3EthModule;
+import co.rsk.rpc.modules.eth.EthModuleTransactionBase;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.AnnotationsErrorResolver;
 import com.googlecode.jsonrpc4j.DefaultErrorResolver;
 import com.googlecode.jsonrpc4j.JsonResponse;
 import com.googlecode.jsonrpc4j.MultipleErrorResolver;
+import org.ethereum.config.Constants;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskErrorResolver;
@@ -36,6 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JsonRPCParamValidationTest {
@@ -48,6 +57,71 @@ class JsonRPCParamValidationTest {
         handler = mock(Web3EthModule.class);
         this.jsonRpcServer = new JsonRpcCustomServer(handler, handler.getClass(), Collections.emptyList(), objectMapper);
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
+    }
+
+    @Test
+    void eth_sendTransaction_accessListAddressNotHex_returnsInvalidParams() throws Exception {
+        JsonResponse response = sendTransaction("""
+                "type": "0x1",
+                "accessList": [{"address": "0xzz%s", "storageKeys": []}]
+                """.formatted("00".repeat(19)));
+
+        assertEquals(-32602, response.getCode());
+        assertEquals("Access list entry address must be a 20-byte hex value at index 0",
+                response.getResponse().get("error").get("message").asText());
+    }
+
+    @Test
+    void eth_sendTransaction_authorizationListRNotHex_returnsInvalidParams() throws Exception {
+        JsonResponse response = sendTransaction("""
+                "type": "0x4",
+                "authorizationList": [{
+                    "chainId": "0x21",
+                    "address": "0x%s",
+                    "nonce": "0x0",
+                    "yParity": "0x0",
+                    "r": "0xzz",
+                    "s": "0x1"
+                }]
+                """.formatted("11".repeat(20)));
+
+        assertEquals(-32602, response.getCode());
+        assertEquals("Authorization list entry r must be hex at index 0",
+                response.getResponse().get("error").get("message").asText());
+    }
+
+    /** Sends a raw eth_sendTransaction request from a wallet account, with {@code typedFields} added to its arguments. */
+    private JsonResponse sendTransaction(String typedFields) throws Exception {
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
+                Constants.regtest(), wallet, mock(TransactionPool.class), transactionGateway);
+        when(handler.eth_sendTransaction(any())).thenAnswer(
+                invocation -> ethModuleTransaction.sendTransaction(invocation.getArgument(0)));
+
+        String requestBody = """
+                {
+                    "jsonrpc": "2.0",
+                    "method": "eth_sendTransaction",
+                    "params": [{
+                        "from": "%s",
+                        "to": "%s",
+                        "gas": "0x76c0",
+                        "gasPrice": "0x9184e72a000",
+                        "value": "0x186a0",
+                        "nonce": "0x1",
+                        "chainId": "0x21",
+                        %s
+                    }],
+                    "id": 1
+                }
+                """.formatted(sender.toJsonString(), receiver.toJsonString(), typedFields);
+
+        JsonResponse response = jsonRpcServer.handleJsonNodeRequest(objectMapper.readTree(requestBody));
+        verify(transactionGateway, never()).receiveTransaction(any());
+        return response;
     }
 
     @Test

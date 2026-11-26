@@ -43,6 +43,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -152,8 +153,11 @@ public class MinerUtils {
         return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, signatureCache, txsToRemove);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, SignatureCache signatureCache) {
+    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, RepositorySnapshot originalRepo, Coin minGasPrice, ActivationConfig.ForBlock activations, SignatureCache signatureCache) {
+        boolean isRskip252Enabled = activations.isActive(ConsensusRule.RSKIP252);
+        boolean isRskip545Enabled = activations.isActive(ConsensusRule.RSKIP545);
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
+        Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
                 Keccak256 hash = tx.getHash();
@@ -161,14 +165,6 @@ public class MinerUtils {
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
                 RskAddress txSender = tx.getSender(signatureCache);
                 logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
-
-                BigInteger expectedNonce;
-
-                if (accountNonces.containsKey(txSender)) {
-                    expectedNonce = accountNonces.get(txSender).add(BigInteger.ONE);
-                } else {
-                    expectedNonce = originalRepo.getNonce(txSender);
-                }
 
                 if (isLowGasPriced(minGasPrice, tx)) {
                     txsToRemove.add(tx);
@@ -182,12 +178,9 @@ public class MinerUtils {
                     continue;
                 }
 
-                if (!expectedNonce.equals(txNonce)) {
-                    logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hash);
+                if (!isRskip545Enabled && !tryAdvanceNonce(hash, txSender, txNonce, accountNonces, originalRepo)) {
                     continue;
                 }
-
-                accountNonces.put(txSender, txNonce);
 
                 logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
             } catch (Exception e) {
@@ -203,6 +196,17 @@ public class MinerUtils {
         logger.debug("Ending getTransactions {}", txsResult.size());
 
         return txsResult;
+    }
+
+    private static boolean tryAdvanceNonce(Keccak256 hash, RskAddress txSender, BigInteger txNonce, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo) {
+        BigInteger lastNonce = accountNonces.get(txSender);
+        BigInteger expectedNonce = lastNonce != null ? lastNonce.add(BigInteger.ONE) : originalRepo.getNonce(txSender);
+        if (!expectedNonce.equals(txNonce)) {
+            logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hash);
+            return false;
+        }
+        accountNonces.put(txSender, txNonce);
+        return true;
     }
 
     private static byte[] generateRandomPrefix() {

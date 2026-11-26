@@ -196,7 +196,7 @@ class MutableTrieCacheTest {
         RskAddress addr = new RskAddress("b86ca7db8c7ae687ac8d098789987eee12333fc7");
 
         baseRepository.createAccount(addr);
-        baseRepository.setupContract(addr);
+        baseRepository.initializeStorage(addr);
 
         DataWord sk120 = toStorageKey("120");
         DataWord sk121 = toStorageKey("121");

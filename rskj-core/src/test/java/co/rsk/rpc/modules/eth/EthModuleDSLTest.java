@@ -25,6 +25,7 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.util.HexUtils;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.CallArguments;
@@ -34,6 +35,7 @@ import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -91,6 +93,83 @@ class EthModuleDSLTest {
         assertEquals("0x", call);
     }
 
+    // RSKIP-692 test case 11
+    @Test
+    void testCall_directCallToBridgeWithUnknownMethod_returnsExecutionError() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(failingBridgeCallArguments());
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class,
+                () -> eth.call(callArgumentsParam, latest));
+        assertEquals(-32015, exception.getCode());
+        assertEquals("VM Exception while processing transaction: execution failed", exception.getMessage());
+        assertNull(exception.getRevertData());
+    }
+
+    @Test
+    void testCall_directCallToBridgeWithInsufficientGas_returnsExecutionError() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+
+        // Covers the intrinsic cost of 21,064 but not the 23,000 the Bridge declares for this data
+        CallArguments args = failingBridgeCallArguments();
+        args.setGas("0x7530"); // 30,000
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class,
+                () -> eth.call(callArgumentsParam, latest));
+        assertEquals(-32015, exception.getCode());
+        assertEquals("VM Exception while processing transaction: execution failed", exception.getMessage());
+        assertNull(exception.getRevertData());
+    }
+
+    @Test
+    void testCall_directCallToLocalOnlyBridgeMethod_returnsValue() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(localOnlyBridgeGetterCallArguments());
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        // The Bridge never processed the requested BTC tx hash, so it answers -1 as an ABI-encoded int64
+        assertEquals("0x" + "ff".repeat(32), eth.call(callArgumentsParam, latest));
+    }
+
+    /**
+     * A call from an arbitrary account to the Bridge with data that matches no Bridge method,
+     * so the Bridge throws while executing.
+     */
+    static CallArguments failingBridgeCallArguments() {
+        CallArguments args = new CallArguments();
+        args.setFrom("0x" + "ab".repeat(20));
+        args.setTo("0x" + PrecompiledContracts.BRIDGE_ADDR.toHexString());
+        args.setValue("0x0");
+        args.setGas("0x30d40"); // 200,000
+        args.setData("0xdeadbeef");
+        return args;
+    }
+
+    /**
+     * A call from an arbitrary account to the Bridge method getBtcTxHashProcessedHeight, which only
+     * allows local calls, asking for a BTC tx hash the Bridge has never processed.
+     */
+    static CallArguments localOnlyBridgeGetterCallArguments() {
+        CallArguments args = new CallArguments();
+        args.setFrom("0x" + "ab".repeat(20));
+        args.setTo("0x" + PrecompiledContracts.BRIDGE_ADDR.toHexString());
+        args.setValue("0x0");
+        args.setGas("0x30d40"); // 200,000
+        byte[] data = CallTransaction.Function.fromSignature(
+                "getBtcTxHashProcessedHeight", new String[]{"string"}, new String[]{"int64"}
+        ).encode("11".repeat(32));
+        args.setData(HexUtils.toUnformattedJsonHex(data));
+        return args;
+    }
+
     @Test
     void testCall_StateOverride_stateIsOverridden() throws DslProcessorException, FileNotFoundException {
         // When
@@ -120,6 +199,44 @@ class EthModuleDSLTest {
         // when calling get() on the contract with the override
         String result2 = eth.call(callArgumentsParam, blockIdentifierParam, List.of(accountOverride));
         // then the returned value is the overridden state value: 20
+        assertEquals(20, HexUtils.jsonHexToInt(result2));
+    }
+
+    @Test
+    void testCall_StateOverride_withType2AccessListCall_stateIsOverridden() throws DslProcessorException, FileNotFoundException {
+        // Given
+        World world = new World();
+        // given a deployed contract with stored state = 10
+        String contractAddress = deployContractAndGetAddressFromDsl("dsl/eth_module/simple_contract.txt", world);
+
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress("0x" + contractAddress);
+        entry.setStorageKeys(List.of("0x" + "0".repeat(63) + "1"));
+
+        final CallArguments args = new CallArguments();
+        args.setTo("0x" + contractAddress);
+        args.setData(SIMPLE_CONTRACT_GET_METHOD); //call get() function
+        args.setMaxPriorityFeePerGas("0x1");
+        args.setMaxFeePerGas("0x2");
+        args.setAccessList(List.of(entry));
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+
+        String result = eth.call(callArgumentsParam, blockIdentifierParam);
+        // then the result is the stored state value: 10 — Type 2 resolution/encoding does not break a plain call
+        assertEquals(SIMPLE_CONTRACT_STORED_DATA, HexUtils.jsonHexToInt(result));
+
+        AccountOverride accountOverride = new AccountOverride(new RskAddress(contractAddress));
+        DataWord key = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000000");
+        DataWord value = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000014");
+        // given the same Type 2 + access list call, now combined with a state override setting storage[0] = 20
+        accountOverride.setState(Map.of(key, value));
+        // when calling get() as a Type 2 call, with the override
+        String result2 = eth.call(callArgumentsParam, blockIdentifierParam, List.of(accountOverride));
+        // then the override still takes effect: the returned value is 20, not 10
         assertEquals(20, HexUtils.jsonHexToInt(result2));
     }
 
@@ -202,6 +319,12 @@ class EthModuleDSLTest {
         String result2 = eth.call(callArgumentsParam, blockIdentifierParam, List.of(accountOverride));
         // then the returned balance is 30000
         assertEquals(defaultBalance, HexUtils.jsonHexToInt(result2));
+
+        // when calling getMyBalance() again with no override at all
+        String result3 = eth.call(callArgumentsParam, blockIdentifierParam);
+        // then the override must not have leaked into the real state: the balance is back to the original, non-overridden value
+        assertEquals(HexUtils.jsonHexToInt(result), HexUtils.jsonHexToInt(result3));
+        assertNotEquals(defaultBalance, HexUtils.jsonHexToInt(result3));
     }
 
     @Test

@@ -49,23 +49,23 @@ public final class Type0SignatureUtils {
         byte[] r = txFields.get(rIndex).getRLPData();
         byte[] s = txFields.get(sIndex).getRLPData();
         if (r != null) {
-            CommonParsingUtils.requireSignatureComponent(r, "Signature R is not valid");
+            CommonParsingUtils.requireNormalizedSignatureComponent(r, "Signature R is not valid");
         }
         if (s != null) {
-            CommonParsingUtils.requireSignatureComponent(s, "Signature S is not valid");
+            CommonParsingUtils.requireNormalizedSignatureComponent(s, "Signature S is not valid");
         }
 
         return new SignedSignature(chainId, ECDSASignature.fromComponents(r, s, getRealV(v)));
     }
 
-    public static byte extractChainIdFromV(byte v) {
+    private static byte extractChainIdFromV(byte v) {
         if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) {
             return 0;
         }
         return (byte) (((0x00FF & v) - CHAIN_ID_INC) / 2);
     }
 
-    public static byte getRealV(byte v) {
+    private static byte getRealV(byte v) {
         if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) {
             return v;
         }

@@ -50,6 +50,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * DSL integration tests for RSKIP-545: Type 4 (EIP-7702 set-code) transactions.
@@ -110,7 +112,7 @@ class Rskip545DslTest {
 
         assertNotNull(tx);
         assertEquals(TransactionType.TYPE_4, tx.getType());
-        assertFalse(tx.isRskNamespaceTransaction());
+        assertFalse(tx.getTypePrefix().isRskNamespace());
         assertFalse(tx.getAuthorizationList().isEmpty(),
                 "Type 4 transaction must carry a non-empty authorization list");
     }
@@ -205,9 +207,9 @@ class Rskip545DslTest {
     }
 
     @Test
-    void type4_firstSelfAuth_onEmptyAuthority_gasUsedEqualsIntrinsic() {
-        assertEquals(SINGLE_AUTH_INTRINSIC, gasUsedInBlock("b01", "txType4SelfAuth"),
-                "Empty authority: full PER_EMPTY_ACCOUNT_COST kept (no refund)");
+    void type4_firstSelfAuth_onFundedAuthority_gasUsedReflectsRefund() {
+        assertEquals(SINGLE_AUTH_INTRINSIC - DELEGATION_REPLACEMENT_REFUND, gasUsedInBlock("b01", "txType4SelfAuth"),
+                "Funded authority: PER_EMPTY_ACCOUNT_COST - PER_AUTH_BASE_COST refunded on first delegation");
     }
 
     @Test
@@ -215,14 +217,14 @@ class Rskip545DslTest {
         long firstAuthGas = gasUsedInBlock("b01", "txType4SelfAuth");
         long reAuthGas = gasUsedInBlock("b02", "txType4WithValue");
 
-        assertEquals(DELEGATION_REPLACEMENT_REFUND, firstAuthGas - reAuthGas,
-                "Replacing delegation refunds PER_EMPTY_ACCOUNT_COST - PER_AUTH_BASE_COST");
+        assertEquals(firstAuthGas, reAuthGas,
+                "A funded authority gets the same refund whether it is delegating for the first time or replacing a delegation");
         assertEquals(SINGLE_AUTH_INTRINSIC - DELEGATION_REPLACEMENT_REFUND, reAuthGas);
     }
 
     @Test
-    void type4_externalAuth_onEmptyAuthority_gasUsedEqualsIntrinsic() {
-        assertEquals(SINGLE_AUTH_INTRINSIC, gasUsedInBlock("b04", "txType4ExternalAuth"));
+    void type4_externalAuth_onFundedAuthority_gasUsedReflectsRefund() {
+        assertEquals(SINGLE_AUTH_INTRINSIC - DELEGATION_REPLACEMENT_REFUND, gasUsedInBlock("b04", "txType4ExternalAuth"));
     }
 
     static Stream<Arguments> delegatedAuthorityGasCases() {
@@ -482,16 +484,29 @@ class Rskip545DslTest {
     void type4_blockedWhenRskip545Inactive() {
         Transaction tx = world.getTransactionByName("txType4SelfAuth");
         var activations = world.getConfig().getActivationConfig().forBlock(1);
-        var without545 = org.mockito.Mockito.mock(
+        var without545 = mock(
                 org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
-        org.mockito.Mockito.when(without545.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
-        org.mockito.Mockito.when(without545.isActive(ConsensusRule.RSKIP546)).thenReturn(true);
-        org.mockito.Mockito.when(without545.isActive(ConsensusRule.RSKIP545)).thenReturn(false);
+        when(without545.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
+        when(without545.isActive(ConsensusRule.RSKIP546)).thenReturn(true);
+        when(without545.isActive(ConsensusRule.RSKIP545)).thenReturn(false);
 
         assertTrue(tx.isTypedTransactionNotAllowed(without545),
                 "Type 4 must be rejected when RSKIP-545 is inactive");
         assertFalse(tx.isTypedTransactionNotAllowed(activations),
                 "Type 4 must be allowed when RSKIP-545 is active in this world");
+    }
+
+    @Test
+    void type4_blockedWhenRskip546Inactive() {
+        Transaction tx = world.getTransactionByName("txType4SelfAuth");
+        var without546 = mock(
+                org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
+        when(without546.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
+        when(without546.isActive(ConsensusRule.RSKIP546)).thenReturn(false);
+        when(without546.isActive(ConsensusRule.RSKIP545)).thenReturn(true);
+
+        assertTrue(tx.isTypedTransactionNotAllowed(without546),
+                "Type 4 must be rejected when RSKIP-546 is inactive");
     }
 
     // =========================================================================

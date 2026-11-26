@@ -83,11 +83,7 @@ public interface AccountInformationProvider {
     @Nullable
     byte[] getCode(RskAddress addr);
 
-    /**
-     * @param addr an address account
-     * @return true if the addr identifies a contract
-     */
-    boolean isContract(RskAddress addr);
+    boolean hasInitializedStorage(RskAddress addr);
 
     /**
      * Get current nonce of a given account
