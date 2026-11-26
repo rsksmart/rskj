@@ -234,6 +234,22 @@ class TransactionExecutorTest {
     }
 
     @Test
+    void blockTxWithGasBelowIntrinsicCostIsRejectedWithReason() {
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(mock(ReceivedTxSignatureCache.class));
+        mockRepositoryForAnAccountWithBalance(sender, 1_000_000L);
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
+
+        Transaction transaction = getTransaction(sender, receiver, BigInteger.valueOf(20999).toByteArray(),
+                BigInteger.ONE.toByteArray(), Coin.valueOf(1), Coin.ZERO);
+        when(transaction.transactionCost(any(), any(), any())).thenReturn(21000L);
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(config, blockStore, receiptStore, blockFactory, programInvokeFactory, precompiledContracts, blockTxSignatureCache);
+        TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(transaction, txIndex, executionBlock.getCoinbase(), repository, executionBlock, 0L);
+
+        assertFalse(txExecutor.executeTransaction());
+        assertEquals("Not enough gas for transaction execution: tx needs: 21000 tx sent: 20999", txExecutor.getExecutionError());
+    }
+
+    @Test
     void remascTxIsReceivedAndShouldntBeInCache(){
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
