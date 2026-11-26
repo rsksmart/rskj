@@ -56,73 +56,83 @@
     </appender>
 
     <!-- Loggers -->
-    <logger name="execute" level="INFO"/>
-    <logger name="blockvalidator" level="INFO"/>
-    <logger name="blockexecutor" level="INFO"/>
-    <logger name="general" level="INFO"/>
-    <logger name="gaspricetracker" level="INFO"/>
-    <logger name="web3" level="INFO"/>
-    <logger name="repository" level="INFO"/>
-    <logger name="VM" level="ERROR"/>
-    <logger name="blockqueue" level="INFO"/>
-    <logger name="io.netty" level="INFO"/>
-    <logger name="block" level="INFO"/>
-    <logger name="minerserver" level="INFO"/>
-    <logger name="txbuilderex" level="INFO"/>
-    <logger name="pendingstate" level="INFO"/>
-    <logger name="hsqldb.db" level="INFO"/>
-    <logger name="TCK-Test" level="INFO"/>
-    <logger name="db" level="INFO"/>
-    <logger name="net" level="INFO"/>
-    <logger name="start" level="INFO"/>
-    <logger name="cli" level="INFO"/>
-    <logger name="txs" level="INFO"/>
-    <logger name="gas" level="ERROR"/>
-    <logger name="main" level="INFO"/>
-    <logger name="trie" level="INFO"/>
-    <logger name="peermonitor" level="INFO"/>
-    <logger name="bridge" level="INFO"/>
-    <logger name="rlp" level="INFO"/>
-    <logger name="messagehandler" level="INFO"/>
-    <logger name="sync" level="INFO"/>
-    <logger name="BtcToRskClient" level="INFO"/>
-    <logger name="ui" level="INFO"/>
-    <logger name="java.nio" level="INFO"/>
-    <logger name="org.eclipse.jetty" level="INFO"/>
-    <logger name="wire" level="INFO"/>
-    <logger name="BridgeSupport" level="INFO"/>
-    <logger name="jsonrpc" level="INFO"/>
-    <logger name="wallet" level="INFO"/>
-    <logger name="blockchain" level="INFO"/>
-    <logger name="blockprocessor" level="INFO"/>
-    <logger name="asyncblockprocessor" level="INFO"/>
-    <logger name="state" level="INFO"/>
-    <logger name="org.bitcoinj" level="INFO"/>
-    <logger name="metrics" level="INFO"/>
-    <logger name="messageProcess" level="INFO"/>
-    <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="INFO"/>
-    <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="INFO"/>
-    <logger name="blooms" level="INFO"/>
-    <logger name="triestore" level="INFO" />
-    <logger name="btcBlockStore" level="INFO" />
-    <logger name="secp256k1" level="INFO" />
-    <logger name="altbn128" level="INFO" />
-    <logger name="co.rsk.net.discovery.PeerExplorer" level="INFO" />
-    <logger name="co.rsk.net.discovery.NodeChallengeManager" level="INFO" />
-    <logger name="co.rsk.RskContext" level="INFO" />
+    <logger name="execute" level="OFF"/>
+    <logger name="blockvalidator" level="OFF"/>
+    <logger name="blockexecutor" level="OFF"/>
+    <logger name="general" level="OFF"/>
+    <logger name="gaspricetracker" level="OFF"/>
+    <logger name="web3" level="OFF"/>
+    <logger name="repository" level="OFF"/>
+    <logger name="VM" level="OFF"/>
+    <logger name="blockqueue" level="OFF"/>
+    <logger name="io.netty" level="OFF"/>
+    <logger name="block" level="OFF"/>
+    <logger name="minerserver" level="OFF"/>
+    <logger name="txbuilderex" level="OFF"/>
+    <logger name="pendingstate" level="OFF"/>
+    <logger name="hsqldb.db" level="OFF"/>
+    <logger name="TCK-Test" level="OFF"/>
+    <logger name="db" level="OFF"/>
+    <logger name="net" level="OFF"/>
+    <logger name="start" level="OFF"/>
+    <logger name="cli" level="OFF"/>
+    <logger name="txs" level="OFF"/>
+    <logger name="gas" level="OFF"/>
+    <logger name="main" level="OFF"/>
+    <logger name="trie" level="OFF"/>
+    <logger name="peermonitor" level="OFF"/>
+    <logger name="bridge" level="OFF"/>
+    <logger name="rlp" level="OFF"/>
+    <logger name="messagehandler" level="OFF"/>
+    <logger name="sync" level="OFF"/>
+    <logger name="BtcToRskClient" level="OFF"/>
+    <logger name="ui" level="OFF"/>
+    <logger name="java.nio" level="OFF"/>
+    <logger name="org.eclipse.jetty" level="OFF"/>
+    <logger name="wire" level="OFF"/>
+    <logger name="BridgeSupport" level="OFF"/>
+    <logger name="jsonrpc" level="OFF"/>
+    <logger name="wallet" level="OFF"/>
+    <logger name="blockchain" level="OFF"/>
+    <logger name="blockprocessor" level="OFF"/>
+    <logger name="asyncblockprocessor" level="OFF"/>
+    <logger name="state" level="OFF"/>
+    <logger name="org.bitcoinj" level="OFF"/>
+    <logger name="metrics" level="OFF"/>
+    <logger name="messageProcess" level="OFF"/>
+    <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="OFF"/>
+    <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="OFF"/>
+    <logger name="blooms" level="OFF"/>
+    <logger name="triestore" level="OFF" />
+    <logger name="btcBlockStore" level="OFF" />
+    <logger name="secp256k1" level="OFF" />
+    <logger name="altbn128" level="OFF" />
+    <logger name="co.rsk.net.discovery.PeerExplorer" level="OFF" />
+    <logger name="co.rsk.net.discovery.NodeChallengeManager" level="OFF" />
+    <logger name="co.rsk.RskContext" level="OFF" />
 
     <!-- Use INFO or upper levels for production environments. -->
-    <logger name="com.googlecode.jsonrpc4j" level="INFO" />
+    <logger name="com.googlecode.jsonrpc4j" level="OFF" />
+
+    <!-- Turn on your logs HERE -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="co.rsk.net.discovery.PeerExplorer" level="INFO" />
 
     <!-- Logger for CLI tools -->
-    <logger name="clitool" level="DEBUG" additivity="false" >
+    <logger name="clitool" level="OFF" additivity="false" >
         <appender-ref ref="STDOUT_CLI_TOOL"/>
         <appender-ref ref="FILE-AUDIT"/>
     </logger>
 
     <!-- Root logger -->
     <root level="DEBUG">
-        <appender-ref ref="stdout"/>
-        <appender-ref ref="FILE-AUDIT"/>
+        <appender-ref ref="CONSOLE"/>
+<!--        <appender-ref ref="stdout"/>-->
+<!--        <appender-ref ref="FILE-AUDIT"/>-->
     </root>
 </configuration>
