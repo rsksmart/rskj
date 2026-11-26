@@ -69,9 +69,7 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
 
     /**
      * Legacy RLP spells nonce 0 either as 0x80 (empty) or as the single byte 0x00. The encoder
-     * writes both as 0x80, so the hash and signature do not depend on the spelling. Returning
-     * one byte form for zero, the empty array that every other parsing path produces, keeps
-     * byte-level nonce comparisons consistent. Only the single 0x00 byte is rewritten: longer
+     * writes both as 0x80, so the hash and signature do not depend on the spelling. Only the single 0x00 byte is rewritten: longer
      * zero-padded nonces re-encode as received, so rewriting them would change the hash.
      */
     private static byte[] canonicalZeroNonce(byte[] nonce) {
