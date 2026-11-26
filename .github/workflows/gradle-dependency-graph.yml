@@ -46,6 +46,11 @@ jobs:
 
       - name: Generate and submit dependency graph
         uses: gradle/actions/dependency-submission@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        env:
+          # The action adds this plugin to the build. Dependency verification
+          # trusts only this version (gradle/verification-metadata.xml), so pin it
+          # here: an action update must not swap it.
+          DEPENDENCY_GRAPH_PLUGIN_VERSION: '1.5.1'
         with:
           dependency-graph: generate-and-submit
           dependency-graph-include-configurations: '^runtimeClasspath$'
