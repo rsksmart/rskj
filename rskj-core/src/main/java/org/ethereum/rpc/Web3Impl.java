@@ -59,6 +59,7 @@ import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
+import org.ethereum.rpc.dto.ProofResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -540,6 +541,48 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public ProofResultDTO eth_getProof(HexAddressParam address, HexDataArrayParam storageKeys, BlockRefParam blockRefParam) throws Exception {
+        return eth_getProof(address, storageKeys, resolveBlockId(blockRefParam));
+    }
+
+    private ProofResultDTO eth_getProof(HexAddressParam address, HexDataArrayParam storageKeys, String blockId) {
+        try {
+            // eth_getProof uses RLP encoding for Ethereum compatibility
+            return getEthModule().getProof(
+                    address.getAddress(),
+                    storageKeys.getAsDataWords(),
+                    blockId,
+                    true  // Use RLP encoding for Ethereum compatibility
+            );
+        } finally {
+            if (logger.isDebugEnabled()) {
+                logger.debug("eth_getProof({}, {}, {})", address, storageKeys.size(), blockId);
+            }
+        }
+    }
+
+    @Override
+    public ProofResultDTO rsk_getProof(HexAddressParam address, HexDataArrayParam storageKeys, BlockRefParam blockRefParam) throws Exception {
+        return rsk_getProof(address, storageKeys, resolveBlockId(blockRefParam));
+    }
+
+    private ProofResultDTO rsk_getProof(HexAddressParam address, HexDataArrayParam storageKeys, String blockId) {
+        try {
+            // rsk_getProof uses RSKj's native format (no RLP wrapping)
+            return getEthModule().getProof(
+                    address.getAddress(),
+                    storageKeys.getAsDataWords(),
+                    blockId,
+                    false  // Use native RSKj format
+            );
+        } finally {
+            if (logger.isDebugEnabled()) {
+                logger.debug("rsk_getProof({}, {}, {})", address, storageKeys.size(), blockId);
+            }
+        }
+    }
+
+    @Override
     public String eth_getTransactionCount(HexAddressParam address, BlockRefParam blockRefParam) {
         if (blockRefParam.getIdentifier() != null) {
             return this.eth_getTransactionCount(address, blockRefParam.getIdentifier());
@@ -550,6 +593,14 @@ public class Web3Impl implements Web3 {
 
     private String eth_getTransactionCount(HexAddressParam address, Map<String, String> inputs) {
         return invokeByBlockRef(inputs, blockNumber -> this.eth_getTransactionCount(address, blockNumber));
+    }
+
+    private String resolveBlockId(BlockRefParam blockRefParam) {
+        String blockId = blockRefParam.getIdentifier();
+        if (blockId != null) {
+            return blockId;
+        }
+        return invokeByBlockRef(blockRefParam.getInputs(), UnaryOperator.identity());
     }
 
     /**
