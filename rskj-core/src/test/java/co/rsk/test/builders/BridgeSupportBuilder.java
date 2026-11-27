@@ -1,10 +1,17 @@
 package co.rsk.test.builders;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.StoredBlock;
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
+import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
@@ -19,6 +26,9 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 
 public class BridgeSupportBuilder {
+    // From RSKIP643 on, building a federation spend wallet reads the BTC chain head
+    private static final int DEFAULT_BTC_CHAIN_HEAD_HEIGHT = 870_000;
+
     private BridgeConstants bridgeConstants;
     private BridgeStorageProvider provider;
     private BridgeEventLogger eventLogger;
@@ -48,9 +58,30 @@ public class BridgeSupportBuilder {
         this.federationSupport = mock(FederationSupport.class);
         this.lockingCapSupport = mock(LockingCapSupport.class);
         this.unionBridgeSupport = mock(UnionBridgeSupport.class);
-        this.btcBlockStoreFactory = mock(Factory.class);
+        this.btcBlockStoreFactory = mockBtcBlockStoreFactoryWithChainHead();
         this.activations = mock(ActivationConfig.ForBlock.class);
         this.signatureCache = mock(BlockTxSignatureCache.class);
+    }
+
+    private static Factory mockBtcBlockStoreFactoryWithChainHead() {
+        // Not the genesis hash, so building the block store does not load checkpoints
+        BtcBlock chainHeadHeader = mock(BtcBlock.class);
+        when(chainHeadHeader.getHash()).thenReturn(Sha256Hash.of(new byte[]{1}));
+
+        StoredBlock chainHead = mock(StoredBlock.class);
+        when(chainHead.getHeader()).thenReturn(chainHeadHeader);
+        when(chainHead.getHeight()).thenReturn(DEFAULT_BTC_CHAIN_HEAD_HEIGHT);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        try {
+            when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+        } catch (BlockStoreException e) {
+            throw new IllegalStateException(e);
+        }
+
+        Factory btcBlockStoreFactory = mock(Factory.class);
+        when(btcBlockStoreFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
+        return btcBlockStoreFactory;
     }
 
     public static BridgeSupportBuilder builder() {

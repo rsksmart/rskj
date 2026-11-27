@@ -29,6 +29,7 @@ import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -1985,6 +1986,162 @@ class BridgeSupportReleaseBtcTest {
         LogInfo firstLog = logs.get(0);
         assertEquals(expectedTopics, firstLog.getTopics());
         assertArrayEquals(expectedData, firstLog.getData());
+    }
+
+    @Nested
+    class PegoutWithCoinbaseUtxo {
+        private static final int COINBASE_MATURITY_IN_BTC_BLOCKS = 100;
+        private static final int COINBASE_BTC_BLOCK_HEIGHT = 870_000;
+        private static final int HEIGHT_OF_UTXOS_REGISTERED_BEFORE_RSKIP643 = 0;
+        private final ActivationConfig.ForBlock activationsBeforeRskip643 = ActivationConfigsForTest.vetiver900().forBlock(0L);
+
+        private final Sha256Hash coinbaseTxHash = createHash(643);
+
+        @Test
+        void pegout_beforeCoinbaseIsMature_doesNotSpendCoinbaseUtxo() throws Exception {
+            setUpOnlyCoinbaseUtxo(COINBASE_BTC_BLOCK_HEIGHT);
+            int btcChainHeadHeight = COINBASE_BTC_BLOCK_HEIGHT + COINBASE_MATURITY_IN_BTC_BLOCKS - 2;
+            bridgeSupport = initBridgeSupportWithBtcChainHead(ACTIVATIONS_ALL, btcChainHeadHeight);
+
+            requestPegoutAndUpdateCollections();
+
+            assertPegoutWasNotCreated();
+        }
+
+        @Test
+        void pegout_whenCoinbaseIsMature_spendsCoinbaseUtxo() throws Exception {
+            setUpOnlyCoinbaseUtxo(COINBASE_BTC_BLOCK_HEIGHT);
+            int btcChainHeadHeight = COINBASE_BTC_BLOCK_HEIGHT + COINBASE_MATURITY_IN_BTC_BLOCKS - 1;
+            bridgeSupport = initBridgeSupportWithBtcChainHead(ACTIVATIONS_ALL, btcChainHeadHeight);
+
+            requestPegoutAndUpdateCollections();
+
+            assertPegoutSpendsOnlyCoinbaseUtxo();
+        }
+
+        @Test
+        void pegout_beforeRskip643_neverSpendsCoinbaseUtxo() throws Exception {
+            setUpOnlyCoinbaseUtxo(HEIGHT_OF_UTXOS_REGISTERED_BEFORE_RSKIP643);
+            bridgeSupport = initBridgeSupportWithBtcChainHead(activationsBeforeRskip643, COINBASE_BTC_BLOCK_HEIGHT);
+
+            requestPegoutAndUpdateCollections();
+
+            assertPegoutWasNotCreated();
+        }
+
+        @Test
+        void pegout_afterRskip643_spendsCoinbaseUtxoRegisteredBeforeActivation() throws Exception {
+            setUpOnlyCoinbaseUtxo(HEIGHT_OF_UTXOS_REGISTERED_BEFORE_RSKIP643);
+            bridgeSupport = initBridgeSupportWithBtcChainHead(ACTIVATIONS_ALL, COINBASE_BTC_BLOCK_HEIGHT);
+
+            requestPegoutAndUpdateCollections();
+
+            assertPegoutSpendsOnlyCoinbaseUtxo();
+        }
+
+        @Test
+        void pegout_withImmatureCoinbaseUtxo_spendsOtherUtxo() throws Exception {
+            setUpOnlyCoinbaseUtxo(COINBASE_BTC_BLOCK_HEIGHT);
+            UTXO nonCoinbaseUtxo = UTXOBuilder.builder()
+                .withTransactionHash(createHash(1))
+                .withValue(Coin.COIN.multiply(2))
+                .withBlockHeight(COINBASE_BTC_BLOCK_HEIGHT)
+                .withScriptPubKey(activeFederation.getP2SHScript())
+                .build();
+            federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL).add(nonCoinbaseUtxo);
+            bridgeSupport = initBridgeSupportWithBtcChainHead(ACTIVATIONS_ALL, COINBASE_BTC_BLOCK_HEIGHT);
+
+            requestPegoutAndUpdateCollections();
+
+            BtcTransaction pegout = getSinglePegoutWaitingForConfirmations();
+            assertEquals(1, pegout.getInputs().size());
+            assertEquals(nonCoinbaseUtxo.getHash(), pegout.getInput(0).getOutpoint().getHash());
+        }
+
+        @Test
+        void pegout_whenBtcChainHeadCannotBeRead_throwsIllegalStateException() throws Exception {
+            BlockStoreException blockStoreException = new BlockStoreException("block store error");
+            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+            when(btcBlockStore.getChainHead()).thenThrow(blockStoreException);
+            useBtcBlockStore(btcBlockStore);
+            bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
+            bridgeSupport.releaseBtc(releaseTx);
+            Transaction updateCollectionsTx = buildUpdateTx();
+
+            IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> bridgeSupport.updateCollections(updateCollectionsTx)
+            );
+
+            assertSame(blockStoreException, exception.getCause());
+        }
+
+        @Test
+        void pegout_beforeRskip643_doesNotReadBtcChainHead() throws Exception {
+            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+            useBtcBlockStore(btcBlockStore);
+            bridgeSupport = initBridgeSupport(eventLogger, activationsBeforeRskip643);
+
+            requestPegoutAndUpdateCollections();
+
+            verify(btcBlockStore, never()).getChainHead();
+            assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        }
+
+        private void useBtcBlockStore(BtcBlockStoreWithCache btcBlockStore) {
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
+            when(btcBlockStoreFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
+            bridgeSupportBuilder.withBtcBlockStoreFactory(btcBlockStoreFactory);
+        }
+
+        private void setUpOnlyCoinbaseUtxo(int coinbaseUtxoHeight) {
+            UTXO coinbaseUtxo = UTXOBuilder.builder()
+                .withTransactionHash(coinbaseTxHash)
+                .withValue(Coin.COIN.multiply(2))
+                .withBlockHeight(coinbaseUtxoHeight)
+                .isCoinbase(true)
+                .withScriptPubKey(activeFederation.getP2SHScript())
+                .build();
+            List<UTXO> federationUtxos = federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL);
+            federationUtxos.clear();
+            federationUtxos.add(coinbaseUtxo);
+        }
+
+        private BridgeSupport initBridgeSupportWithBtcChainHead(
+            ActivationConfig.ForBlock activations,
+            int btcChainHeadHeight
+        ) throws BlockStoreException {
+            BtcBlock chainHeadHeader = new BtcBlock(NETWORK_PARAMETERS, 1, createHash(1), createHash(2), 1, 1, 1, new ArrayList<>());
+            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+            when(btcBlockStore.getChainHead()).thenReturn(new StoredBlock(chainHeadHeader, BigInteger.ONE, btcChainHeadHeight));
+            useBtcBlockStore(btcBlockStore);
+
+            return initBridgeSupport(eventLogger, activations);
+        }
+
+        private void requestPegoutAndUpdateCollections() throws IOException {
+            bridgeSupport.releaseBtc(releaseTx);
+            bridgeSupport.updateCollections(buildUpdateTx());
+        }
+
+        private void assertPegoutWasNotCreated() throws IOException {
+            assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).isEmpty());
+            assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        }
+
+        private void assertPegoutSpendsOnlyCoinbaseUtxo() throws IOException {
+            BtcTransaction pegout = getSinglePegoutWaitingForConfirmations();
+            assertEquals(1, pegout.getInputs().size());
+            assertEquals(coinbaseTxHash, pegout.getInput(0).getOutpoint().getHash());
+            assertTrue(bridgeStorageProvider.getReleaseRequestQueue().getEntries().isEmpty());
+        }
+
+        private BtcTransaction getSinglePegoutWaitingForConfirmations() throws IOException {
+            Collection<PegoutsWaitingForConfirmations.Entry> entries =
+                bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL);
+            assertEquals(1, entries.size());
+            return entries.iterator().next().getBtcTransaction();
+        }
     }
 
     private Transaction buildReleaseRskTx(co.rsk.core.Coin coin) {

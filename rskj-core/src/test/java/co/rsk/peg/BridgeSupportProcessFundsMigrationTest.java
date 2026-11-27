@@ -17,12 +17,17 @@ import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -47,6 +52,7 @@ import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import co.rsk.test.builders.UTXOBuilder;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -2586,6 +2592,141 @@ class BridgeSupportProcessFundsMigrationTest {
         }
     }
 
+    @Nested
+    class MigrationWithCoinbaseUtxo {
+        private static final int COINBASE_MATURITY_IN_BTC_BLOCKS = 100;
+        private static final int COINBASE_BTC_BLOCK_HEIGHT = 870_000;
+        private static final int HEIGHT_OF_UTXOS_REGISTERED_BEFORE_RSKIP643 = 0;
+
+        private final List<BtcECKey> retiringFedKeys = BitcoinTestUtils.getBtcEcKeys(9, "retiring");
+        private final Federation retiringFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(retiringFedKeys)
+            .build();
+        private final Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
+            .withCreationBlockNumber(ACTIVE_FEDERATION_CREATION_BLOCK)
+            .build();
+        private final Sha256Hash coinbaseTxHash = createHash(643);
+
+        @Test
+        void duringMigration_beforeCoinbaseIsMature_doesNotMigrateCoinbaseUtxo() throws IOException {
+            int btcChainHeadHeight = COINBASE_BTC_BLOCK_HEIGHT + COINBASE_MATURITY_IN_BTC_BLOCKS - 2;
+            setUpBridgeSupportWithBtcChainHead(duringMigrationBlockNumber(), ALL_ACTIVATIONS, btcChainHeadHeight);
+            setUpActiveAndRetiringFederations(activeFederation, retiringFederation, List.of(buildCoinbaseUtxo(COINBASE_BTC_BLOCK_HEIGHT)));
+
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+            assertNoMigrationTxCreated();
+            assertRetiringFederationStillPresent();
+            assertRetiringUtxosCount(1);
+        }
+
+        @Test
+        void duringMigration_whenCoinbaseIsMature_migratesCoinbaseUtxo() throws IOException {
+            int btcChainHeadHeight = COINBASE_BTC_BLOCK_HEIGHT + COINBASE_MATURITY_IN_BTC_BLOCKS - 1;
+            setUpBridgeSupportWithBtcChainHead(duringMigrationBlockNumber(), ALL_ACTIVATIONS, btcChainHeadHeight);
+            setUpActiveAndRetiringFederations(activeFederation, retiringFederation, List.of(buildCoinbaseUtxo(COINBASE_BTC_BLOCK_HEIGHT)));
+
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+            assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+            BtcTransaction migrationTx = getLastMigrationEntryAdded(ALL_ACTIVATIONS).getBtcTransaction();
+            assertEquals(1, migrationTx.getInputs().size());
+            assertEquals(coinbaseTxHash, migrationTx.getInput(0).getOutpoint().getHash());
+            assertNoRemainingRetiringUtxos();
+        }
+
+        @Test
+        void duringMigration_beforeRskip643_neverMigratesCoinbaseUtxo() throws IOException {
+            long executionBlockNumber = duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
+            bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, VETIVER_ACTIVATIONS);
+            setUpBridgeSupportWithBtcChainHead(executionBlockNumber, VETIVER_ACTIVATIONS, COINBASE_BTC_BLOCK_HEIGHT);
+            List<UTXO> retiringUtxos = List.of(buildCoinbaseUtxo(HEIGHT_OF_UTXOS_REGISTERED_BEFORE_RSKIP643));
+            setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
+
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+            assertMigrationTxCount(0, VETIVER_ACTIVATIONS);
+            assertRetiringFederationStillPresent();
+            assertRetiringUtxosCount(1);
+        }
+
+        @Test
+        void pastMigrationAge_withOnlyImmatureCoinbaseUtxo_clearsRetiringFederation() throws IOException {
+            // The retiring wallet balance leaves out the immature coinbase UTXO, so the federation
+            // looks empty and is cleared together with that UTXO.
+            int btcChainHeadHeight = COINBASE_BTC_BLOCK_HEIGHT + COINBASE_MATURITY_IN_BTC_BLOCKS - 2;
+            setUpBridgeSupportWithBtcChainHead(pastMigrationBlockNumber(), ALL_ACTIVATIONS, btcChainHeadHeight);
+            setUpActiveAndRetiringFederations(activeFederation, retiringFederation, List.of(buildCoinbaseUtxo(COINBASE_BTC_BLOCK_HEIGHT)));
+
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+            assertNoMigrationTxCreated();
+            assertRetiringFederationCleared();
+        }
+
+        private UTXO buildCoinbaseUtxo(int btcBlockHeight) {
+            return UTXOBuilder.builder()
+                .withTransactionHash(coinbaseTxHash)
+                .withValue(Coin.COIN)
+                .withBlockHeight(btcBlockHeight)
+                .isCoinbase(true)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .build();
+        }
+
+        private void setUpBridgeSupportWithBtcChainHead(
+            long executionBlockNumber,
+            ActivationConfig.ForBlock activations,
+            int btcChainHeadHeight
+        ) {
+            org.ethereum.core.Block executionBlock = new BlockGenerator().createBlock(executionBlockNumber, 1);
+
+            federationSupport = FederationSupportBuilder.builder()
+                .withFederationConstants(FEDERATION_CONSTANTS)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            bridgeSupport = BridgeSupportBuilder.builder()
+                .withBridgeConstants(BRIDGE_CONSTANTS)
+                .withProvider(bridgeStorageProvider)
+                .withExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withEventLogger(new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, activations, logs))
+                .withBtcBlockStoreFactory(mockBtcBlockStoreFactoryWithChainHead(btcChainHeadHeight))
+                .build();
+        }
+
+        private BtcBlockStoreWithCache.Factory mockBtcBlockStoreFactoryWithChainHead(int btcChainHeadHeight) {
+            BtcBlock chainHeadHeader = new BtcBlock(
+                NETWORK_PARAMETERS,
+                1,
+                createHash(1),
+                createHash(2),
+                1,
+                1,
+                1,
+                new ArrayList<>()
+            );
+            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+            try {
+                when(btcBlockStore.getChainHead()).thenReturn(new StoredBlock(
+                    chainHeadHeader,
+                    BigInteger.ONE,
+                    btcChainHeadHeight
+                ));
+            } catch (BlockStoreException e) {
+                throw new IllegalStateException(e);
+            }
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
+            when(btcBlockStoreFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
+            return btcBlockStoreFactory;
+        }
+    }
+
     private static void assertAllExpectedInputsWereIncluded(int remainingExpectedInputs) {
         assertEquals(0, remainingExpectedInputs);
     }
@@ -2605,8 +2746,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     entry -> entry.getBtcTransaction().getInputs().size(),
                     Comparator.reverseOrder()
                 )
-            )
-            .toList();
+            ).toList();
     }
 
     private PegoutsWaitingForConfirmations.Entry getLastMigrationEntryAdded(ActivationConfig.ForBlock activations) throws IOException {

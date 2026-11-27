@@ -394,6 +394,38 @@ class BridgeSupportRegisterPegoutTransactionTest {
     }
 
     @Test
+    void registerPegoutTransaction_withCoinbaseToActiveFed_shouldNotRegister() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        // arrange
+        setUpBridgeAndFederationSupportWithActivations(PEGOUT_REGISTRATION_BLOCK_NUMBER, allActivations);
+        Script coinbaseScriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithoutSender(BTC_BLOCK_WITH_RELEASE_HEIGHT);
+        BtcTransaction coinbaseTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams, coinbaseScriptSig);
+        coinbaseTx.addOutput(Coin.COIN, activeFederation.getAddress());
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForTxIdRegistration(
+            bridgeStorageProvider,
+            bridgeMainnetConstants,
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            coinbaseTx,
+            btcBlockStore
+        );
+
+        // act
+        bridgeSupport.registerPegoutTransaction(
+            coinbaseTx.getHash(),
+            BTC_BLOCK_WITH_RELEASE_HEIGHT,
+            pmt.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        // assert
+        assertReleaseWasNotRegistered(
+            bridgeStorageProvider,
+            federationSupport,
+            logs,
+            coinbaseTx
+        );
+    }
+
+    @Test
     void registerPegoutTransaction_withUnknownTx_shouldNotRegister() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         // arrange
         setUpBridgeAndFederationSupportWithActivations(PEGOUT_REGISTRATION_BLOCK_NUMBER, allActivations);

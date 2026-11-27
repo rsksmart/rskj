@@ -1207,6 +1207,41 @@ class BridgeSupportFlyoverTest {
             assertUtxosAreEqual(expectedUtxos, federationSupport.getActiveFederationBtcUTXOs());
         }
 
+        @Test
+        void registerFlyoverBtcTransaction_coinbaseTx_shouldRegisterCoinbaseUtxoWithBtcTxHeight() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            arrangeFlyoverCoinbaseTransaction(allActivations);
+
+            List<UTXO> expectedUtxos = List.of(
+                UTXOBuilder.builder()
+                    .withTransactionHash(flyoverBtcTx.getHash())
+                    .withOutpointIndex(outputToFlyoverActiveFederation.getIndex())
+                    .withValue(outputToFlyoverActiveFederation.getValue())
+                    .withBlockHeight(btcBlockToRegisterHeight)
+                    .isCoinbase(true)
+                    .withScriptPubKey(outputToFlyoverActiveFederation.getScriptPubKey())
+                    .build()
+            );
+
+            // act
+            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
+                rskTx,
+                flyoverBtcTx.bitcoinSerialize(),
+                btcBlockToRegisterHeight,
+                pmtWithTransactions.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                lpBtcAddress,
+                true
+            );
+
+            // assert
+            assertEquals(co.rsk.core.Coin.fromBitcoin(FLYOVER_PEGIN_AMOUNT).asBigInteger(), result);
+            assertUtxosAreEqual(expectedUtxos, federationSupport.getActiveFederationBtcUTXOs());
+        }
+
         private void setUpWithActivations(ActivationConfig.ForBlock activations) {
             Block currentBlock = createRskBlock();
             federationSupport = federationSupportBuilder
@@ -1237,6 +1272,17 @@ class BridgeSupportFlyoverTest {
         }
 
         private void arrangeFlyoverBtcTransaction(ActivationConfig.ForBlock activations) throws Exception {
+            BtcTransaction btcTxWithoutOutputs = new BtcTransaction(btcMainnetParams);
+            btcTxWithoutOutputs.addInput(BitcoinTestUtils.createHash(0), 0, new Script(new byte[]{}));
+            arrangeFlyoverPegin(activations, btcTxWithoutOutputs);
+        }
+
+        private void arrangeFlyoverCoinbaseTransaction(ActivationConfig.ForBlock activations) throws Exception {
+            Script coinbaseScriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithoutSender(btcBlockToRegisterHeight);
+            arrangeFlyoverPegin(activations, BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams, coinbaseScriptSig));
+        }
+
+        private void arrangeFlyoverPegin(ActivationConfig.ForBlock activations, BtcTransaction btcTxWithoutOutputs) throws Exception {
             Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
                 derivationArgumentsHash,
                 userRefundBtcAddress,
@@ -1246,8 +1292,7 @@ class BridgeSupportFlyoverTest {
             );
             Address flyoverActiveFederationAddress = getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, activeFederation);
 
-            flyoverBtcTx = new BtcTransaction(btcMainnetParams);
-            flyoverBtcTx.addInput(BitcoinTestUtils.createHash(0), 0, new Script(new byte[]{}));
+            flyoverBtcTx = btcTxWithoutOutputs;
             outputToFlyoverActiveFederation = flyoverBtcTx.addOutput(FLYOVER_PEGIN_AMOUNT, flyoverActiveFederationAddress);
 
             pmtWithTransactions = createValidPmtForTransactions(List.of(flyoverBtcTx), btcMainnetParams);
@@ -3117,16 +3162,25 @@ class BridgeSupportFlyoverTest {
         );
         tx.addOutput(Coin.COIN, activeFlyoverFederationAddress);
 
+        // the chain head is the block of the transaction, so it has too few confirmations
+        int btcTxHeight = 100;
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        BtcBlock chainHeadHeader = new BtcBlock(btcRegTestParams, 1, BitcoinTestUtils.createHash(1), BitcoinTestUtils.createHash(2), 1, 1, 1, new ArrayList<>());
+        when(btcBlockStore.getChainHead()).thenReturn(new StoredBlock(chainHeadHeader, BigInteger.ONE, btcTxHeight));
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(btcBlockStoreFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
+
         BridgeSupport bridgeSupport = spy(bridgeSupportBuilder
             .withProvider(provider)
             .withActivations(activations)
             .withBridgeConstants(bridgeConstantsRegtest)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .build());
 
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
-            100,
+            btcTxHeight,
             Hex.decode("ab"),
             derivationArgumentsHash,
             userRefundBtcAddress,
