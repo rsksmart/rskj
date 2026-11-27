@@ -102,14 +102,14 @@ public final class BridgeUtils {
     public static Wallet getFederationSpendWallet(
         Context btcContext,
         Federation federation,
-        List<UTXO> utxos,
+        RskUTXOProvider utxoProvider,
         boolean isFlyoverCompatible,
         BridgeStorageProvider storageProvider
     ) {
         return getFederationsSpendWallet(
             btcContext,
             Collections.singletonList(federation),
-            utxos,
+            utxoProvider,
             isFlyoverCompatible,
             storageProvider
         );
@@ -118,7 +118,7 @@ public final class BridgeUtils {
     public static Wallet getFederationsSpendWallet(
         Context btcContext,
         List<Federation> federations,
-        List<UTXO> utxos,
+        RskUTXOProvider utxoProvider,
         boolean isFlyoverCompatible,
         BridgeStorageProvider storageProvider
     ) {
@@ -129,7 +129,6 @@ public final class BridgeUtils {
             wallet = new BridgeBtcWallet(btcContext, federations);
         }
 
-        RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
 
         federations.forEach(federation ->

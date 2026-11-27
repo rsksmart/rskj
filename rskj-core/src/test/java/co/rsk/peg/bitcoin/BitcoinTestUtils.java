@@ -32,6 +32,10 @@ public class BitcoinTestUtils {
      */
     public static final Coin MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT = Coin.valueOf(2700);
 
+    private static final int MIN_COINBASE_SCRIPT_SIG_LENGTH = 2;
+    private static final int MAX_COINBASE_SCRIPT_SIG_LENGTH = 100;
+    private static final byte[] COINBASE_EXTRANONCE = Hex.decode("0011223344556677");
+
     public static BtcECKey getBtcEcKeyFromSeed(String seed) {
         byte[] serializedSeed = HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8));
         return BtcECKey.fromPrivate(serializedSeed);
@@ -300,6 +304,65 @@ public class BitcoinTestUtils {
         coinbaseTx.verify();
 
         return coinbaseTx;
+    }
+
+    /**
+     * Builds a coinbase whose scriptSig follows the Bitcoin consensus rules: it starts with the
+     * BIP34 block height and is 2 to 100 bytes long. The caller adds the outputs.
+     */
+    public static BtcTransaction createCoinbaseTransaction(NetworkParameters networkParameters, Script coinbaseScriptSig) {
+        int scriptSigLength = coinbaseScriptSig.getProgram().length;
+        if (scriptSigLength < MIN_COINBASE_SCRIPT_SIG_LENGTH || scriptSigLength > MAX_COINBASE_SCRIPT_SIG_LENGTH) {
+            throw new IllegalArgumentException("Invalid coinbase scriptSig length: " + scriptSigLength);
+        }
+
+        BtcTransaction coinbaseTx = new BtcTransaction(networkParameters);
+        coinbaseTx.addInput(Sha256Hash.ZERO_HASH, -1L, coinbaseScriptSig);
+        return coinbaseTx;
+    }
+
+    /**
+     * {@code <height> <pubkey>}: the Bridge reads the public key as the one of a P2PKH sender.
+     */
+    public static Script createCoinbaseScriptSigWithP2pkhSender(int btcBlockHeight, BtcECKey senderKey) {
+        return new ScriptBuilder()
+            .number(btcBlockHeight)
+            .data(senderKey.getPubKey())
+            .build();
+    }
+
+    /**
+     * {@code <height> <extranonce> <redeem script>}: the Bridge reads the last chunk as the
+     * redeem script of a P2SH multisig sender.
+     */
+    public static Script createCoinbaseScriptSigWithP2shMultisigSender(int btcBlockHeight, Script senderRedeemScript) {
+        return new ScriptBuilder()
+            .number(btcBlockHeight)
+            .data(COINBASE_EXTRANONCE)
+            .data(senderRedeemScript.getProgram())
+            .build();
+    }
+
+    /**
+     * {@code <height> <extranonce> <pool tag>}: the usual shape of a mining pool coinbase.
+     * The Bridge cannot get a sender from it. The pool tag uses only lowercase letters, which
+     * are all non-push opcodes, so the Bridge can parse it as a script that is not a multisig.
+     */
+    public static Script createCoinbaseScriptSigWithoutSender(int btcBlockHeight) {
+        return new ScriptBuilder()
+            .number(btcBlockHeight)
+            .data(COINBASE_EXTRANONCE)
+            .data("pooltag".getBytes(StandardCharsets.US_ASCII))
+            .build();
+    }
+
+    /**
+     * A segwit coinbase input carries exactly one 32-byte witness item, the witness reserved value.
+     */
+    public static void addWitnessReservedValue(BtcTransaction coinbaseTx) {
+        TransactionWitness txWitness = new TransactionWitness(1);
+        txWitness.setPush(0, WITNESS_RESERVED_VALUE.getBytes());
+        coinbaseTx.setWitness(0, txWitness);
     }
 
     private static BtcTransaction createCoinbaseTxWithWitnessReservedValue(NetworkParameters networkParameters) {

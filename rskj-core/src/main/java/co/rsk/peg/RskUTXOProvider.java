@@ -18,22 +18,28 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
-
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.UTXOProvider;
+import co.rsk.bitcoinj.core.UTXOProviderException;
 import java.util.List;
 
-/**
- * Support class for the bridge btc wallet
- * @author Oscar Guindzberg
- */
 public class RskUTXOProvider implements UTXOProvider {
+
+    protected static final int BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM = Integer.MAX_VALUE;
 
     private final NetworkParameters params;
     private final List<UTXO> utxos;
+    private final int btcChainHeadHeight;
 
-    public RskUTXOProvider(NetworkParameters params, List<UTXO> utxos) {
+    public RskUTXOProvider(NetworkParameters params, List<UTXO> utxos, int btcChainHeadHeight) {
+        if (btcChainHeadHeight < 0) {
+            throw new IllegalArgumentException("Invalid BTC chain head height: " + btcChainHeadHeight);
+        }
         this.params = params;
         this.utxos = utxos;
+        this.btcChainHeadHeight = btcChainHeadHeight;
     }
 
     @Override
@@ -42,13 +48,12 @@ public class RskUTXOProvider implements UTXOProvider {
     }
 
     @Override
-    public int getChainHeadHeight() throws UTXOProviderException {
-        return Integer.MAX_VALUE;
+    public int getChainHeadHeight() {
+        return btcChainHeadHeight;
     }
 
     @Override
     public NetworkParameters getParams() {
         return params;
     }
-
 }

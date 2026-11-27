@@ -2032,6 +2032,250 @@ class BridgeSupportRegisterBtcTransactionTest {
             assertPeginIsRejectedAndRefunded(activations, btcTransaction, Coin.COIN, PEGIN_V1_INVALID_PAYLOAD);
         }
 
+        @Nested
+        class CoinbasePegin {
+            private static final long FIRST_OUTPUT = 0;
+            private static final long SECOND_OUTPUT = 1;
+
+            private final int height = HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX;
+            private final Coin valueToFed = Coin.COIN;
+            private final BtcECKey senderKey = BitcoinTestUtils.getBtcEcKeyFromSeed("coinbaseSender");
+            private final Script senderRedeemScript = ScriptBuilder.createRedeemScript(1, List.of(senderKey));
+            private final Script malformedPayload = PegTestUtils.createOpReturnScriptForRskWithCustomPayload(1, new byte[]{});
+
+            private static Stream<Arguments> beforeAndAfterRskip643Args() {
+                return Stream.of(
+                    Arguments.of(vetiver900Activations),
+                    Arguments.of(allActivations)
+                );
+            }
+
+            @ParameterizedTest
+            @MethodSource("beforeAndAfterRskip643Args")
+            void legacyPegin_fromP2pkhSender_isRegistered(ForBlock activations) throws Exception {
+                BtcTransaction coinbaseTx = createCoinbaseWithP2pkhSender();
+                coinbaseTx.addOutput(valueToFed, activeFederation.getAddress());
+
+                registerCoinbase(activations, coinbaseTx);
+
+                RskAddress senderRskAddress = BitcoinTestUtils.getRskAddressFromBtcPublicKey(senderKey);
+                verify(bridgeEventLogger, times(1)).logPeginBtc(senderRskAddress, coinbaseTx, valueToFed, 0);
+                assertCoinbaseUtxoWasRegisteredInActiveFed(activations, coinbaseTx, FIRST_OUTPUT);
+            }
+
+            @ParameterizedTest
+            @MethodSource("beforeAndAfterRskip643Args")
+            void peginV1_fromP2pkhSender_isRegistered(ForBlock activations) throws Exception {
+                BtcTransaction coinbaseTx = createCoinbaseWithP2pkhSender();
+                coinbaseTx.addOutput(Coin.ZERO, opReturnScript);
+                coinbaseTx.addOutput(valueToFed, activeFederation.getAddress());
+
+                registerCoinbase(activations, coinbaseTx);
+
+                verify(bridgeEventLogger, times(1)).logPeginBtc(destinationRskAddress, coinbaseTx, valueToFed, 1);
+                assertCoinbaseUtxoWasRegisteredInActiveFed(activations, coinbaseTx, SECOND_OUTPUT);
+            }
+
+            @ParameterizedTest
+            @MethodSource("beforeAndAfterRskip643Args")
+            void peginV1WithMalformedPayload_fromP2pkhSender_isRefundedToSender(ForBlock activations) throws Exception {
+                BtcTransaction coinbaseTx = createCoinbaseWithP2pkhSender();
+                coinbaseTx.addOutput(valueToFed, activeFederation.getAddress());
+                coinbaseTx.addOutput(Coin.ZERO, malformedPayload);
+
+                registerCoinbase(activations, coinbaseTx);
+
+                Address senderBtcAddress = senderKey.toAddress(btcMainnetParams);
+                assertCoinbaseIsRejectedForRefund(activations, coinbaseTx, senderBtcAddress, PEGIN_V1_INVALID_PAYLOAD);
+            }
+
+            @ParameterizedTest
+            @MethodSource("beforeAndAfterRskip643Args")
+            void legacyPegin_fromP2shMultisigSender_isRefundedToSender(ForBlock activations) throws Exception {
+                BtcTransaction coinbaseTx = createCoinbaseWithP2shMultisigSender();
+                coinbaseTx.addOutput(valueToFed, activeFederation.getAddress());
+
+                registerCoinbase(activations, coinbaseTx);
+
+                Address senderBtcAddress = Address.fromP2SHScript(btcMainnetParams, ScriptBuilder.createP2SHOutputScript(senderRedeemScript));
+                assertCoinbaseIsRejectedForRefund(activations, coinbaseTx, senderBtcAddress, LEGACY_PEGIN_MULTISIG_SENDER);
+            }
+
+            @ParameterizedTest
+            @MethodSource("beforeAndAfterRskip643Args")
+            void peginV1_fromP2shMultisigSender_isRegistered(ForBlock activations) throws Exception {
+                BtcTransaction coinbaseTx = createCoinbaseWithP2shMultisigSender();
+                coinbaseTx.addOutput(Coin.ZERO, opReturnScript);
+                coinbaseTx.addOutput(valueToFed, activeFederation.getAddress());
+
+                registerCoinbase(activations, coinbaseTx);
+
+                verify(bridgeEventLogger, times(1)).logPeginBtc(destinationRskAddress, coinbaseTx, valueToFed, 1);
+                assertCoinbaseUtxoWasRegisteredInActiveFed(activations, coinbaseTx, SECOND_OUTPUT);
+            }
+
+            @ParameterizedTest
+            @MethodSource("beforeAndAfterRskip643Args")
+            void peginV1WithMalformedPayload_fromP2shMultisigSender_isRefundedToSender(ForBlock activations) throws Exception {
+                BtcTransaction coinbaseTx = createCoinbaseWithP2shMultisigSender();
+                coinbaseTx.addOutput(valueToFed, activeFederation.getAddress());
+                coinbaseTx.addOutput(Coin.ZERO, malformedPayload);
+
+                registerCoinbase(activations, coinbaseTx);
+
+                Address senderBtcAddress = Address.fromP2SHScript(btcMainnetParams, ScriptBuilder.createP2SHOutputScript(senderRedeemScript));
+                assertCoinbaseIsRejectedForRefund(activations, coinbaseTx, senderBtcAddress, PEGIN_V1_INVALID_PAYLOAD);
+            }
+
+            @ParameterizedTest
+            @MethodSource("beforeAndAfterRskip643Args")
+            void legacyPegin_withoutSender_isRejectedWithoutRefund(ForBlock activations) throws Exception {
+                BtcTransaction coinbaseTx = createCoinbaseWithoutSender();
+                coinbaseTx.addOutput(valueToFed, activeFederation.getAddress());
+
+                registerCoinbase(activations, coinbaseTx);
+
+                assertLegacyUndeterminedSenderPeginIsRejected(coinbaseTx, activations);
+            }
+
+            @ParameterizedTest
+            @MethodSource("beforeAndAfterRskip643Args")
+            void peginV1_withoutSender_isRegistered(ForBlock activations) throws Exception {
+                BtcTransaction coinbaseTx = createCoinbaseWithoutSender();
+                coinbaseTx.addOutput(Coin.ZERO, opReturnScript);
+                coinbaseTx.addOutput(valueToFed, activeFederation.getAddress());
+
+                registerCoinbase(activations, coinbaseTx);
+
+                verify(bridgeEventLogger, times(1)).logPeginBtc(destinationRskAddress, coinbaseTx, valueToFed, 1);
+                assertCoinbaseUtxoWasRegisteredInActiveFed(activations, coinbaseTx, SECOND_OUTPUT);
+            }
+
+            @ParameterizedTest
+            @MethodSource("beforeAndAfterRskip643Args")
+            void peginV1WithMalformedPayload_withoutSender_isRejectedWithoutRefund(ForBlock activations) throws Exception {
+                BtcTransaction coinbaseTx = createCoinbaseWithoutSender();
+                coinbaseTx.addOutput(valueToFed, activeFederation.getAddress());
+                coinbaseTx.addOutput(Coin.ZERO, malformedPayload);
+
+                registerCoinbase(activations, coinbaseTx);
+
+                assertInvalidPeginV1UndeterminedSenderIsRejected(coinbaseTx, activations);
+            }
+
+            @ParameterizedTest
+            @MethodSource("beforeAndAfterRskip643Args")
+            void legacyPegin_belowMinimum_isRejectedWithInvalidAmount(ForBlock activations) throws Exception {
+                BtcTransaction coinbaseTx = createCoinbaseWithP2pkhSender();
+                coinbaseTx.addOutput(belowMinimumPeginTxValue, activeFederation.getAddress());
+
+                registerCoinbase(activations, coinbaseTx);
+
+                assertInvalidPeginIsRejectedWithInvalidAmountReason(coinbaseTx, activations);
+            }
+
+            @ParameterizedTest
+            @MethodSource("beforeAndAfterRskip643Args")
+            void legacyPegin_toActiveAndRetiringFed_isRegisteredInBoth(ForBlock activations) throws Exception {
+                when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
+                BtcTransaction coinbaseTx = createCoinbaseWithP2pkhSender();
+                coinbaseTx.addOutput(valueToFed, activeFederation.getAddress());
+                coinbaseTx.addOutput(valueToFed, retiringFederation.getAddress());
+
+                registerCoinbase(activations, coinbaseTx);
+
+                RskAddress senderRskAddress = BitcoinTestUtils.getRskAddressFromBtcPublicKey(senderKey);
+                verify(bridgeEventLogger, times(1)).logPeginBtc(senderRskAddress, coinbaseTx, valueToFed.multiply(2), 0);
+                int expectedUtxoHeight = getExpectedUtxosHeight(activations, height);
+                assertUtxosAreEqual(List.of(buildExpectedCoinbaseUtxo(coinbaseTx, FIRST_OUTPUT, expectedUtxoHeight)), activeFederationUtxos);
+                assertUtxosAreEqual(List.of(buildExpectedCoinbaseUtxo(coinbaseTx, SECOND_OUTPUT, expectedUtxoHeight)), retiringFederationUtxos);
+            }
+
+            private BtcTransaction createCoinbaseWithP2pkhSender() {
+                Script scriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithP2pkhSender(height, senderKey);
+                return BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams, scriptSig);
+            }
+
+            private BtcTransaction createCoinbaseWithP2shMultisigSender() {
+                Script scriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithP2shMultisigSender(height, senderRedeemScript);
+                return BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams, scriptSig);
+            }
+
+            private BtcTransaction createCoinbaseWithoutSender() {
+                Script scriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithoutSender(height);
+                return BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams, scriptSig);
+            }
+
+            private void registerCoinbase(ForBlock activations, BtcTransaction coinbaseTx) throws Exception {
+                PartialMerkleTree pmt = createPmtAndMockBlockStore(coinbaseTx, height);
+                BridgeSupport bridgeSupport = buildBridgeSupport(activations);
+                bridgeSupport.registerBtcTransaction(rskTx, coinbaseTx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
+            }
+
+            private UTXO buildExpectedCoinbaseUtxo(BtcTransaction coinbaseTx, long outputIndex, int expectedUtxoHeight) {
+                TransactionOutput output = coinbaseTx.getOutput(outputIndex);
+                return UTXOBuilder.builder()
+                    .withTransactionHash(coinbaseTx.getHash())
+                    .withOutpointIndex(outputIndex)
+                    .withValue(output.getValue())
+                    .withBlockHeight(expectedUtxoHeight)
+                    .isCoinbase(true)
+                    .withScriptPubKey(output.getScriptPubKey())
+                    .build();
+            }
+
+            private void assertCoinbaseUtxoWasRegisteredInActiveFed(
+                ForBlock activations,
+                BtcTransaction coinbaseTx,
+                long outputIndex
+            ) throws IOException {
+                verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+                verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(coinbaseTx.getHash(false), rskExecutionBlock.getNumber());
+
+                int expectedUtxoHeight = getExpectedUtxosHeight(activations, height);
+                assertUtxosAreEqual(List.of(buildExpectedCoinbaseUtxo(coinbaseTx, outputIndex, expectedUtxoHeight)), activeFederationUtxos);
+                assertTrue(retiringFederationUtxos.isEmpty());
+                verifyLogUtxosRegistered(activations, coinbaseTx, List.of(valueToFed), List.of(outputIndex), activeFederation);
+            }
+
+            private void assertCoinbaseIsRejectedForRefund(
+                ForBlock activations,
+                BtcTransaction coinbaseTx,
+                Address expectedRefundAddress,
+                RejectedPeginReason expectedRejectedPeginReason
+            ) throws IOException {
+                if (!activations.isActive(ConsensusRule.RSKIP643)) {
+                    assertRefundIsNotBuilt(activations, coinbaseTx, expectedRejectedPeginReason);
+                    return;
+                }
+
+                assertPeginIsRejectedAndRefunded(activations, coinbaseTx, valueToFed, expectedRejectedPeginReason);
+                BtcTransaction refundTx = pegoutsWaitingForConfirmations.getEntries(activations).iterator().next().getBtcTransaction();
+                // The refund spends only the coinbase outputs, so no other federation UTXO waits for the coinbase to mature
+                for (TransactionInput refundInput : refundTx.getInputs()) {
+                    assertEquals(coinbaseTx.getHash(), refundInput.getOutpoint().getHash());
+                }
+                assertEquals(1, refundTx.getOutputs().size());
+                assertEquals(expectedRefundAddress, refundTx.getOutput(0).getScriptPubKey().getToAddress(btcMainnetParams));
+            }
+
+            // Before RSKIP643 the coinbase UTXO of a refund has height 0, and the wallet takes it as never
+            // mature, so the refund cannot be built.
+            private void assertRefundIsNotBuilt(
+                ForBlock activations,
+                BtcTransaction coinbaseTx,
+                RejectedPeginReason expectedRejectedPeginReason
+            ) throws IOException {
+                verify(bridgeEventLogger, times(1)).logRejectedPegin(coinbaseTx, expectedRejectedPeginReason);
+                verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
+                verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+                verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(coinbaseTx.getHash(false), rskExecutionBlock.getNumber());
+                assertTrue(pegoutsWaitingForConfirmations.getEntries(activations).isEmpty());
+                assertTrue(activeFederationUtxos.isEmpty());
+                assertTrue(retiringFederationUtxos.isEmpty());
+            }
+        }
+
         void setUp(ForBlock activations) {
             networkParameters = bridgeConstants.getBtcParams();
             setUpBridgeSupport(activations, bridgeConstants, activeFederation.getCreationBlockNumber());
@@ -2395,6 +2639,46 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
+            void registerBtcTransaction_coinbaseWithP2SHMultisigSender_sentToBothP2shErpRetiringFedAndP2shP2wshErpActiveFed_shouldNotRefund() throws Exception {
+                // arrange
+                retiringFederation = P2shErpFederationBuilder.builder().build();
+                activeFederation = P2shP2wshErpFederationBuilder.builder()
+                    .withCreationBlockNumber(activeFedCreationBlockNumber)
+                    .build();
+                setUp(allActivations);
+
+                BtcTransaction coinbaseTx = buildCoinbaseFromP2shMultiSig();
+                coinbaseTx.addOutput(valueToSend, retiringFederation.getAddress());
+                coinbaseTx.addOutput(valueToSend, activeFederation.getAddress());
+
+                // act
+                registerPegin(coinbaseTx);
+
+                // assert
+                assertRejectedPeginWasNotRefunded(coinbaseTx);
+            }
+
+            @Test
+            void registerBtcTransaction_coinbaseWithP2SHMultisigSender_sentToP2shErpRetiringFed_shouldRefund() throws Exception {
+                // arrange
+                retiringFederation = P2shErpFederationBuilder.builder().build();
+                activeFederation = P2shP2wshErpFederationBuilder.builder()
+                    .withCreationBlockNumber(activeFedCreationBlockNumber)
+                    .build();
+                setUp(allActivations);
+
+                BtcTransaction coinbaseTx = buildCoinbaseFromP2shMultiSig();
+                coinbaseTx.addOutput(valueToSend, retiringFederation.getAddress());
+
+                // act
+                registerPegin(coinbaseTx);
+
+                // assert
+                assertPeginWasRejectedAndRefunded(1, coinbaseTx);
+                assertRefundInputIsFromLegacyFederation(retiringFederation, 0);
+            }
+
+            @Test
             void registerBtcTransaction_legacyPeginP2SHP2WSHMultisigSender_sentToBothP2shErpRetiringFedAndP2shP2wshErpActiveFed_shouldNotRefund() throws Exception {
                 // arrange
                 retiringFederation = P2shErpFederationBuilder.builder().build();
@@ -2447,6 +2731,16 @@ class BridgeSupportRegisterBtcTransactionTest {
                 assertLogRejectedPegin(logs, rejectedPegin, LEGACY_PEGIN_MULTISIG_SENDER);
                 assertLogUnrefundablePegin(logs, rejectedPegin, OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS);
                 assertUtxosRegisteredWasNotEmitted();
+            }
+
+            // A coinbase scriptSig holds at most 100 bytes, so the sender redeem script is a 1-of-1 multisig
+            private BtcTransaction buildCoinbaseFromP2shMultiSig() {
+                Script oneOfOneRedeemScript = ScriptBuilder.createRedeemScript(1, multiSigKeys.subList(0, 1));
+                Script coinbaseScriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithP2shMultisigSender(
+                    (int) rskExecutionBlockNumber,
+                    oneOfOneRedeemScript
+                );
+                return BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams, coinbaseScriptSig);
             }
 
             private BtcTransaction buildPeginFromP2shMultiSig() {

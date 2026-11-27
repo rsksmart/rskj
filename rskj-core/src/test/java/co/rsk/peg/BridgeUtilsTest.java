@@ -361,12 +361,12 @@ class BridgeUtilsTest {
     }
 
     @Test
-    void getFederationSpendWallet() throws UTXOProviderException {
+    void getFederationSpendWallet() {
         test_getSpendWallet(false);
     }
 
     @Test
-    void getFederationSpendWallet_flyoverCompatible() throws UTXOProviderException {
+    void getFederationSpendWallet_flyoverCompatible() {
         test_getSpendWallet(true);
     }
 
@@ -1402,7 +1402,7 @@ class BridgeUtilsTest {
         assertTrue(difference < tolerance && difference > -tolerance);
     }
 
-    private void test_getSpendWallet(boolean isFlyoverCompatible) throws UTXOProviderException {
+    private void test_getSpendWallet(boolean isFlyoverCompatible) {
         List<FederationMember> federationMembers =
             FederationTestUtils.getFederationMembersWithBtcKeys(
                 Arrays.asList(
@@ -1427,7 +1427,8 @@ class BridgeUtilsTest {
         mockedUtxos.add(mock(UTXO.class));
         mockedUtxos.add(mock(UTXO.class));
 
-        Wallet wallet = BridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, mockedUtxos, isFlyoverCompatible, null);
+        RskUTXOProvider expectedUtxoProvider = new RskUTXOProvider(networkParameters, mockedUtxos, RskUTXOProvider.BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM);
+        Wallet wallet = BridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, expectedUtxoProvider, isFlyoverCompatible, null);
 
         if (isFlyoverCompatible) {
             Assertions.assertEquals(FlyoverCompatibleBtcWalletWithStorage.class, wallet.getClass());
@@ -1438,9 +1439,7 @@ class BridgeUtilsTest {
         assertIsWatching(federation.getAddress(), wallet, networkParameters);
         CoinSelector selector = wallet.getCoinSelector();
         Assertions.assertEquals(RskAllowUnconfirmedCoinSelector.class, selector.getClass());
-        UTXOProvider utxoProvider = wallet.getUTXOProvider();
-        Assertions.assertEquals(RskUTXOProvider.class, utxoProvider.getClass());
-        Assertions.assertEquals(mockedUtxos, utxoProvider.getOpenTransactionOutputs(Collections.emptyList()));
+        Assertions.assertSame(expectedUtxoProvider, wallet.getUTXOProvider());
     }
 
     private void test_getNoSpendWallet(boolean isFlyoverCompatible) {
@@ -2639,6 +2638,99 @@ class BridgeUtilsTest {
                 assertEquals(expectedValuePerOutput, outputs.get(i));
             }
             assertEquals(expectedLastOutputValue, outputs.get(expectedOutputsCount - 1));
+        }
+    }
+
+    @Nested
+    class SpendWalletCoinbaseMaturity {
+        private static final int COINBASE_MATURITY_IN_BTC_BLOCKS = 100;
+        private static final int UTXO_BTC_BLOCK_HEIGHT = 870_000;
+
+        private final NetworkParameters btcMainnetParams = BridgeMainNetConstants.getInstance().getBtcParams();
+        private final Context btcContext = new Context(btcMainnetParams);
+        private final Federation federation = P2shErpFederationBuilder.builder().build();
+
+        @Test
+        void coinbaseUtxo_oneBlockBeforeMaturity_isNotSpendable() {
+            int btcChainHeadHeight = UTXO_BTC_BLOCK_HEIGHT + COINBASE_MATURITY_IN_BTC_BLOCKS - 2;
+            Wallet wallet = buildSpendWallet(List.of(buildFederationUtxo(true, UTXO_BTC_BLOCK_HEIGHT)), btcChainHeadHeight);
+
+            assertEquals(Coin.ZERO, wallet.getBalance());
+        }
+
+        @Test
+        void coinbaseUtxo_atMaturity_isSpendable() {
+            int btcChainHeadHeight = UTXO_BTC_BLOCK_HEIGHT + COINBASE_MATURITY_IN_BTC_BLOCKS - 1;
+            Wallet wallet = buildSpendWallet(List.of(buildFederationUtxo(true, UTXO_BTC_BLOCK_HEIGHT)), btcChainHeadHeight);
+
+            assertEquals(Coin.COIN, wallet.getBalance());
+        }
+
+        @Test
+        void nonCoinbaseUtxo_atChainHead_isSpendable() {
+            Wallet wallet = buildSpendWallet(List.of(buildFederationUtxo(false, UTXO_BTC_BLOCK_HEIGHT)), UTXO_BTC_BLOCK_HEIGHT);
+
+            assertEquals(Coin.COIN, wallet.getBalance());
+        }
+
+        @Test
+        void immatureCoinbaseUtxo_doesNotHideOtherUtxos() {
+            List<UTXO> utxos = List.of(
+                buildFederationUtxo(false, UTXO_BTC_BLOCK_HEIGHT),
+                buildFederationUtxo(true, UTXO_BTC_BLOCK_HEIGHT)
+            );
+            Wallet wallet = buildSpendWallet(utxos, UTXO_BTC_BLOCK_HEIGHT);
+
+            assertEquals(Coin.COIN, wallet.getBalance());
+        }
+
+        @Test
+        void coinbaseUtxoWithHeightZero_beforeRskip643_isNeverSpendable() {
+            Wallet wallet = buildSpendWallet(
+                List.of(buildFederationUtxo(true, 0)),
+                RskUTXOProvider.BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM
+            );
+
+            assertEquals(Coin.ZERO, wallet.getBalance());
+        }
+
+        @Test
+        void coinbaseUtxoWithHeightZero_afterRskip643_isSpendable() {
+            // UTXOs registered before RSKIP643 keep height 0, so they look as old as the BTC chain
+            Wallet wallet = buildSpendWallet(List.of(buildFederationUtxo(true, 0)), UTXO_BTC_BLOCK_HEIGHT);
+
+            assertEquals(Coin.COIN, wallet.getBalance());
+        }
+
+        @Test
+        void nonCoinbaseUtxo_beforeRskip643_isSpendable() {
+            Wallet wallet = buildSpendWallet(
+                List.of(buildFederationUtxo(false, 0)),
+                RskUTXOProvider.BTC_CHAIN_HEAD_HEIGHT_BEFORE_CARDAMOM
+            );
+
+            assertEquals(Coin.COIN, wallet.getBalance());
+        }
+
+        private Wallet buildSpendWallet(List<UTXO> utxos, int btcChainHeadHeight) {
+            return BridgeUtils.getFederationSpendWallet(
+                btcContext,
+                federation,
+                new RskUTXOProvider(btcMainnetParams, utxos, btcChainHeadHeight),
+                false,
+                null
+            );
+        }
+
+        private UTXO buildFederationUtxo(boolean isCoinbase, int btcBlockHeight) {
+            int transactionHashSeed = isCoinbase ? 1 : 2;
+            return UTXOBuilder.builder()
+                .withTransactionHash(BitcoinTestUtils.createHash(transactionHashSeed))
+                .withValue(Coin.COIN)
+                .withBlockHeight(btcBlockHeight)
+                .isCoinbase(isCoinbase)
+                .withScriptPubKey(federation.getP2SHScript())
+                .build();
         }
     }
 }

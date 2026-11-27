@@ -9,23 +9,29 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.RskTestUtils;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.pegin.PeginEvaluationResult;
 import co.rsk.peg.pegin.PeginProcessAction;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
+import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -281,5 +287,91 @@ class PegUtilsEvaluatePeginTest {
         );
 
         assertEquals(PeginProcessAction.REGISTER, peginEvaluationResult.getPeginProcessAction());
+    }
+
+    @Nested
+    class CoinbasePegin {
+        private static final int BTC_BLOCK_HEIGHT = 870_000;
+        private static final BtcECKey SENDER_KEY = BitcoinTestUtils.getBtcEcKeyFromSeed("coinbaseSender");
+        private static final Script P2PKH_SENDER_SCRIPT_SIG =
+            BitcoinTestUtils.createCoinbaseScriptSigWithP2pkhSender(BTC_BLOCK_HEIGHT, SENDER_KEY);
+        private static final Script P2SH_MULTISIG_SENDER_SCRIPT_SIG = BitcoinTestUtils.createCoinbaseScriptSigWithP2shMultisigSender(
+            BTC_BLOCK_HEIGHT,
+            ScriptBuilder.createRedeemScript(1, List.of(SENDER_KEY))
+        );
+        private static final Script NO_SENDER_SCRIPT_SIG = BitcoinTestUtils.createCoinbaseScriptSigWithoutSender(BTC_BLOCK_HEIGHT);
+        private static final Optional<Script> NO_PAYLOAD = Optional.empty();
+        private static final Optional<Script> VALID_V1_PAYLOAD = Optional.of(PegTestUtils.createOpReturnScriptForRsk(
+            1,
+            RskTestUtils.generateAddress("rskDestination"),
+            Optional.empty()
+        ));
+        private static final Optional<Script> MALFORMED_V1_PAYLOAD =
+            Optional.of(PegTestUtils.createOpReturnScriptForRskWithCustomPayload(1, new byte[]{}));
+
+        private static Stream<Arguments> coinbasePeginArgs() {
+            return Stream.of(
+                Arguments.of(P2PKH_SENDER_SCRIPT_SIG, NO_PAYLOAD, PeginProcessAction.REGISTER, Optional.empty()),
+                Arguments.of(P2PKH_SENDER_SCRIPT_SIG, VALID_V1_PAYLOAD, PeginProcessAction.REGISTER, Optional.empty()),
+                Arguments.of(P2PKH_SENDER_SCRIPT_SIG, MALFORMED_V1_PAYLOAD, PeginProcessAction.REFUND, Optional.of(RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD)),
+                Arguments.of(P2SH_MULTISIG_SENDER_SCRIPT_SIG, NO_PAYLOAD, PeginProcessAction.REFUND, Optional.of(RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER)),
+                Arguments.of(P2SH_MULTISIG_SENDER_SCRIPT_SIG, VALID_V1_PAYLOAD, PeginProcessAction.REGISTER, Optional.empty()),
+                Arguments.of(P2SH_MULTISIG_SENDER_SCRIPT_SIG, MALFORMED_V1_PAYLOAD, PeginProcessAction.REFUND, Optional.of(RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD)),
+                Arguments.of(NO_SENDER_SCRIPT_SIG, NO_PAYLOAD, PeginProcessAction.NO_REFUND, Optional.of(RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER)),
+                Arguments.of(NO_SENDER_SCRIPT_SIG, VALID_V1_PAYLOAD, PeginProcessAction.REGISTER, Optional.empty()),
+                Arguments.of(NO_SENDER_SCRIPT_SIG, MALFORMED_V1_PAYLOAD, PeginProcessAction.NO_REFUND, Optional.of(RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD))
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("coinbasePeginArgs")
+        void evaluatePegin_coinbaseToActiveFed(
+            Script coinbaseScriptSig,
+            Optional<Script> payload,
+            PeginProcessAction expectedPeginProcessAction,
+            Optional<RejectedPeginReason> expectedRejectedPeginReason
+        ) {
+            BtcTransaction coinbaseTx = BitcoinTestUtils.createCoinbaseTransaction(networkParameters, coinbaseScriptSig);
+            coinbaseTx.addOutput(Coin.COIN, activeFederation.getAddress());
+            payload.ifPresent(opReturnScript -> coinbaseTx.addOutput(Coin.ZERO, opReturnScript));
+            PeginInformation peginInformation = new PeginInformation(
+                new BtcLockSenderProvider(),
+                new PeginInstructionsProvider(),
+                activations
+            );
+
+            PeginEvaluationResult peginEvaluationResult = PegUtils.evaluatePegin(
+                coinbaseTx,
+                peginInformation,
+                minimumPegInTxValue,
+                activeFedWallet,
+                activations
+            );
+
+            assertEquals(expectedPeginProcessAction, peginEvaluationResult.getPeginProcessAction());
+            assertEquals(expectedRejectedPeginReason, peginEvaluationResult.getRejectedPeginReason());
+        }
+
+        @Test
+        void evaluatePegin_coinbaseBelowMinimumToActiveFed_cannotBeProcessedWithInvalidAmount() {
+            BtcTransaction coinbaseTx = BitcoinTestUtils.createCoinbaseTransaction(networkParameters, P2PKH_SENDER_SCRIPT_SIG);
+            coinbaseTx.addOutput(minimumPegInTxValue.minus(Coin.SATOSHI), activeFederation.getAddress());
+            PeginInformation peginInformation = new PeginInformation(
+                new BtcLockSenderProvider(),
+                new PeginInstructionsProvider(),
+                activations
+            );
+
+            PeginEvaluationResult peginEvaluationResult = PegUtils.evaluatePegin(
+                coinbaseTx,
+                peginInformation,
+                minimumPegInTxValue,
+                activeFedWallet,
+                activations
+            );
+
+            assertEquals(PeginProcessAction.NO_REFUND, peginEvaluationResult.getPeginProcessAction());
+            assertEquals(Optional.of(RejectedPeginReason.INVALID_AMOUNT), peginEvaluationResult.getRejectedPeginReason());
+        }
     }
 }

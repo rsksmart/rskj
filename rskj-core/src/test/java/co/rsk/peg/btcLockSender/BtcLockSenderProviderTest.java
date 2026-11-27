@@ -10,11 +10,16 @@ import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import org.bouncycastle.util.encoders.Hex;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -83,5 +88,74 @@ class BtcLockSenderProviderTest {
 
         Optional<BtcLockSender> result = provider.tryGetBtcLockSender(tx);
         assertFalse(result.isPresent());
+    }
+
+    @Nested
+    class CoinbaseSender {
+        private static final int BTC_BLOCK_HEIGHT = 870_000;
+
+        private final BtcLockSenderProvider provider = new BtcLockSenderProvider();
+        private final BtcECKey senderKey = BitcoinTestUtils.getBtcEcKeyFromSeed("coinbaseSender");
+
+        @Test
+        void gets_p2pkh_sender_from_coinbase_with_height_and_public_key() {
+            Script scriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithP2pkhSender(BTC_BLOCK_HEIGHT, senderKey);
+            BtcTransaction coinbaseTx = BitcoinTestUtils.createCoinbaseTransaction(params, scriptSig);
+
+            Optional<BtcLockSender> result = provider.tryGetBtcLockSender(coinbaseTx);
+
+            assertTrue(result.isPresent());
+            BtcLockSender btcLockSender = result.get();
+            assertEquals(TxSenderAddressType.P2PKH, btcLockSender.getTxSenderAddressType());
+            assertEquals(senderKey.toAddress(params), btcLockSender.getBTCAddress());
+            assertEquals(BitcoinTestUtils.getRskAddressFromBtcPublicKey(senderKey), btcLockSender.getRskAddress());
+        }
+
+        @Test
+        void gets_p2sh_multisig_sender_from_coinbase_ending_with_multisig_redeem_script() {
+            Script redeemScript = ScriptBuilder.createRedeemScript(1, List.of(senderKey));
+            Script scriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithP2shMultisigSender(BTC_BLOCK_HEIGHT, redeemScript);
+            BtcTransaction coinbaseTx = BitcoinTestUtils.createCoinbaseTransaction(params, scriptSig);
+
+            Optional<BtcLockSender> result = provider.tryGetBtcLockSender(coinbaseTx);
+
+            assertTrue(result.isPresent());
+            BtcLockSender btcLockSender = result.get();
+            assertEquals(TxSenderAddressType.P2SHMULTISIG, btcLockSender.getTxSenderAddressType());
+            Address expectedSenderAddress = Address.fromP2SHScript(params, ScriptBuilder.createP2SHOutputScript(redeemScript));
+            assertEquals(expectedSenderAddress, btcLockSender.getBTCAddress());
+        }
+
+        @Test
+        void gets_no_sender_from_mining_pool_coinbase() {
+            Script scriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithoutSender(BTC_BLOCK_HEIGHT);
+            BtcTransaction coinbaseTx = BitcoinTestUtils.createCoinbaseTransaction(params, scriptSig);
+
+            assertFalse(provider.tryGetBtcLockSender(coinbaseTx).isPresent());
+        }
+
+        @Test
+        void gets_no_sender_from_segwit_coinbase() {
+            // A segwit coinbase input holds only the witness reserved value. The segwit sender
+            // types need two or more witness items, and the Bridge has no native segwit sender type.
+            Script scriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithoutSender(BTC_BLOCK_HEIGHT);
+            BtcTransaction coinbaseTx = BitcoinTestUtils.createCoinbaseTransaction(params, scriptSig);
+            BitcoinTestUtils.addWitnessReservedValue(coinbaseTx);
+
+            assertFalse(provider.tryGetBtcLockSender(coinbaseTx).isPresent());
+        }
+
+        @Test
+        void gets_p2pkh_sender_from_segwit_coinbase_with_height_and_public_key() {
+            // The scriptSig alone matches a P2PKH sender, so the witness does not change the result.
+            Script scriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithP2pkhSender(BTC_BLOCK_HEIGHT, senderKey);
+            BtcTransaction coinbaseTx = BitcoinTestUtils.createCoinbaseTransaction(params, scriptSig);
+            BitcoinTestUtils.addWitnessReservedValue(coinbaseTx);
+
+            Optional<BtcLockSender> result = provider.tryGetBtcLockSender(coinbaseTx);
+
+            assertTrue(result.isPresent());
+            assertEquals(TxSenderAddressType.P2PKH, result.get().getTxSenderAddressType());
+        }
     }
 }

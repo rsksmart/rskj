@@ -45,6 +45,7 @@ import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import co.rsk.test.builders.PegoutTransactionBuilder;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.*;
 
 import co.rsk.test.builders.UTXOBuilder;
@@ -399,6 +400,59 @@ class BridgeSupportSvpTest {
             assertNoSvpFundTxSigned();
             assertNoSvpSpendTxWFS();
             assertNoSvpSpendTxHash();
+        }
+    }
+
+    @Nested
+    class FundTxWithCoinbaseUtxo {
+        private static final int COINBASE_MATURITY_IN_BTC_BLOCKS = 100;
+        private static final int COINBASE_BTC_BLOCK_HEIGHT = 870_000;
+        private final Sha256Hash coinbaseTxHash = createHash(643);
+
+        @BeforeEach
+        void setUpOnlyCoinbaseUtxo() {
+            UTXO coinbaseUtxo = UTXOBuilder.builder()
+                .withScriptPubKey(ScriptBuilder.createOutputScript(activeFederation.getAddress()))
+                .withTransactionHash(coinbaseTxHash)
+                .withValue(Coin.COIN)
+                .withBlockHeight(COINBASE_BTC_BLOCK_HEIGHT)
+                .isCoinbase(true)
+                .build();
+            bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), List.of(coinbaseUtxo), BridgeSerializationUtils::serializeUTXOList);
+        }
+
+        @Test
+        void updateCollections_beforeCoinbaseIsMature_doesNotCreateFundTransaction() throws Exception {
+            setUpBtcChainHead(COINBASE_BTC_BLOCK_HEIGHT + COINBASE_MATURITY_IN_BTC_BLOCKS - 2);
+
+            bridgeSupport.updateCollections(rskTx);
+
+            assertNoSvpFundTxHashUnsigned();
+        }
+
+        @Test
+        void updateCollections_whenCoinbaseIsMature_createsFundTransactionSpendingCoinbaseUtxo() throws Exception {
+            setUpBtcChainHead(COINBASE_BTC_BLOCK_HEIGHT + COINBASE_MATURITY_IN_BTC_BLOCKS - 1);
+
+            bridgeSupport.updateCollections(rskTx);
+            bridgeStorageProvider.save();
+
+            assertTrue(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+            BtcTransaction fundTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            assertEquals(1, fundTransaction.getInputs().size());
+            assertEquals(coinbaseTxHash, fundTransaction.getInput(0).getOutpoint().getHash());
+        }
+
+        private void setUpBtcChainHead(int btcChainHeadHeight) throws BlockStoreException {
+            BtcBlock chainHeadHeader = new BtcBlock(btcMainnetParams, 1, createHash(1), createHash(2), 1, 1, 1, new ArrayList<>());
+            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+            when(btcBlockStore.getChainHead()).thenReturn(new StoredBlock(chainHeadHeader, BigInteger.ONE, btcChainHeadHeight));
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
+            when(btcBlockStoreFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
+
+            bridgeSupport = bridgeSupportBuilder
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .build();
         }
     }
 

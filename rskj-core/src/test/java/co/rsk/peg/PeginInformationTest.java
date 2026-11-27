@@ -6,7 +6,9 @@ import static org.mockito.Mockito.when;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
@@ -28,6 +30,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -478,6 +481,46 @@ class PeginInformationTest {
                 Assertions.assertNull(peginInformation.getSenderBtcAddress());
                 Assertions.assertNull(peginInformation.getRskDestinationAddress());
             });
+        }
+    }
+
+    @Nested
+    class CoinbaseWithMalformedPayload {
+        private static final int BTC_BLOCK_HEIGHT = 870_000;
+        private final BtcECKey senderKey = BitcoinTestUtils.getBtcEcKeyFromSeed("coinbaseSender");
+        private final Script malformedPayload = PegTestUtils.createOpReturnScriptForRskWithCustomPayload(1, new byte[]{});
+
+        @Test
+        void parse_coinbaseWithP2pkhSender_throwsAndKeepsSenderAsRefundAddress() {
+            Script scriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithP2pkhSender(BTC_BLOCK_HEIGHT, senderKey);
+            BtcTransaction coinbaseTx = BitcoinTestUtils.createCoinbaseTransaction(networkParameters, scriptSig);
+            coinbaseTx.addOutput(Coin.ZERO, malformedPayload);
+            PeginInformation peginInformation = new PeginInformation(
+                new BtcLockSenderProvider(),
+                new PeginInstructionsProvider(),
+                arrowhead600Activations
+            );
+
+            Assertions.assertThrows(PeginInstructionsException.class, () -> peginInformation.parse(coinbaseTx));
+
+            Assertions.assertEquals(senderKey.toAddress(networkParameters), peginInformation.getBtcRefundAddress());
+            Assertions.assertEquals(TxSenderAddressType.P2PKH, peginInformation.getSenderBtcAddressType());
+        }
+
+        @Test
+        void parse_coinbaseWithoutSender_throwsWithoutRefundAddress() {
+            Script scriptSig = BitcoinTestUtils.createCoinbaseScriptSigWithoutSender(BTC_BLOCK_HEIGHT);
+            BtcTransaction coinbaseTx = BitcoinTestUtils.createCoinbaseTransaction(networkParameters, scriptSig);
+            coinbaseTx.addOutput(Coin.ZERO, malformedPayload);
+            PeginInformation peginInformation = new PeginInformation(
+                new BtcLockSenderProvider(),
+                new PeginInstructionsProvider(),
+                arrowhead600Activations
+            );
+
+            Assertions.assertThrows(PeginInstructionsException.class, () -> peginInformation.parse(coinbaseTx));
+
+            Assertions.assertNull(peginInformation.getBtcRefundAddress());
         }
     }
 }
