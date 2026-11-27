@@ -160,17 +160,19 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     private boolean init() {
+        // Anything added between here and the local-call early return below also runs during block execution and
+        // is consensus-critical.
         basicTxCost = tx.transactionCost(constants, activations, signatureCache);
-
-        if (localCall) {
-            return true;
-        }
 
         if (tx.isInitCodeSizeInvalidForTx(activations)) {
 
             String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
 
-            logger.warn(errorMessage);
+            if (localCall) {
+                logger.debug(errorMessage);
+            } else {
+                logger.warn(errorMessage);
+            }
 
             execError(errorMessage);
 
@@ -178,6 +180,14 @@ public class TransactionExecutor {
         }
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
+
+        if (localCall) {
+            // A local call skips the gas-limit, nonce, balance, address and signature checks below, but it must still
+            // cover its intrinsic cost: otherwise execution subtracts that cost from less gas and fails with an
+            // unexpected exception.
+            return coversIntrinsicCost(txGasLimit);
+        }
+
         long gasLimit = (activations.isActive(RSKIP351) && activations.isActive(RSKIP144)) ? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
 
         if (!gasIsValid(txGasLimit, gasLimit)) {
@@ -216,6 +226,14 @@ public class TransactionExecutor {
         return true;
     }
 
+
+    private boolean coversIntrinsicCost(long txGasLimit) {
+        if (txGasLimit < basicTxCost) {
+            execError(String.format("Not enough gas for transaction execution: tx needs: %s tx sent: %s", basicTxCost, txGasLimit));
+            return false;
+        }
+        return true;
+    }
 
     private boolean transactionAddressesAreValid() {
         // Prevent transactions with excessive address size
@@ -278,12 +296,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        if (txGasLimit < basicTxCost) {
-            execError(String.format("Not enough gas for transaction execution: tx needs: %s tx sent: %s", basicTxCost, txGasLimit));
-            return false;
-        }
-
-        return true;
+        return coversIntrinsicCost(txGasLimit);
     }
 
     private void execute() {
@@ -742,6 +755,10 @@ public class TransactionExecutor {
 
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
+    }
+
+    public String getExecutionError() {
+        return executionError;
     }
 
     public TransactionExecutor setLocalCall(boolean localCall) {

@@ -19,6 +19,7 @@ package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -474,22 +475,31 @@ public class TransactionPoolImpl implements TransactionPool {
     /**
      * @param newTx             a transaction to be added to the pending list (nonce = last pending nonce + 1)
      * @param currentRepository
-     * @return whether the sender balance is enough to pay for all pending transactions + newTx
+     * @return whether the sender balance is enough to pay for newTx plus every pending transaction that can still be
+     * mined and is not replaced by newTx
      */
     private boolean senderCanPayPendingTransactionsAndNewTx(Transaction newTx, RepositorySnapshot currentRepository) {
-        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender(signatureCache));
+        RskAddress sender = newTx.getSender(signatureCache);
+        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(sender);
+        // a missing account has nonce zero and balance zero
+        AccountState senderState = currentRepository.getAccountState(sender);
+        BigInteger stateNonce = senderState == null ? BigInteger.ZERO : senderState.getNonce();
+        Coin balance = senderState == null ? Coin.ZERO : senderState.getBalance();
+        BigInteger newTxNonce = newTx.getNonceAsInteger();
 
         Coin accumTxCost = Coin.ZERO;
         for (Transaction t : transactions) {
-            boolean isReplacedTx = Arrays.equals(t.getNonce(), newTx.getNonce());
-            // do not consider replaced transaction for the calculations
-            if (!isReplacedTx) {
+            BigInteger nonce = t.getNonceAsInteger();
+            boolean isReplacedTx = nonce.equals(newTxNonce);
+            // a stale tx (nonce already consumed in state) can never be mined, so its cost can never be spent
+            boolean isStaleTx = nonce.compareTo(stateNonce) < 0;
+            if (!isReplacedTx && !isStaleTx) {
                 accumTxCost = accumTxCost.add(getTxBaseCost(t));
             }
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
-        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0;
+        return costWithNewTx.compareTo(balance) <= 0;
     }
 
     private Coin getTxBaseCost(Transaction tx) {
