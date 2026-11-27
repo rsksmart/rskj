@@ -2,7 +2,7 @@
   "ExecutionBlockRef": {
     "title": "executionBlockRef",
     "type": "object",
-    "description": "A block reference for a method that executes against the block rather than reading it. It is the same object as `blockRef`, except that `blockNumber` may be given in decimal as well as in hex: the height is resolved by `ExecutionBlockRetriever`, which parses both bases, where the reading methods go through `Web3InformationRetriever` and take hex only. At least one of `blockHash` or `blockNumber` must be present; the node rejects an object carrying neither with `Invalid block input`.",
+    "description": "A block reference for a method that executes against the block rather than reading it. It is the same object as `blockRef`, except that `blockNumber` may be given in decimal as well as in hex: the height is resolved by `ExecutionBlockRetriever`, which parses both bases, where the reading methods go through `Web3InformationRetriever` and take hex only. At least one of `blockHash` or `blockNumber` must be present; the node rejects an object carrying neither with `Invalid block input`. `blockNumber` must be a height: a 32-byte block hash there is rejected with `-32602`, because only `blockHash` is checked against `requireCanonical`.",
     "properties": {
       "blockHash": {
         "$ref": "#/components/schemas/BlockHash"

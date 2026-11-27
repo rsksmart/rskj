@@ -2,7 +2,7 @@
   "BlockRef": {
     "title": "blockRef",
     "type": "object",
-    "description": "Object defining block references, for a method that reads the block. At least one of `blockHash` or `blockNumber` must be present; the node rejects an object carrying neither with `Invalid block input`. `blockNumber` is hex only here -- a decimal height is answered with `invalid blocknumber`. The method that executes against the block rather than reading it takes `executionBlockRef`, which also accepts decimal.",
+    "description": "Object defining block references, for a method that reads the block. At least one of `blockHash` or `blockNumber` must be present; the node rejects an object carrying neither with `Invalid block input`. `blockNumber` is hex only here -- a decimal height is answered with `invalid blocknumber`. The methods that execute against the block rather than reading it take `executionBlockRef`, which also accepts decimal. `blockNumber` must be a height: a 32-byte block hash there is rejected with `-32602`, because only `blockHash` is checked against `requireCanonical`.",
     "properties": {
       "blockHash": {
         "$ref": "#/components/schemas/BlockHash"

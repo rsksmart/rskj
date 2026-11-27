@@ -11,13 +11,19 @@ import org.ethereum.core.*;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Web3InformationRetrieverTest {
@@ -99,6 +105,65 @@ class Web3InformationRetrieverTest {
 
         assertTrue(result.isPresent());
         assertEquals(secondBlock, result.get());
+    }
+
+    @Test
+    void getBlock_upperCaseHash_resolvesByHash() {
+        String hash = "0x00000000000000000000000000000000000000000000000000000000000000AB";
+        Block block = mock(Block.class);
+        when(blockchain.getBlockByHash(HexUtils.stringHexToByteArray(hash))).thenReturn(block);
+        Optional<Block> result = target.getBlock(hash);
+
+        assertTrue(result.isPresent());
+        assertEquals(block, result.get());
+        verify(blockchain, never()).getBlockByNumber(anyLong());
+    }
+
+    @Test
+    void getBlock_hashLengthWithoutPrefix_isNotReadAsAHash() {
+        String hashLengthDigits = "0000000000000000000000000000000000000000000000000000000000000002";
+
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class, () -> target.getBlock(hashLengthDigits));
+
+        assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
+        verify(blockchain, never()).getBlockByHash(any());
+    }
+
+    @Test
+    void getBlock_zeroPaddedHeightShorterThanAHash_resolvesByNumber() {
+        String height = "0x00000000000000000000000000000000000000000000000000000000000002";
+        Block secondBlock = mock(Block.class);
+        when(blockchain.getBlockByNumber(2)).thenReturn(secondBlock);
+        Optional<Block> result = target.getBlock(height);
+
+        assertTrue(result.isPresent());
+        assertEquals(secondBlock, result.get());
+        verify(blockchain, never()).getBlockByHash(any());
+    }
+
+    @Test
+    void getBlock_heightZeroPaddedToSixtyThreeDigits_resolvesByNumber() {
+        Block secondBlock = mock(Block.class);
+        when(blockchain.getBlockByNumber(2)).thenReturn(secondBlock);
+        Optional<Block> result = target.getBlock(String.format("0x%063x", 2));
+
+        assertTrue(result.isPresent());
+        assertEquals(secondBlock, result.get());
+        verify(blockchain, never()).getBlockByHash(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "0x00000000000000000000000000000000000000000000000000000000000000002", // 0x and 65 digits
+            "0000000000000000000000000000000000000000000000000000000000000000ab" // 66 characters, no 0x
+    })
+    void getBlock_oneCharacterOffAPrefixedHash_isRejectedWithoutAHashLookup(String identifier) {
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class, () -> target.getBlock(identifier));
+
+        assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
+        verify(blockchain, never()).getBlockByHash(any());
     }
 
     @Test

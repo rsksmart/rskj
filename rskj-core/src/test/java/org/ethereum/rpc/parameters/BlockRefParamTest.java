@@ -19,6 +19,8 @@ package org.ethereum.rpc.parameters;
 
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -99,6 +101,35 @@ public class BlockRefParamTest {
         };
 
         assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(inputs));
+    }
+
+    @Test
+    void blockNumberShapedLikeABlockHash_isRejected() {
+        Map<String, String> inputs = Map.of("blockNumber", "0x" + "0".repeat(62) + "01");
+
+        RskJsonRpcRequestException e = assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(inputs));
+
+        assertEquals(-32602, (int) e.getCode());
+    }
+
+    @Test
+    void blockNumberShapedLikeAnUpperCaseBlockHash_isRejected() {
+        Map<String, String> inputs = Map.of("blockNumber", "0x" + "AB".repeat(32));
+
+        RskJsonRpcRequestException e = assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(inputs));
+
+        assertEquals(-32602, (int) e.getCode());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {62, 63})
+    void blockNumberZeroPaddedShorterThanABlockHash_isAccepted(int digits) {
+        String blockNumber = "0x" + "0".repeat(digits - 2) + "1a";
+        Map<String, String> inputs = Map.of("blockNumber", blockNumber);
+
+        BlockRefParam blockRefParam = new BlockRefParam(inputs);
+
+        assertEquals(blockNumber, blockRefParam.getInputs().get("blockNumber"));
     }
 
     @Test

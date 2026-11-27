@@ -116,6 +116,18 @@ class Web3ImplUnitTest {
     }
 
     @Test
+    void eth_getCode_pending() {
+        String addr = "0x0011223344556677880011223344556677889900";
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        when(retriever.getInformationProvider("pending")).thenReturn(aip);
+        when(aip.getCode(new RskAddress(addr))).thenReturn(new byte[]{1, 2, 3});
+
+        String result = target.eth_getCode(new HexAddressParam(addr), new BlockRefParam("pending"));
+
+        assertEquals("0x010203", result);
+    }
+
+    @Test
         //validates invokeByBlockRef call
     void eth_getBalanceByBlockRef() {
         String addr = "0x0011223344556677880011223344556677889900";
@@ -238,6 +250,27 @@ class Web3ImplUnitTest {
         String result = target.rsk_getStorageBytesAt(hexAddressParam, hexNumberParam, blockRefParam);
         assertEquals(expectedResult,
                 result);
+    }
+
+    @Test
+    void rsk_getStorageBytesAtByBlockHash() {
+        String hash = "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8";
+        String addr = "0x0011223344556677880011223344556677889900";
+        String storageIdx = "0x01";
+        Block block = mock(Block.class);
+        when(block.getHashJsonString()).thenReturn(hash);
+        when(blockchain.getBlockByHash(HexUtils.stringHexToByteArray(hash))).thenReturn(block);
+        byte[] resultBytes = TestUtils.generateBytes("result", 64);
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        when(retriever.getInformationProvider(hash)).thenReturn(aip);
+        when(aip.getStorageBytes(new RskAddress(addr), DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx))))
+                .thenReturn(resultBytes);
+        Map<String, String> blockRef = new HashMap<>();
+        blockRef.put("blockHash", hash);
+
+        String result = target.rsk_getStorageBytesAt(new HexAddressParam(addr), new HexNumberParam(storageIdx), new BlockRefParam(blockRef));
+
+        assertEquals(HexUtils.toUnformattedJsonHex(resultBytes), result);
     }
 
     @Test

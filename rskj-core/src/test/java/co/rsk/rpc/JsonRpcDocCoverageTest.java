@@ -165,17 +165,12 @@ class JsonRpcDocCoverageTest {
      * here would notice. An entry naming a method that does not take the mapped parameter type fails, for the
      * same reason a mapped type matching no method does.
      *
-     * <p>{@code eth_estimateGas} is the executing method of the {@link BlockIdentifierParam} type, and it is
-     * named here for the same reason {@code eth_call} is: its type's {@code form} is the reading union, which
-     * it does not reach. The entry and the union pin depend on each other and were made together. With the
-     * tag pinned instead, this entry would be unnecessary and a reading method could be widened to the
-     * executing variant unnoticed; with the union pinned and this entry absent, {@code eth_estimateGas} itself
-     * fails. Together they hold the contract in both directions: a reading method cannot claim the decimal
-     * height its retriever rejects, and the executing method cannot quietly lose it.
+     * <p>{@code eth_estimateGas} takes the same {@link BlockRefParam} and resolves through the same retriever
+     * as {@code eth_call}, so it is named here for the same reason.
      */
     private static final Map<String, String> WIDER_BLOCK_FORM_BY_METHOD = Map.of(
             "eth_call", "#/components/schemas/ExecutionBlockRef",
-            "eth_estimateGas", "#/components/schemas/ExecutionBlockNumberOrTag");
+            "eth_estimateGas", "#/components/schemas/ExecutionBlockRef");
 
     /**
      * Every node-side block parameter type, mapped to what documenting it honestly requires. Methods are found

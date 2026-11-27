@@ -21,7 +21,9 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HashParamTest {
 
@@ -59,5 +61,27 @@ class HashParamTest {
         assertThrows(RskJsonRpcRequestException.class, () -> new BlockHashParam(invalidHash));
         assertThrows(RskJsonRpcRequestException.class, () -> new BlockHashParam(shorterHash));
         assertThrows(RskJsonRpcRequestException.class, () -> new BlockHashParam(invalidCharHash));
+    }
+
+    @Test
+    void blockHashParam_validLengthDecodingToOtherThan32Bytes_isRejected() {
+        String thirtyOneBytes = "0x" + "ab".repeat(31);
+        String thirtyThreeBytesWithoutPrefix = "ab".repeat(33);
+
+        RskJsonRpcRequestException shorter = assertThrows(RskJsonRpcRequestException.class, () -> new BlockHashParam(thirtyOneBytes));
+        RskJsonRpcRequestException longer = assertThrows(RskJsonRpcRequestException.class, () -> new BlockHashParam(thirtyThreeBytesWithoutPrefix));
+
+        assertEquals("Invalid block hash: incorrect length.", shorter.getMessage());
+        assertEquals("Invalid block hash: incorrect length.", longer.getMessage());
+    }
+
+    @Test
+    void isPrefixedHash32Hex_onlyAcceptsPrefixAndSixtyFourHexDigits() {
+        assertTrue(HashParam32.isPrefixedHash32Hex("0x" + "aB".repeat(32)));
+        assertFalse(HashParam32.isPrefixedHash32Hex(null));
+        assertFalse(HashParam32.isPrefixedHash32Hex("0x" + "a".repeat(63)));
+        assertFalse(HashParam32.isPrefixedHash32Hex("0x" + "a".repeat(65)));
+        assertFalse(HashParam32.isPrefixedHash32Hex("a".repeat(66)));
+        assertFalse(HashParam32.isPrefixedHash32Hex("0x" + "g".repeat(64)));
     }
 }

@@ -57,7 +57,7 @@ public interface Web3EthModule {
 
     String eth_estimateGas(CallArgumentsParam args);
 
-    String eth_estimateGas(CallArgumentsParam args, BlockIdentifierParam bnOrId);
+    String eth_estimateGas(CallArgumentsParam args, BlockRefParam blockRefParam);
 
     EthModule getEthModule();
 
@@ -96,10 +96,6 @@ public interface Web3EthModule {
     String eth_getUncleCountByBlockNumber(BlockIdentifierParam bnOrId)throws Exception;
 
     String eth_getCode(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
-
-    default String getCode(HexAddressParam address, String blockId) {
-        return getEthModule().getCode(address, blockId);
-    }
 
     default String eth_sendRawTransaction(HexDataParam rawData) {
         return getEthModule().sendRawTransaction(rawData);

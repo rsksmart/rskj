@@ -22,7 +22,6 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.exception.TransactionExecutionRejectedException;
-import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.peg.BridgeState;
@@ -41,7 +40,6 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
@@ -49,7 +47,6 @@ import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
-import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -80,7 +77,6 @@ public class EthModule
     private static final byte[] ERROR_ABI_FUNCTION_SIGNATURE = ERROR_ABI_FUNCTION.encodeSignature(); //08c379a0
 
     private final Blockchain blockchain;
-    private final TransactionPool transactionPool;
     private final ReversibleTransactionExecutor reversibleTransactionExecutor;
     private final ExecutionBlockRetriever executionBlockRetriever;
     private final RepositoryLocator repositoryLocator;
@@ -100,7 +96,6 @@ public class EthModule
             BridgeConstants bridgeConstants,
             byte chainId,
             Blockchain blockchain,
-            TransactionPool transactionPool,
             ReversibleTransactionExecutor reversibleTransactionExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
             RepositoryLocator repositoryLocator,
@@ -115,7 +110,6 @@ public class EthModule
             StateOverrideApplier stateOverrideApplier) {
         this.chainId = chainId;
         this.blockchain = blockchain;
-        this.transactionPool = transactionPool;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
         this.repositoryLocator = repositoryLocator;
@@ -308,58 +302,6 @@ public class EthModule
 
     public String chainId() {
         return HexUtils.toJsonHex(new byte[]{chainId});
-    }
-
-    public String getCode(HexAddressParam address, String blockId) {
-        if (blockId == null) {
-            throw new NullPointerException();
-        }
-
-        String s = null;
-        RskAddress addr = address.getAddress();
-        try {
-
-            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
-
-            if (accountInformationProvider != null) {
-                byte[] code = accountInformationProvider.getCode(addr);
-
-                // Code can be null, if there is no account.
-                if (code == null) {
-                    code = new byte[0];
-                }
-
-                s = HexUtils.toUnformattedJsonHex(code);
-            }
-
-            return s;
-        } finally {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("eth_getCode({}, {}): {}", addr.toHexString(), blockId, s);
-            }
-        }
-    }
-
-    private AccountInformationProvider getAccountInformationProvider(String id) {
-        switch (id.toLowerCase()) {
-            case "pending":
-                return transactionPool.getPendingState();
-            case "earliest":
-                return repositoryLocator.snapshotAt(blockchain.getBlockByNumber(0).getHeader());
-            case "latest":
-                return repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
-            default:
-                try {
-                    long blockNumber = HexUtils.stringHexToBigInteger(id).longValue();
-                    Block requestedBlock = blockchain.getBlockByNumber(blockNumber);
-                    if (requestedBlock != null) {
-                        return repositoryLocator.snapshotAt(requestedBlock.getHeader());
-                    }
-                    return null;
-                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                    throw invalidParamError("invalid blocknumber " + id);
-                }
-        }
     }
 
     @VisibleForTesting

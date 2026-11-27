@@ -20,6 +20,7 @@ package org.ethereum.rpc.parameters;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.HexUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.Utils;
 
 import static co.rsk.util.HexUtils.stringHexToByteArray;
 
@@ -27,12 +28,13 @@ public abstract class HashParam32 {
     public static final int HASH_BYTE_LENGTH = Keccak256.HASH_LEN;
     public static final int MIN_HASH_HEX_LEN = 2 * HASH_BYTE_LENGTH; // 2 hex characters per byte
     public static final int MAX_HASH_HEX_LEN = MIN_HASH_HEX_LEN + 2; // 2 bytes for 0x prefix
+    private static final String INVALID_PREFIX = "Invalid ";
 
     private final Keccak256 hash;
 
     HashParam32(String hashType, String hash) {
         if (!isHash32HexLengthValid(hash)) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid " + hashType + ": incorrect length.");
+            throw RskJsonRpcRequestException.invalidParamError(INVALID_PREFIX + hashType + ": incorrect length.");
         }
 
         byte[] hashBytes;
@@ -40,11 +42,11 @@ public abstract class HashParam32 {
         try {
             hashBytes = HexUtils.stringHexToByteArray(hash);
         } catch (Exception e) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid " + hashType + " format: invalid hex value", e);
+            throw RskJsonRpcRequestException.invalidParamError(INVALID_PREFIX + hashType + " format: invalid hex value", e);
         }
 
         if (HASH_BYTE_LENGTH != hashBytes.length) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid " + hashType + ": incorrect length.");
+            throw RskJsonRpcRequestException.invalidParamError(INVALID_PREFIX + hashType + ": incorrect length.");
         }
 
         this.hash = new Keccak256(stringHexToByteArray(hash));
@@ -56,5 +58,9 @@ public abstract class HashParam32 {
 
     public static boolean isHash32HexLengthValid(String hex) {
         return hex != null && hex.length() >= MIN_HASH_HEX_LEN && hex.length() <= MAX_HASH_HEX_LEN;
+    }
+
+    public static boolean isPrefixedHash32Hex(String hex) {
+        return hex != null && hex.length() == MAX_HASH_HEX_LEN && Utils.isHexadecimalString(hex);
     }
 }

@@ -1071,7 +1071,7 @@ class Web3ImplLogsTest {
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(),
                 new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockChain, transactionPool,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockChain,
                 null, new ExecutionBlockRetriever(blockChain, null, null),
                 null, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache), null,
                 bridgeSupportFactory,

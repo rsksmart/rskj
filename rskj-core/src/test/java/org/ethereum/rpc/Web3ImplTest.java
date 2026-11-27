@@ -44,6 +44,7 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
+import co.rsk.rpc.netty.JsonRpcCustomServer;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.debug.trace.DebugTracer;
@@ -70,6 +71,11 @@ import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
 import co.rsk.util.NodeStopper;
 import co.rsk.util.TestContract;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.googlecode.jsonrpc4j.AnnotationsErrorResolver;
+import com.googlecode.jsonrpc4j.DefaultErrorResolver;
+import com.googlecode.jsonrpc4j.MultipleErrorResolver;
 import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -109,6 +115,7 @@ import org.ethereum.rpc.Simples.SimplePeerServer;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.exception.RskErrorResolver;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockHashParam;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
@@ -131,11 +138,17 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -646,6 +659,294 @@ class Web3ImplTest {
         assertNonCanonicalBlockHash("0x010203", chain.block, blockRef -> chain.web3.eth_getCode(new HexAddressParam(chain.accountAddress), new BlockRefParam(blockRef)));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "\"%s\"",
+            "{\"blockHash\": \"%s\"}",
+            "{\"blockHash\": \"%s\", \"requireCanonical\": \"false\"}"
+    })
+    void getCodeOverJsonRpc_byBlockHash_returnsCodeAtThatBlock(String blockParamFormat) throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String blockParam = String.format(blockParamFormat, chain.block.getHashJsonString());
+        String params = String.format("[\"0x%s\", %s]", chain.accountAddress, blockParam);
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
+
+        assertEquals("0x010203", response.path("result").asText(), response.toString());
+    }
+
+    @Test
+    void getCodeOverJsonRpc_byBareBlockHashForAccountWithoutCode_returnsEmptyBytes() throws IOException {
+        final ChainParams chain = createChainWithATransaction(false);
+        String params = String.format("[\"0x%s\", \"%s\"]", chain.accountAddress, chain.block.getHashJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
+
+        assertEquals("0x", response.path("result").asText(), response.toString());
+    }
+
+    @Test
+    void getBalanceOverJsonRpc_byUnknownHashShapedLikeABlockNumber_returnsError() throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String unknownHash = String.format("0x%064x", chain.block.getNumber());
+        String params = String.format("[\"0x%s\", \"%s\"]", chain.accountAddress, unknownHash);
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getBalance", params);
+
+        assertEquals(-32600, response.path("error").path("code").asInt(), response.toString());
+    }
+
+    @Test
+    void getCodeOverJsonRpc_byUnknownHashShapedLikeABlockNumber_returnsError() throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String unknownHash = String.format("0x%064x", chain.block.getNumber());
+        String params = String.format("[\"0x%s\", \"%s\"]", chain.accountAddress, unknownHash);
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
+
+        assertEquals(-32600, response.path("error").path("code").asInt(), response.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void getCodeOverJsonRpc_byBlockHashWithBooleanRequireCanonical_returnsCode(boolean requireCanonical) throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String params = String.format("[\"0x%s\", {\"blockHash\": \"%s\", \"requireCanonical\": %s}]",
+                chain.accountAddress, chain.block.getHashJsonString(), requireCanonical);
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
+
+        assertEquals("0x010203", response.path("result").asText(), response.toString());
+    }
+
+    @Test
+    void getCodeOverJsonRpc_byBlockHashWithNullRequireCanonical_returnsInvalidParams() throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String params = String.format("[\"0x%s\", {\"blockHash\": \"%s\", \"requireCanonical\": null}]",
+                chain.accountAddress, chain.block.getHashJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
+
+        assertInvalidType(response, "requireCanonical");
+    }
+
+    @Test
+    void getCodeOverJsonRpc_byBlockNumberObjectWithJsonNumber_returnsInvalidParams() throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String params = String.format("[\"0x%s\", {\"blockNumber\": %d}]", chain.accountAddress, chain.block.getNumber());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
+
+        assertInvalidType(response, "blockNumber");
+    }
+
+    @Test
+    void getCodeOverJsonRpc_byBlockNumberObjectWithJsonBoolean_returnsInvalidParams() throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String params = String.format("[\"0x%s\", {\"blockNumber\": true}]", chain.accountAddress);
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
+
+        assertInvalidType(response, "blockNumber");
+    }
+
+    @Test
+    void getCodeOverJsonRpc_byBlockHashObjectWithNonStringUnknownKey_returnsInvalidParams() throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String params = String.format("[\"0x%s\", {\"blockHash\": \"%s\", \"foo\": 1}]",
+                chain.accountAddress, chain.block.getHashJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
+
+        assertInvalidType(response, "foo");
+    }
+
+    @Test
+    void getCodeOverJsonRpc_byBlockHashObjectWithLongUnknownKey_echoesATrimmedKey() throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String params = String.format("[\"0x%s\", {\"blockHash\": \"%s\", \"%s\": 1}]",
+                chain.accountAddress, chain.block.getHashJsonString(), "k".repeat(100_000));
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
+
+        assertInvalidType(response, "k".repeat(66) + "...");
+    }
+
+    private static void assertInvalidType(JsonNode response, String key) {
+        assertEquals(-32602, response.path("error").path("code").asInt(), response.toString());
+        assertEquals("Invalid input: " + key + " has an invalid type",
+                response.path("error").path("message").asText(), response.toString());
+    }
+
+    @Test
+    void callOverJsonRpc_byBlockHashObject_returnsCallResult() throws IOException {
+        final ChainParams chain = createChainWithACall(false);
+        String params = String.format("[%s, {\"blockHash\": \"%s\"}]", callArgsJson(chain.argsForCall), chain.block.getHashJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_call", params);
+
+        assertEquals(CALL_RESPOND, response.path("result").asText(), response.toString());
+    }
+
+    @Test
+    void callOverJsonRpc_byBareBlockHash_returnsCallResult() throws IOException {
+        final ChainParams chain = createChainWithACall(false);
+        String params = String.format("[%s, \"%s\"]", callArgsJson(chain.argsForCall), chain.block.getHashJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_call", params);
+
+        assertEquals(CALL_RESPOND, response.path("result").asText(), response.toString());
+    }
+
+    @Test
+    void callOverJsonRpc_byUnknownHashShapedLikeABlockNumber_returnsSameErrorAsBlockHashObject() throws IOException {
+        final ChainParams chain = createChainWithACall(false);
+        String args = callArgsJson(chain.argsForCall);
+        String unknownHash = String.format("0x%064x", chain.block.getNumber());
+        int objectErrorCode = overJsonRpc(chain.web3, "eth_call",
+                String.format("[%s, {\"blockHash\": \"%s\"}]", args, unknownHash)).path("error").path("code").asInt();
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_call", String.format("[%s, \"%s\"]", args, unknownHash));
+
+        assertEquals(-32600, objectErrorCode);
+        assertEquals(objectErrorCode, response.path("error").path("code").asInt(), response.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"eth_call", "eth_estimateGas"})
+    void executionOverJsonRpc_byBlockNumberTooLargeForALong_returnsInvalidParams(String method) throws IOException {
+        final ChainParams chain = createChainWithACall(false);
+        String params = String.format("[%s, \"0x%s\"]", callArgsJson(chain.argsForCall), "f".repeat(20));
+
+        JsonNode response = overJsonRpc(chain.web3, method, params);
+
+        assertEquals(-32602, response.path("error").path("code").asInt(), response.toString());
+    }
+
+    // Genesis predates the contract, so an empty call there is a plain transfer: 21000 gas (0x5208, Yellow Paper G_transaction).
+    private static final String PLAIN_TRANSFER_GAS = "0x5208";
+    // At the latest block the contract exists and reverts on empty calldata.
+    private static final int EXECUTION_REVERTED_CODE = -32015;
+
+    @Test
+    void estimateGasOverJsonRpc_byBlockNumber_executesAtThatBlock() throws IOException {
+        final ChainParams chain = createChainWithACall(false);
+        String params = String.format("[%s, \"0x0\"]", emptyCallArgsJson(chain.argsForCall));
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_estimateGas", params);
+
+        assertEquals(PLAIN_TRANSFER_GAS, response.path("result").asText(), response.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[%s]", "[%s, null]"})
+    void estimateGasOverJsonRpc_withoutBlock_executesAtLatest(String paramsTemplate) throws IOException {
+        final ChainParams chain = createChainWithACall(false);
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_estimateGas", String.format(paramsTemplate, emptyCallArgsJson(chain.argsForCall)));
+
+        assertEquals(EXECUTION_REVERTED_CODE, response.path("error").path("code").asInt(), response.toString());
+    }
+
+    @Test
+    void estimateGasOverJsonRpc_byBareBlockHash_executesAtThatBlock() throws IOException {
+        final ChainParams chain = createChainWithACall(false);
+        String params = String.format("[%s, \"%s\"]", emptyCallArgsJson(chain.argsForCall), chain.block.getParentHash().toJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_estimateGas", params);
+
+        assertEquals(PLAIN_TRANSFER_GAS, response.path("result").asText(), response.toString());
+    }
+
+    @Test
+    void estimateGasOverJsonRpc_byBlockHashObject_executesAtThatBlock() throws IOException {
+        final ChainParams chain = createChainWithACall(false);
+        String params = String.format("[%s, {\"blockHash\": \"%s\"}]", emptyCallArgsJson(chain.argsForCall), chain.block.getParentHash().toJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_estimateGas", params);
+
+        assertEquals(PLAIN_TRANSFER_GAS, response.path("result").asText(), response.toString());
+    }
+
+    @Test
+    void getBalanceOverJsonRpc_byNonExistentBlockNumber_returnsError() throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String params = String.format("[\"0x%s\", \"0x64\"]", chain.accountAddress);
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getBalance", params);
+
+        assertEquals(-32600, response.path("error").path("code").asInt(), response.toString());
+    }
+
+    @Test
+    void getCodeOverJsonRpc_byNonExistentBlockNumber_returnsError() throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String params = String.format("[\"0x%s\", \"0x64\"]", chain.accountAddress);
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
+
+        assertEquals(-32600, response.path("error").path("code").asInt(), response.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"\"%s\"", "{\"blockHash\": \"%s\"}", "{\"blockHash\": \"%s\", \"requireCanonical\": false}"})
+    void getBalanceOverJsonRpc_byNonCanonicalBlockHash_returnsStateOfThatBlock(String blockRefTemplate) throws IOException {
+        final NonCanonicalTransfer chain = createNonCanonicalTransfer();
+        String recipient = HexUtils.toJsonHex(chain.recipient.getBytes());
+        String canonicalAtSameHeight = overJsonRpc(chain.web3, "eth_getBalance",
+                String.format("[\"%s\", \"0x1\"]", recipient)).path("result").asText();
+        String blockRef = String.format(blockRefTemplate, chain.nonCanonicalBlock.getHashJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getBalance", String.format("[\"%s\", %s]", recipient, blockRef));
+
+        assertEquals("0x0", canonicalAtSameHeight);
+        assertEquals(HexUtils.toQuantityJsonHex(NON_CANONICAL_TRANSFER_VALUE), response.path("result").asText(), response.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"true", "\"true\""})
+    void getBalanceOverJsonRpc_byNonCanonicalBlockHashRequiringCanonical_returnsError(String requireCanonical) throws IOException {
+        final NonCanonicalTransfer chain = createNonCanonicalTransfer();
+        String params = String.format("[\"%s\", {\"blockHash\": \"%s\", \"requireCanonical\": %s}]",
+                HexUtils.toJsonHex(chain.recipient.getBytes()), chain.nonCanonicalBlock.getHashJsonString(), requireCanonical);
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getBalance", params);
+
+        assertEquals(-32600, response.path("error").path("code").asInt(), response.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{\"blockNumber\": \"%s\"}", "{\"blockNumber\": \"%s\", \"requireCanonical\": true}"})
+    void getBalanceOverJsonRpc_byBlockNumberHoldingABlockHash_returnsInvalidParams(String blockRefTemplate) throws IOException {
+        final NonCanonicalTransfer chain = createNonCanonicalTransfer();
+        String blockRef = String.format(blockRefTemplate, chain.nonCanonicalBlock.getHashJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getBalance",
+                String.format("[\"%s\", %s]", HexUtils.toJsonHex(chain.recipient.getBytes()), blockRef));
+
+        assertEquals(-32602, response.path("error").path("code").asInt(), response.toString());
+    }
+
+    // Init code that returns the recipient's balance: PUSH20 recipient, BALANCE, MSTORE at 0, RETURN 32 bytes.
+    private static String returnBalanceOfCallJson(RskAddress account) {
+        return String.format("{\"data\": \"0x73%s3160005260206000f3\"}", account.toHexString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"\"%s\"", "{\"blockHash\": \"%s\"}"})
+    void callOverJsonRpc_byNonCanonicalBlockHash_executesAtThatBlock(String blockRefTemplate) throws IOException {
+        final NonCanonicalTransfer chain = createNonCanonicalTransfer();
+        String call = returnBalanceOfCallJson(chain.recipient);
+        String canonicalAtSameHeight = overJsonRpc(chain.web3, "eth_call",
+                String.format("[%s, \"0x1\"]", call)).path("result").asText();
+        String blockRef = String.format(blockRefTemplate, chain.nonCanonicalBlock.getHashJsonString());
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_call", String.format("[%s, %s]", call, blockRef));
+
+        assertEquals(String.format("0x%064x", 0), canonicalAtSameHeight);
+        assertEquals(String.format("0x%064x", NON_CANONICAL_TRANSFER_VALUE), response.path("result").asText(), response.toString());
+    }
+
     @Test
         //[ {argsForCall}, { "blockNumber": "0x0" } -> return contract call respond at given args for call in genesis block
     void callByBlockNumber() {
@@ -734,7 +1035,7 @@ class Web3ImplTest {
         //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return data at given address in genesis block
     void invokeByBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(false);
-        assertByBlockHash("0x1", chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
+        assertByBlockHash(chain.block.getHashJsonString(), chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
@@ -769,28 +1070,28 @@ class Web3ImplTest {
         //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return data at given address in genesis block
     void invokeCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
-        assertCanonicalBlockHashWhenCanonical("0x1", chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
+        assertCanonicalBlockHashWhenCanonical(chain.block.getHashJsonString(), chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
         //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return data at given address in genesis block
     void invokeByCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
-        assertCanonicalBlockHashWhenNotCanonical("0x1", chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
+        assertCanonicalBlockHashWhenNotCanonical(chain.block.getHashJsonString(), chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
         // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return data at given address in specified block
     void invokeByNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(true);
-        assertNonCanonicalBlockHashWhenNotCanonical("0x1", chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
+        assertNonCanonicalBlockHashWhenNotCanonical(chain.block.getHashJsonString(), chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
         // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>" } -> return data at given address in specified block
     void invokeByNonCanonicalBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(true);
-        assertNonCanonicalBlockHash("0x1", chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
+        assertNonCanonicalBlockHash(chain.block.getHashJsonString(), chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
@@ -2157,9 +2458,12 @@ class Web3ImplTest {
 
         String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
 
-        String resultCode = web3.eth_getCode(new HexAddressParam(accountAddress), new BlockRefParam("0x100"));
+        HexAddressParam addressParam = new HexAddressParam(accountAddress);
+        BlockRefParam blockRefParam = new BlockRefParam("0x100");
 
-        assertNull(resultCode);
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class,
+                () -> web3.eth_getCode(addressParam, blockRefParam));
+        assertEquals(-32600, exception.getCode());
     }
 
     @Test
@@ -2822,7 +3126,7 @@ class Web3ImplTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null,
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain,
                 null, new ExecutionBlockRetriever(blockchain, null, null),
                 null, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache), null,
                 bridgeSupportFactory,
@@ -2949,7 +3253,7 @@ class Web3ImplTest {
                 null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
 
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain,executor,
                 new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway),
                 bridgeSupportFactory,
@@ -3019,7 +3323,7 @@ class Web3ImplTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain,executor,
                 new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator,
                 new EthModuleWalletEnabled(wallet, transactionPool, signatureCache),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, null),
@@ -3406,6 +3710,33 @@ class Web3ImplTest {
         return new ChainParams(world, contractAddress, block, argsForCall);
     }
 
+    private static final long NON_CANONICAL_TRANSFER_VALUE = 1_000_000L;
+
+    // Genesis -> 1a -> 2a is canonical; sibling 1b alone carries a transfer, so its state differs from 1a's.
+    private NonCanonicalTransfer createNonCanonicalTransfer() {
+        final World world = new World();
+        Account sender = new AccountBuilder(world).name("sender").balance(Coin.valueOf(100000000)).build();
+        Account recipient = new AccountBuilder().name("recipient").build();
+        Transaction tx = new TransactionBuilder().sender(sender).receiver(recipient)
+                .value(BigInteger.valueOf(NON_CANONICAL_TRANSFER_VALUE)).build();
+
+        final Block genesis = world.getBlockChain().getBestBlock();
+        final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore());
+        final Block block1a = blockBuilder.parent(genesis).transactions(new ArrayList<>()).build();
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1a));
+        final Block block1b = blockBuilder.parent(genesis).transactions(List.of(tx)).build();
+        world.getBlockChain().tryToConnect(block1b);
+        final Block block2a = blockBuilder.parent(block1a).transactions(new ArrayList<>()).build();
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2a));
+        assertEquals(block1a.getHash(), world.getBlockChain().getBlockByNumber(1).getHash());
+
+        return new NonCanonicalTransfer(createWeb3(world), recipient.getAddress(), block1b);
+    }
+
+    private record NonCanonicalTransfer(Web3Impl web3, RskAddress recipient, Block nonCanonicalBlock) {
+    }
+
     private Block createCanonicalBlock(World world, List<Transaction> txs) {
         final Block genesis = world.getBlockChain().getBestBlock();
         final Block block = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
@@ -3534,6 +3865,25 @@ class Web3ImplTest {
     }
 
     //Chain Param Object creations
+    // Sends a raw JSON-RPC request through the server stack the node uses, with its error resolvers.
+    private static JsonNode overJsonRpc(Web3Impl web3, String method, String params) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonRpcCustomServer server = new JsonRpcCustomServer(web3, web3.getClass(), Collections.emptyList(), mapper);
+        server.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
+        String request = String.format("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"%s\",\"params\":%s}", method, params);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        server.handleRequest(new ByteArrayInputStream(request.getBytes(StandardCharsets.UTF_8)), out);
+        return mapper.readTree(out.toByteArray());
+    }
+
+    private static String callArgsJson(CallArguments args) {
+        return String.format("{\"from\": \"%s\", \"to\": \"%s\", \"data\": \"%s\"}", args.getFrom(), args.getTo(), args.getData());
+    }
+
+    private static String emptyCallArgsJson(CallArguments args) {
+        return String.format("{\"from\": \"%s\", \"to\": \"%s\"}", args.getFrom(), args.getTo());
+    }
+
     private class ChainParams {
         private final Web3Impl web3;
         private final String accountAddress;

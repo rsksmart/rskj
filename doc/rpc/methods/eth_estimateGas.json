@@ -7,7 +7,7 @@
       "$ref": "#/components/contentDescriptors/TransactionCreate"
     },
     {
-      "$ref": "#/components/contentDescriptors/ExecutionBlockNumberOrTag"
+      "$ref": "#/components/contentDescriptors/OptionalBlockRefOrExecutionNumberOrTag"
     }
   ],
   "result": {
@@ -31,7 +31,7 @@
           "$ref": "#/components/schemas/TransactionCreateExampleParam"
         },
         {
-          "name": "blockNumberOrTag",
+          "name": "blockRefOrNumberOrTag",
           "value": "latest"
         }
       ],

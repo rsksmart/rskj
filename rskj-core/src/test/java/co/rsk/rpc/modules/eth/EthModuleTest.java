@@ -22,7 +22,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
-import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
@@ -46,7 +45,6 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
-import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
@@ -54,7 +52,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OverrideablePrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -110,7 +107,6 @@ class EthModuleTest {
                 null,
                 (byte) 1,
                 null,
-                null,
                 executor,
                 retriever,
                 null,
@@ -165,7 +161,6 @@ class EthModuleTest {
                 null,
                 (byte) 1,
                 null,
-                null,
                 executor,
                 retriever,
                 repositoryLocator,
@@ -200,7 +195,6 @@ class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
-                null,
                 null,
                 null,
                 null,
@@ -269,7 +263,6 @@ class EthModuleTest {
         EthModule eth = spy(new EthModule(
                 null,
                 (byte) 1,
-                null,
                 null,
                 null,
                 executionBlockRetrieverMock,
@@ -355,7 +348,6 @@ class EthModuleTest {
                 (byte) 1,
                 null,
                 null,
-                null,
                 executionBlockRetrieverMock,
                 null,
                 null,
@@ -418,7 +410,6 @@ class EthModuleTest {
                 null,
                 (byte) 1,
                 null,
-                null,
                 executor,
                 retriever,
                 repositoryLocator,
@@ -466,7 +457,6 @@ class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
-                null,
                 null,
                 executor,
                 retriever,
@@ -521,7 +511,6 @@ class EthModuleTest {
                 null,
                 (byte) 1,
                 null,
-                null,
                 executor,
                 retriever,
                 null,
@@ -575,7 +564,6 @@ class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 (byte) 0,
-                null,
                 null,
                 executor,
                 retriever,
@@ -823,49 +811,12 @@ class EthModuleTest {
     }
 
     @Test
-    void getCode() {
-        byte[] expectedCode = new byte[]{1, 2, 3};
-
-        TransactionPool mockTransactionPool = mock(TransactionPool.class);
-        PendingState mockPendingState = mock(PendingState.class);
-
-        doReturn(expectedCode).when(mockPendingState).getCode(any(RskAddress.class));
-        doReturn(mockPendingState).when(mockTransactionPool).getPendingState();
-
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
-
-        EthModule eth = new EthModule(
-                null,
-                (byte) 0,
-                null,
-                mockTransactionPool,
-                null,
-                null,
-                null,
-                null,
-                null,
-                bridgeSupportFactory,
-                config.getGasEstimationCap(),
-                config.getCallGasCap(),
-                config.getActivationConfig(),
-                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
-                false,
-                null
-        );
-
-        HexAddressParam addressParam = new HexAddressParam(TestUtils.generateAddress("addr").toHexString());
-        String addr = eth.getCode(addressParam, "pending");
-        MatcherAssert.assertThat(Hex.decode(addr.substring("0x".length())), is(expectedCode));
-    }
-
-    @Test
     void chainId() {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         EthModule eth = new EthModule(
                 mock(BridgeConstants.class),
                 (byte) 33,
                 mock(Blockchain.class),
-                mock(TransactionPool.class),
                 mock(ReversibleTransactionExecutor.class),
                 mock(ExecutionBlockRetriever.class),
                 mock(RepositoryLocator.class),
@@ -907,7 +858,6 @@ class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
-                null,
                 null,
                 executor,
                 retriever,
@@ -958,7 +908,6 @@ class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
-                null,
                 null,
                 executor,
                 retriever,
@@ -1011,7 +960,6 @@ class EthModuleTest {
                 null,
                 (byte) 1,
                 null,
-                null,
                 executor,
                 retriever,
                 null,
@@ -1063,7 +1011,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                null,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1113,7 +1060,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                null,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1161,7 +1107,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                null,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1212,7 +1157,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                null,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1359,7 +1303,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                transactionPoolMock,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1393,7 +1336,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                transactionPoolMock,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1435,7 +1377,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                transactionPoolMock,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
@@ -1463,7 +1404,6 @@ class EthModuleTest {
 
     @Test
     void pendingTransactionsWithWalletDisabled() {
-        TransactionPool transactionPoolMock = mock(TransactionPool.class);
         EthModuleWalletDisabled ethModuleWallet = new EthModuleWalletDisabled();
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         Blockchain blockchain = mock(Blockchain.class);
@@ -1475,7 +1415,6 @@ class EthModuleTest {
                 null,
                 Constants.REGTEST_CHAIN_ID,
                 blockchain,
-                transactionPoolMock,
                 reversibleTransactionExecutor,
                 retriever,
                 mock(RepositoryLocator.class),
