@@ -43,13 +43,14 @@ public final class ZeroSignatureComponentTransactions {
     public static final String ZERO_R_AND_S_HEX = FIELDS_UP_TO_V + "80" + "80";
 
     /**
-     * Last-position shape of a REMASC transaction: a list with a 29-byte payload ({@code 0xdd}) of empty nonce,
-     * gas price and gas limit, destination REMASC ({@code 0x...01000008}), empty value and data, but signed with
-     * v = 101 ({@code 65}), an empty r (zero) and s = 1. Because it carries a signature, it is not a REMASC
-     * transaction.
+     * Last-position shape of a REMASC transaction: a list with a 29-byte payload ({@code 0xdd}) of an empty nonce
+     * ({@code 80}), gas price and gas limit each as the single byte {@code 00}, destination REMASC
+     * ({@code 0x...01000008}), and empty value and data ({@code 80}). Those are the bytes the node writes for the
+     * REMASC transaction of block 1. It is signed, though, with v = 101 ({@code 65}), an empty r (zero) and s = 1.
+     * Because it carries a signature, it is not a REMASC transaction.
      */
     public static final String ZERO_R_TO_REMASC_HEX =
-            "dd" + "80" + "80" + "80" + "940000000000000000000000000000000001000008" + "80" + "80" + "65" + "80" + "01";
+            "dd" + "80" + "00" + "00" + "940000000000000000000000000000000001000008" + "80" + "80" + "65" + "80" + "01";
 
     private ZeroSignatureComponentTransactions() {
     }

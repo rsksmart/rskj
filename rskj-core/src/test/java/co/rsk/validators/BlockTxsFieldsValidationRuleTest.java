@@ -215,7 +215,10 @@ class BlockTxsFieldsValidationRuleTest {
     @ParameterizedTest
     @ValueSource(strings = {
             ZeroSignatureComponentTransactions.ZERO_R_HEX,
-            ZeroSignatureComponentTransactions.ZERO_S_HEX})
+            ZeroSignatureComponentTransactions.ZERO_S_HEX,
+            // Last in the block and REMASC-shaped, but signed: decoding must not promote it to a RemascTransaction,
+            // which would skip the signature checks
+            ZeroSignatureComponentTransactions.ZERO_R_TO_REMASC_HEX})
     void decodedBlockCommittingToZeroSignatureComponentIsRejectedWithoutRecoveringItsSender(String wireHex) {
         byte[] wireTx = Hex.decode(wireHex);
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -226,6 +229,7 @@ class BlockTxsFieldsValidationRuleTest {
 
         assertEquals(1, decoded.getTransactionsList().size());
         assertArrayEquals(wireTx, decoded.getTransactionsList().get(0).getEncoded());
+        assertEquals(ImmutableTransaction.class, decoded.getTransactionsList().get(0).getClass());
         assertFalse(rule.isValid(decoded, genesis));
         verify(signatureCache, never()).getSender(any());
         assertTrue(cachedSenders().isEmpty());
