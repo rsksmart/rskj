@@ -761,6 +761,17 @@ class Web3ImplTest {
         assertInvalidType(response, "foo");
     }
 
+    @Test
+    void getCodeOverJsonRpc_byBlockHashObjectWithLongUnknownKey_echoesATrimmedKey() throws IOException {
+        final ChainParams chain = createChainWithAContractCode(false);
+        String params = String.format("[\"0x%s\", {\"blockHash\": \"%s\", \"%s\": 1}]",
+                chain.accountAddress, chain.block.getHashJsonString(), "k".repeat(100_000));
+
+        JsonNode response = overJsonRpc(chain.web3, "eth_getCode", params);
+
+        assertInvalidType(response, "k".repeat(66) + "...");
+    }
+
     private static void assertInvalidType(JsonNode response, String key) {
         assertEquals(-32602, response.path("error").path("code").asInt(), response.toString());
         assertEquals("Invalid input: " + key + " has an invalid type",

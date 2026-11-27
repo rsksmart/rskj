@@ -17,6 +17,7 @@
  */
 package org.ethereum.rpc.parameters;
 
+import co.rsk.util.StringUtils;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -126,7 +127,7 @@ public class BlockRefParam implements Serializable {
             if (value.isTextual() || (value.isBoolean() && REQUIRED_CANONICAL_KEY.equals(key))) {
                 return value.asText();
             }
-            throw RskJsonRpcRequestException.invalidParamError(String.format("Invalid input: %s has an invalid type", key));
+            throw RskJsonRpcRequestException.invalidParamError(String.format("Invalid input: %s has an invalid type", StringUtils.trim(key)));
         }
     }
 }
