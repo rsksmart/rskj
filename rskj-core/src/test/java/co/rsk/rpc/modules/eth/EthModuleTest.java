@@ -713,6 +713,16 @@ class EthModuleTest {
     }
 
     @Test
+    void sendRawTransaction_zeroR_reportsInvalidSignature() {
+        assertSendRawTransactionRejected(ZeroSignatureComponentTransactions.ZERO_R_HEX, "Invalid transaction signature");
+    }
+
+    @Test
+    void sendRawTransaction_zeroS_reportsInvalidSignature() {
+        assertSendRawTransactionRejected(ZeroSignatureComponentTransactions.ZERO_S_HEX, "Invalid transaction signature");
+    }
+
+    @Test
     void sendRawTransaction_validSignatureWrongChainId_reportsInvalidChainId() {
         Transaction tx = signedLegacyTransaction((byte) 31);
 
@@ -773,10 +783,14 @@ class EthModuleTest {
     }
 
     private static void assertSendRawTransactionRejected(Transaction tx, String expectedMessage) {
+        assertSendRawTransactionRejected(ByteUtil.toHexString(tx.getEncoded()), expectedMessage);
+    }
+
+    private static void assertSendRawTransactionRejected(String rawTransactionHex, String expectedMessage) {
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(
                 Constants.regtest(), new Wallet(new HashMapDB()), mock(TransactionPool.class), transactionGateway);
-        HexDataParam rawData = new HexDataParam(ByteUtil.toHexString(tx.getEncoded()));
+        HexDataParam rawData = new HexDataParam(rawTransactionHex);
 
         RskJsonRpcRequestException e = assertThrows(RskJsonRpcRequestException.class,
                 () -> ethModuleTransaction.sendRawTransaction(rawData));

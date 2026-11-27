@@ -18,26 +18,37 @@
 
 package co.rsk.validators;
 
+import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ZeroSignatureComponentTransactions;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -199,6 +210,29 @@ class BlockTxsFieldsValidationRuleTest {
         Transaction tx = signedTransaction(CHAIN_ID, "sender", oversizedNonce);
 
         assertFalse(rule.isValid(block(tx), parent));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            ZeroSignatureComponentTransactions.ZERO_R_HEX,
+            ZeroSignatureComponentTransactions.ZERO_S_HEX,
+            // Last in the block and REMASC-shaped, but signed: decoding must not promote it to a RemascTransaction,
+            // which would skip the signature checks
+            ZeroSignatureComponentTransactions.ZERO_R_TO_REMASC_HEX})
+    void decodedBlockCommittingToZeroSignatureComponentIsRejectedWithoutRecoveringItsSender(String wireHex) {
+        byte[] wireTx = Hex.decode(wireHex);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block = blockGenerator.createChildBlock(genesis, List.of(new ImmutableTransaction(wireTx)));
+
+        Block decoded = new BlockFactory(ActivationConfigsForTest.regtest()).decodeBlock(block.getEncoded());
+
+        assertEquals(1, decoded.getTransactionsList().size());
+        assertArrayEquals(wireTx, decoded.getTransactionsList().get(0).getEncoded());
+        assertEquals(ImmutableTransaction.class, decoded.getTransactionsList().get(0).getClass());
+        assertFalse(rule.isValid(decoded, genesis));
+        verify(signatureCache, never()).getSender(any());
+        assertTrue(cachedSenders().isEmpty());
     }
 
     private Block block(Transaction... transactions) {

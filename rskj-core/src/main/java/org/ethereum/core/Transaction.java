@@ -125,8 +125,10 @@ public class Transaction {
             }
             byte v = vData[0];
             this.chainId = extractChainIdFromV(v);
-            byte[] r = transaction.get(7).getRLPData();
-            byte[] s = transaction.get(8).getRLPData();
+            // RLP encodes zero as an empty item, which decodes as null. Read it as zero so the
+            // signature checks reject it like any other out-of-range component.
+            byte[] r = Objects.requireNonNullElse(transaction.get(7).getRLPData(), EMPTY_BYTE_ARRAY);
+            byte[] s = Objects.requireNonNullElse(transaction.get(8).getRLPData(), EMPTY_BYTE_ARRAY);
             this.signature = ECDSASignature.fromComponents(r, s, getRealV(v));
         } else {
             this.chainId = 0;

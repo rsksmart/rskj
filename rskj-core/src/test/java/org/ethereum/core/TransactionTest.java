@@ -57,6 +57,8 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -179,6 +181,70 @@ class TransactionTest {
     private static void replaceS(Transaction tx, BigInteger s) {
         ECDSASignature signature = tx.getSignature();
         tx.setSignature(new ECDSASignature(signature.getR(), s, signature.getV()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            ZeroSignatureComponentTransactions.ZERO_R_HEX,
+            ZeroSignatureComponentTransactions.ZERO_S_HEX,
+            ZeroSignatureComponentTransactions.ZERO_R_AND_S_HEX})
+    void decode_zeroSignatureComponent_isRejectedAndReencodesAsReceived(String wireHex) {
+        byte[] wire = Hex.decode(wireHex);
+
+        Transaction tx = new ImmutableTransaction(wire);
+
+        assertFalse(tx.hasAcceptableSignatureComponents());
+        assertFalse(tx.acceptTransactionSignature(REGTEST_CHAIN_ID));
+        assertEquals(REGTEST_CHAIN_ID, tx.getChainId());
+        assertArrayEquals(wire, tx.getEncoded());
+        assertEquals(new Keccak256(HashUtil.keccak256(wire)), tx.getHash());
+    }
+
+    @Test
+    void decode_emptyR_decodesRAsZero() {
+        Transaction tx = new ImmutableTransaction(ZeroSignatureComponentTransactions.zeroR());
+
+        assertEquals(BigInteger.ZERO, tx.getSignature().getR());
+        assertEquals(BigInteger.ONE, tx.getSignature().getS());
+    }
+
+    @Test
+    void decode_emptyS_decodesSAsZero() {
+        Transaction tx = new ImmutableTransaction(ZeroSignatureComponentTransactions.zeroS());
+
+        assertEquals(BigInteger.ONE, tx.getSignature().getR());
+        assertEquals(BigInteger.ZERO, tx.getSignature().getS());
+    }
+
+    @Test
+    void decode_emptyV_isUnsigned() {
+        // nonce 1, gas price 1 gwei, gas limit 21000, to 0x...1234, value 1, empty data, then empty v, r and s
+        byte[] wire = Hex.decode("e301843b9aca00825208940000000000000000000000000000000000001234018080" + "8080");
+
+        Transaction tx = new ImmutableTransaction(wire);
+
+        assertNull(tx.getSignature());
+        assertEquals(0, tx.getChainId());
+        assertArrayEquals(wire, tx.getEncoded());
+    }
+
+    @Test
+    void decode_eip155ExampleTransaction_isAcceptedWithPublishedSignature() {
+        // Signed example transaction published in EIP-155, chain id 1, private key 0x4646...46
+        byte[] wire = Hex.decode("f86c098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a7640000"
+                + "8025a028ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa636276"
+                + "a067cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d83");
+
+        Transaction tx = new ImmutableTransaction(wire);
+
+        assertEquals(1, tx.getChainId());
+        assertEquals(new BigInteger("28ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa636276", 16),
+                tx.getSignature().getR());
+        assertEquals(new BigInteger("67cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d83", 16),
+                tx.getSignature().getS());
+        assertTrue(tx.acceptTransactionSignature((byte) 1));
+        assertEquals(new RskAddress("9d8a62f656a8d1615c1294fd71e9cfb3e4855a4f"), tx.getSender());
+        assertArrayEquals(wire, tx.getEncoded());
     }
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */

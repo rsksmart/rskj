@@ -33,6 +33,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -593,6 +594,38 @@ class MessageTest {
 
         for (int k = 0; k < uncles.size(); k++)
             assertArrayEquals(uncles.get(k).getFullEncoded(), newmessage.getUncles().get(k).getFullEncoded());
+    }
+
+    @Test
+    void decodeBodyResponseMessage_withZeroSignatureComponents_keepsEveryTransaction() {
+        Transaction goodTx = createTransaction(1);
+        byte[] zeroRTx = ZeroSignatureComponentTransactions.zeroR();
+        byte[] zeroSTx = ZeroSignatureComponentTransactions.zeroS();
+        // Last in the body, in the position of a REMASC transaction, but signed, so it is not one
+        byte[] zeroRToRemascTx = ZeroSignatureComponentTransactions.zeroRToRemasc();
+        byte[] wireMessage = RLP.encodeList(
+                RLP.encodeByte(MessageType.BODY_RESPONSE_MESSAGE.getTypeAsByte()),
+                RLP.encodeElement(RLP.encodeList(
+                        RLP.encodeBigInteger(BigInteger.valueOf(100)),
+                        RLP.encodeList(
+                                RLP.encodeList(goodTx.getEncoded(), zeroRTx, zeroSTx, zeroRToRemascTx),
+                                RLP.encodeList()))));
+
+        BodyResponseMessage message = (BodyResponseMessage) Message.create(blockFactory, wireMessage);
+
+        List<Transaction> transactions = message.getTransactions();
+        assertEquals(4, transactions.size());
+        assertEquals(goodTx.getHash(), transactions.get(0).getHash());
+        assertTrue(transactions.get(0).acceptTransactionSignature(Constants.REGTEST_CHAIN_ID));
+        assertRejectedAsReceived(zeroRTx, transactions.get(1));
+        assertRejectedAsReceived(zeroSTx, transactions.get(2));
+        assertRejectedAsReceived(zeroRToRemascTx, transactions.get(3));
+        assertEquals(ImmutableTransaction.class, transactions.get(3).getClass());
+    }
+
+    private static void assertRejectedAsReceived(byte[] wireTx, Transaction decodedTx) {
+        assertArrayEquals(wireTx, decodedTx.getEncoded());
+        assertFalse(decodedTx.acceptTransactionSignature(Constants.REGTEST_CHAIN_ID));
     }
 
     @Test
